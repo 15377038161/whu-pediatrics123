@@ -1,6 +1,5 @@
 import { ArrowRight, ClipboardCheck, MessagesSquare, Stethoscope } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { CASE_CATALOG, getPublicCase } from '@/domain/case-catalog';
 import { AgentRepository } from '@/lib/repository';
 import { requirePageUser } from '@/lib/page-auth';
@@ -21,27 +20,27 @@ export default async function StudentHome() {
 
       <section className="hero-desk">
         <p className="eyebrow" style={{ color: '#e3bd7b' }}>{active ? '继续上次训练' : '本周旗舰病例'}</p>
-        <h1>{activeCase.title}</h1>
-        <p>{activeCase.subtitle}。在动态家长插话和患儿应答中，完成问诊、查体、决策与沟通闭环。</p>
+        <h1>{active ? '继续上次临床训练' : `${activeCase.category}模拟接诊`}</h1>
+        <p>就诊线索：{activeCase.presentingSymptoms.join('、')}。患儿信息、病史和检查结果需由你在训练中逐步获取。</p>
         <div className="hero-actions">
           <a className="btn btn-primary" href={active ? `/student/training?session=${active.id}` : `/student/training?mode=guided&case=${activeCase.id}`}>
             {active ? '继续训练' : '开始病例'} <ArrowRight size={17} />
           </a>
           <a className="btn btn-secondary" href="/about/agent">智能体如何工作</a>
         </div>
-        <div className="case-note"><span>建议 {activeCase.expectedMinutes} 分钟</span><span>{activeCase.age} · {activeCase.sex}童</span><span>武汉大学校本框架</span></div>
+        <div className="case-note"><span>建议 {activeCase.expectedMinutes} 分钟</span><span>自主问诊与检查</span><span>武汉大学校本框架</span></div>
       </section>
 
-      <div className="section-head" id="case-library"><h2 className="section-title">模拟病例库</h2><span className="eyebrow">男童 · 女童 · 可持续扩展</span></div>
+      <div className="section-head" id="case-library"><h2 className="section-title">模拟病例库</h2><span className="eyebrow">仅展示就诊线索</span></div>
       <div className="case-library">
-        {CASE_CATALOG.map((caseItem) => (
+        {CASE_CATALOG.map((caseItem, index) => (
           <article className="case-card" key={caseItem.id}>
-            <div className="case-card-photo"><Image src={caseItem.patientImage} alt={caseItem.patientAlt} fill sizes="(max-width: 767px) 34vw, 180px" /></div>
             <div className="case-card-copy">
-              <p className="eyebrow">{caseItem.age} · {caseItem.sex}童 · {caseItem.difficulty}</p>
-              <h3>{caseItem.title}</h3>
-              <p>{caseItem.subtitle}</p>
-              <span className="case-status">{caseItem.contentStatus === 'flagship-fixture' ? '旗舰演示病例' : '演示病例 · 待教师审核'}</span>
+              <p className="case-number">病例 {String(index + 1).padStart(2, '0')}</p>
+              <h3>{caseItem.category}</h3>
+              <div className="symptom-list" aria-label="就诊症状">
+                {caseItem.presentingSymptoms.map((symptom) => <span key={symptom}>{symptom}</span>)}
+              </div>
               <a className="btn btn-secondary" href={`/student/training?mode=guided&case=${caseItem.id}`}>进入病例 <ArrowRight size={15} /></a>
             </div>
           </article>

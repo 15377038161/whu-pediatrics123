@@ -3,6 +3,8 @@ export interface PublicCaseProfile {
   version: number;
   title: string;
   subtitle: string;
+  category: string;
+  presentingSymptoms: string[];
   age: string;
   sex: '男' | '女';
   difficulty: string;
@@ -18,7 +20,9 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
     id: 'peds-respiratory-001',
     version: 1,
     title: '3岁男童发热、咳嗽伴气促',
-    subtitle: '儿童呼吸系统 · 肺炎危险信号识别与家长沟通',
+    subtitle: '儿童呼吸系统模拟病例',
+    category: '呼吸系统',
+    presentingSymptoms: ['发热', '咳嗽', '呼吸急促'],
     age: '3岁2个月',
     sex: '男',
     difficulty: '基础进阶',
@@ -32,7 +36,9 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
     id: 'peds-wheeze-002',
     version: 1,
     title: '5岁女童发热、咳嗽伴喘息',
-    subtitle: '儿童呼吸系统 · 喘息评估、诱因追问与安全处置',
+    subtitle: '儿童呼吸系统模拟病例',
+    category: '呼吸系统',
+    presentingSymptoms: ['发热', '咳嗽', '喘息'],
     age: '5岁4个月',
     sex: '女',
     difficulty: '基础进阶',
