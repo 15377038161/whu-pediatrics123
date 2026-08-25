@@ -1,0 +1,28 @@
+[project]
+sub_id = "84a9a19f"
+name = "luojia-pediatrics-agent"
+requires = ["nodejs-24"]
+project_type = "web"
+version = "0.0.35"
+entrypoint = "server.js"
+
+[preview]
+preview_enable = "enabled"
+
+[dev]
+build = ["bash", "scripts/build.sh"]
+run = ["bash", "scripts/run.sh"]
+
+[deploy]
+build = ["bash", ".cozeproj/scripts/deploy_build.sh"]
+run = ["bash", ".cozeproj/scripts/deploy_run.sh"]
+
+[deploy.profile]
+kind = "service"
+flavor = "web"
+
+[deploy.backend]
+enabled = true
+
+[subprojects]
+path = ["."]
