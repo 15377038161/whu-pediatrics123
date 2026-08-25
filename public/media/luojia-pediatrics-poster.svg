@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">珞珈儿科智训登录背景</title>
+  <desc id="desc">珞珈山树影、校舍屋脊、儿童生长曲线与听诊波形构成的安静教学场景</desc>
+  <rect width="1920" height="1080" fill="#e8eee8"/>
+  <rect width="1920" height="1080" fill="#173c3c" opacity=".08"/>
+  <circle cx="1530" cy="250" r="280" fill="#e5cdb3" opacity=".75"/>
+  <path d="M0 720C220 620 420 690 620 590s390-40 580-135 430-110 720-10v635H0Z" fill="#35584f" opacity=".2"/>
+  <path d="M0 820c260-90 480-55 700-120s410-130 690-70 370 5 530-40v490H0Z" fill="#173c3c" opacity=".82"/>
+  <g fill="#f4efe6" opacity=".94">
+    <path d="M235 791h820v185H235z"/>
+    <path d="M205 792l440-215 440 215z"/>
+    <path d="M300 734h690v31H300z"/>
+    <path d="M355 646h580v26H355z"/>
+    <path d="M410 615h470v24H410z"/>
+  </g>
+  <g fill="#173c3c" opacity=".82">
+    <rect x="310" y="829" width="84" height="147" rx="4"/><rect x="450" y="829" width="84" height="147" rx="4"/>
+    <rect x="590" y="829" width="110" height="147" rx="4"/><rect x="756" y="829" width="84" height="147" rx="4"/>
+    <rect x="896" y="829" width="84" height="147" rx="4"/>
+  </g>
+  <g fill="none" stroke="#b34e3d" stroke-width="8" stroke-linecap="round" opacity=".82">
+    <path d="M1100 545h95l35-66 55 137 54-106 45 35h132"/>
+    <path d="M1310 814c42-112 84-178 126-178s84 66 126 178"/>
+  </g>
+  <g fill="none" stroke="#f4efe6" stroke-width="5" opacity=".75">
+    <path d="M1210 900c98-55 190-60 280-12s174 44 260-10"/>
+    <path d="M1240 846c70-35 130-38 180-10" stroke-dasharray="12 18"/>
+  </g>
+  <g fill="#173c3c" opacity=".32">
+    <circle cx="176" cy="270" r="58"/><circle cx="105" cy="350" r="85"/><circle cx="252" cy="365" r="98"/>
+    <rect x="164" y="350" width="22" height="315" rx="11"/>
+  </g>
+  <text x="1092" y="316" fill="#173c3c" font-size="28" font-family="system-ui,sans-serif" letter-spacing="8">LUOJIA PEDIATRICS</text>
+</svg>

@@ -1,0 +1,45 @@
+{
+  "name": "luojia-pediatrics-agent",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "preinstall": "only-allow pnpm",
+    "dev": "next dev -H 127.0.0.1 -p 8765",
+    "build": "next build && tsup src/server.ts --format cjs --platform node --out-dir dist --external next",
+    "start": "node dist/server.js",
+    "lint": "eslint . --quiet",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test tests/**/*.test.ts",
+    "validate": "pnpm run typecheck && pnpm run lint && pnpm run test",
+    "bundle": "pwsh -NoProfile -File scripts/package-coze.ps1"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "2.110.8",
+    "coze-coding-dev-sdk": "^0.7.24",
+    "dotenv": "^17.2.3",
+    "lucide-react": "^0.468.0",
+    "next": "16.1.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "only-allow": "^1.2.2",
+    "tailwindcss": "^4",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}

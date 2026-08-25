@@ -1,0 +1,155 @@
+import type { Emotion, Stage, VitalSigns } from '@/domain/agent';
+
+export interface HistoryIntent {
+  id: string;
+  label: string;
+  keywords: string[];
+  childAnswer: string;
+  parentAnswer: string;
+  preferredActor: 'child' | 'parent' | 'mixed';
+  score: number;
+  evidenceCode: string;
+}
+
+export interface ExamRule {
+  id: string;
+  toolId: string;
+  bodyPartId: string;
+  label: string;
+  result: string;
+  evidenceCode: string;
+  requires: string[];
+  risk: 'normal' | 'attention' | 'critical';
+}
+
+export interface AuxiliaryTest {
+  id: string;
+  label: string;
+  indication: string;
+  result: string;
+  evidenceCode: string;
+  appropriate: boolean;
+}
+
+export interface FlagshipCase {
+  id: string;
+  version: number;
+  title: string;
+  subtitle: string;
+  age: string;
+  sex: string;
+  triage: string;
+  difficulty: string;
+  expectedMinutes: number;
+  initialEmotion: Emotion;
+  initialVitals: VitalSigns;
+  stages: Array<{ id: Stage; label: string; shortLabel: string }>;
+  history: HistoryIntent[];
+  exams: ExamRule[];
+  tests: AuxiliaryTest[];
+}
+
+export const FLAGSHIP_CASE: FlagshipCase = {
+  id: 'peds-respiratory-001',
+  version: 1,
+  title: '3岁患儿发热、咳嗽伴气促',
+  subtitle: '儿童呼吸系统 · 危险信号识别与家长沟通',
+  age: '3岁2个月',
+  sex: '男',
+  triage: '患儿由母亲抱入诊室，精神欠佳，呼吸较快。',
+  difficulty: '基础进阶',
+  expectedMinutes: 12,
+  initialEmotion: 'nervous',
+  initialVitals: { temperature: 39.2, heartRate: 132, respiratoryRate: 42, spo2: 94 },
+  stages: [
+    { id: 'triage', label: '接诊与分诊', shortLabel: '接诊' },
+    { id: 'history', label: '学生自主问诊', shortLabel: '问诊' },
+    { id: 'exam', label: '可视化体格检查', shortLabel: '查体' },
+    { id: 'tests', label: '辅助检查选择', shortLabel: '检查' },
+    { id: 'assessment', label: '病情摘要与诊断', shortLabel: '诊断' },
+    { id: 'plan', label: '治疗及处置计划', shortLabel: '处置' },
+    { id: 'communication', label: '患儿与家长沟通', shortLabel: '沟通' },
+    { id: 'report', label: '训练报告与补练', shortLabel: '报告' },
+  ],
+  history: [
+    {
+      id: 'onset', label: '起病与病程', keywords: ['什么时候', '多久', '几天', '开始', '病程'],
+      childAnswer: '前天开始不舒服，昨天咳得更多了。',
+      parentAnswer: '前天晚上开始发热和咳嗽，今天呼吸明显比平时快。',
+      preferredActor: 'mixed', score: 4, evidenceCode: 'HX_ONSET',
+    },
+    {
+      id: 'fever', label: '发热特点', keywords: ['体温', '发热', '发烧', '最高', '退烧'],
+      childAnswer: '我觉得很热，吃药以后好一点。',
+      parentAnswer: '最高39.4℃，退热后会短暂下降，几个小时后又升高。',
+      preferredActor: 'parent', score: 4, evidenceCode: 'HX_FEVER',
+    },
+    {
+      id: 'danger', label: '呼吸危险信号', keywords: ['喘', '憋', '呼吸困难', '青紫', '嘴唇', '胸口', '气促'],
+      childAnswer: '跑一下就喘，胸口有点难受。',
+      parentAnswer: '今天安静坐着也呼吸快，睡觉时胸口起伏明显，没有抽搐。',
+      preferredActor: 'mixed', score: 8, evidenceCode: 'HX_DANGER',
+    },
+    {
+      id: 'general', label: '一般状态', keywords: ['精神', '吃饭', '饮食', '尿', '喝水', '睡眠', '大便'],
+      childAnswer: '不太想吃饭，只想躺着。',
+      parentAnswer: '精神和食欲都比平时差，能喝少量水，今天小便两次。',
+      preferredActor: 'mixed', score: 4, evidenceCode: 'HX_GENERAL',
+    },
+    {
+      id: 'exposure', label: '接触史', keywords: ['接触', '同学', '幼儿园', '传染', '流行'],
+      childAnswer: '班里好像有人咳嗽。',
+      parentAnswer: '幼儿园本周有几名孩子因发热咳嗽请假，家里没有类似患者。',
+      preferredActor: 'parent', score: 3, evidenceCode: 'HX_EXPOSURE',
+    },
+    {
+      id: 'vaccination', label: '预防接种史', keywords: ['接种', '疫苗', '预防针'],
+      childAnswer: '打针我会哭。',
+      parentAnswer: '按儿童免疫规划完成了现阶段接种，没有漏种记录。',
+      preferredActor: 'parent', score: 3, evidenceCode: 'HX_VACCINATION',
+    },
+    {
+      id: 'birth', label: '出生与发育史', keywords: ['出生', '早产', '喂养', '发育', '生长'],
+      childAnswer: '我不知道，妈妈知道。',
+      parentAnswer: '足月顺产，出生体重3.2公斤，生长发育与同龄儿童相近。',
+      preferredActor: 'parent', score: 2, evidenceCode: 'HX_BIRTH',
+    },
+    {
+      id: 'allergy', label: '过敏及既往史', keywords: ['过敏', '以前', '既往', '住院', '哮喘', '药物'],
+      childAnswer: '以前感冒过，没有住过院。',
+      parentAnswer: '无明确药物和食物过敏史，无反复喘息或慢性心肺疾病。',
+      preferredActor: 'parent', score: 3, evidenceCode: 'HX_ALLERGY',
+    },
+  ],
+  exams: [
+    { id: 'prep-hygiene', toolId: 'hand-hygiene', bodyPartId: 'hands', label: '手卫生', result: '已完成手卫生并向患儿及家长说明检查目的。', evidenceCode: 'EX_PREP', requires: [], risk: 'normal' },
+    { id: 'temperature', toolId: 'thermometer', bodyPartId: 'forehead', label: '体温测量', result: '体温39.2℃。', evidenceCode: 'EX_TEMP', requires: ['EX_PREP'], risk: 'attention' },
+    { id: 'mouth', toolId: 'tongue-depressor', bodyPartId: 'mouth', label: '口咽检查', result: '咽部轻度充血，未见明显疱疹或脓性分泌物。患儿在解释后能够配合张口、伸舌。', evidenceCode: 'EX_MOUTH', requires: ['EX_PREP'], risk: 'normal' },
+    { id: 'respiratory', toolId: 'stethoscope', bodyPartId: 'chest', label: '肺部听诊', result: '双侧呼吸音粗，右下肺可闻及细湿啰音；呼气相无明显延长。', evidenceCode: 'EX_RESP', requires: ['EX_PREP'], risk: 'critical' },
+    { id: 'oxygen', toolId: 'oximeter', bodyPartId: 'finger', label: '血氧监测', result: '静息状态SpO₂ 92%，脉搏132次/分。', evidenceCode: 'EX_SPO2', requires: ['EX_PREP'], risk: 'critical' },
+    { id: 'blood-pressure', toolId: 'bp-cuff', bodyPartId: 'upper-arm', label: '血压测量', result: '选择儿童袖带后测得血压92/58 mmHg。', evidenceCode: 'EX_BP', requires: ['EX_PREP'], risk: 'normal' },
+  ],
+  tests: [
+    { id: 'cbc-crp', label: '血常规与CRP', indication: '评估感染与炎症程度', result: '白细胞12.6×10⁹/L，中性粒细胞比例升高，CRP 32 mg/L。', evidenceCode: 'TEST_CBC', appropriate: true },
+    { id: 'chest-image', label: '胸部影像', indication: '低氧且存在局灶肺部体征', result: '右下肺可见斑片状浸润影，未见明显胸腔积液。', evidenceCode: 'TEST_IMAGE', appropriate: true },
+    { id: 'pathogen', label: '呼吸道病原学', indication: '结合流行病学和病程选择', result: '呼吸道病毒抗原筛查阴性；其他病原结果需结合病程解释。', evidenceCode: 'TEST_PATHOGEN', appropriate: true },
+    { id: 'brain-mri', label: '头颅MRI', indication: '当前无神经系统指征', result: '当前病史和查体不支持常规选择该检查。', evidenceCode: 'TEST_LOW_VALUE', appropriate: false },
+  ],
+};
+
+export function identifyHistoryIntent(question: string): HistoryIntent | null {
+  return identifyHistoryIntents(question)[0] ?? null;
+}
+
+export function identifyHistoryIntents(question: string): HistoryIntent[] {
+  const normalized = question.replace(/\s+/g, '');
+  return FLAGSHIP_CASE.history.filter((item) => item.keywords.some((keyword) => normalized.includes(keyword)));
+}
+
+export function findExamRule(toolId: string, bodyPartId: string): ExamRule | null {
+  return FLAGSHIP_CASE.exams.find((item) => item.toolId === toolId && item.bodyPartId === bodyPartId) ?? null;
+}
+
+export function findTest(testId: string): AuxiliaryTest | null {
+  return FLAGSHIP_CASE.tests.find((item) => item.id === testId) ?? null;
+}

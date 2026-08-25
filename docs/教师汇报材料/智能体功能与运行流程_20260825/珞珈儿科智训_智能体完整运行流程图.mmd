@@ -1,0 +1,146 @@
+flowchart TB
+  classDef startend fill:#173F35,color:#fff,stroke:#173F35,stroke-width:2px;
+  classDef process fill:#FFFDF8,color:#243A35,stroke:#2F6654,stroke-width:2px;
+  classDef decision fill:#FFF7E6,color:#243A35,stroke:#B8873D,stroke-width:2px;
+  classDef document fill:#F0F3E8,color:#243A35,stroke:#667C4E,stroke-width:2px;
+  classDef database fill:#E6F0EF,color:#243A35,stroke:#56797A,stroke-width:2px;
+  classDef error fill:#FFF1EF,color:#7A201B,stroke:#B33A32,stroke-width:2px;
+  PRE["前置条件<br/>病例任务已预置；超星账号可用；正式环境启用认证<br/>Coze数据库已配置；知识已版本化；教师仅只读<br/>超星认证与表单待授权联调"]
+  S0(["开始：学生发起登录<br/><small>学生｜即时</small>"])
+  P1["执行超星身份认证<br/><small>超星平台｜2—10秒</small>"]
+  D1{"身份认证成功？<br/><small>超星平台｜即时</small>"}
+  D2{"属于允许机构？<br/><small>超星平台｜即时</small>"}
+  D3{"学生还是教师？<br/><small>统一智能体｜即时</small>"}
+  P2["进入学生首页<br/><small>学生｜1—3秒</small>"]
+  P3["选择训练模式<br/><small>学生｜5—15秒</small>"]
+  P4[["创建统一病例会话<br/><small>统一智能体｜1—3秒</small>"]]
+  P5["完成接诊与分诊<br/><small>学生｜30—60秒</small>"]
+  P6["输入问诊问题<br/><small>学生｜10—30秒</small>"]
+  P7[["识别问题意图<br/><small>统一智能体｜1—3秒</small>"]]
+  D4{"问题是否有效？<br/><small>统一智能体｜即时</small>"}
+  D5{"患儿能否回答？<br/><small>角色模拟模块｜即时</small>"}
+  D6{"家长需要插话？<br/><small>角色模拟模块｜即时</small>"}
+  P8[["调度患儿家长应答<br/><small>角色模拟模块｜1—3秒</small>"]]
+  D7{"需要医生干预？<br/><small>统一智能体｜即时</small>"}
+  P9["执行安抚秩序干预<br/><small>学生｜10—30秒</small>"]
+  D8{"模型调用成功？<br/><small>统一智能体｜1—3秒</small>"}
+  P10["执行可视化体检<br/><small>学生｜1—3分钟</small>"]
+  D9{"器材部位匹配？<br/><small>查体规则引擎｜即时</small>"}
+  D10{"必要准备完成？<br/><small>查体规则引擎｜即时</small>"}
+  P11["选择辅助检查<br/><small>学生｜30—60秒</small>"]
+  D11{"存在危险信号？<br/><small>统一智能体｜即时</small>"}
+  P12["优先执行安全处置<br/><small>学生｜30—60秒</small>"]
+  P13["提交摘要与诊断<br/><small>学生｜1—2分钟</small>"]
+  P14[["检索儿科知识依据<br/><small>知识检索模块｜1—3秒</small>"]]
+  D12{"存在可靠依据？<br/><small>知识检索模块｜即时</small>"}
+  P15["提交治疗处置计划<br/><small>学生｜1—2分钟</small>"]
+  P16["完成患儿家长沟通<br/><small>学生｜1—2分钟</small>"]
+  D13{"达到结束条件？<br/><small>统一智能体｜即时</small>"}
+  D14{"OSCE时间结束？<br/><small>统一智能体｜即时</small>"}
+  P17[["冻结现有过程证据<br/><small>OSCE评分引擎｜即时</small>"]]
+  D15{"评分证据完整？<br/><small>OSCE评分引擎｜即时</small>"}
+  P18[["执行评分训练评价<br/><small>OSCE评分引擎｜3—10秒</small>"]]
+  P19[/"生成个人训练报告<br/><small>OSCE评分引擎｜3—10秒</small>"/]
+  D16{"报告生成成功？<br/><small>OSCE评分引擎｜即时</small>"}
+  P20[/"生成六维能力画像<br/><small>OSCE评分引擎｜1—3秒</small>"/]
+  P21[/"生成专项补练建议<br/><small>统一智能体｜1—3秒</small>"/]
+  DB1[("保存Coze数据库<br/><small>Coze数据库｜1—3秒</small>")]
+  P22[("加入超星同步队列<br/><small>Coze数据库｜即时</small>")]
+  D17{"超星接口已配置？<br/><small>超星平台｜即时</small>"}
+  P23["提交超星表单<br/><small>超星平台｜2—10秒</small>"]
+  D18{"同步是否成功？<br/><small>超星平台｜即时</small>"}
+  O1[/"学生个人训练报告<br/><small>统一智能体｜即时</small>"/]
+  O2[/"学生获得补练路径<br/><small>学生｜即时</small>"/]
+  O3[/"教师查看只读学情<br/><small>教师｜即时</small>"/]
+  E0(["形成儿科教学闭环<br/><small>统一智能体｜持续</small>"])
+  E1["认证失败<br/><small>返回登录并重新授权｜重新操作</small>"]
+  E2["机构角色不符<br/><small>拒绝访问并联系管理员｜明确结束</small>"]
+  E3["问题无法识别<br/><small>提示具体追问方向｜重新操作</small>"]
+  E4["模型调用失败<br/><small>使用预置病例事实｜安全降级</small>"]
+  E5["器材部位错误<br/><small>不返回深层体征并留痕｜重新操作</small>"]
+  E6["检查准备缺失<br/><small>训练提示／考核扣分｜重新操作</small>"]
+  E7["知识依据不足<br/><small>返回暂无经审核依据｜安全降级</small>"]
+  E8["OSCE时间结束<br/><small>冻结证据并自动提交｜明确结束</small>"]
+  E9["报告生成异常<br/><small>保留证据并标记待生成｜保存待处理</small>"]
+  E10["超星表单未配置<br/><small>保留队列并等待授权｜保存待处理</small>"]
+  E11["超星同步失败<br/><small>按幂等键最多重试8次｜保存待处理</small>"]
+  PRE -.-> S0
+  S0 --> P1
+  P1 --> D1
+  D1 -->|是| D2
+  D1 -->|否| E1
+  E1 -->|重新授权| S0
+  D2 -->|是| D3
+  D2 -->|否| E2
+  D3 -->|学生| P2
+  D3 -->|教师| O3
+  P2 --> P3
+  P3 --> P4
+  P4 --> P5
+  P5 --> P6
+  P6 --> P7
+  P7 --> D4
+  D4 -->|是| D5
+  D4 -->|否| E3
+  E3 -->|重新提问| P6
+  D5 -->|是／否| D6
+  D6 -->|是／否| P8
+  P8 --> D7
+  D7 -->|是| P9
+  D7 -->|否| D8
+  P9 --> D8
+  D8 -->|是| P10
+  D8 -->|否| E4
+  E4 -->|预置事实| P10
+  P10 --> D9
+  D9 -->|是| D10
+  D9 -->|否| E5
+  E5 -->|重做| P10
+  D10 -->|是| P11
+  D10 -->|否| E6
+  E6 -->|考核留痕| P11
+  E6 -->|训练重做| P10
+  P11 --> D11
+  D11 -->|是| P12
+  D11 -->|否| P13
+  P12 --> P13
+  P13 --> P14
+  P14 --> D12
+  D12 -->|是| P15
+  D12 -->|否| E7
+  E7 -->|无依据继续| P15
+  P15 --> P16
+  P16 --> D13
+  D13 -->|否| P6
+  D13 -->|是| D14
+  D14 -->|是| P17
+  D14 -->|否| D15
+  P17 --> D15
+  D15 -->|是| P18
+  D15 -->|否：标记缺口| P18
+  P18 --> P19
+  P19 --> D16
+  D16 -->|是| P20
+  D16 -->|否| E9
+  E9 -->|保存证据| DB1
+  P20 --> P21
+  P21 --> DB1
+  DB1 --> P22
+  P22 --> D17
+  D17 -->|是| P23
+  D17 -->|否| E10
+  E10 -->|等待授权| O1
+  P23 --> D18
+  D18 -->|是| O1
+  D18 -->|否| E11
+  E11 -->|队列保留| O1
+  O1 --> O2
+  O1 --> O3
+  O2 --> E0
+  O3 --> E0
+  class S0,E0 startend;
+  class D1,D2,D3,D4,D5,D6,D7,D8,D9,D10,D11,D12,D13,D14,D15,D16,D17,D18 decision;
+  class P19,P20,P21,O1,O2,O3 document;
+  class DB1,P22 database;
+  class P1,P2,P3,P4,P5,P6,P7,P8,P9,P10,P11,P12,P13,P14,P15,P16,P17,P18,P23 process;
+  class E1,E2,E3,E4,E5,E6,E7,E8,E9,E10,E11 error;

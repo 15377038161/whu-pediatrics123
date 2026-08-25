@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">珞珈儿科智训统一智能体思维导图</title>
+  <desc id="desc">以统一儿科教学智能体为中心，展示学生闭环、智能体内核、四大资源库、武汉大学特色、身份权限、数据闭环、教师只读和竞赛创新八个分支。</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#173c3c" flood-opacity="0.14"/></filter>
+    <linearGradient id="center" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#173c3c"/><stop offset="1" stop-color="#285b57"/></linearGradient>
+    <style>
+      .title{font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:34px;font-weight:700;fill:#173c3c}
+      .subtitle{font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:15px;fill:#657572;letter-spacing:2px}
+      .branch-title{font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:20px;font-weight:700;fill:#173c3c}
+      .branch-text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:14px;fill:#51635f}
+      .center-title{font-family:"STSong","SimSun",serif;font-size:31px;font-weight:700;fill:#fffdf8}
+      .center-text{font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:15px;fill:#dfeae5}
+      .tag{font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:13px;font-weight:700;fill:#e8c486;letter-spacing:2px}
+      .footer{font-family:"Microsoft YaHei","PingFang SC",sans-serif;font-size:14px;fill:#6c7773}
+      .line{fill:none;stroke:#769188;stroke-width:3;stroke-linecap:round}
+      .dot{fill:#aa493a}
+    </style>
+  </defs>
+  <rect width="1600" height="1000" fill="#f7f4ed"/>
+  <path d="M0 122 C330 90 430 165 760 116 C1080 68 1250 118 1600 76 L1600 0 L0 0 Z" fill="#e5eeea" opacity="0.8"/>
+  <path d="M0 915 C300 865 510 955 820 912 C1130 868 1340 940 1600 890 L1600 1000 L0 1000 Z" fill="#efe2d5" opacity="0.7"/>
+  <text x="800" y="58" text-anchor="middle" class="title">珞珈儿科智训 · 整体智能体思维导图</text>
+  <text x="800" y="88" text-anchor="middle" class="subtitle">武汉大学儿科学主题 · 教育智能体竞赛汇报版</text>
+
+  <path class="line" d="M620 430 C560 395 540 245 500 205"/>
+  <path class="line" d="M620 480 C555 470 535 410 500 390"/>
+  <path class="line" d="M620 535 C555 555 535 585 500 585"/>
+  <path class="line" d="M620 590 C560 630 540 780 500 795"/>
+  <path class="line" d="M980 430 C1040 395 1060 245 1100 205"/>
+  <path class="line" d="M980 480 C1045 470 1065 410 1100 390"/>
+  <path class="line" d="M980 535 C1045 555 1065 585 1100 585"/>
+  <path class="line" d="M980 590 C1040 630 1060 780 1100 795"/>
+
+  <circle class="dot" cx="500" cy="205" r="6"/><circle class="dot" cx="500" cy="390" r="6"/><circle class="dot" cx="500" cy="585" r="6"/><circle class="dot" cx="500" cy="795" r="6"/>
+  <circle class="dot" cx="1100" cy="205" r="6"/><circle class="dot" cx="1100" cy="390" r="6"/><circle class="dot" cx="1100" cy="585" r="6"/><circle class="dot" cx="1100" cy="795" r="6"/>
+
+  <g filter="url(#shadow)">
+    <rect x="620" y="380" width="360" height="270" rx="32" fill="url(#center)"/>
+    <rect x="708" y="412" width="184" height="32" rx="16" fill="#ffffff" opacity="0.1"/>
+    <text x="800" y="434" text-anchor="middle" class="tag">ONE AGENT · ONE MEMORY</text>
+    <text x="800" y="493" text-anchor="middle" class="center-title">统一儿科教学智能体</text>
+    <text x="800" y="532" text-anchor="middle" class="center-text">同一病例版本 · 同一会话状态 · 同一证据链</text>
+    <text x="800" y="568" text-anchor="middle" class="center-text">角色模拟 × 查体规则 × 知识检索 × OSCE评分</text>
+    <line x1="690" y1="596" x2="910" y2="596" stroke="#ffffff" opacity="0.2"/>
+    <text x="800" y="625" text-anchor="middle" class="center-text">输入 → 理解 → 调用技能 → 反馈 → 评价 → 补练</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="70" y="132" width="430" height="146" rx="22" fill="#fffdf8"/>
+    <rect x="70" y="132" width="9" height="146" rx="5" fill="#aa493a"/>
+    <text x="102" y="170" class="branch-title">① 学生临床训练闭环</text>
+    <text x="102" y="203" class="branch-text">接诊分诊 → 自主问诊 → 可视化查体 → 辅助检查</text>
+    <text x="102" y="231" class="branch-text">诊断处置 → 家长沟通 → 训练报告 → 专项补练</text>
+    <text x="102" y="259" class="branch-text">训练、专项、OSCE 复用同一病例与智能体</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="70" y="317" width="430" height="146" rx="22" fill="#fffdf8"/>
+    <rect x="70" y="317" width="9" height="146" rx="5" fill="#678578"/>
+    <text x="102" y="355" class="branch-title">② 智能体临床内核</text>
+    <text x="102" y="388" class="branch-text">依据年龄、问题、情绪动态调度患儿与家长回答</text>
+    <text x="102" y="416" class="branch-text">确定性规则校验器材、部位、准备动作和顺序</text>
+    <text x="102" y="444" class="branch-text">知识只作有来源检索，模型不得编造体征与病史</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="70" y="512" width="430" height="146" rx="22" fill="#fffdf8"/>
+    <rect x="70" y="512" width="9" height="146" rx="5" fill="#c59454"/>
+    <text x="102" y="550" class="branch-title">③ 四大教学资源库</text>
+    <text x="102" y="583" class="branch-text">问诊与体征模拟库 · 传染病儿科特点库</text>
+    <text x="102" y="611" class="branch-text">沟通场景专项库 · OSCE 标准化考核库</text>
+    <text x="102" y="639" class="branch-text">老师资料到位后按版本导入，不修改业务代码</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="70" y="722" width="430" height="146" rx="22" fill="#fffdf8"/>
+    <rect x="70" y="722" width="9" height="146" rx="5" fill="#416e69"/>
+    <text x="102" y="760" class="branch-title">④ 武汉大学儿科特色</text>
+    <text x="102" y="793" class="branch-text">珞珈儿科能力图谱 · 校本病例 · 医学人文沟通</text>
+    <text x="102" y="821" class="branch-text">“珞珈书院 × 儿科临床工作台”原创视觉体系</text>
+    <text x="102" y="849" class="branch-text">特色进入教学标准与评价，不停留在校色与校徽</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1100" y="132" width="430" height="146" rx="22" fill="#fffdf8"/>
+    <rect x="1521" y="132" width="9" height="146" rx="5" fill="#aa493a"/>
+    <text x="1132" y="170" class="branch-title">⑤ 身份与权限边界</text>
+    <text x="1132" y="203" class="branch-text">正式入口强制超星认证，服务端交换令牌</text>
+    <text x="1132" y="231" class="branch-text">学生只看本人；教师只读授权课程群组</text>
+    <text x="1132" y="259" class="branch-text">教师无发布、编辑、改分和评语写入权限</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1100" y="317" width="430" height="146" rx="22" fill="#fffdf8"/>
+    <rect x="1521" y="317" width="9" height="146" rx="5" fill="#678578"/>
+    <text x="1132" y="355" class="branch-title">⑥ 数据与外部闭环</text>
+    <text x="1132" y="388" class="branch-text">Coze PostgreSQL 保存会话、消息、操作与报告</text>
+    <text x="1132" y="416" class="branch-text">同步队列通过幂等键、退避重试写入超星表单</text>
+    <text x="1132" y="444" class="branch-text">凭据缺失时保留积压，明确显示“待授权联调”</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1100" y="512" width="430" height="146" rx="22" fill="#fffdf8"/>
+    <rect x="1521" y="512" width="9" height="146" rx="5" fill="#c59454"/>
+    <text x="1132" y="550" class="branch-title">⑦ 教师只读学情分析</text>
+    <text x="1132" y="583" class="branch-text">学生检索 · 六维能力画像 · 模拟与 OSCE 报告</text>
+    <text x="1132" y="611" class="branch-text">问答原文 · 查体操作 · 诊疗提交 · 扣分证据</text>
+    <text x="1132" y="639" class="branch-text">全过程时间线可回放，评价可解释、可核验</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1100" y="722" width="430" height="146" rx="22" fill="#fffdf8"/>
+    <rect x="1521" y="722" width="9" height="146" rx="5" fill="#416e69"/>
+    <text x="1132" y="760" class="branch-title">⑧ 竞赛创新与体验</text>
+    <text x="1132" y="793" class="branch-text">半写实 2.5D 患儿 · 动态插话与异常答题行为</text>
+    <text x="1132" y="821" class="branch-text">移动端单任务抽屉，桌面端同组件三栏重排</text>
+    <text x="1132" y="849" class="branch-text">语音渐进增强 · 44px 触控 · 动效降级 · 证据评分</text>
+  </g>
+
+  <rect x="480" y="915" width="640" height="44" rx="22" fill="#e7ece7"/>
+  <circle cx="510" cy="937" r="6" fill="#aa493a"/>
+  <text x="535" y="943" class="footer">当前交付：本地全流程可运行；Coze 数据库、超星认证与表单写入待真实凭据授权联调</text>
+</svg>

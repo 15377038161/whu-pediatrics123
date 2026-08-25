@@ -1,0 +1,45 @@
+# 珞珈儿科智训架构说明
+
+## 1. 单一智能体业务链
+
+```text
+学生文字/临床操作
+        ↓
+POST /api/agent/turn（AgentEvent）
+        ↓
+统一病例会话状态 SessionState
+        ↓
+角色调度 ─ 查体规则 ─ 知识检索 ─ 安全校验 ─ OSCE评分
+        ↓
+多角色消息、证据解锁、教学反馈、技能与来源摘要
+        ↓
+Coze PostgreSQL → sync_outbox → 超星表单
+```
+
+问诊、查体、辅助检查、诊断、处置和沟通共享 `sessionId + caseVersion + state`。专项训练和 OSCE 只是同一内核的模式约束，不复制病例逻辑。
+
+## 2. 核心边界
+
+- 大模型：只把服务器提供的病例事实改写成符合年龄与情绪的表达；调用失败时使用确定性预置事实。
+- 运行审计：`agent_call_records` 仅保存技能轨迹、模型/回退状态和耗时，不保存提示词、完整响应或内部思维过程。
+- 查体：`准备动作 + 器材 + 部位 + 顺序` 完全由规则校验，模型不能生成体征。
+- 评分：只读取会话中的真实 `ClinicalEvent` 和已解锁证据，逐项生成得分和扣分依据。
+- 知识：保留来源 URL、机构、日期和审核状态；公开资料仅作测试参考，高风险剂量不能在教师审核前进入评分标准。
+- 教师：只有查询接口，无发布、编辑、改分或评语写入接口。
+
+## 3. 关键代码
+
+- `src/domain/agent.ts`：公共事件和数据契约。
+- `src/domain/case.ts`：旗舰病例 v1 和临床规则。
+- `src/lib/agent-engine.ts`：统一状态机。
+- `src/lib/role-agent.ts`：受约束的患儿/家长语言模拟。
+- `src/lib/scoring.ts`：证据化六维评分。
+- `src/lib/repository.ts`：预览内存适配器与 Coze PostgreSQL 适配器。
+- `src/lib/chaoxing-sync.ts`：可靠同步、幂等与重试。
+
+## 4. 失败语义
+
+- 模型失败：保留操作，使用病例预置回答，不产生新事实。
+- OSCE 到时：冻结当前证据并生成报告。
+- 表单凭据缺失：事件留在 `sync_outbox`，错误标记 `WAITING_FOR_CHAOXING_AUTHORIZATION`。
+- 数据库未配置：正式业务接口返回明确错误；非生产评委预览使用隔离内存数据。

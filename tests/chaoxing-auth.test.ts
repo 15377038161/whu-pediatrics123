@@ -1,0 +1,65 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { NextRequest } from 'next/server';
+import { GET as beginChaoxingLogin } from '@/app/api/auth/chaoxing/route';
+import { GET as finishChaoxingLogin } from '@/app/api/auth/callback/chaoxing/route';
+
+const keys = [
+  'ENABLE_CHAOXING_AUTH',
+  'CHAOXING_APPID',
+  'CHAOXING_SECRET',
+  'CHAOXING_FIDS',
+  'CHAOXING_REDIRECT_URI',
+] as const;
+
+function withChaoxingConfig<T>(run: () => Promise<T>): Promise<T> {
+  const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  Object.assign(process.env, {
+    ENABLE_CHAOXING_AUTH: 'true',
+    CHAOXING_APPID: 'test-app',
+    CHAOXING_SECRET: 'test-secret',
+    CHAOXING_FIDS: 'whu:武汉大学',
+    CHAOXING_REDIRECT_URI: 'https://example.edu/api/auth/callback/chaoxing',
+  });
+  return run().finally(() => {
+    for (const key of keys) {
+      const value = original[key];
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+}
+
+test('超星配置缺失时只返回明确错误页', async () => {
+  const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  for (const key of keys) delete process.env[key];
+  try {
+    const response = await beginChaoxingLogin(new NextRequest('http://127.0.0.1:8765/api/auth/chaoxing'));
+    assert.equal(response.status, 307);
+    assert.match(response.headers.get('location') ?? '', /reason=config_missing/);
+  } finally {
+    for (const key of keys) {
+      const value = original[key];
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
+
+test('缺少签名登录上下文的回调在访问超星前即被拒绝', async () => {
+  const response = await finishChaoxingLogin(new NextRequest('http://127.0.0.1:8765/api/auth/callback/chaoxing?code=fake&state=whu'));
+  assert.equal(response.status, 307);
+  assert.match(response.headers.get('location') ?? '', /reason=oauth_expired/);
+});
+
+test('回调机构必须与发起登录时选择的机构一致', async () => withChaoxingConfig(async () => {
+  const begin = await beginChaoxingLogin(new NextRequest('http://127.0.0.1:8765/api/auth/chaoxing?fid=whu&next=%2Fstudent'));
+  const setCookie = begin.headers.get('set-cookie');
+  assert.ok(setCookie);
+  const cookie = setCookie.split(';', 1)[0];
+  const callback = await finishChaoxingLogin(new NextRequest('http://127.0.0.1:8765/api/auth/callback/chaoxing?code=fake&state=other', {
+    headers: { cookie },
+  }));
+  assert.equal(callback.status, 307);
+  assert.match(callback.headers.get('location') ?? '', /reason=oauth_expired/);
+}));
