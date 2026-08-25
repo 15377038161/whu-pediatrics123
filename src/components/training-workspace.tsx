@@ -1,12 +1,14 @@
 'use client';
 
 import {
-  Activity, ArrowLeft, Check, ChevronRight, Clock3, Droplets, Gauge, Hand, Home,
-  ClipboardList, LoaderCircle, MessageCircleHeart, Mic, ScanFace, Send, Stethoscope, Thermometer, UserRound,
+  Activity, ArrowLeft, Check, ChevronRight, Clock3, Home,
+  ClipboardList, LoaderCircle, MessageCircleHeart, Mic, Send, Stethoscope, UserRound,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentEvent, AgentTraceItem, AgentTurnResult, ApiResult, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
+import { getPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
   { id: 'triage', label: '接诊与分诊', short: '接诊' }, { id: 'history', label: '学生自主问诊', short: '问诊' },
@@ -16,10 +18,13 @@ const stages: Array<{ id: Stage; label: string; short: string }> = [
 ];
 
 const tools = [
-  { id: 'hand-hygiene', label: '手卫生', icon: Hand }, { id: 'stethoscope', label: '听诊器', icon: Stethoscope },
-  { id: 'thermometer', label: '体温计', icon: Thermometer }, { id: 'oximeter', label: '血氧仪', icon: Activity },
-  { id: 'bp-cuff', label: '血压计', icon: Gauge }, { id: 'tongue-depressor', label: '压舌板', icon: ScanFace },
-  { id: 'flashlight', label: '手电筒', icon: Droplets },
+  { id: 'hand-hygiene', label: '手卫生', image: '/media/clinical/tools/hand-hygiene.png' },
+  { id: 'stethoscope', label: '听诊器', image: '/media/clinical/tools/stethoscope.png' },
+  { id: 'thermometer', label: '体温计', image: '/media/clinical/tools/thermometer.png' },
+  { id: 'oximeter', label: '血氧仪', image: '/media/clinical/tools/oximeter.png' },
+  { id: 'bp-cuff', label: '血压计', image: '/media/clinical/tools/bp-cuff.png' },
+  { id: 'tongue-depressor', label: '压舌板', image: '/media/clinical/tools/tongue-depressor.png' },
+  { id: 'flashlight', label: '手电筒', image: '/media/clinical/tools/flashlight.png' },
 ];
 
 const tests = [
@@ -46,43 +51,30 @@ function communicationContext(session: SessionState) {
   return openingParent ? [openingParent, ...recentClinicalResults] : recentClinicalResults;
 }
 
-function PatientFigure({ selectedTool, onExamine, busy, interactive }: { selectedTool: string | null; onExamine: (part: string) => void; busy: boolean; interactive: boolean }) {
+function PatientFigure({ patient, selectedTool, onExamine, busy, interactive }: { patient: PublicCaseProfile; selectedTool: string | null; onExamine: (part: string) => void; busy: boolean; interactive: boolean }) {
   const hotspots = [
-    ['forehead','额头'], ['mouth','口咽'], ['chest','胸部'], ['upper-arm','上臂'], ['finger','手指'], ['hands','双手'],
+    ['forehead','头面'], ['mouth','口咽'], ['chest','胸部'], ['upper-arm','上臂'], ['finger','手指'], ['hands','双手'],
   ];
   return (
     <div className="patient-stage">
-      <div className="patient-figure" aria-label="半写实2.5D患儿交互模型">
-        <svg viewBox="0 0 300 400" role="img" aria-labelledby="patient-title patient-desc">
-          <title id="patient-title">3岁男童正面坐姿</title><desc id="patient-desc">患儿精神欠佳，呼吸较快，可选择体表热区进行检查。</desc>
-          <defs>
-            <linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#edc4a8"/><stop offset="1" stopColor="#c99174"/></linearGradient>
-            <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#71958d"/><stop offset="1" stopColor="#3f6963"/></linearGradient>
-          </defs>
-          <ellipse cx="150" cy="377" rx="90" ry="15" fill="#173c3c" opacity=".14" />
-          <path d="M95 340q-17 10-19 37h59l4-40zM205 340q17 10 19 37h-59l-4-40z" fill="#3b4e50"/>
-          <g className="patient-breath">
-            <path d="M98 171q52-25 104 0l24 168q-76 31-152 0z" fill="url(#shirt)"/>
-            <path d="M91 184q-22 34-22 103l33 6 18-92zM209 184q22 34 22 103l-33 6-18-92z" fill="url(#skin)"/>
-            <path d="M99 208q51 22 102 0" fill="none" stroke="#dce9e5" strokeWidth="5" opacity=".38"/>
-          </g>
-          <path d="M124 135h52v45h-52z" fill="url(#skin)"/>
-          <ellipse cx="150" cy="91" rx="58" ry="69" fill="url(#skin)"/>
-          <path d="M98 83q3-61 55-64 49 4 53 61-17-17-32-18-39 20-76 21z" fill="#3c302d"/>
-          <path d="M116 91q12-8 24 0M160 91q12-8 24 0" stroke="#453d3a" strokeWidth="4" strokeLinecap="round" fill="none"/>
-          <circle cx="128" cy="96" r="3" fill="#2a2928"/><circle cx="172" cy="96" r="3" fill="#2a2928"/>
-          <path className="patient-mouth" d="M137 125q13-7 26 0" stroke="#974f4b" strokeWidth="4" strokeLinecap="round" fill="none"/>
-          <path d="M102 117q7 11 14 4M198 117q-7 11-14 4" stroke="#c68073" strokeWidth="3" fill="none" opacity=".65"/>
-          <circle cx="93" cy="96" r="10" fill="url(#skin)"/><circle cx="207" cy="96" r="10" fill="url(#skin)"/>
-        </svg>
-        {interactive && hotspots.map(([id,label]) => <button key={id} disabled={busy} type="button" className={`hotspot hotspot-${id === 'upper-arm' ? 'arm' : id}`} onClick={() => onExamine(id)} aria-label={`检查${label}`}>{label}</button>)}
+      <div className="patient-figure" aria-label="仿真虚拟患儿交互模型">
+        <Image
+          className="patient-photo"
+          src={patient.patientImage}
+          alt={patient.patientAlt}
+          fill
+          priority
+          sizes="(max-width: 767px) 92vw, (max-width: 1199px) 38vw, 360px"
+        />
+        {interactive && hotspots.map(([id,label]) => <button key={id} disabled={busy} type="button" className={`hotspot hotspot-${id === 'upper-arm' ? 'arm' : id}`} onClick={() => onExamine(id)} aria-label={`使用当前器材检查${label}`}><span aria-hidden="true" />{label}</button>)}
       </div>
       <div className="patient-caption"><span>{interactive ? <>当前器材：<strong>{tools.find((tool) => tool.id === selectedTool)?.label ?? '未选择'}</strong></> : <strong>观察模式</strong>}</span><span className="emotion-pill">紧张 · 呼吸较快</span></div>
+      <p className="patient-disclosure">虚拟标准化患儿 · 非真实病例影像</p>
     </div>
   );
 }
 
-export function TrainingWorkspace({ mode, initialSessionId }: { mode: SessionMode; initialSessionId?: string }) {
+export function TrainingWorkspace({ mode, initialSessionId, initialCaseId }: { mode: SessionMode; initialSessionId?: string; initialCaseId?: string }) {
   const router = useRouter();
   const started = useRef(false);
   const finishing = useRef(false);
@@ -108,11 +100,11 @@ export function TrainingWorkspace({ mode, initialSessionId }: { mode: SessionMod
     setBusy(true);
     (initialSessionId
       ? api<SessionState>(`/api/sessions/${initialSessionId}`)
-      : api<SessionState>('/api/sessions', { method: 'POST', body: JSON.stringify({ mode }) }))
+      : api<SessionState>('/api/sessions', { method: 'POST', body: JSON.stringify({ mode, caseId: initialCaseId }) }))
       .then((value) => { setSession(value); if (!initialSessionId) router.replace(`/student/training?session=${value.id}`); })
       .catch((cause) => setError(cause instanceof Error ? cause.message : '训练加载失败。'))
       .finally(() => setBusy(false));
-  }, [initialSessionId, mode, router]);
+  }, [initialCaseId, initialSessionId, mode, router]);
 
   const finish = useCallback(async () => {
     if (!session || finishing.current) return;
@@ -174,11 +166,15 @@ export function TrainingWorkspace({ mode, initialSessionId }: { mode: SessionMod
   const evidenceEvents = useMemo(() => session?.events.filter((event) => event.evidenceCodes.length > 0) ?? [], [session?.events]);
 
   if (!session) return <main className="loading-screen" id="main-content"><div><div className="pulse-mark"><Activity /></div><strong>{error ?? '正在建立统一病例会话…'}</strong>{error && <p><a className="btn btn-secondary" href="/student">返回首页</a></p>}</div></main>;
+  const caseProfile = getPublicCase(session.caseId);
+  const caseTests = session.caseId === 'peds-wheeze-002'
+    ? tests.map((test) => test.id === 'chest-image' ? { ...test, indication: '低氧或首次明显喘息时评估' } : test)
+    : tests;
 
   const stageContent = (() => {
     switch (session.stage) {
       case 'triage': return <>
-        <div className="stage-intro"><p className="eyebrow">阶段 1</p><h2>接诊与分诊</h2><p>患儿由母亲抱入诊室，精神欠佳，呼吸较快。先观察整体状态，再进入自主问诊。</p></div>
+        <div className="stage-intro"><p className="eyebrow">阶段 1</p><h2>接诊与分诊</h2><p>{session.messages.find((item) => item.actor === 'system' && item.kind === 'navigation')?.content}先观察整体状态，再进入自主问诊。</p></div>
         <div className="vitals"><div className="vital"><strong>{session.vitals.temperature}</strong><span>体温 ℃</span></div><div className="vital"><strong>{session.vitals.heartRate}</strong><span>心率 /min</span></div><div className="vital"><strong>{session.vitals.respiratoryRate}</strong><span>呼吸 /min</span></div><div className="vital"><strong>{session.vitals.spo2}%</strong><span>初筛 SpO₂</span></div></div>
         <ul className="stage-checklist"><li>确认患儿年龄、陪诊人和主诉</li><li>观察意识、精神状态与呼吸费力表现</li><li>使用学生自己的语言开始问诊</li></ul>
         <button className="btn btn-primary btn-block" onClick={() => navigate('history')} disabled={busy}>进入自主问诊 <ChevronRight size={17} /></button>
@@ -203,7 +199,7 @@ export function TrainingWorkspace({ mode, initialSessionId }: { mode: SessionMod
       </>;
       case 'tests': return <>
         <div className="stage-intro"><p className="eyebrow">临床适宜性</p><h2>选择辅助检查</h2><p>根据已经获得的病史和体征选择检查。低价值检查会被记录，但不会提供额外有效证据。</p></div>
-        <div className="choice-list">{tests.map((test) => <button key={test.id} className="choice" data-ordered={session.orderedTests.includes(test.id)} disabled={busy || session.orderedTests.includes(test.id)} onClick={() => sendEvent({ type: 'ORDER_TEST', data: { testId: test.id } })}><strong>{session.orderedTests.includes(test.id) && <Check size={15} />} {test.label}</strong><span>{test.indication}</span></button>)}</div>
+        <div className="choice-list">{caseTests.map((test) => <button key={test.id} className="choice" data-ordered={session.orderedTests.includes(test.id)} disabled={busy || session.orderedTests.includes(test.id)} onClick={() => sendEvent({ type: 'ORDER_TEST', data: { testId: test.id } })}><strong>{session.orderedTests.includes(test.id) && <Check size={15} />} {test.label}</strong><span>{test.indication}</span></button>)}</div>
         <div className="form-actions"><button className="btn btn-secondary" onClick={() => navigate('assessment')}>形成病情摘要与诊断 <ChevronRight size={16} /></button></div>
       </>;
       case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, differentials } }); if (result) await navigate('plan'); }}>
@@ -233,14 +229,14 @@ export function TrainingWorkspace({ mode, initialSessionId }: { mode: SessionMod
   return (
     <main className="training-shell" id="main-content">
       <header className="training-head">
-        <div className="training-toolbar"><a className="icon-btn" href="/student" aria-label="返回首页"><ArrowLeft size={18} /></a><div className="training-title"><strong>3岁患儿发热、咳嗽伴气促</strong><span>{session.mode === 'osce' ? 'OSCE 考核模式' : session.mode === 'practice' ? '专项训练模式' : '智能体引导模式'}</span></div>{session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <a className="icon-btn" href="/student" aria-label="回到首页"><Home size={17} /></a>}</div>
+        <div className="training-toolbar"><a className="icon-btn" href="/student" aria-label="返回首页"><ArrowLeft size={18} /></a><div className="training-title"><strong>{caseProfile.title}</strong><span>{session.mode === 'osce' ? 'OSCE 考核模式' : session.mode === 'practice' ? '专项训练模式' : '智能体引导模式'}</span></div>{session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <a className="icon-btn" href="/student" aria-label="回到首页"><Home size={17} /></a>}</div>
         <div className="stage-scroll" aria-label="训练阶段">{stages.map((stage,index) => <button key={stage.id} className="stage-chip" data-current={session.stage === stage.id} data-done={index < currentIndex} disabled={busy || stage.id === 'report' || (session.mode === 'osce' && index < currentIndex)} onClick={() => navigate(stage.id)} aria-label={stage.label}>{stage.short}</button>)}</div>
       </header>
       <div className="case-band"><span>{session.mode === 'osce' ? '无提示、不可重试' : '提供方向性反馈'}</span><span>病例 v{session.caseVersion}</span><span>证据 {session.unlockedEvidence.length} 项</span></div>
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       <div className="training-grid">
         <section className="workspace-panel training-primary" data-mobile-hidden={mobileView !== 'task'}><div className="panel-head"><h2>{stages[currentIndex]?.label}</h2>{busy && <LoaderCircle className="patient-breath" size={18} />}</div><div className="panel-body">{stageContent}{feedback && <div className="feedback">{feedback}</div>}{trace.length > 0 && <details className="trace"><summary>查看智能体调用的技能与依据</summary><ul>{trace.map((item,index) => <li key={`${item.skill}-${index}`}><strong>{item.skill}：</strong>{item.label}{item.sourceIds.length > 0 ? `（来源 ${item.sourceIds.join('、')}）` : ''}</li>)}</ul></details>}</div></section>
-        <section className="workspace-panel training-patient" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>患儿交互模型</h2><span className="emotion-pill">半写实 2.5D</span></div><PatientFigure selectedTool={selectedTool} onExamine={examine} busy={busy} interactive={session.stage === 'exam'} />{session.stage === 'exam' ? <div className="tool-rack" aria-label="体检器材栏">{tools.map(({ id,label,icon:Icon }) => <button type="button" className="tool" data-selected={selectedTool === id} onClick={() => setSelectedTool(id)} key={id}><Icon aria-hidden="true" /><span>{label}</span></button>)}</div> : <div className="case-band">进入查体阶段后解锁器材和体表热区</div>}</section>
+        <section className="workspace-panel training-patient" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>患儿交互模型</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}童</span></div><PatientFigure patient={caseProfile} selectedTool={selectedTool} onExamine={examine} busy={busy} interactive={session.stage === 'exam'} />{session.stage === 'exam' ? <div className="tool-rack" aria-label="写实体检器材栏">{tools.map(({ id,label,image }) => <button type="button" className="tool" data-selected={selectedTool === id} onClick={() => setSelectedTool(id)} aria-pressed={selectedTool === id} key={id}><span className="tool-photo-wrap"><Image className="tool-photo" src={image} alt="" fill sizes="72px" /></span><span>{label}</span></button>)}</div> : <div className="case-band">进入查体阶段后解锁器材和体表热区</div>}</section>
         <details className="workspace-panel training-record" data-mobile-hidden={mobileView !== 'record'} open><summary className="panel-head"><h2>病例记录</h2><span>{evidenceEvents.length} 项操作证据</span></summary><div className="panel-body"><div className="vitals"><div className="vital"><strong>{session.vitals.temperature}</strong><span>体温 ℃</span></div><div className="vital"><strong>{session.vitals.heartRate}</strong><span>心率</span></div><div className="vital"><strong>{session.vitals.respiratoryRate}</strong><span>呼吸</span></div><div className="vital"><strong>{session.vitals.spo2}%</strong><span>SpO₂</span></div></div><div className="section-head" style={{ marginTop: 18 }}><h3 style={{ margin: 0, fontSize: 14 }}>过程时间线</h3></div>{evidenceEvents.length === 0 ? <div className="empty-note">完成问诊或查体后，已获得证据会出现在这里。</div> : <div className="evidence-log">{evidenceEvents.slice(-8).reverse().map((event) => <div className="evidence-item" key={event.id}><strong>{event.summary}</strong><br/><span>{event.evidenceCodes.join('、')}</span></div>)}</div>}</div></details>
       </div>
       <nav className="mobile-workspace-nav" aria-label="临床工作台抽屉切换">

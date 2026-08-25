@@ -1,5 +1,6 @@
 import { BookOpenCheck, CheckCircle2, CircleAlert } from 'lucide-react';
 import type { TrainingReport } from '@/domain/agent';
+import { getPublicCase } from '@/domain/case-catalog';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
   { key: 'history', label: '儿科问诊', max: 25 },
@@ -12,13 +13,14 @@ const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string;
 
 export function ReportView({ report, readonly = false }: { report: TrainingReport; readonly?: boolean }) {
   const mode = report.mode === 'osce' ? 'OSCE考核' : report.mode === 'practice' ? '专项训练' : '引导训练';
+  const caseProfile = getPublicCase(report.caseId);
   return (
     <div>
       <section className="report-hero">
         <div className="score-ring" aria-label={`总分 ${report.totalScore} 分`}><strong>{report.totalScore}</strong></div>
         <div>
           <p className="eyebrow" style={{ color: '#e3bd7b' }}>{mode} · {readonly ? '只读报告' : '训练完成'}</p>
-          <h1>3岁患儿发热、咳嗽伴气促</h1>
+          <h1>{caseProfile.title}</h1>
           <p>报告依据实际问答、器材操作、临床决策与沟通原文生成。</p>
         </div>
       </section>

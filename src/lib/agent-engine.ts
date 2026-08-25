@@ -8,7 +8,7 @@ import type {
   SessionState,
   Stage,
 } from '@/domain/agent';
-import { FLAGSHIP_CASE, findExamRule, findTest, identifyHistoryIntents } from '@/domain/case';
+import { FLAGSHIP_CASE, findExamRule, findTest, getCase, identifyHistoryIntents } from '@/domain/case';
 import { retrieveKnowledge } from '@/domain/knowledge';
 import { renderRoleReply } from '@/lib/role-agent';
 
@@ -38,14 +38,15 @@ function clinicalEvent(
   return { id: crypto.randomUUID(), clientEventId, type, stage, summary, correct, evidenceCodes, createdAt: now() };
 }
 
-export function createInitialSession(userId: string, mode: SessionMode): SessionState {
+export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id): SessionState {
+  const pediatricCase = getCase(caseId);
   const startedAt = now();
   const expiresAt = mode === 'osce' ? new Date(Date.now() + 8 * 60_000).toISOString() : null;
   return {
     id: crypto.randomUUID(),
     userId,
-    caseId: FLAGSHIP_CASE.id,
-    caseVersion: FLAGSHIP_CASE.version,
+    caseId: pediatricCase.id,
+    caseVersion: pediatricCase.version,
     mode,
     stage: 'triage',
     status: 'active',
@@ -53,8 +54,8 @@ export function createInitialSession(userId: string, mode: SessionMode): Session
     updatedAt: startedAt,
     expiresAt,
     messages: [
-      message('system', FLAGSHIP_CASE.triage, { kind: 'navigation' }),
-      message('parent', '医生您好，孩子前天开始发热咳嗽，今天呼吸看起来有些快。我担心他越来越严重。', { emotion: 'anxious' }),
+      message('system', pediatricCase.triage, { kind: 'navigation' }),
+      message('parent', pediatricCase.openingParent, { emotion: 'anxious' }),
     ],
     events: [],
     askedIntents: [],
@@ -64,7 +65,7 @@ export function createInitialSession(userId: string, mode: SessionMode): Session
     decision: null,
     plan: null,
     communication: null,
-    childEmotion: FLAGSHIP_CASE.initialEmotion,
+    childEmotion: pediatricCase.initialEmotion,
     parentInterruption: 'active',
     behavior: {
       childResponseStyle: 'age_limited',
@@ -72,7 +73,7 @@ export function createInitialSession(userId: string, mode: SessionMode): Session
       hiddenExposureRevealed: false,
       cooperation: 35,
     },
-    vitals: { ...FLAGSHIP_CASE.initialVitals },
+    vitals: { ...pediatricCase.initialVitals },
     reportId: null,
   };
 }
@@ -91,13 +92,14 @@ function feedbackFor(session: SessionState, text: string): string | null {
 
 function validateStageNavigation(session: SessionState, target: Stage): boolean {
   if (session.mode !== 'osce') return true;
-  const order = FLAGSHIP_CASE.stages.map((stage) => stage.id);
+  const order = getCase(session.caseId).stages.map((stage) => stage.id);
   return order.indexOf(target) >= order.indexOf(session.stage);
 }
 
 async function handleQuestion(session: SessionState, text: string, clientEventId: string): Promise<AgentTurnResult> {
+  const pediatricCase = getCase(session.caseId);
   const studentMessage = message('student', text);
-  const intents = identifyHistoryIntents(text);
+  const intents = identifyHistoryIntents(session.caseId, text);
   const newMessages: AgentMessage[] = [studentMessage];
   const traces = [trace('角色调度', '按患儿年龄、问题意图和家长插话状态选择回答者')];
 
@@ -120,6 +122,8 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   const childFact = intents.map((intent) => intent.childAnswer).join('；');
   const parentFact = intents.map((intent) => intent.parentAnswer).join('；');
   const roleResult = await renderRoleReply({
+    childAge: pediatricCase.age,
+    childSex: pediatricCase.sex,
     question: text,
     childFact,
     parentFact,
@@ -160,10 +164,11 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
 }
 
 function handleIntervention(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'], clientEventId: string): AgentTurnResult {
+  const patientName = getCase(session.caseId).patientName;
   const copy = {
-    child_answer: '小宇，接下来请你自己告诉我哪里不舒服，可以慢慢说。',
+    child_answer: `${patientName}，接下来请你自己告诉我哪里不舒服，可以慢慢说。`,
     pause_parent: '我想先听孩子本人回答，家长稍后再补充，可以吗？',
-    comfort_child: '小宇别紧张，我会一步一步告诉你要做什么，不舒服可以随时说。',
+    comfort_child: `${patientName}别紧张，我会一步一步告诉你要做什么，不舒服可以随时说。`,
   }[action];
   const studentMessage = message('student', copy);
   let response: AgentMessage;
@@ -193,7 +198,7 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
 }
 
 function handleExam(session: SessionState, toolId: string, bodyPartId: string, clientEventId: string): AgentTurnResult {
-  const rule = findExamRule(toolId, bodyPartId);
+  const rule = findExamRule(session.caseId, toolId, bodyPartId);
   const traceItems = [trace('查体规则', '校验准备动作、器材、部位与检查顺序')];
   if (!rule) {
     session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `器材${toolId}与部位${bodyPartId}不匹配`, false, []));
@@ -225,7 +230,7 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
 }
 
 function handleTest(session: SessionState, testId: string, clientEventId: string): AgentTurnResult {
-  const test = findTest(testId);
+  const test = findTest(session.caseId, testId);
   if (!test) throw new Error('TEST_NOT_FOUND');
   session.orderedTests = uniq([...session.orderedTests, test.id]);
   session.unlockedEvidence = uniq([...session.unlockedEvidence, test.evidenceCode]);

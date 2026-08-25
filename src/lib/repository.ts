@@ -103,8 +103,8 @@ export class AgentRepository {
     return this.actor.provider === 'preview';
   }
 
-  async createSession(mode: SessionMode): Promise<SessionState> {
-    const session = createInitialSession(this.actor.id, mode);
+  async createSession(mode: SessionMode, caseId?: string): Promise<SessionState> {
+    const session = createInitialSession(this.actor.id, mode, caseId);
     if (this.isPreview()) {
       const store = memoryStore();
       store.users.set(this.actor.id, this.actor);

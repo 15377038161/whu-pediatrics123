@@ -1,5 +1,7 @@
 import { ArrowRight, ClipboardCheck, MessagesSquare, Stethoscope } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { CASE_CATALOG, getPublicCase } from '@/domain/case-catalog';
 import { AgentRepository } from '@/lib/repository';
 import { requirePageUser } from '@/lib/page-auth';
 
@@ -9,6 +11,7 @@ export default async function StudentHome() {
   const [reports, sessions] = await Promise.all([repository.listOwnReports(), repository.listOwnSessions()]);
   const latestReport = reports[0];
   const active = sessions.find((session) => session.status === 'active');
+  const activeCase = active ? getPublicCase(active.caseId) : CASE_CATALOG[0];
   const abilities = latestReport?.abilities;
   return (
     <>
@@ -18,20 +21,36 @@ export default async function StudentHome() {
 
       <section className="hero-desk">
         <p className="eyebrow" style={{ color: '#e3bd7b' }}>{active ? '继续上次训练' : '本周旗舰病例'}</p>
-        <h1>3岁患儿发热、咳嗽伴气促</h1>
-        <p>在动态家长插话和低龄患儿应答中，完成危险信号识别、肺部查体与沟通闭环。</p>
+        <h1>{activeCase.title}</h1>
+        <p>{activeCase.subtitle}。在动态家长插话和患儿应答中，完成问诊、查体、决策与沟通闭环。</p>
         <div className="hero-actions">
-          <a className="btn btn-primary" href={active ? `/student/training?session=${active.id}` : '/student/training?mode=guided'}>
+          <a className="btn btn-primary" href={active ? `/student/training?session=${active.id}` : `/student/training?mode=guided&case=${activeCase.id}`}>
             {active ? '继续训练' : '开始病例'} <ArrowRight size={17} />
           </a>
           <a className="btn btn-secondary" href="/about/agent">智能体如何工作</a>
         </div>
-        <div className="case-note"><span>建议 12 分钟</span><span>儿童呼吸系统</span><span>武汉大学校本框架</span></div>
+        <div className="case-note"><span>建议 {activeCase.expectedMinutes} 分钟</span><span>{activeCase.age} · {activeCase.sex}童</span><span>武汉大学校本框架</span></div>
       </section>
+
+      <div className="section-head" id="case-library"><h2 className="section-title">模拟病例库</h2><span className="eyebrow">男童 · 女童 · 可持续扩展</span></div>
+      <div className="case-library">
+        {CASE_CATALOG.map((caseItem) => (
+          <article className="case-card" key={caseItem.id}>
+            <div className="case-card-photo"><Image src={caseItem.patientImage} alt={caseItem.patientAlt} fill sizes="(max-width: 767px) 34vw, 180px" /></div>
+            <div className="case-card-copy">
+              <p className="eyebrow">{caseItem.age} · {caseItem.sex}童 · {caseItem.difficulty}</p>
+              <h3>{caseItem.title}</h3>
+              <p>{caseItem.subtitle}</p>
+              <span className="case-status">{caseItem.contentStatus === 'flagship-fixture' ? '旗舰演示病例' : '演示病例 · 待教师审核'}</span>
+              <a className="btn btn-secondary" href={`/student/training?mode=guided&case=${caseItem.id}`}>进入病例 <ArrowRight size={15} /></a>
+            </div>
+          </article>
+        ))}
+      </div>
 
       <div className="section-head"><h2 className="section-title">三个学习入口</h2><span className="eyebrow">玩起来 · 用起来 · 学起来</span></div>
       <div className="entry-list">
-        <a className="entry" href="/student/training?mode=guided">
+        <a className="entry" href="#case-library">
           <span className="entry-mark"><Stethoscope /></span><h3>模拟病例</h3><p>在完整病例中自主问诊、检查和决策，训练模式提供方向性反馈。</p><span className="entry-meta">进入临床工作台 <ArrowRight size={14} /></span>
         </a>
         <a className="entry" href="/student/practice">

@@ -30,10 +30,11 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
       + (evidence.has('EX_SPO2') ? 7 : 0)
       + ([...evidence].filter((code) => ['EX_TEMP', 'EX_MOUTH', 'EX_BP'].includes(code)).length > 0 ? 4 : 0));
 
-  const pneumoniaIdentified = includesAny(decisionText, ['肺炎', '下呼吸道感染']);
+  const isWheezeCase = session.caseId === 'peds-wheeze-002';
+  const primaryDiagnosisIdentified = includesAny(decisionText, isWheezeCase ? ['喘息', '哮喘', '支气管痉挛', '气道高反应'] : ['肺炎', '下呼吸道感染']);
   const lowOxygenIdentified = includesAny(decisionText, ['低氧', '血氧', '呼吸困难', '气促', '危险']);
   const differentialProvided = (session.decision?.differentials.trim().length ?? 0) >= 6;
-  const reasoningScore = (pneumoniaIdentified ? 10 : 0) + (lowOxygenIdentified ? 6 : 0) + (differentialProvided ? 4 : 0);
+  const reasoningScore = (primaryDiagnosisIdentified ? 10 : 0) + (lowOxygenIdentified ? 6 : 0) + (differentialProvided ? 4 : 0);
 
   const safePriority = includesAny(planText, ['吸氧', '氧疗', '监测', '生命体征']);
   const furtherAssessment = includesAny(planText, ['评估', '住院', '转诊', '复评', '检查']);
@@ -67,7 +68,7 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
     {
       code: 'RUBRIC_EXAM_RESP', label: '肺部重点查体', achieved: evidence.has('EX_RESP'),
       score: evidence.has('EX_RESP') ? 10 : 0, maxScore: 10,
-      detail: evidence.has('EX_RESP') ? '完成手卫生后使用听诊器检查胸部并获取局灶体征。' : '未通过正确器材、部位和准备动作获得肺部听诊证据。',
+      detail: evidence.has('EX_RESP') ? `完成手卫生后使用听诊器检查胸部并获取${isWheezeCase ? '哮鸣音与呼气相变化' : '局灶体征'}。` : '未通过正确器材、部位和准备动作获得肺部听诊证据。',
       eventIds: eventIdsFor(session, ['EX_RESP']),
     },
     {
@@ -77,9 +78,9 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
       eventIds: eventIdsFor(session, ['EX_SPO2']),
     },
     {
-      code: 'RUBRIC_REASONING', label: '诊断与证据整合', achieved: pneumoniaIdentified && lowOxygenIdentified,
+      code: 'RUBRIC_REASONING', label: '诊断与证据整合', achieved: primaryDiagnosisIdentified && lowOxygenIdentified,
       score: reasoningScore, maxScore: 20,
-      detail: pneumoniaIdentified && lowOxygenIdentified ? '诊断能够同时覆盖肺部感染与低氧风险。' : '诊断或病情摘要尚未把肺部证据和低氧风险完整串联。',
+      detail: primaryDiagnosisIdentified && lowOxygenIdentified ? `诊断能够同时覆盖${isWheezeCase ? '喘息性气道问题' : '肺部感染'}与低氧风险。` : '诊断或病情摘要尚未把肺部证据和低氧风险完整串联。',
       eventIds: eventIdsFor(session, ['DECISION']),
     },
     {
@@ -101,7 +102,7 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
   const improvements = scoreEvidence.filter((item) => !item.achieved).map((item) => item.label);
   const recommendation = improvements[0]
     ? `优先完成“${improvements[0]}”专项补练，再进入同类进阶病例。`
-    : '进入儿童肺炎动态病情变化与治疗后复评进阶病例。';
+    : `进入${isWheezeCase ? '儿童喘息动态评估' : '儿童肺炎动态病情变化'}与治疗后复评进阶病例。`;
 
   return {
     id: reportId,

@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-08-25T03:22:25.589Z",
+  "firstLevelBranches": 10,
+  "flowNodes": 47,
+  "decisionNodes": 18,
+  "exceptionNodes": 11,
+  "crossModuleLinks": 9,
+  "result": "PASS",
+  "outputs": {
+    "mindMapPng": "3840x2160",
+    "flowchartPng": "4960x3508",
+    "svgFont": "Microsoft YaHei / Noto Sans CJK SC / Source Han Sans SC"
+  }
+}

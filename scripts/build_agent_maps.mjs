@@ -234,7 +234,9 @@ const links = [
   ['S0','P1',''],['P1','D1',''],['D1','D2','是'],['D1','E1','否'],['E1','S0','重新授权'],
   ['D2','D3','是'],['D2','E2','否'],['D3','P2','学生'],['D3','O3','教师'],
   ['P2','P3',''],['P3','P4',''],['P4','P5',''],['P5','P6',''],['P6','P7',''],['P7','D4',''],
-  ['D4','D5','是'],['D4','E3','否'],['E3','P6','重新提问'],['D5','D6','是／否'],['D6','P8','是／否'],
+  ['D4','D5','是'],['D4','E3','否'],['E3','P6','重新提问'],
+  ['D5','D6','是：患儿回答'],['D5','D6','否：家长回答'],
+  ['D6','P8','是：双方应答'],['D6','P8','否：当前角色应答'],
   ['P8','D7',''],['D7','P9','是'],['D7','D8','否'],['P9','D8',''],['D8','P10','是'],['D8','E4','否'],['E4','P10','预置事实'],
   ['P10','D9',''],['D9','D10','是'],['D9','E5','否'],['E5','P10','重做'],['D10','P11','是'],['D10','E6','否'],['E6','P11','考核留痕'],['E6','P10','训练重做'],
   ['P11','D11',''],['D11','P12','是'],['D11','P13','否'],['P12','P13',''],['P13','P14',''],['P14','D12',''],
@@ -356,9 +358,47 @@ const flowSvg = buildFlowSvg();
 const mindMmd = mindMermaid();
 const flowMmd = flowMermaid();
 
+function validateModel() {
+  const errors = [];
+  if (branches.length !== 10) errors.push(`一级分支应为10个，实际${branches.length}个`);
+  for (const branch of branches) {
+    if (branch.items.length < 3 || branch.items.length > 6) errors.push(`${branch.title}的二级节点不是3—6个`);
+    for (const [label, notes] of branch.items) {
+      if (label.length > 20) errors.push(`思维导图节点超过20字：${label}`);
+      if (notes.length < 2) errors.push(`三级说明不足2项：${branch.title}/${label}`);
+    }
+  }
+  const ids = [...mainSteps.map(n=>n[0]), ...exceptions.map(e=>e[0])];
+  if (new Set(ids).size !== ids.length) errors.push('流程节点编号重复');
+  for (const node of mainSteps) if (node[1].length > 20) errors.push(`流程节点超过20字：${node[1]}`);
+  for (const node of mainSteps.filter(n=>n[4]==='decision')) {
+    const outgoing = links.filter(l=>l[0]===node[0]).map(l=>l[2]);
+    if (node[0] === 'D3') {
+      if (!outgoing.some(x=>x.includes('学生')) || !outgoing.some(x=>x.includes('教师'))) errors.push('D3缺少学生/教师流向');
+    } else if (!outgoing.some(x=>x.startsWith('是')) || !outgoing.some(x=>x.startsWith('否'))) {
+      errors.push(`${node[0]}缺少明确的是/否流向`);
+    }
+  }
+  if (exceptions.length !== 11) errors.push(`异常节点应为11个，实际${exceptions.length}个`);
+  if (mindSvg.includes('NaN') || flowSvg.includes('NaN')) errors.push('SVG含无效坐标');
+  if (errors.length) throw new Error(`图表模型校验失败：\n${errors.join('\n')}`);
+  return {
+    checkedAt: new Date().toISOString(),
+    firstLevelBranches: branches.length,
+    flowNodes: mainSteps.length,
+    decisionNodes: mainSteps.filter(n=>n[4]==='decision').length,
+    exceptionNodes: exceptions.length,
+    crossModuleLinks: crossLinks.length,
+    result: 'PASS',
+  };
+}
+
+const validation = validateModel();
+
 const nodeTable = mainSteps.map(n=>`| ${n[0]} | ${n[1]} | ${n[2]} | ${n[3]} | ${n[4]} |`).join('\n');
-const normalTable = links.filter(l=>!l[1].startsWith('E')).map(l=>`| ${l[0]} | ${l[1]} | ${l[2]||'正常'} |`).join('\n');
-const errorTable = links.filter(l=>l[1].startsWith('E')||l[0].startsWith('E')).map(l=>`| ${l[0]} | ${l[1]} | ${l[2]||'异常'} |`).join('\n');
+const exceptionIds = new Set(exceptions.map(e=>e[0]));
+const normalTable = links.filter(l=>!exceptionIds.has(l[0])&&!exceptionIds.has(l[1])).map(l=>`| ${l[0]} | ${l[1]} | ${l[2]||'正常'} |`).join('\n');
+const errorTable = links.filter(l=>exceptionIds.has(l[0])||exceptionIds.has(l[1])).map(l=>`| ${l[0]} | ${l[1]} | ${l[2]||'异常'} |`).join('\n');
 
 const report = `# 珞珈儿科智训｜智能体功能与完整运行流程交付说明
 
@@ -471,6 +511,14 @@ fs.writeFileSync(path.join(outDir, '珞珈儿科智训_图表交付说明.md'), 
 
 await sharp(Buffer.from(mindSvg)).png().toFile(path.join(outDir, '珞珈儿科智训_智能体功能思维导图_4K.png'));
 await sharp(Buffer.from(flowSvg)).png().toFile(path.join(outDir, '珞珈儿科智训_智能体完整运行流程图_A3.png'));
+const mindMeta = await sharp(path.join(outDir, '珞珈儿科智训_智能体功能思维导图_4K.png')).metadata();
+const flowMeta = await sharp(path.join(outDir, '珞珈儿科智训_智能体完整运行流程图_A3.png')).metadata();
+validation.outputs = {
+  mindMapPng: `${mindMeta.width}x${mindMeta.height}`,
+  flowchartPng: `${flowMeta.width}x${flowMeta.height}`,
+  svgFont: 'Microsoft YaHei / Noto Sans CJK SC / Source Han Sans SC',
+};
+fs.writeFileSync(path.join(outDir, '珞珈儿科智训_全链路校验结果.json'), `${JSON.stringify(validation, null, 2)}\n`, 'utf8');
 
 console.log(outDir);
 console.log('generated:', fs.readdirSync(outDir).sort().join('\n'));

@@ -11,6 +11,8 @@ const roleReplySchema = z.object({
 });
 
 export interface RoleReplyInput {
+  childAge: string;
+  childSex: string;
   question: string;
   childFact: string;
   parentFact: string;
@@ -32,7 +34,7 @@ export async function renderRoleReply(input: RoleReplyInput): Promise<{ reply: z
       {
         role: 'system',
         content: [
-          '你是儿科标准化病人模拟智能体。只能把给定事实改写为符合3岁患儿或焦虑母亲的自然中文，不得补充任何新病史、检查或诊断。',
+          `你是儿科标准化病人模拟智能体。只能把给定事实改写为符合${input.childAge}${input.childSex}童或陪诊家长的自然中文，不得补充任何新病史、检查或诊断。`,
           '患儿表达应短、口语化且医学认知有限；家长可以补充但不能泄露未给出的事实。',
           '只输出JSON：{"child":"可选","parent":"可选","childEmotion":"nervous|calm|low|resistant|anxious|neutral"}。',
         ].join('\n'),

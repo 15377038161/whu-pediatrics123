@@ -69,3 +69,18 @@ test('OSCE 模式隐藏提示并禁止阶段回退', async () => {
   await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'exam' } }, 'event-forward');
   await assert.rejects(() => runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'history' } }, 'event-back'), /OSCE_STAGE_BACKTRACK_FORBIDDEN/);
 });
+
+test('女童病例使用独立病例版本、应答事实与查体结果', async () => {
+  const session = createInitialSession('student-1', 'guided', 'peds-wheeze-002');
+  assert.equal(session.caseId, 'peds-wheeze-002');
+  assert.equal(session.vitals.temperature, 38.1);
+  assert.match(session.messages[1].content, /呼呼响/);
+
+  await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '以前有没有喘息或过敏？' } }, 'female-hx-001');
+  assert.ok(session.askedIntents.includes('allergy'));
+  assert.match(session.messages.at(-1)?.content ?? '', /喘息|过敏性鼻炎/);
+
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'female-exam-001');
+  const result = await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'female-exam-002');
+  assert.match(result.newMessages[0].content, /哮鸣音/);
+});
