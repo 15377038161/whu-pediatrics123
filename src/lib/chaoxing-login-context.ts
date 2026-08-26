@@ -3,7 +3,7 @@ import type { NextRequest, NextResponse } from 'next/server';
 import { getRealOrigin } from '@/lib/auth-utils';
 
 const COOKIE = 'luojia_peds_login_context';
-const MAX_AGE = 60 * 30;
+const MAX_AGE = 60 * 10; // 10 minutes (reduced from 30)
 interface Context { version: 1; nextPath: string; fid: string; expiresAt: number }
 
 function secret(): string {

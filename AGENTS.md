@@ -58,8 +58,13 @@ tests/                      # 测试
 
 - **Supabase 已实例化**：数据库变量由平台注入（`COZE_SUPABASE_URL`/`COZE_SUPABASE_ANON_KEY`/`COZE_SUPABASE_SERVICE_ROLE_KEY`），本地开发通过 `coze_workload_identity` 的 `get_project_env_vars()` 获取
 - **迁移已执行**：`supabase/migrations/202608230001_pediatrics_agent.sql` 已在目标数据库执行（16 张业务表 + RLS）。变更表结构必须新增带时间戳前缀的迁移文件，禁止改动已执行的历史迁移
-- **超星 OAuth 已配置**：`ENABLE_CHAOXING_AUTH=true`，凭据在 `.env`（APPID/SECRET/FIDS/REDIRECT_URI）。回调地址格式：`<项目公网域名>/api/auth/callback/chaoxing`
-- **部署域名**：`COZE_PROJECT_DOMAIN_DEFAULT` 由平台注入，回调地址依赖它
+- **超星 OAuth 已实现**：
+  - **代码完整**：发起授权、OAuth回调、用户创建与绑定、角色权限映射、错误处理全部就绪
+  - **配置灵活**：支持显式配置 `CHAOXING_REDIRECT_URI` 或自动从 `COZE_PROJECT_DOMAIN_DEFAULT` 生成
+  - **安全措施**：AppSecret 仅服务端、HttpOnly Cookie、签名登录上下文、虚拟邮箱（SHA-256）
+  - **部署流程**：参考 `docs/CHAOXING_DEPLOYMENT_CHECKLIST.md` 和 `docs/CHAOXING_PRODUCTION_CONFIG.md`
+  - **验证脚本**：运行 `node scripts/verify-chaoxing-config.js` 检查配置
+- **部署域名**：`COZE_PROJECT_DOMAIN_DEFAULT` 由平台注入，回调地址可自动从其生成
 
 ## 用户偏好与长期约束
 
@@ -74,3 +79,10 @@ tests/                      # 测试
 - Next.js dev 模式端口需通过 CLI 参数指定，不能依赖 package.json 中的 script
 - Supabase 未配置时（无 COZE_SUPABASE_URL），应用使用进程内存 fallback，仅用于演示
 - `.env.local` 中禁止保留空值的 `CHAOXING_*`/`COZE_SUPABASE_*` 变量——Next.js 加载顺序 `.env.local` 优先，空值会覆盖 `.env` 中的真实凭据导致 401
+- **超星身份验证部署**：
+  - 部署前运行 `node scripts/verify-chaoxing-config.js` 验证配置
+  - 回调地址必须在超星后台和环境变量中**逐字符一致**（包括协议、域名、路径）
+  - 生产环境必须使用 HTTPS
+  - `CHAOXING_SECRET` 必须存储在密钥管理中，不得出现在代码/日志中
+  - 教师权限基于 `CHAOXING_TEACHER_UIDS` 白名单，空值 = 全部学生权限
+  - 首次部署后立即用测试学生和教师账号验证完整登录流程

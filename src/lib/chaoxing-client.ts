@@ -56,10 +56,26 @@ function parseInstitutions(raw: string): Institution[] {
   return [...values.values()];
 }
 
+function getRedirectUri(): string {
+  // Priority 1: Explicit CHAOXING_REDIRECT_URI (for custom domains)
+  const explicit = process.env.CHAOXING_REDIRECT_URI?.trim();
+  if (explicit) return explicit;
+
+  // Priority 2: Build from COZE_PROJECT_DOMAIN_DEFAULT (production)
+  const domain = process.env.COZE_PROJECT_DOMAIN_DEFAULT?.trim();
+  if (domain) {
+    const base = domain.startsWith('http') ? domain : `https://${domain}`;
+    return `${base}/api/auth/callback/chaoxing`;
+  }
+
+  // Priority 3: Fallback (should not happen in production)
+  throw new Error('无法确定回调地址：CHAOXING_REDIRECT_URI 和 COZE_PROJECT_DOMAIN_DEFAULT 都未配置');
+}
+
 function config(): Config {
   const appid = process.env.CHAOXING_APPID?.trim() ?? '';
   const secret = process.env.CHAOXING_SECRET?.trim() ?? '';
-  const redirectUri = process.env.CHAOXING_REDIRECT_URI?.trim() ?? '';
+  const redirectUri = getRedirectUri();
   const institutions = parseInstitutions(process.env.CHAOXING_FIDS ?? '');
   if (!appid || !secret || !redirectUri || institutions.length === 0) {
     throw new ChaoxingLoginError('config_missing', '超星OAuth配置不完整');
