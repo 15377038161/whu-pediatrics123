@@ -16,11 +16,18 @@
 5. 设置：`ENABLE_CHAOXING_AUTH=true`、`CHAOXING_APPID`、`CHAOXING_SECRET`、`CHAOXING_FIDS`、`CHAOXING_REDIRECT_URI`。
 6. 将允许查看课程群组的教师 UID 写入 `CHAOXING_TEACHER_UIDS`（逗号分隔），重新部署。
 
+`CHAOXING_FIDS` 支持两种写法：
+
+- `1024,1385`：登录页只显示一个按钮，回调时按配置顺序识别账号所属机构。
+- `1024:武汉大学,1385:机构名称`：登录页显示机构选择框，并严格校验所选机构。
+
+不要配置多个裸 FID 后再强制前端传 `fid`，否则普通登录按钮会在跳转超星前被服务端拒绝。
+
 ## 正常结果与失败排查
 
 - 正常：学生进入 `/student`，白名单教师进入 `/teacher`。
 - `config_missing`：检查开关和五项变量，尤其回调必须为 HTTPS 且与后台完全一致。
+- `institution_mismatch`：账号不属于允许机构，或具名多机构模式下没有选择机构。
 - `oauth_expired`：登录上下文已过期或回调机构与发起登录时不一致，返回登录页重新发起授权。
-- `fid_not_allowed`：核对超星返回 FID 和 `CHAOXING_FIDS`。
 - 教师进入学生端：核对提供方角色字段及服务端教师 UID 白名单。
 - 回调过期：重新从登录页发起，不复用旧授权链接。

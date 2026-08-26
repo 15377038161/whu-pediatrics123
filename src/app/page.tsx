@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ArrowRight, GraduationCap, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import { ChaoxingLoginEntry } from '@/components/chaoxing-login-entry';
+import { getChaoxingLoginOptions } from '@/lib/chaoxing-client';
 import { getCurrentUser } from '@/lib/supabase-auth';
 import { isPreviewEnabled } from '@/lib/preview-auth';
 
@@ -8,7 +10,7 @@ export default async function LoginPage() {
   const user = await getCurrentUser(await cookies());
   if (user) redirect(user.role === 'teacher' ? '/teacher' : '/student');
   const preview = isPreviewEnabled();
-  const authReady = process.env.ENABLE_CHAOXING_AUTH === 'true' && Boolean(process.env.CHAOXING_APPID && process.env.CHAOXING_SECRET);
+  const loginOptions = getChaoxingLoginOptions();
   return (
     <main className="landing" id="main-content">
       <video className="landing-media" autoPlay muted loop playsInline poster="/media/luojia-pediatrics-poster.svg" aria-hidden="true">
@@ -35,12 +37,10 @@ export default async function LoginPage() {
           <h2 className="section-title" id="login-title">进入儿科临床学习空间</h2>
           <div className="login-status">
             <span className="status-dot" aria-hidden="true" />
-            <span>{authReady ? '超星认证配置已载入，首次正式联调后启用。' : '管理员尚未完成超星身份授权；正式环境不会开放替代登录。'}</span>
+            <span>{loginOptions.configured ? '超星认证配置已载入，可使用学习通身份进入。' : '管理员尚未完成超星身份授权；正式环境不会开放替代登录。'}</span>
           </div>
           <div className="login-actions">
-            <a className="btn btn-primary btn-block" href="/api/auth/chaoxing">
-              <GraduationCap size={19} /> 使用超星账号进入 <ArrowRight size={17} />
-            </a>
+            <ChaoxingLoginEntry {...loginOptions} />
             {preview && (
               <>
                 <a className="btn btn-secondary btn-block" href="/api/preview/login?role=student">评委预览 · 学生端</a>

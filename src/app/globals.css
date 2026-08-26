@@ -63,6 +63,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .landing-copy p { margin: 0; color: rgba(255,255,255,.8); max-width: 570px; }
 .login-panel { padding: 20px; border: 1px solid rgba(255,255,255,.22); border-radius: 20px; background: rgba(247,244,237,.94); color: var(--ink); box-shadow: 0 24px 70px rgba(0,0,0,.24); backdrop-filter: blur(18px); }
 .login-status { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px; font-size: 14px; }
+.chaoxing-login-entry { display: grid; gap: 12px; }
+.login-field { display: grid; gap: 7px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.login-field select { width: 100%; min-height: var(--tap); border: 1px solid var(--line); border-radius: 12px; background: var(--white); color: var(--ink); padding: 9px 12px; font: inherit; }
+.auth-error-page { min-height: 100svh; display: grid; place-items: center; padding: 24px; background: var(--paper); }
+.auth-error-card { width: min(100%, 520px); padding: clamp(24px, 6vw, 42px); border: 1px solid var(--line); border-radius: 24px; background: var(--white); box-shadow: var(--shadow); }
+.auth-error-card h1 { margin: 10px 0 8px; font-size: clamp(24px, 6vw, 34px); }
+.auth-error-card > p:not(.eyebrow) { color: var(--muted); }
+.auth-error-mark { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #fff0eb; color: var(--brick); font-size: 28px; font-weight: 800; }
+.button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
 .status-dot { flex: 0 0 9px; width: 9px; height: 9px; margin-top: 7px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 5px rgba(165,103,43,.12); }
 .login-actions { display: grid; gap: 10px; }
 .login-note { margin: 14px 0 0; color: #667675; font-size: 12px; }

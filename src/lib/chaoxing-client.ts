@@ -28,7 +28,8 @@ export class ChaoxingLoginError extends Error {
   }
 }
 
-interface Institution { fid: string; name: string }
+export interface Institution { fid: string; name: string }
+export interface ChaoxingLoginOptions { configured: boolean; institutions: Institution[] }
 interface Config { appid: string; secret: string; redirectUri: string; institutions: Institution[] }
 interface Token { accessToken: string; openid: string; expiresTime: string }
 
@@ -69,7 +70,14 @@ function getRedirectUri(): string {
   }
 
   // Priority 3: Fallback (should not happen in production)
-  throw new Error('无法确定回调地址：CHAOXING_REDIRECT_URI 和 COZE_PROJECT_DOMAIN_DEFAULT 都未配置');
+  throw new ChaoxingLoginError(
+    'config_missing',
+    '无法确定回调地址：CHAOXING_REDIRECT_URI 和 COZE_PROJECT_DOMAIN_DEFAULT 都未配置',
+  );
+}
+
+function requiresInstitutionChoice(institutions: Institution[]): boolean {
+  return institutions.length > 1 && institutions.some(({ fid, name }) => name !== fid);
 }
 
 function config(): Config {
@@ -87,10 +95,11 @@ export function isChaoxingConfigured(): boolean {
   try { config(); return process.env.ENABLE_CHAOXING_AUTH === 'true'; } catch { return false; }
 }
 
-export function getChaoxingLoginOptions(): { configured: boolean; institutions: Institution[] } {
+export function getChaoxingLoginOptions(): ChaoxingLoginOptions {
   try {
     const { institutions } = config();
-    return { configured: process.env.ENABLE_CHAOXING_AUTH === 'true', institutions: institutions.length > 1 ? institutions : [] };
+    const configured = process.env.ENABLE_CHAOXING_AUTH === 'true';
+    return { configured, institutions: configured && requiresInstitutionChoice(institutions) ? institutions : [] };
   } catch {
     return { configured: false, institutions: [] };
   }
@@ -102,7 +111,7 @@ export function getChaoxingAuthorizationConfig(requestedFid: string | null): { a
   if (requested && !institutions.some((item) => item.fid === requested)) {
     throw new ChaoxingLoginError('institution_mismatch', '请求机构不在允许列表中');
   }
-  if (!requested && institutions.length > 1) {
+  if (!requested && requiresInstitutionChoice(institutions)) {
     throw new ChaoxingLoginError('institution_mismatch', '必须选择登录机构');
   }
   return { appid, redirectUri, stateFid: requested || institutions[0].fid };
@@ -181,8 +190,14 @@ async function identityFor(token: Token, institution: Institution): Promise<Chao
 export async function resolveChaoxingIdentity(code: string, callbackFid: string): Promise<ChaoxingIdentity> {
   const { institutions } = config();
   const selected = institutions.find((item) => item.fid === callbackFid);
-  if (!selected) throw new ChaoxingLoginError('institution_mismatch', '回调机构不在允许列表中');
-  const candidates = [selected, ...institutions.filter((item) => item.fid !== selected.fid)];
+  if (requiresInstitutionChoice(institutions)) {
+    if (!selected) throw new ChaoxingLoginError('institution_mismatch', '回调机构不在允许列表中');
+  }
+  const candidates = requiresInstitutionChoice(institutions)
+    ? [selected!]
+    : selected
+      ? [selected, ...institutions.filter((item) => item.fid !== selected.fid)]
+      : institutions;
   const token = await exchangeCode(code);
   for (const institution of candidates) {
     const identity = await identityFor(token, institution);

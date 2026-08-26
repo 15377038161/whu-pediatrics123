@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { normalizeLoginErrorReason } from '@/lib/login-error';
 
 const messages: Record<string, { title: string; detail: string }> = {
   config_missing: { title: '超星身份授权尚未配置', detail: '请项目管理员完成APPID、APPKEY、学校FID和HTTPS回调地址配置后再试。' },
@@ -10,7 +11,8 @@ const messages: Record<string, { title: string; detail: string }> = {
 
 export default async function AuthErrorPage({ searchParams }: { searchParams: Promise<{ reason?: string }> }) {
   const { reason = 'oauth_failed' } = await searchParams;
-  const message = messages[reason] ?? messages.oauth_failed;
+  const normalizedReason = normalizeLoginErrorReason(reason);
+  const message = messages[normalizedReason] ?? messages.oauth_failed;
   return (
     <main className="auth-error-page">
       <section className="auth-error-card">
@@ -19,8 +21,8 @@ export default async function AuthErrorPage({ searchParams }: { searchParams: Pr
         <h1>{message.title}</h1>
         <p>{message.detail}</p>
         <div className="button-row">
-          <Link className="button primary" href="/">返回登录页</Link>
-          <a className="button ghost" href="/api/auth/chaoxing">重新登录</a>
+          <Link className="btn btn-secondary" href="/">返回登录页</Link>
+          {normalizedReason !== 'config_missing' && <a className="btn btn-primary" href="/api/auth/chaoxing">重新登录</a>}
         </div>
       </section>
     </main>

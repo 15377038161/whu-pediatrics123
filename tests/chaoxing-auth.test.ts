@@ -46,6 +46,21 @@ test('超星配置缺失时只返回明确错误页', async () => {
   }
 });
 
+test('多个裸 FID 使用单按钮，并以首个 FID 发起超星授权', async () => withChaoxingConfig(async () => {
+  process.env.CHAOXING_FIDS = '1024,1385';
+  const response = await beginChaoxingLogin(new NextRequest('http://127.0.0.1:8765/api/auth/chaoxing'));
+  const location = new URL(response.headers.get('location') ?? '');
+  assert.equal(location.origin, 'https://auth.chaoxing.com');
+  assert.equal(location.pathname, '/connect/oauth2/authorize');
+  assert.equal(location.searchParams.get('state'), '1024');
+}));
+
+test('多个具名机构未选择时返回机构错误而不是配置缺失', async () => withChaoxingConfig(async () => {
+  process.env.CHAOXING_FIDS = '1024:武汉大学,1385:测试机构';
+  const response = await beginChaoxingLogin(new NextRequest('http://127.0.0.1:8765/api/auth/chaoxing'));
+  assert.match(response.headers.get('location') ?? '', /reason=institution_mismatch/);
+}));
+
 test('缺少签名登录上下文的回调在访问超星前即被拒绝', async () => {
   const response = await finishChaoxingLogin(new NextRequest('http://127.0.0.1:8765/api/auth/callback/chaoxing?code=fake&state=whu'));
   assert.equal(response.status, 307);
