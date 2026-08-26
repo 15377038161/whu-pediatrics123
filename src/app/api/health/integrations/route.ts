@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
 import { ok } from '@/lib/api-result';
 import { chaoxingFormConfigured } from '@/lib/chaoxing-sync';
+import { isChaoxingConfigured } from '@/lib/chaoxing-client';
 import { isPreviewEnabled } from '@/lib/preview-auth';
 
 export async function GET(_request: NextRequest) {
   const database = Boolean(process.env.COZE_SUPABASE_URL && process.env.COZE_SUPABASE_SERVICE_ROLE_KEY);
-  const authentication = process.env.ENABLE_CHAOXING_AUTH === 'true'
-    && Boolean(process.env.CHAOXING_APPID && process.env.CHAOXING_SECRET && process.env.CHAOXING_FIDS);
+  const authentication = isChaoxingConfigured();
   return ok({
     app: 'ready',
     database: database ? 'configured' : 'waiting_for_coze_database',

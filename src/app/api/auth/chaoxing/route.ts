@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRealOrigin, normalizeSafeRedirectPath } from '@/lib/auth-utils';
-import { getChaoxingAuthorizationConfig, isChaoxingConfigured } from '@/lib/chaoxing-client';
+import { normalizeSafeRedirectPath } from '@/lib/auth-utils';
+import { getChaoxingAuthorizationConfig } from '@/lib/chaoxing-client';
 import { setLoginContextCookie } from '@/lib/chaoxing-login-context';
+import { chaoxingErrorReason, loginErrorRedirect } from '@/lib/login-error';
 
 export async function GET(request: NextRequest) {
   try {
-    if (!isChaoxingConfigured()) throw new Error('config_missing');
     const nextPath = normalizeSafeRedirectPath(request.nextUrl.searchParams.get('next')) || '/student';
     const config = getChaoxingAuthorizationConfig(request.nextUrl.searchParams.get('fid'));
     const url = new URL('https://auth.chaoxing.com/connect/oauth2/authorize');
@@ -20,6 +20,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('无法发起超星登录:', error instanceof Error ? error.message : String(error));
-    return NextResponse.redirect(new URL('/auth/error?reason=config_missing', getRealOrigin(request)));
+    return loginErrorRedirect(request, chaoxingErrorReason(error));
   }
 }
