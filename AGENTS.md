@@ -52,7 +52,14 @@ tests/                      # 测试
 - **构建**：`pnpm build`（next build + tsup 打包 server.ts）
 - **生产启动**：`pnpm start`（node dist/server.js）
 - **验证**：`pnpm validate`（typecheck + lint + test）
-- **环境变量**：复制 `.env.example` 为 `.env.local`，生成 `PREVIEW_SIGNING_SECRET`
+- **环境变量**：`.env`（业务配置：Supabase 凭据 + 超星 OAuth，参考 `.env.example`）、`.env.local`（仅 preview 覆盖，Next.js 中优先级高于 `.env`，禁止在其中放空值业务变量，否则会覆盖 `.env` 的有效值）
+
+## 数据库与认证集成状态
+
+- **Supabase 已实例化**：数据库变量由平台注入（`COZE_SUPABASE_URL`/`COZE_SUPABASE_ANON_KEY`/`COZE_SUPABASE_SERVICE_ROLE_KEY`），本地开发通过 `coze_workload_identity` 的 `get_project_env_vars()` 获取
+- **迁移已执行**：`supabase/migrations/202608230001_pediatrics_agent.sql` 已在目标数据库执行（16 张业务表 + RLS）。变更表结构必须新增带时间戳前缀的迁移文件，禁止改动已执行的历史迁移
+- **超星 OAuth 已配置**：`ENABLE_CHAOXING_AUTH=true`，凭据在 `.env`（APPID/SECRET/FIDS/REDIRECT_URI）。回调地址格式：`<项目公网域名>/api/auth/callback/chaoxing`
+- **部署域名**：`COZE_PROJECT_DOMAIN_DEFAULT` 由平台注入，回调地址依赖它
 
 ## 用户偏好与长期约束
 
@@ -66,4 +73,4 @@ tests/                      # 测试
 - `server.ts` 中默认绑定 `127.0.0.1`，预览时需通过 `--hostname 0.0.0.0` 覆盖
 - Next.js dev 模式端口需通过 CLI 参数指定，不能依赖 package.json 中的 script
 - Supabase 未配置时（无 COZE_SUPABASE_URL），应用使用进程内存 fallback，仅用于演示
-- 超星 OAuth 未联调时保持 `ENABLE_CHAOXING_AUTH=false`
+- `.env.local` 中禁止保留空值的 `CHAOXING_*`/`COZE_SUPABASE_*` 变量——Next.js 加载顺序 `.env.local` 优先，空值会覆盖 `.env` 中的真实凭据导致 401
