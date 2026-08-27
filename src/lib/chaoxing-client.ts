@@ -92,13 +92,18 @@ function config(): Config {
 }
 
 export function isChaoxingConfigured(): boolean {
-  try { config(); return process.env.ENABLE_CHAOXING_AUTH === 'true'; } catch { return false; }
+  try {
+    config();
+    return process.env.ENABLE_CHAOXING_AUTH !== 'false';
+  } catch {
+    return false;
+  }
 }
 
 export function getChaoxingLoginOptions(): ChaoxingLoginOptions {
   try {
     const { institutions } = config();
-    const configured = process.env.ENABLE_CHAOXING_AUTH === 'true';
+    const configured = process.env.ENABLE_CHAOXING_AUTH !== 'false';
     return { configured, institutions: configured && requiresInstitutionChoice(institutions) ? institutions : [] };
   } catch {
     return { configured: false, institutions: [] };

@@ -3,6 +3,7 @@ import test from 'node:test';
 import { NextRequest } from 'next/server';
 import { GET as beginChaoxingLogin } from '@/app/api/auth/chaoxing/route';
 import { GET as finishChaoxingLogin } from '@/app/api/auth/callback/chaoxing/route';
+import { getChaoxingLoginOptions, isChaoxingConfigured } from '@/lib/chaoxing-client';
 
 const keys = [
   'ENABLE_CHAOXING_AUTH',
@@ -53,6 +54,18 @@ test('多个裸 FID 使用单按钮，并以首个 FID 发起超星授权', asyn
   assert.equal(location.origin, 'https://auth.chaoxing.com');
   assert.equal(location.pathname, '/connect/oauth2/authorize');
   assert.equal(location.searchParams.get('state'), '1024');
+}));
+
+test('凭据完整且未设置总开关时默认启用超星登录', async () => withChaoxingConfig(async () => {
+  delete process.env.ENABLE_CHAOXING_AUTH;
+  assert.equal(isChaoxingConfigured(), true);
+  assert.equal(getChaoxingLoginOptions().configured, true);
+}));
+
+test('显式关闭总开关时隐藏超星登录入口', async () => withChaoxingConfig(async () => {
+  process.env.ENABLE_CHAOXING_AUTH = 'false';
+  assert.equal(isChaoxingConfigured(), false);
+  assert.equal(getChaoxingLoginOptions().configured, false);
 }));
 
 test('多个具名机构未选择时返回机构错误而不是配置缺失', async () => withChaoxingConfig(async () => {

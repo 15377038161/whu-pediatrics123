@@ -13,7 +13,7 @@
 2. 进入武汉大学超星开放平台，新建自建应用。
 3. PC 地址、移动地址填写正式域名；回调填写 `https://正式域名/api/auth/callback/chaoxing`。
 4. 获取 APPID、APPKEY 和武汉大学 FID，仅录入 Coze 环境变量。
-5. 设置：`ENABLE_CHAOXING_AUTH=true`、`CHAOXING_APPID`、`CHAOXING_SECRET`、`CHAOXING_FIDS`、`CHAOXING_REDIRECT_URI`。
+5. 设置：`CHAOXING_APPID`、`CHAOXING_SECRET`、`CHAOXING_FIDS`、`CHAOXING_REDIRECT_URI`。凭据完整时认证默认启用；只有需要临时关闭时才设置 `ENABLE_CHAOXING_AUTH=false`。
 6. 将允许查看课程群组的教师 UID 写入 `CHAOXING_TEACHER_UIDS`（逗号分隔），重新部署。
 
 `CHAOXING_FIDS` 支持两种写法：
