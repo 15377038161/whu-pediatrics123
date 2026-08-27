@@ -178,6 +178,8 @@ async function identityFor(token: Token, institution: Institution): Promise<Chao
   const loginNames = Array.isArray(user.loginNames) ? user.loginNames.map(String).map((item) => item.trim()).filter(Boolean) : [];
   const name = stringValue(user, ['name', 'realname', 'displayName']) || uid;
   const studentNo = stringValue(user, ['studentcode', 'studentCode', 'workNumber', 'username']) || loginNames[0] || '';
+  const avatar = stringValue(user, ['avatar', 'avatarUrl', 'photo', 'pic', 'headPic', 'portrait'])
+    || `https://photo.chaoxing.com/p/${encodeURIComponent(uid)}_80`;
   return {
     openid: token.openid,
     uid,
@@ -188,7 +190,7 @@ async function identityFor(token: Token, institution: Institution): Promise<Chao
     orgName: stringValue(user, ['orgName', 'schoolname']) || institution.name,
     role: roles(user.role),
     loginNames,
-    avatar: `https://photo.chaoxing.com/p/${encodeURIComponent(uid)}_80`,
+    avatar,
   };
 }
 

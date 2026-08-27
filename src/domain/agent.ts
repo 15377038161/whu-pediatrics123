@@ -17,6 +17,7 @@ export interface UserContext {
   id: string;
   role: AppRole;
   displayName: string;
+  avatarUrl?: string | null;
   studentNo: string | null;
   provider: 'preview' | 'chaoxing';
   chaoxingUid: string | null;

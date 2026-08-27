@@ -19,7 +19,7 @@ export default async function StudentHome() {
       <p className="page-lead">今天从一个真实临床任务开始。智能体会记住你在每个阶段获得的证据。</p>
 
       <section className="hero-desk">
-        <p className="eyebrow" style={{ color: '#e3bd7b' }}>{active ? '继续上次训练' : '本周旗舰病例'}</p>
+        <p className="eyebrow">{active ? '继续上次训练' : '本周旗舰病例'}</p>
         <h1>{active ? '继续上次临床训练' : `${activeCase.category}模拟接诊`}</h1>
         <p>就诊线索：{activeCase.presentingSymptoms.join('、')}。患儿信息、病史和检查结果需由你在训练中逐步获取。</p>
         <div className="hero-actions">

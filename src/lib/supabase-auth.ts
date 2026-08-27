@@ -26,6 +26,7 @@ function normalize(user: User): UserContext {
     id: user.id,
     role: text(app, 'role') === 'teacher' ? 'teacher' : 'student',
     displayName: text(metadata, 'full_name') || text(chaoxing, 'displayName') || '用户',
+    avatarUrl: text(metadata, 'avatar_url') || null,
     studentNo: text(chaoxing, 'studentNo') || null,
     provider: 'chaoxing',
     chaoxingUid: text(chaoxing, 'uid') || null,

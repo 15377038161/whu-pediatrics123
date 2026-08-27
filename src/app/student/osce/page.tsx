@@ -5,7 +5,7 @@ export default function OscePage() {
     <>
       <p className="eyebrow">OSCE 标准化考站</p><h1 className="page-title">儿童发热伴气促考站</h1><p className="page-lead">考核复用旗舰病例与统一智能体，仅切换考核约束和评分策略。</p>
       <section className="hero-desk">
-        <p className="eyebrow" style={{ color: '#e3bd7b' }}>8 分钟 · 100 分</p><h1>准备好后一次性开始</h1>
+        <p className="eyebrow">8 分钟 · 100 分</p><h1>准备好后一次性开始</h1>
         <p>系统会保存每轮问答、器材与部位操作、诊断、处置和沟通原文，时间结束自动提交。</p>
         <div className="hero-actions"><a className="btn btn-primary" href="/student/training?mode=osce">开始考核 <ArrowRight size={17} /></a></div>
       </section>

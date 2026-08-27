@@ -19,7 +19,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
       <section className="report-hero">
         <div className="score-ring" aria-label={`总分 ${report.totalScore} 分`}><strong>{report.totalScore}</strong></div>
         <div>
-          <p className="eyebrow" style={{ color: '#e3bd7b' }}>{mode} · {readonly ? '只读报告' : '训练完成'}</p>
+          <p className="eyebrow">{mode} · {readonly ? '只读报告' : '训练完成'}</p>
           <h1>{caseProfile.title}</h1>
           <p>报告依据实际问答、器材操作、临床决策与沟通原文生成。</p>
         </div>

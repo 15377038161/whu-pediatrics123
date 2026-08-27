@@ -2,6 +2,7 @@
 
 import { BarChart3, BookOpenText, ClipboardCheck, Home, LogOut, Stethoscope, Users } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import type { UserContext } from '@/domain/agent';
 
 const studentNav = [
@@ -19,6 +20,7 @@ const teacherNav = [
 export function AppShell({ user, children }: { user: UserContext; children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [avatarFailed, setAvatarFailed] = useState(false);
   if (pathname.startsWith('/student/training')) return <>{children}</>;
   const nav = user.role === 'teacher' ? teacherNav : studentNav;
   async function logout() {
@@ -35,7 +37,11 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
         </a>
         <div className="topbar-user">
           <div><strong>{user.displayName}</strong><span className="sr-only">，{user.role === 'teacher' ? '教师' : '学生'}</span></div>
-          <div className="avatar" aria-hidden="true">{user.displayName.slice(0, 1)}</div>
+          <div className="avatar" aria-label={`${user.displayName}的头像`}>
+            {user.avatarUrl && !avatarFailed
+              ? <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setAvatarFailed(true)} />
+              : <span aria-hidden="true">{user.displayName.slice(0, 1)}</span>}
+          </div>
           <button className="icon-btn" type="button" onClick={logout} aria-label="退出登录" title="退出登录"><LogOut size={17} /></button>
         </div>
       </header>
