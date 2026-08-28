@@ -42,6 +42,7 @@ tests/                      # 测试
 - `src/domain/case-catalog.ts`：公开病例目录
 - `src/domain/case.ts`：版本化病例事实、体征规则、检查结果
 - `src/lib/agent-engine.ts`：统一智能体状态机与确定性临床规则
+- `src/lib/coze-ai.ts`：Coze 原生 AI 统一接入层（配置、错误分类、超时/重试弹性调用）
 - `src/app/api/`：认证、会话、智能体、报告、教师查询、同步接口
 - `src/server.ts`：生产环境入口（build 后 `node dist/server.js` 启动）
 
@@ -65,6 +66,16 @@ tests/                      # 测试
   - **部署流程**：参考 `docs/CHAOXING_DEPLOYMENT_CHECKLIST.md` 和 `docs/CHAOXING_PRODUCTION_CONFIG.md`
   - **验证脚本**：运行 `node scripts/verify-chaoxing-config.js` 检查配置
 - **部署域名**：`COZE_PROJECT_DOMAIN_DEFAULT` 由平台注入，回调地址可自动从其生成
+
+## Coze 原生 AI 集成
+
+- **唯一 AI 调用点**：`src/lib/role-agent.ts` 的 SP 角色应答生成（调用链 `POST /api/agent/turn` → `runAgentTurn` → `handleQuestion` → `renderRoleReply`）。评分/报告/临床规则按教学设计保持确定性，不接入生成式 AI
+- **统一走 `src/lib/coze-ai.ts`**：新增任何 AI 调用必须经 `invokeCozeAI`（内置单次超时、指数退避重试、错误分类），禁止在业务代码直接 `new LLMClient` 或硬编码域名/密钥
+- **凭据与域名**：默认取平台注入的 `COZE_WORKLOAD_IDENTITY_API_KEY` / `COZE_INTEGRATION_BASE_URL`；可选覆盖 `COZE_AI_API_KEY` / `COZE_AI_BASE_URL`；弹性参数 `COZE_AI_TIMEOUT_MS`(30s) / `COZE_AI_MAX_ATTEMPTS`(3) / `COZE_AI_RETRY_BASE_MS`(600)。密钥只进环境变量，不进代码/日志
+- **降级契约**：模型失败（重试耗尽/鉴权/解析失败）→ `reply=null` + `runtime.execution='model_fallback'`（含 `errorKind`/`attempts`），引擎回退确定性事实应答，问诊轮次永不中断
+- **请求头透传**：API Route 必须用 `HeaderUtils.extractForwardHeaders(request.headers)` 并经 `runAgentTurn` 的 `forwardHeaders` 选项传入（需 SDK ≥ 0.7.10）
+- **测试**：单元 `tests/coze-ai.test.ts`（注入式，不耗配额）；真实集成 `AI_LIVE_TEST=1 pnpm exec tsx --test tests/coze-ai-live.test.ts`（功能+压力，消耗模型配额，按需执行）
+- **改造记录**：`docs/AI_MIGRATION_REPORT.md`（改造清单、错误处理矩阵、测试报告）
 
 ## 用户偏好与长期约束
 

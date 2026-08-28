@@ -124,6 +124,8 @@ export interface AgentRuntimeSummary {
   execution: 'deterministic' | 'model' | 'model_fallback';
   model: string | null;
   durationMs: number;
+  attempts?: number;
+  errorKind?: string;
 }
 
 export interface AbilityScores {

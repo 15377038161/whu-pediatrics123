@@ -96,7 +96,7 @@ function validateStageNavigation(session: SessionState, target: Stage): boolean 
   return order.indexOf(target) >= order.indexOf(session.stage);
 }
 
-async function handleQuestion(session: SessionState, text: string, clientEventId: string): Promise<AgentTurnResult> {
+async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>): Promise<AgentTurnResult> {
   const pediatricCase = getCase(session.caseId);
   const studentMessage = message('student', text);
   const intents = identifyHistoryIntents(session.caseId, text);
@@ -130,7 +130,7 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
     preferredActor,
     parentPaused: session.parentInterruption === 'paused',
     childComforted: session.childEmotion === 'calm',
-  });
+  }, forwardHeaders);
   const modelReply = roleResult.reply;
   const childAnswer = modelReply?.child ?? childFact;
   const parentAnswer = modelReply?.parent ?? parentFact;
@@ -302,7 +302,11 @@ function handleCommunication(session: SessionState, text: string, clientEventId:
   };
 }
 
-export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string): Promise<AgentTurnResult> {
+export interface AgentTurnOptions {
+  forwardHeaders?: Record<string, string>;
+}
+
+export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string, options?: AgentTurnOptions): Promise<AgentTurnResult> {
   if (session.status !== 'active') throw new Error('SESSION_COMPLETED');
   if (session.expiresAt && Date.parse(session.expiresAt) <= Date.now() && event.type !== 'FINISH_SESSION') {
     throw new Error('SESSION_EXPIRED');
@@ -312,7 +316,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
   }
 
   switch (event.type) {
-    case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId);
+    case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders);
     case 'DOCTOR_INTERVENTION': return handleIntervention(session, event.data.action, clientEventId);
     case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId);
     case 'ORDER_TEST': return handleTest(session, event.data.testId, clientEventId);
