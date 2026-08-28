@@ -73,7 +73,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .landing-trust { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 16px; color: #52716d; font-size: 13px; }
 .landing-trust span { display: inline-flex; align-items: center; gap: 7px; }
 .login-panel { padding: 20px; border: 1px solid rgba(39,108,99,.14); border-radius: 24px; background: rgba(255,255,255,.88); color: var(--ink); box-shadow: 0 26px 70px rgba(39,75,71,.12); backdrop-filter: blur(20px); }
-.login-status { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px; font-size: 14px; }
 .chaoxing-login-entry { display: grid; gap: 12px; }
 .login-field { display: grid; gap: 7px; font-size: 13px; font-weight: 700; color: var(--muted); }
 .login-field select { width: 100%; min-height: var(--tap); border: 1px solid var(--line); border-radius: 12px; background: var(--white); color: var(--ink); padding: 9px 12px; font: inherit; }
@@ -83,9 +82,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .auth-error-card > p:not(.eyebrow) { color: var(--muted); }
 .auth-error-mark { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #fff0eb; color: var(--brick); font-size: 28px; font-weight: 800; }
 .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
-.status-dot { flex: 0 0 9px; width: 9px; height: 9px; margin-top: 7px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 5px rgba(165,103,43,.12); }
 .login-actions { display: grid; gap: 10px; }
-.login-note { margin: 14px 0 0; color: #667675; font-size: 12px; }
 
 .btn { min-height: var(--tap); border: 1px solid transparent; border-radius: 12px; padding: 10px 16px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; font-weight: 700; transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
 .btn:hover { transform: translateY(-1px); }

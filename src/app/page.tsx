@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { Activity, ShieldCheck, Sparkles, Stethoscope } from 'lucide-react';
+import { Activity, Sparkles, Stethoscope } from 'lucide-react';
 import { ChaoxingLoginEntry } from '@/components/chaoxing-login-entry';
 import { getChaoxingLoginOptions } from '@/lib/chaoxing-client';
 import { getCurrentUser } from '@/lib/supabase-auth';
@@ -42,12 +42,7 @@ export default async function LoginPage() {
           <div className="landing-trust"><span><Stethoscope size={15} /> 临床流程驱动</span><span><Sparkles size={15} /> 多角色动态应答</span></div>
         </section>
         <section className="login-panel" aria-labelledby="login-title">
-          <p className="eyebrow">统一身份入口</p>
           <h2 className="section-title" id="login-title">进入儿科临床学习空间</h2>
-          <div className="login-status">
-            <span className="status-dot" aria-hidden="true" />
-            <span>{loginOptions.configured ? '超星认证配置已载入，可使用学习通身份进入。' : '管理员尚未完成超星身份授权；正式环境不会开放替代登录。'}</span>
-          </div>
           <div className="login-actions">
             <ChaoxingLoginEntry {...loginOptions} />
             {preview && (
@@ -57,7 +52,6 @@ export default async function LoginPage() {
               </>
             )}
           </div>
-          <p className="login-note"><ShieldCheck size={13} style={{ verticalAlign: -2 }} /> 授权令牌仅在服务端交换，不进入浏览器、日志或交付包。</p>
         </section>
       </div>
     </main>
