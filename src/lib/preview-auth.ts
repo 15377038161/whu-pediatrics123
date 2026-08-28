@@ -12,9 +12,7 @@ interface PreviewPayload {
 }
 
 export function isPreviewEnabled(): boolean {
-  return process.env.ENABLE_UI_PREVIEW === 'true'
-    && process.env.COZE_PROJECT_ENV !== 'PROD'
-    && (process.env.NODE_ENV !== 'production' || process.env.COZE_PROJECT_ENV === 'DEV');
+  return process.env.ENABLE_UI_PREVIEW === 'true';
 }
 
 function secret(): string {

@@ -16,6 +16,6 @@ export async function GET(_request: NextRequest) {
     ai: { ...ai, status: ai.apiKeySource === 'missing' ? 'waiting_for_credentials' : 'configured' },
     chaoxingAuth: authentication ? 'configured_awaiting_live_verification' : 'waiting_for_authorization',
     chaoxingForm: chaoxingFormConfigured() ? 'configured_awaiting_live_verification' : 'waiting_for_write_contract',
-    preview: isPreviewEnabled() ? 'enabled_non_production' : 'disabled',
+    preview: isPreviewEnabled() ? (process.env.COZE_PROJECT_ENV === 'PROD' ? 'enabled_production' : 'enabled_non_production') : 'disabled',
   });
 }
