@@ -4,6 +4,7 @@ import type {
   AgentTraceItem,
   AgentTurnResult,
   ClinicalEvent,
+  PracticeFocus,
   SessionMode,
   SessionState,
   Stage,
@@ -38,7 +39,7 @@ function clinicalEvent(
   return { id: crypto.randomUUID(), clientEventId, type, stage, summary, correct, evidenceCodes, createdAt: now() };
 }
 
-export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id): SessionState {
+export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id, practiceFocus?: PracticeFocus): SessionState {
   const pediatricCase = getCase(caseId);
   const startedAt = now();
   const expiresAt = mode === 'osce' ? new Date(Date.now() + 8 * 60_000).toISOString() : null;
@@ -48,6 +49,7 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
     caseId: pediatricCase.id,
     caseVersion: pediatricCase.version,
     mode,
+    practiceFocus: mode === 'practice' ? practiceFocus ?? 'history' : null,
     stage: 'triage',
     status: 'active',
     startedAt,
@@ -119,8 +121,8 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   const preferredActor = intents.every((intent) => intent.preferredActor === 'parent')
     ? 'parent'
     : intents.every((intent) => intent.preferredActor === 'child') ? 'child' : 'mixed';
-  const childFact = intents.map((intent) => intent.childAnswer).join('；');
-  const parentFact = intents.map((intent) => intent.parentAnswer).join('；');
+  const childFact = intents.map((intent) => intent.childAnswer).join(' ');
+  const parentFact = intents.map((intent) => intent.parentAnswer).join(' ');
   const roleResult = await renderRoleReply({
     childAge: pediatricCase.age,
     childSex: pediatricCase.sex,

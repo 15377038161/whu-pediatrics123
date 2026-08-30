@@ -5,6 +5,7 @@ const stage = z.enum(['triage', 'history', 'exam', 'tests', 'assessment', 'plan'
 export const createSessionSchema = z.object({
   mode: z.enum(['guided', 'practice', 'osce']),
   caseId: z.enum(['peds-respiratory-001', 'peds-wheeze-002']).optional(),
+  focus: z.enum(['history', 'exam', 'safety', 'communication']).optional(),
 });
 
 export const agentTurnSchema = z.object({

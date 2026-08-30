@@ -84,3 +84,17 @@ test('女童病例使用独立病例版本、应答事实与查体结果', async
   const result = await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'female-exam-002');
   assert.match(result.newMessages[0].content, /哮鸣音/);
 });
+
+test('专项训练会话保留明确训练重点', () => {
+  const session = createInitialSession('student-1', 'practice', 'peds-respiratory-001', 'communication');
+  assert.equal(session.mode, 'practice');
+  assert.equal(session.practiceFocus, 'communication');
+});
+
+test('真实问诊可识别咳嗽特点与院前用药', async () => {
+  const session = createInitialSession('student-1', 'guided');
+  const result = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '孩子咳嗽有痰吗？在家吃过什么药？' } }, 'event-cough-treatment');
+  assert.ok(result.session.askedIntents.includes('cough'));
+  assert.ok(result.session.askedIntents.includes('treatment'));
+  assert.match(result.newMessages.map((item) => item.content).join(''), /干咳|退热药/);
+});

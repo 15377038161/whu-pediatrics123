@@ -22,11 +22,12 @@ function withEnvironment(values: Partial<Record<(typeof keys)[number], string>>,
   }
 }
 
-test('构建包默认不开放预览身份', () => withEnvironment({ ENABLE_UI_PREVIEW: 'true', NODE_ENV: 'production' }, () => {
+test('未显式开启时任何环境都不开放预览身份', () => withEnvironment({ NODE_ENV: 'production' }, () => {
   assert.equal(isPreviewEnabled(), false);
 }));
 
-test('只有明确的Coze开发环境可以在生产构建中开放预览身份', () => {
+test('显式开关可在开发或生产环境开放评委预览', () => {
   withEnvironment({ ENABLE_UI_PREVIEW: 'true', NODE_ENV: 'production', COZE_PROJECT_ENV: 'DEV' }, () => assert.equal(isPreviewEnabled(), true));
-  withEnvironment({ ENABLE_UI_PREVIEW: 'true', NODE_ENV: 'production', COZE_PROJECT_ENV: 'PROD' }, () => assert.equal(isPreviewEnabled(), false));
+  withEnvironment({ ENABLE_UI_PREVIEW: 'true', NODE_ENV: 'production', COZE_PROJECT_ENV: 'PROD' }, () => assert.equal(isPreviewEnabled(), true));
+  withEnvironment({ ENABLE_UI_PREVIEW: 'false', NODE_ENV: 'development', COZE_PROJECT_ENV: 'DEV' }, () => assert.equal(isPreviewEnabled(), false));
 });

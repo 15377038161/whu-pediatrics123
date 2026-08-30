@@ -85,6 +85,18 @@ export const FLAGSHIP_CASE: FlagshipCase = {
       preferredActor: 'parent', score: 4, evidenceCode: 'HX_FEVER',
     },
     {
+      id: 'cough', label: '咳嗽与呼吸道症状', keywords: ['咳嗽', '咳', '咳痰', '痰', '干咳', '夜里咳'],
+      childAnswer: '一直咳，晚上睡觉也会咳醒，没有咳出东西。',
+      parentAnswer: '以阵发性干咳为主，夜间更明显，没有咯血或明显脓痰。',
+      preferredActor: 'mixed', score: 3, evidenceCode: 'HX_COUGH',
+    },
+    {
+      id: 'treatment', label: '院前用药与效果', keywords: ['吃药', '吃过', '什么药', '用药', '药物', '治疗', '退热药', '抗生素'],
+      childAnswer: '妈妈给我喝过退烧药，后来没那么热了。',
+      parentAnswer: '在家按说明用过一次退热药，体温短暂下降；未自行使用抗生素。',
+      preferredActor: 'parent', score: 2, evidenceCode: 'HX_TREATMENT',
+    },
+    {
       id: 'danger', label: '呼吸危险信号', keywords: ['喘', '憋', '呼吸困难', '青紫', '嘴唇', '胸口', '气促'],
       childAnswer: '跑一下就喘，胸口有点难受。',
       parentAnswer: '今天安静坐着也呼吸快，睡觉时胸口起伏明显，没有抽搐。',
@@ -147,6 +159,8 @@ export const FEMALE_WHEEZE_CASE: FlagshipCase = {
   history: [
     { id: 'onset', label: '起病与病程', keywords: ['什么时候', '多久', '几天', '开始', '病程'], childAnswer: '昨天晚上开始咳嗽，今天呼吸会响。', parentAnswer: '昨晚开始低热和阵发性咳嗽，今天活动后喘息更明显。', preferredActor: 'mixed', score: 4, evidenceCode: 'HX_ONSET' },
     { id: 'fever', label: '发热特点', keywords: ['体温', '发热', '发烧', '最高', '退烧'], childAnswer: '我觉得有一点热。', parentAnswer: '最高38.3℃，没有寒战，退热后精神会好一些。', preferredActor: 'parent', score: 4, evidenceCode: 'HX_FEVER' },
+    { id: 'cough', label: '咳嗽与喘息特点', keywords: ['咳嗽', '咳', '咳痰', '痰', '干咳', '夜里咳'], childAnswer: '会一阵一阵地咳，跑起来还会呼呼响。', parentAnswer: '主要是阵发性干咳，夜间和活动后明显，没有咯血或脓痰。', preferredActor: 'mixed', score: 3, evidenceCode: 'HX_COUGH' },
+    { id: 'treatment', label: '院前用药与效果', keywords: ['吃药', '吃过', '什么药', '用药', '药物', '治疗', '退热药', '雾化'], childAnswer: '还没有做雾化，喝过一点退烧药。', parentAnswer: '只按说明使用过退热药，未自行雾化或使用抗生素。', preferredActor: 'parent', score: 2, evidenceCode: 'HX_TREATMENT' },
     { id: 'danger', label: '呼吸危险信号', keywords: ['喘', '憋', '呼吸困难', '青紫', '嘴唇', '胸口', '气促'], childAnswer: '跑起来会喘，胸口有点紧。', parentAnswer: '安静时也能听见喘息，但没有口唇青紫、意识异常或抽搐。', preferredActor: 'mixed', score: 8, evidenceCode: 'HX_DANGER' },
     { id: 'general', label: '一般状态', keywords: ['精神', '吃饭', '饮食', '尿', '喝水', '睡眠', '大便'], childAnswer: '能喝水，不太想吃饭。', parentAnswer: '精神稍差，饮水和小便基本正常，夜里因咳嗽睡得不好。', preferredActor: 'mixed', score: 4, evidenceCode: 'HX_GENERAL' },
     { id: 'exposure', label: '诱因与接触史', keywords: ['接触', '同学', '幼儿园', '传染', '流行', '诱因', '运动', '冷空气'], childAnswer: '这两天幼儿园有人感冒。', parentAnswer: '班里有同学感冒，降温后咳嗽加重，未接触烟雾和新宠物。', preferredActor: 'parent', score: 3, evidenceCode: 'HX_EXPOSURE' },

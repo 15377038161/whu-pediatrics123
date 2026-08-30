@@ -20,6 +20,8 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
     (asked.has('danger') ? 8 : 0)
       + (asked.has('onset') ? 4 : 0)
       + (asked.has('fever') ? 4 : 0)
+      + (asked.has('cough') ? 2 : 0)
+      + (asked.has('treatment') ? 1 : 0)
       + (asked.has('general') ? 4 : 0)
       + (asked.has('exposure') ? 3 : 0)
       + (asked.has('vaccination') || asked.has('birth') || asked.has('allergy') ? 2 : 0));

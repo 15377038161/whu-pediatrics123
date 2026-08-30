@@ -1,5 +1,6 @@
 export type AppRole = 'student' | 'teacher';
 export type SessionMode = 'guided' | 'practice' | 'osce';
+export type PracticeFocus = 'history' | 'exam' | 'safety' | 'communication';
 export type Stage =
   | 'triage'
   | 'history'
@@ -56,6 +57,7 @@ export interface SessionState {
   caseId: string;
   caseVersion: number;
   mode: SessionMode;
+  practiceFocus: PracticeFocus | null;
   stage: Stage;
   status: 'active' | 'completed' | 'report_pending';
   startedAt: string;

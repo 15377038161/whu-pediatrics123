@@ -1,4 +1,5 @@
-import { ArrowRight, ClipboardCheck, MessagesSquare, Stethoscope } from 'lucide-react';
+import { ArrowRight, ClipboardCheck, Clock3, HeartPulse, MessagesSquare, Sparkles, Stethoscope } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { CASE_CATALOG, getPublicCase } from '@/domain/case-catalog';
 import { AgentRepository } from '@/lib/repository';
@@ -14,21 +15,28 @@ export default async function StudentHome() {
   const abilities = latestReport?.abilities;
   return (
     <>
-      <p className="eyebrow">珞珈儿科能力图谱</p>
-      <h1 className="page-title">上午好，{user.displayName}</h1>
-      <p className="page-lead">今天从一个真实临床任务开始。智能体会记住你在每个阶段获得的证据。</p>
+      <p className="eyebrow">珞珈儿科 · 今日训练</p>
+      <h1 className="page-title">你好，{user.displayName}</h1>
+      <p className="page-lead">今天也从一个真实临床任务开始。放心提问、判断和操作，智能体只给方向，不会替你完成训练。</p>
 
-      <section className="hero-desk">
-        <p className="eyebrow">{active ? '继续上次训练' : '本周旗舰病例'}</p>
-        <h1>{active ? '继续上次临床训练' : `${activeCase.category}模拟接诊`}</h1>
-        <p>就诊线索：{activeCase.presentingSymptoms.join('、')}。患儿信息、病史和检查结果需由你在训练中逐步获取。</p>
-        <div className="hero-actions">
-          <a className="btn btn-primary" href={active ? `/student/training?session=${active.id}` : `/student/training?mode=guided&case=${activeCase.id}`}>
-            {active ? '继续训练' : '开始病例'} <ArrowRight size={17} />
-          </a>
-          <a className="btn btn-secondary" href="/about/agent">智能体如何工作</a>
+      <section className="hero-desk student-hero">
+        <div className="student-hero-copy">
+          <p className="eyebrow">{active ? '欢迎回来 · 进度已保存' : '本周旗舰病例'}</p>
+          <h1>{active ? '接着上次的临床思路继续' : `今天接诊一位${activeCase.age}患儿`}</h1>
+          <p>就诊线索：{activeCase.presentingSymptoms.join('、')}。病史和检查结果需要由你亲自问出来、查出来。</p>
+          <div className="hero-actions">
+            <a className="btn btn-primary" href={active ? `/student/training?session=${active.id}` : `/student/training?mode=guided&case=${activeCase.id}`}>
+              {active ? '继续训练' : '开始接诊'} <ArrowRight size={17} />
+            </a>
+            <a className="btn btn-secondary" href="/student/practice"><Sparkles size={16} /> 先做专项热身</a>
+          </div>
+          <div className="case-note"><span><Clock3 size={14} /> 建议 {activeCase.expectedMinutes} 分钟</span><span><HeartPulse size={14} /> 自主问诊与检查</span><span>过程自动保存</span></div>
         </div>
-        <div className="case-note"><span>建议 {activeCase.expectedMinutes} 分钟</span><span>自主问诊与检查</span><span>武汉大学校本框架</span></div>
+        <div className="student-hero-doctor" aria-hidden="true"><span>我在诊室陪你一起思考</span><Image src="/media/brand/little-doctor-companion.webp" alt="" width={720} height={1080} sizes="(max-width: 699px) 145px, 230px" /></div>
+      </section>
+
+      <section className="journey-strip" aria-label="训练闭环">
+        {['先观察', '再问诊', '做检查', '下判断', '会沟通', '看证据'].map((label, index) => <div key={label}><span>{index + 1}</span><strong>{label}</strong></div>)}
       </section>
 
       <div className="section-head" id="case-library"><h2 className="section-title">模拟病例库</h2><span className="eyebrow">仅展示就诊线索</span></div>
@@ -37,7 +45,8 @@ export default async function StudentHome() {
           <article className="case-card" key={caseItem.id}>
             <div className="case-card-copy">
               <p className="case-number">病例 {String(index + 1).padStart(2, '0')}</p>
-              <h3>{caseItem.category}</h3>
+              <h3>{caseItem.title}</h3>
+              <div className="case-meta"><span>{caseItem.age}</span><span>{caseItem.difficulty}</span><span>{caseItem.expectedMinutes} 分钟</span></div>
               <div className="symptom-list" aria-label="就诊症状">
                 {caseItem.presentingSymptoms.map((symptom) => <span key={symptom}>{symptom}</span>)}
               </div>
@@ -47,7 +56,7 @@ export default async function StudentHome() {
         ))}
       </div>
 
-      <div className="section-head"><h2 className="section-title">三个学习入口</h2><span className="eyebrow">玩起来 · 用起来 · 学起来</span></div>
+      <div className="section-head"><h2 className="section-title">选择你的训练方式</h2><span className="eyebrow">从完整病例到单项补练</span></div>
       <div className="entry-list">
         <a className="entry" href="#case-library">
           <span className="entry-mark"><Stethoscope /></span><h3>模拟病例</h3><p>在完整病例中自主问诊、检查和决策，训练模式提供方向性反馈。</p><span className="entry-meta">进入临床工作台 <ArrowRight size={14} /></span>

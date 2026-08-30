@@ -1,4 +1,4 @@
-import { BookOpenCheck, CheckCircle2, CircleAlert } from 'lucide-react';
+import { ArrowRight, BookOpenCheck, CheckCircle2, CircleAlert, RotateCcw } from 'lucide-react';
 import type { TrainingReport } from '@/domain/agent';
 import { getPublicCase } from '@/domain/case-catalog';
 
@@ -42,6 +42,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           <p>{report.recommendation}</p>
           {report.strengths.length > 0 && <p><strong>已经掌握：</strong>{report.strengths.join('、')}</p>}
           {report.improvements.length > 0 && <p><strong>重点改进：</strong>{report.improvements.join('、')}</p>}
+          {!readonly && <div className="report-actions"><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={`/student/training?mode=guided&case=${report.caseId}`}>再练一次 <ArrowRight size={14} /></a></div>}
         </section>
       </div>
       <section className="report-section" style={{ marginTop: 14 }}>

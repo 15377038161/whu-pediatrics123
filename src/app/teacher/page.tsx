@@ -5,5 +5,5 @@ import { requirePageUser } from '@/lib/page-auth';
 export default async function TeacherPage() {
   const user = await requirePageUser('teacher');
   const students = await new AgentRepository(user).listTeacherStudents();
-  return <TeacherDashboard students={students} />;
+  return <TeacherDashboard students={students} referenceTime={new Date().toISOString()} />;
 }

@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { Activity, Sparkles, Stethoscope } from 'lucide-react';
+import Image from 'next/image';
+import { Activity, ArrowRight, HeartPulse, MessageCircleHeart, Sparkles, Stethoscope } from 'lucide-react';
 import { ChaoxingLoginEntry } from '@/components/chaoxing-login-entry';
 import { getChaoxingLoginOptions } from '@/lib/chaoxing-client';
 import { getCurrentUser } from '@/lib/supabase-auth';
@@ -27,22 +28,33 @@ export default async function LoginPage() {
               <p className="brand-kicker">Wuhan University Pediatrics</p>
             </div>
           </div>
-          <div className="landing-copy">
-            <h2>从真实问诊，到可解释的临床能力成长</h2>
-            <p>在同一个病例记忆中完成自主问诊、可视化查体、临床决策、家长沟通与 OSCE 考核。</p>
+          <div className="landing-hero-row">
+            <div className="landing-copy">
+              <span className="welcome-chip"><HeartPulse size={15} /> 嗨，未来的小医生</span>
+              <h2>把每一次练习，变成真正会接诊</h2>
+              <p>和虚拟患儿、家长自然对话，在同一个病例中完成问诊、查体、临床决策、沟通与 OSCE 复盘。</p>
+              <div className="learning-beads" aria-label="完整训练路径"><span>会问</span><i /><span>会查</span><i /><span>会判断</span></div>
+            </div>
+            <div className="landing-doctor" aria-hidden="true">
+              <span className="doctor-speech">准备好接诊了吗？</span>
+              <Image src="/media/brand/little-doctor-companion.webp" alt="" width={720} height={1080} priority sizes="(max-width: 699px) 150px, 230px" />
+            </div>
           </div>
           <div className="ecg-monitor" aria-hidden="true">
-            <div className="ecg-monitor-head"><span><Activity size={16} /> 教学智能体在线</span><span>儿科临床训练</span></div>
+            <div className="ecg-monitor-head"><span><Activity size={16} /> 教学智能体在线</span><span className="ecg-rate"><strong>108</strong> bpm · 模拟心率</span></div>
             <svg viewBox="0 0 720 120" preserveAspectRatio="none">
               <path className="ecg-gridline" d="M0 60H720" />
+              <path className="ecg-line ecg-line-ghost" d="M0 60H95l15-1 11-18 15 54 18-83 18 49h60l18-1 10-16 14 48 17-72 17 41h116l16-1 12-20 15 58 18-88 19 51h166" />
               <path className="ecg-line" d="M0 60H95l15-1 11-18 15 54 18-83 18 49h60l18-1 10-16 14 48 17-72 17 41h116l16-1 12-20 15 58 18-88 19 51h166" />
             </svg>
             <span className="ecg-glow" />
           </div>
-          <div className="landing-trust"><span><Stethoscope size={15} /> 临床流程驱动</span><span><Sparkles size={15} /> 多角色动态应答</span></div>
+          <div className="landing-trust"><span><Stethoscope size={15} /> 真实临床动线</span><span><MessageCircleHeart size={15} /> 患儿与家长双角色</span><span><Sparkles size={15} /> 每一步都有证据</span></div>
         </section>
         <section className="login-panel" aria-labelledby="login-title">
+          <span className="login-panel-icon"><Stethoscope size={21} /></span>
           <h2 className="section-title" id="login-title">进入儿科临床学习空间</h2>
+          <p className="login-panel-copy">使用学习通身份进入，自动匹配学生或教师角色。</p>
           <div className="login-actions">
             <ChaoxingLoginEntry {...loginOptions} />
             {preview && (
@@ -52,6 +64,7 @@ export default async function LoginPage() {
               </>
             )}
           </div>
+          <p className="login-footnote">教学模拟 · 非真实医疗建议 <ArrowRight size={12} /></p>
         </section>
       </div>
     </main>

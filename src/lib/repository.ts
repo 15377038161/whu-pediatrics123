@@ -1,4 +1,4 @@
-import type { AgentRuntimeSummary, AgentTraceItem, SessionMode, SessionState, SyncEventV1, TrainingReport, UserContext } from '@/domain/agent';
+import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, SessionState, SyncEventV1, TrainingReport, UserContext } from '@/domain/agent';
 import { createInitialSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
@@ -103,8 +103,8 @@ export class AgentRepository {
     return this.actor.provider === 'preview';
   }
 
-  async createSession(mode: SessionMode, caseId?: string): Promise<SessionState> {
-    const session = createInitialSession(this.actor.id, mode, caseId);
+  async createSession(mode: SessionMode, caseId?: string, practiceFocus?: PracticeFocus): Promise<SessionState> {
+    const session = createInitialSession(this.actor.id, mode, caseId, practiceFocus);
     if (this.isPreview()) {
       const store = memoryStore();
       store.users.set(this.actor.id, this.actor);

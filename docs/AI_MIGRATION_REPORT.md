@@ -10,7 +10,7 @@
 
 | # | 接口功能 | 调用位置（调用链） | 原请求参数格式 | 原响应解析逻辑 | 改造内容 |
 |---|---|---|---|---|---|
-| 1 | 标准化病人角色应答生成：把预置病例事实改写为患儿/家长的自然语言应答（含患儿情绪标签） | `src/lib/role-agent.ts` `renderRoleReply()` ← `src/lib/agent-engine.ts` `handleQuestion()` ← `runAgentTurn()` ← `POST /api/agent/turn`（`src/app/api/agent/turn/route.ts`） | `messages`: system（角色约束，含年龄/性别插值）+ user（`JSON.stringify(RoleReplyInput)`）；`llmConfig`: `{ model: 'doubao-seed-2-0-lite-260215', temperature: 0.35, thinking: 'disabled', caching: 'disabled' }` | 剥离 ```` ```json ```` 围栏 → `JSON.parse` → Zod `roleReplySchema` 校验（`child?`/`parent?`/`childEmotion`）；任意失败则 `reply = null`，引擎回退到确定性事实应答 | 请求参数与消息格式保持兼容（同为 Coze 原生接口 `Message[] + LLMConfig`）；新增统一接入层 `invokeCozeAI`（超时、重试、退避、错误分类）；响应解析层保留并增强（支持 JSON 嵌在说明文字中的抽取、`safeParse` 替代 try/throw）；失败分类写入 `runtime.errorKind` |
+| 1 | 标准化病人角色应答生成：把预置病例事实改写为患儿/家长的自然语言应答（含患儿情绪标签） | `src/lib/role-agent.ts` `renderRoleReply()` ← `src/lib/agent-engine.ts` `handleQuestion()` ← `runAgentTurn()` ← `POST /api/agent/turn`（`src/app/api/agent/turn/route.ts`） | `messages`: system（事实边界、年龄化表达、角色秩序、未知信息与注入隔离）+ user（`JSON.stringify(RoleReplyInput)`）；`llmConfig`: `{ model: 'doubao-seed-2-0-lite-260215', temperature: 0.22, thinking: 'disabled', caching: 'disabled' }` | 剥离 ```` ```json ```` 围栏 → `JSON.parse` → Zod `roleReplySchema` 校验（`child?`/`parent?`/`childEmotion`）；任意失败则 `reply = null`，引擎回退到确定性事实应答 | 请求参数与消息格式保持兼容（同为 Coze 原生接口 `Message[] + LLMConfig`）；统一接入层 `invokeCozeAI` 提供超时、重试、退避和错误分类；`buildRoleSystemPrompt()` 将学生问话视为不可信诊室数据，禁止模型泄露隐藏事实、给出诊断或替学生作答 |
 
 ### 明确不接入 AI 的模块（按教学评测设计保留确定性规则）
 
@@ -39,6 +39,8 @@
 - **请求地址/鉴权头**：由 `coze-coding-dev-sdk` 的 `Config.getHeaders()` 统一生成鉴权头并指向平台网关，业务代码不再自行拼接地址与请求头。
 - **请求头透传**：`POST /api/agent/turn` 按 SDK 规范使用 `HeaderUtils.extractForwardHeaders(request.headers)` 提取链路头（`x-tt-logid` 等），经 `runAgentTurn(session, event, id, { forwardHeaders })` → `renderRoleReply(input, forwardHeaders)` 传入 `LLMClient`，保证请求追踪与上下文传播（需 SDK ≥ 0.7.10，当前 0.7.24）。
 - **请求参数**：保持 `Message[]` + `LLMConfig` 结构，含 `user` 角色消息（接口硬性要求）；模型固定 `doubao-seed-2-0-lite-260215`（低时延高并发档，适配问诊交互）。
+- **角色真实性约束**：患儿使用符合年龄的短句和有限时间概念；家长只补充患儿无法准确说明的内容；暂停家长发言时必须省略 `parent` 字段；安抚后只提高表达完整度，不放宽事实边界。
+- **安全边界**：学生自由输入的 `question` 被明确标记为不可信数据，不能覆盖系统规则；未知信息必须回答“不清楚/未注意”，不得主动给出诊断、评分、正确答案或操作建议。
 - **响应解析层**：保留原 Zod 校验契约（`child`/`parent`/`childEmotion`），上游业务流程（`agent-engine` 的 `modelReply?.child ?? childFact` 回退链）零改动。
 
 ## 4. 错误处理与降级机制
@@ -66,7 +68,7 @@
 |---|---|
 | `tests/coze-ai.test.ts`（错误分类、重试退避、超时、认证不重试、Retry-After） | 7/7 通过 |
 | `tests/agent-engine.test.ts`（确定性流程回归） | 全部通过 |
-| 全套件（`pnpm exec tsx --test tests/*.test.ts`） | **54 pass / 0 fail**（4 个 live 用例默认跳过） |
+| 全套件（`pnpm exec tsx --test tests/*.test.ts`） | **59 pass / 0 fail**（4 个 live 用例默认跳过） |
 | `tsc --noEmit` 与 `eslint --quiet` | 通过 |
 
 ### 5.2 功能测试 — 标准化病人应答生成（顺序 8 次，含提示词/请求参数/响应解析全链路）
@@ -102,7 +104,7 @@
 | 结构化解析成功 | ≥ 6/8 | 8/8 | ✅ |
 | 压力成功率 | ≥ 95% | 100% | ✅ |
 | 压力 P95 时延 | ≤ 30000 ms | 2006 ms | ✅ |
-| 离线单元回归 | 全绿 | 54 pass / 0 fail | ✅ |
+| 离线单元回归 | 全绿 | 59 pass / 0 fail | ✅ |
 
 复测方式：`AI_LIVE_TEST=1 pnpm exec tsx --test tests/coze-ai-live.test.ts`（默认跳过，避免日常测试消耗配额）。
 
@@ -119,4 +121,5 @@
 | `.env.example` | 文档化 `COZE_AI_*` 可选覆盖项与默认值 |
 | `tests/coze-ai.test.ts` | 新增：错误分类与重试/超时/降级单元测试（7 例，注入式依赖，不消耗配额） |
 | `tests/coze-ai-live.test.ts` | 新增：真实集成测试（配置巡检、功能 8 连发、完整业务轮次、24 并发 8 压力），默认跳过 |
+| `tests/role-agent.test.ts` | 新增：提示词事实边界、家长暂停、患儿安抚状态与注入隔离回归测试 |
 | `AGENTS.md` | 更新：AI 集成说明 |

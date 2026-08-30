@@ -2,12 +2,12 @@
 
 import {
   Activity, ArrowLeft, Check, ChevronRight, Clock3, Home,
-  ClipboardList, LoaderCircle, MessageCircleHeart, Mic, Send, Stethoscope, UserRound,
+  ClipboardList, Lightbulb, LoaderCircle, MessageCircleHeart, Mic, Send, Stethoscope, UserRound,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AgentEvent, AgentTraceItem, AgentTurnResult, ApiResult, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
+import type { AgentEvent, AgentTraceItem, AgentTurnResult, ApiResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
 import { getPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
@@ -33,6 +33,21 @@ const tests = [
   { id: 'pathogen', label: '呼吸道病原学', indication: '结合流行病学和病程选择' },
   { id: 'brain-mri', label: '头颅 MRI', indication: '当前是否存在神经系统指征？' },
 ];
+
+const focusLabels: Record<PracticeFocus, string> = {
+  history: '儿科病史采集', exam: '肺部规范查体', safety: '感染与危重识别', communication: '家长焦虑沟通',
+};
+
+const stageHints: Record<Stage, string[]> = {
+  triage: ['先判断意识、呼吸和循环是否稳定，再决定问诊顺序。', '注意低龄儿童的呼吸频率与血氧，不能只看体温。'],
+  history: ['先用开放式问题了解主诉，再逐项追问起病、危险信号和一般状态。', '患儿说不清时可请家长补充，但仍要给孩子表达机会。', '问到呼吸问题时，别忘了静息气促、青紫和胸壁起伏。'],
+  exam: ['先完成手卫生和解释，再按“观察—测量—重点查体”推进。', '低氧风险下，血氧监测和肺部听诊是高价值操作。'],
+  tests: ['每项检查都应回答一个临床问题，避免为了“全面”而开单。', '把低氧和局灶肺部体征与影像学指征联系起来。'],
+  assessment: ['摘要建议按“年龄—病程—阳性证据—危险信号—关键阴性”组织。', '诊断要同时表达疾病判断和严重程度。'],
+  plan: ['先稳定生命体征，再完善评估；低氧时优先监测与氧疗。', '处置计划要写清复评节点、升级治疗或转诊条件。'],
+  communication: ['先回应焦虑，再用通俗语言解释风险，最后给出明确下一步。', '同时对患儿说明接下来会做什么，避免只和家长说话。'],
+  report: ['报告会把每个得分项回链到本次问答和操作证据。'],
+};
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, { ...init, headers: { 'content-type': 'application/json', ...init?.headers } });
@@ -74,7 +89,7 @@ function PatientFigure({ patient, selectedTool, onExamine, busy, interactive }: 
   );
 }
 
-export function TrainingWorkspace({ mode, initialSessionId, initialCaseId }: { mode: SessionMode; initialSessionId?: string; initialCaseId?: string }) {
+export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, practiceFocus }: { mode: SessionMode; initialSessionId?: string; initialCaseId?: string; practiceFocus?: PracticeFocus }) {
   const router = useRouter();
   const started = useRef(false);
   const finishing = useRef(false);
@@ -93,6 +108,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId }: { m
   const [communication, setCommunication] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<'task' | 'patient' | 'record'>('task');
+  const [hintIndex, setHintIndex] = useState(0);
 
   useEffect(() => {
     if (started.current) return;
@@ -100,11 +116,11 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId }: { m
     setBusy(true);
     (initialSessionId
       ? api<SessionState>(`/api/sessions/${initialSessionId}`)
-      : api<SessionState>('/api/sessions', { method: 'POST', body: JSON.stringify({ mode, caseId: initialCaseId }) }))
+      : api<SessionState>('/api/sessions', { method: 'POST', body: JSON.stringify({ mode, caseId: initialCaseId, focus: practiceFocus }) }))
       .then((value) => { setSession(value); if (!initialSessionId) router.replace(`/student/training?session=${value.id}`); })
       .catch((cause) => setError(cause instanceof Error ? cause.message : '训练加载失败。'))
       .finally(() => setBusy(false));
-  }, [initialCaseId, initialSessionId, mode, router]);
+  }, [initialCaseId, initialSessionId, mode, practiceFocus, router]);
 
   const finish = useCallback(async () => {
     if (!session || finishing.current) return;
@@ -149,7 +165,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId }: { m
 
   async function navigate(stage: Stage) {
     const result = await sendEvent({ type: 'NAVIGATE_STAGE', data: { stage } });
-    if (result) setMobileView('task');
+    if (result) { setMobileView('task'); setHintIndex(0); }
   }
   async function submitQuestion() {
     if (!question.trim()) return;
@@ -167,6 +183,15 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId }: { m
 
   if (!session) return <main className="loading-screen" id="main-content"><div><div className="pulse-mark"><Activity /></div><strong>{error ?? '正在建立统一病例会话…'}</strong>{error && <p><a className="btn btn-secondary" href="/student">返回首页</a></p>}</div></main>;
   const caseProfile = getPublicCase(session.caseId);
+  const currentFocus = session.practiceFocus ?? practiceFocus;
+  const hints = stageHints[session.stage];
+  const exitMode = session.mode;
+  function leaveTraining() {
+    const confirmed = window.confirm(exitMode === 'osce'
+      ? '离开后计时仍会继续，确定暂时退出考站吗？'
+      : '本次操作已自动保存，确定暂时退出训练吗？');
+    if (confirmed) router.push('/student');
+  }
   const caseTests = session.caseId === 'peds-wheeze-002'
     ? tests.map((test) => test.id === 'chest-image' ? { ...test, indication: '低氧或首次明显喘息时评估' } : test)
     : tests;
@@ -229,13 +254,13 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId }: { m
   return (
     <main className="training-shell" id="main-content">
       <header className="training-head">
-        <div className="training-toolbar"><a className="icon-btn" href="/student" aria-label="返回首页"><ArrowLeft size={18} /></a><div className="training-title"><strong>{caseProfile.title}</strong><span>{session.mode === 'osce' ? 'OSCE 考核模式' : session.mode === 'practice' ? '专项训练模式' : '智能体引导模式'}</span></div>{session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <a className="icon-btn" href="/student" aria-label="回到首页"><Home size={17} /></a>}</div>
+        <div className="training-toolbar"><button className="icon-btn" type="button" onClick={leaveTraining} aria-label="暂时退出训练"><ArrowLeft size={18} /></button><div className="training-title"><strong>{caseProfile.title}</strong><span>{session.mode === 'osce' ? 'OSCE 考核模式' : session.mode === 'practice' ? `专项训练 · ${currentFocus ? focusLabels[currentFocus] : '能力补练'}` : '智能体引导模式'}</span></div>{session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <button className="icon-btn" type="button" onClick={leaveTraining} aria-label="回到首页"><Home size={17} /></button>}</div>
         <div className="stage-scroll" aria-label="训练阶段">{stages.map((stage,index) => <button key={stage.id} className="stage-chip" data-current={session.stage === stage.id} data-done={index < currentIndex} disabled={busy || stage.id === 'report' || (session.mode === 'osce' && index < currentIndex)} onClick={() => navigate(stage.id)} aria-label={stage.label}>{stage.short}</button>)}</div>
       </header>
-      <div className="case-band"><span>{session.mode === 'osce' ? '无提示、不可重试' : '提供方向性反馈'}</span><span>病例 v{session.caseVersion}</span><span>证据 {session.unlockedEvidence.length} 项</span></div>
+      <div className="case-band"><span>{session.mode === 'osce' ? '无提示、不可重试' : '操作自动保存 · 提供方向性反馈'}</span><span>病例 v{session.caseVersion}</span><span>证据 {session.unlockedEvidence.length} 项</span></div>
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       <div className="training-grid">
-        <section className="workspace-panel training-primary" data-mobile-hidden={mobileView !== 'task'}><div className="panel-head"><h2>{stages[currentIndex]?.label}</h2>{busy && <LoaderCircle className="patient-breath" size={18} />}</div><div className="panel-body">{stageContent}{feedback && <div className="feedback">{feedback}</div>}{trace.length > 0 && <details className="trace"><summary>查看智能体调用的技能与依据</summary><ul>{trace.map((item,index) => <li key={`${item.skill}-${index}`}><strong>{item.skill}：</strong>{item.label}{item.sourceIds.length > 0 ? `（来源 ${item.sourceIds.join('、')}）` : ''}</li>)}</ul></details>}</div></section>
+        <section className="workspace-panel training-primary" data-mobile-hidden={mobileView !== 'task'}><div className="panel-head"><h2>{stages[currentIndex]?.label}</h2>{busy && <LoaderCircle className="patient-breath" size={18} />}</div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{session.mode !== 'osce' && session.stage !== 'report' && <div className="coach-hint"><button type="button" onClick={() => setHintIndex((value) => (value + 1) % hints.length)}><Lightbulb size={15} /> 给我一个方向</button><p>{hints[hintIndex % hints.length]}</p></div>}{feedback && <div className="feedback">{feedback}</div>}{trace.length > 0 && <details className="trace"><summary>查看智能体调用的技能与依据</summary><ul>{trace.map((item,index) => <li key={`${item.skill}-${index}`}><strong>{item.skill}：</strong>{item.label}{item.sourceIds.length > 0 ? `（来源 ${item.sourceIds.join('、')}）` : ''}</li>)}</ul></details>}</div></section>
         <section className="workspace-panel training-patient" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>患儿交互模型</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}童</span></div><PatientFigure patient={caseProfile} selectedTool={selectedTool} onExamine={examine} busy={busy} interactive={session.stage === 'exam'} />{session.stage === 'exam' ? <div className="tool-rack" aria-label="写实体检器材栏">{tools.map(({ id,label,image }) => <button type="button" className="tool" data-selected={selectedTool === id} onClick={() => setSelectedTool(id)} aria-pressed={selectedTool === id} key={id}><span className="tool-photo-wrap"><Image className="tool-photo" src={image} alt="" fill sizes="72px" /></span><span>{label}</span></button>)}</div> : <div className="case-band">进入查体阶段后解锁器材和体表热区</div>}</section>
         <details className="workspace-panel training-record" data-mobile-hidden={mobileView !== 'record'} open><summary className="panel-head"><h2>病例记录</h2><span>{evidenceEvents.length} 项操作证据</span></summary><div className="panel-body"><div className="vitals"><div className="vital"><strong>{session.vitals.temperature}</strong><span>体温 ℃</span></div><div className="vital"><strong>{session.vitals.heartRate}</strong><span>心率</span></div><div className="vital"><strong>{session.vitals.respiratoryRate}</strong><span>呼吸</span></div><div className="vital"><strong>{session.vitals.spo2}%</strong><span>SpO₂</span></div></div><div className="section-head" style={{ marginTop: 18 }}><h3 style={{ margin: 0, fontSize: 14 }}>过程时间线</h3></div>{evidenceEvents.length === 0 ? <div className="empty-note">完成问诊或查体后，已获得证据会出现在这里。</div> : <div className="evidence-log">{evidenceEvents.slice(-8).reverse().map((event) => <div className="evidence-item" key={event.id}><strong>{event.summary}</strong><br/><span>{event.evidenceCodes.join('、')}</span></div>)}</div>}</div></details>
       </div>

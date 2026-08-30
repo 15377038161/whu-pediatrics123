@@ -1,13 +1,13 @@
 'use client';
 
-import { BarChart3, BookOpenText, ClipboardCheck, Home, LogOut, Stethoscope, Users } from 'lucide-react';
+import { BarChart3, BookOpenText, ClipboardCheck, Home, LogOut, Sparkles, Users } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { UserContext } from '@/domain/agent';
 
 const studentNav = [
   { href: '/student', label: '首页', icon: Home },
-  { href: '/student/training?mode=guided', label: '病例', icon: Stethoscope },
+  { href: '/student/practice', label: '专项', icon: Sparkles },
   { href: '/student/osce', label: 'OSCE', icon: ClipboardCheck },
   { href: '/student/reports', label: '报告', icon: BarChart3 },
 ];
