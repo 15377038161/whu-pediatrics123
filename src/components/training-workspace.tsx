@@ -93,6 +93,10 @@ function PatientFigure({ patient, selectedTool, onExamine, busy, interactive }: 
   );
 }
 
+function ToolRack({ selectedTool, onSelect, busy }: { selectedTool: string | null; onSelect: (toolId: string) => void; busy: boolean }) {
+  return <div className="tool-rack" aria-label="写实体检器材栏">{tools.map(({ id,label,image }) => <button type="button" className="tool" data-selected={selectedTool === id} disabled={busy} onClick={() => onSelect(id)} aria-pressed={selectedTool === id} key={id}><span className="tool-photo-wrap"><Image className="tool-photo" src={image} alt="" fill sizes="72px" /></span><span>{label}</span></button>)}</div>;
+}
+
 export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, practiceFocus }: { mode: SessionMode; initialSessionId?: string; initialCaseId?: string; practiceFocus?: PracticeFocus }) {
   const router = useRouter();
   const started = useRef(false);
@@ -224,6 +228,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
 
   const currentIndex = stages.findIndex((stage) => stage.id === session?.stage);
   const evidenceEvents = useMemo(() => session?.events.filter((event) => event.evidenceCodes.length > 0) ?? [], [session?.events]);
+  const examEvidenceCount = evidenceEvents.filter((event) => event.stage === 'exam').length;
 
   if (!session) return <main className="loading-screen" id="main-content"><div><div className="pulse-mark"><Activity /></div><strong>{error ?? '正在建立统一病例会话…'}</strong>{error && <p><a className="btn btn-secondary" href="/student">返回首页</a></p>}</div></main>;
   const caseProfile = getPublicCase(session.caseId);
@@ -265,7 +270,12 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       case 'exam': return <>
         <div className="stage-intro"><p className="eyebrow">器材逻辑校验</p><h2>可视化体格检查</h2><p>先选择器材，再点击患儿对应部位。只有准备动作、器材与部位正确，才能解锁深层体征。</p></div>
         <div className="alert">训练提示：开始深层查体前，请先完成手卫生。</div>
-        <div className="form-actions"><button className="btn btn-primary" onClick={() => setMobileView('patient')}><UserRound size={16} /> 打开患儿模型与器材</button><button className="btn btn-secondary" onClick={() => navigate('tests')}>完成查体，选择辅助检查 <ChevronRight size={16} /></button></div>
+        <div className="exam-flow" aria-label="查体操作进度">
+          <div data-state={selectedTool ? 'done' : 'current'}><span>1</span><p><strong>选择器材</strong><small>{selectedTool ? `当前选择：${tools.find((tool) => tool.id === selectedTool)?.label}` : '从右侧器材车选择本次工具'}</small></p></div>
+          <div data-state={selectedTool && examEvidenceCount === 0 ? 'current' : examEvidenceCount > 0 ? 'done' : 'waiting'}><span>2</span><p><strong>点击检查部位</strong><small>在患儿模型上完成对应操作</small></p></div>
+          <div data-state={examEvidenceCount > 0 ? 'done' : 'waiting'}><span>3</span><p><strong>查看实时记录</strong><small>{examEvidenceCount > 0 ? `已记录 ${examEvidenceCount} 项查体证据` : '有效结果会自动写入病例记录'}</small></p></div>
+        </div>
+        <div className="form-actions"><button className="btn btn-primary exam-open-patient" onClick={() => setMobileView('patient')}><UserRound size={16} /> 打开患儿模型与器材</button><button className="btn btn-secondary" onClick={() => navigate('tests')}>完成查体，选择辅助检查 <ChevronRight size={16} /></button></div>
       </>;
       case 'tests': return <>
         <div className="stage-intro"><p className="eyebrow">临床适宜性</p><h2>选择辅助检查</h2><p>根据已经获得的病史和体征选择检查。低价值检查会被记录，但不会提供额外有效证据。</p></div>
@@ -306,8 +316,9 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       <div className="training-grid">
         <section className="workspace-panel training-primary" data-stage={session.stage} data-mobile-hidden={mobileView !== 'task'}><div className="panel-head"><h2>{stages[currentIndex]?.label}</h2><div className="panel-actions">{session.stage === 'history' && <button className="voice-toggle" type="button" aria-label={voiceEnabled ? '关闭自动语音播报' : '开启自动语音播报'} aria-pressed={voiceEnabled} onClick={toggleVoice}>{voiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}<span>{voiceEnabled ? '自动播报' : '已静音'}</span></button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>
-        <section className="workspace-panel training-patient" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>患儿交互模型</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}童</span></div><PatientFigure patient={caseProfile} selectedTool={selectedTool} onExamine={examine} busy={busy} interactive={session.stage === 'exam'} />{session.stage === 'exam' ? <div className="tool-rack" aria-label="写实体检器材栏">{tools.map(({ id,label,image }) => <button type="button" className="tool" data-selected={selectedTool === id} onClick={() => setSelectedTool(id)} aria-pressed={selectedTool === id} key={id}><span className="tool-photo-wrap"><Image className="tool-photo" src={image} alt="" fill sizes="72px" /></span><span>{label}</span></button>)}</div> : <div className="case-band">进入查体阶段后解锁器材和体表热区</div>}</section>
+        <section className="workspace-panel training-patient" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>患儿交互模型</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}童</span></div><PatientFigure patient={caseProfile} selectedTool={selectedTool} onExamine={examine} busy={busy} interactive={session.stage === 'exam'} />{session.stage !== 'exam' && <div className="case-band">进入查体阶段后解锁器材和体表热区</div>}</section>
         <details className="workspace-panel training-record" data-mobile-hidden={mobileView !== 'record'} open><summary className="panel-head"><h2>实时病例记录</h2><span>{evidenceEvents.length} 项本轮证据</span></summary><div className="panel-body"><p className="record-kicker">接诊已知</p><div className="vitals"><div className="vital"><strong>{session.vitals.temperature}</strong><span>体温 ℃</span></div><div className="vital"><strong>{session.vitals.heartRate}</strong><span>心率</span></div><div className="vital"><strong>{session.vitals.respiratoryRate}</strong><span>呼吸</span></div><div className="vital"><strong>{session.vitals.spo2}%</strong><span>SpO₂</span></div></div><div className="record-section-head"><h3>本轮新增</h3><span>随有效操作实时更新</span></div>{evidenceEvents.length === 0 ? <div className="empty-note">尚未获得新的问诊或查体证据。</div> : <div className="evidence-log" aria-live="polite">{evidenceEvents.slice(-8).reverse().map((event) => <div className="evidence-item" key={event.id}><strong>{event.summary}</strong><span>{stages.find((stage) => stage.id === event.stage)?.short ?? '训练'}阶段 · 已记录 {event.evidenceCodes.length} 项证据</span></div>)}</div>}</div></details>
+        {session.stage === 'exam' && <aside className="workspace-panel training-tools" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>器材车</h2><span>{selectedTool ? `已选：${tools.find((tool) => tool.id === selectedTool)?.label}` : '请选择器材'}</span></div><ToolRack selectedTool={selectedTool} onSelect={setSelectedTool} busy={busy} /></aside>}
       </div>
       <nav className="mobile-workspace-nav" aria-label="临床工作台抽屉切换">
         <button data-active={mobileView === 'task'} onClick={() => setMobileView('task')}><ClipboardList /> 当前任务</button>

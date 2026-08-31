@@ -284,6 +284,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .stage-checklist { display: grid; gap: 8px; margin: 16px 0; padding: 0; list-style: none; }
 .stage-checklist li { padding: 11px 12px 11px 40px; position: relative; background: #f1f3ee; border-radius: 11px; font-size: 14px; }
 .stage-checklist li::before { content: ""; position: absolute; left: 14px; top: 16px; width: 12px; height: 12px; border: 2px solid var(--moss); border-radius: 50%; }
+.exam-flow { margin: 14px 0 8px; display: grid; gap: 8px; }
+.exam-flow > div { min-height: 62px; padding: 10px 12px; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: center; border: 1px solid #e0e8e3; border-radius: 13px; background: #f8fbf9; }
+.exam-flow > div > span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: #e7ece9; color: #74817e; font: 900 13px ui-rounded, sans-serif; }
+.exam-flow p { margin: 0; display: grid; gap: 2px; }
+.exam-flow strong { font-size: 13px; }
+.exam-flow small { color: #6c7d79; font-size: 11px; }
+.exam-flow > div[data-state="current"] { border-color: #a8d7c6; background: #eff9f5; }
+.exam-flow > div[data-state="current"] > span { background: var(--pine); color: white; }
+.exam-flow > div[data-state="done"] > span { background: #d9f0e6; color: var(--pine-dark); }
+.exam-flow > div[data-state="done"] > span::after { content: "✓"; }
+.exam-flow > div[data-state="done"] > span { font-size: 0; }
 .alert { padding: 12px 14px; border: 1px solid #dfc1b9; border-radius: 12px; background: #fff1ec; color: #74352f; font-size: 13px; }
 .loading-screen { min-height: 70svh; display: grid; place-items: center; text-align: center; }
 .pulse-mark { width: 74px; height: 74px; margin: 0 auto 14px; border: 1px solid var(--moss); border-radius: 50%; display: grid; place-items: center; animation: pulse 1.4s ease-in-out infinite; }
@@ -453,9 +464,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .main-content { padding-top: 32px; }
   .training-grid { grid-template-columns: minmax(0, 1.34fr) minmax(0, .96fr) minmax(0, .7fr); align-items: start; padding: 18px 22px; }
   .training-primary { grid-column: 1; }
-  .training-patient { grid-column: 2; grid-row: 1; }
+  .training-patient { grid-column: 2; grid-row: 1 / span 2; }
   .training-record { grid-column: 3; grid-row: 1; }
+  .training-tools { grid-column: 3; grid-row: 2; }
   .training-record .vitals { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .training-tools .panel-head { align-items: flex-start; }
+  .training-tools .panel-head span { color: #687976; text-align: right; font-size: 11px; }
+  .training-tools .tool-rack { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; overflow: visible; background: var(--white); border-top: 0; }
+  .training-tools .tool { width: 100%; min-height: 80px; }
+  .training-tools .tool-photo-wrap { width: 54px; height: 46px; }
+  .exam-open-patient { display: none; }
   .training-primary[data-stage="history"] .history-chat { min-height: 450px; max-height: 560px; }
   .training-shell { padding-bottom: 24px; }
   .mobile-workspace-nav { display: none; }
