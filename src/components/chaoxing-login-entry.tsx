@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, GraduationCap } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
 import type { ChaoxingLoginOptions } from '@/lib/chaoxing-client';
 
 export function ChaoxingLoginEntry({ configured, institutions }: ChaoxingLoginOptions) {
@@ -11,7 +12,7 @@ export function ChaoxingLoginEntry({ configured, institutions }: ChaoxingLoginOp
   if (!configured) {
     return (
       <button className="btn btn-primary btn-block" type="button" disabled>
-        <GraduationCap size={19} /> 超星认证尚未配置
+        <Image className="chaoxing-mark" src="/media/brand/chaoxing-logo.png" alt="" width={135} height={135} /> 超星认证尚未配置
       </button>
     );
   }
@@ -44,7 +45,7 @@ export function ChaoxingLoginEntry({ configured, institutions }: ChaoxingLoginOp
         onClick={login}
         disabled={pending || (institutions.length > 0 && !fid)}
       >
-        <GraduationCap size={19} />
+        <Image className="chaoxing-mark" src="/media/brand/chaoxing-logo.png" alt="" width={135} height={135} />
         {pending ? '正在连接超星…' : '使用超星账号进入'}
         {!pending && <ArrowRight size={17} />}
       </button>

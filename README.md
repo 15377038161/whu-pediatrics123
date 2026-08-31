@@ -28,7 +28,9 @@
 - `src/lib/role-agent.ts`：患儿/家长角色提示词、结构化响应校验与确定性降级。
 - `src/app/api/`：认证、会话、智能体、报告、教师只读查询和同步接口。
 - `src/components/`：移动端优先、桌面重排的统一组件树。
-- `public/media/brand/little-doctor-companion.webp`：原创透明背景小医生陪伴插画（首页与学生首页复用）。
+- `public/media/brand/pediatric-mascot-v2.webp`：原创透明背景非人类儿科助手（首页与学生首页复用）。
+- `public/media/brand/wuhan-university-logo.png`：武汉大学官网品牌下载包中的标准双色校徽。
+- `public/media/brand/chaoxing-logo.png`：超星官方登录站点使用的品牌图标。
 - `supabase/migrations/`：数据表、索引和行级权限。
 - `docs/实施方案/`：架构、UI、接口联调、验收和导入文档。
 - `demo/`：旧静态原型的历史说明，不再作为运行入口。
