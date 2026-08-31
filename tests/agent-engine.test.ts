@@ -37,6 +37,30 @@ test('医生干预改变家长插话和患儿情绪状态', async () => {
   assert.ok(session.behavior.cooperation > 35);
 });
 
+test('学生说出的沟通干预可被自然语言识别并保留原话', async () => {
+  const session = createInitialSession('student-1', 'guided');
+  const pauseText = '家长先不要补充，我想先听孩子说。';
+  const paused = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: pauseText } }, 'event-spoken-pause');
+  assert.equal(paused.session.parentInterruption, 'paused');
+  assert.equal(paused.newMessages[0].content, pauseText);
+  assert.equal(paused.newMessages[1].actor, 'parent');
+
+  const comfortText = '小朋友别紧张，慢慢说，我会陪着你。';
+  const comforted = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: comfortText } }, 'event-spoken-comfort');
+  assert.equal(comforted.session.childEmotion, 'calm');
+  assert.equal(comforted.newMessages[0].content, comfortText);
+  assert.equal(comforted.newMessages[1].actor, 'child');
+});
+
+test('同一句安抚与临床追问会同时更新患儿状态并解锁问诊事实', async () => {
+  const session = createInitialSession('student-1', 'guided');
+  const result = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '小朋友别紧张，慢慢告诉我什么时候开始咳嗽的？' } }, 'event-spoken-combined');
+  assert.equal(result.session.childEmotion, 'calm');
+  assert.ok(result.session.askedIntents.includes('onset'));
+  assert.ok(result.session.askedIntents.includes('cough'));
+  assert.ok(result.session.events.at(-1)?.evidenceCodes.includes('COMM_INTERVENTION'));
+});
+
 test('查体必须同时满足准备动作、器材和部位', async () => {
   const session = createInitialSession('student-1', 'guided');
   const blocked = await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'event-blocked');

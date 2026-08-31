@@ -98,12 +98,35 @@ function validateStageNavigation(session: SessionState, target: Stage): boolean 
   return order.indexOf(target) >= order.indexOf(session.stage);
 }
 
+function detectSpokenIntervention(text: string): Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'] | null {
+  if (/家长.{0,8}(先别|先不要|稍后|等会|暂时).{0,6}(说|回答|补充)|让.{0,4}(孩子|患儿).{0,6}(先说|先回答)|我想先听.{0,6}(孩子|患儿)/.test(text)) return 'pause_parent';
+  if (/(别紧张|不要紧张|不用怕|别害怕|不要害怕|慢慢说|我会陪你|不会疼)/.test(text)) return 'comfort_child';
+  if (/(孩子|患儿|小朋友|你).{0,8}(自己说|自己回答|告诉我)|请.{0,6}(孩子|患儿|小朋友|你).{0,8}(回答|说|告诉我)/.test(text)) return 'child_answer';
+  return null;
+}
+
+function applyInterventionState(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action']): void {
+  if (action === 'pause_parent') {
+    session.parentInterruption = 'paused';
+  } else if (action === 'comfort_child') {
+    session.childEmotion = 'calm';
+    session.parentInterruption = 'supportive';
+    session.behavior.cooperation = Math.min(100, session.behavior.cooperation + 35);
+  } else {
+    session.behavior.childResponseStyle = 'cooperative';
+  }
+}
+
 async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>): Promise<AgentTurnResult> {
+  const spokenIntervention = detectSpokenIntervention(text);
   const pediatricCase = getCase(session.caseId);
-  const studentMessage = message('student', text);
   const intents = identifyHistoryIntents(session.caseId, text);
+  if (spokenIntervention && intents.length === 0) return handleIntervention(session, spokenIntervention, clientEventId, text);
+  if (spokenIntervention) applyInterventionState(session, spokenIntervention);
+  const studentMessage = message('student', text);
   const newMessages: AgentMessage[] = [studentMessage];
   const traces = [trace('角色调度', '按患儿年龄、问题意图和家长插话状态选择回答者')];
+  if (spokenIntervention) traces.push(trace('病例状态', '从学生原话识别沟通干预并更新应答状态'));
 
   if (intents.length === 0) {
     newMessages.push(
@@ -155,7 +178,9 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   if (intents.some((intent) => intent.id === 'exposure')) session.behavior.hiddenExposureRevealed = true;
   session.behavior.childResponseStyle = session.childEmotion === 'calm' ? 'cooperative' : 'brief';
   const labels = intents.map((intent) => intent.label).join('、');
-  session.events.push(clinicalEvent(clientEventId, 'ASK_QUESTION', 'history', `完成${labels}问诊`, true, intents.map((intent) => intent.evidenceCode)));
+  const evidenceCodes = intents.map((intent) => intent.evidenceCode);
+  if (spokenIntervention) evidenceCodes.push('COMM_INTERVENTION');
+  session.events.push(clinicalEvent(clientEventId, 'ASK_QUESTION', 'history', `完成${labels}问诊${spokenIntervention ? '并完成沟通干预' : ''}`, true, evidenceCodes));
   session.messages.push(...newMessages);
   session.stage = 'history';
   session.updatedAt = now();
@@ -165,25 +190,21 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   return { session, newMessages, feedback: feedbackFor(session, `已形成“${labels}”的过程证据。`), trace: traces, runtime: roleResult.runtime };
 }
 
-function handleIntervention(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'], clientEventId: string): AgentTurnResult {
+function handleIntervention(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'], clientEventId: string, spokenText?: string): AgentTurnResult {
   const patientName = getCase(session.caseId).patientName;
   const copy = {
     child_answer: `${patientName}，接下来请你自己告诉我哪里不舒服，可以慢慢说。`,
     pause_parent: '我想先听孩子本人回答，家长稍后再补充，可以吗？',
     comfort_child: `${patientName}别紧张，我会一步一步告诉你要做什么，不舒服可以随时说。`,
   }[action];
-  const studentMessage = message('student', copy);
+  const studentMessage = message('student', spokenText ?? copy);
   let response: AgentMessage;
+  applyInterventionState(session, action);
   if (action === 'pause_parent') {
-    session.parentInterruption = 'paused';
     response = message('parent', '好的，我等孩子说完再补充。', { emotion: 'neutral' });
   } else if (action === 'comfort_child') {
-    session.childEmotion = 'calm';
-    session.parentInterruption = 'supportive';
-    session.behavior.cooperation = Math.min(100, session.behavior.cooperation + 35);
     response = message('child', '好……我会慢慢说。', { emotion: 'calm' });
   } else {
-    session.behavior.childResponseStyle = 'cooperative';
     response = message('child', '嗯，我自己说。', { emotion: session.childEmotion });
   }
   const newMessages = [studentMessage, response];
@@ -194,7 +215,7 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
   return {
     session,
     newMessages,
-    feedback: feedbackFor(session, '干预已写入会话状态，将影响后续回答顺序与配合度。'),
+    feedback: feedbackFor(session, '已识别你的沟通表达，将影响后续回答顺序与患儿配合度。'),
     trace: [trace('角色调度', '更新患儿情绪、家长插话和配合度状态'), trace('病例状态', '记录医生干预证据')],
   };
 }
