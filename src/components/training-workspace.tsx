@@ -118,6 +118,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const spokenMessageIds = useRef(new Set<string>());
   const historyChatRef = useRef<HTMLDivElement>(null);
   const examAudioRef = useRef<HTMLAudioElement>(null);
+  const roleAudioRef = useRef<HTMLAudioElement | null>(null);
   const [session, setSession] = useState<SessionState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,35 +138,42 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [hintOpen, setHintOpen] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
 
-  const queueRoleSpeech = useCallback((content: string, actor: 'child' | 'parent') => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
-    const utterance = new SpeechSynthesisUtterance(content);
-    utterance.lang = 'zh-CN';
-    utterance.rate = actor === 'child' ? 0.94 : 1;
-    utterance.pitch = actor === 'child' ? 1.2 : 1.04;
-    const chineseVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith('zh'));
-    if (chineseVoice) utterance.voice = chineseVoice;
-    window.speechSynthesis.speak(utterance);
-    return true;
-  }, []);
-
-  const replayRoleSpeech = useCallback((content: string, actor: 'child' | 'parent') => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
-    if (!queueRoleSpeech(content, actor)) setFeedback('当前浏览器不支持语音播报，请直接阅读对话文字。');
-  }, [queueRoleSpeech]);
-
-  const speakExamObservation = useCallback((content: string) => {
+  const fallbackSpeech = useCallback((content: string, actor: 'child' | 'parent' | 'narrator') => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(content);
     utterance.lang = 'zh-CN';
-    utterance.rate = 0.92;
-    utterance.pitch = 1;
-    const chineseVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith('zh'));
-    if (chineseVoice) utterance.voice = chineseVoice;
+    utterance.rate = actor === 'child' ? 0.94 : actor === 'narrator' ? 0.92 : 1;
+    utterance.pitch = actor === 'child' ? 1.2 : 1;
+    const zh = window.speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith('zh'));
+    if (zh) utterance.voice = zh;
     window.speechSynthesis.speak(utterance);
     return true;
   }, []);
+
+  const playTTS = useCallback(async (content: string, persona: 'child' | 'parent' | 'narrator') => {
+    const prev = roleAudioRef.current;
+    if (prev) prev.pause();
+    try {
+      const resp = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: content, persona }) });
+      if (!resp.ok) throw new Error('tts_unavailable');
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = roleAudioRef.current ?? (roleAudioRef.current = new Audio());
+      if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
+      audio.src = url;
+      await audio.play();
+      return true;
+    } catch {
+      return fallbackSpeech(content, persona);
+    }
+  }, [fallbackSpeech]);
+
+  const replayRoleSpeech = useCallback((content: string, actor: 'child' | 'parent') => {
+    void playTTS(content, actor);
+  }, [playTTS]);
+
+  const speakExamObservation = useCallback((content: string) => playTTS(content, 'narrator'), [playTTS]);
 
   const playExamObservationAudio = useCallback((observation: ExamObservation) => {
     if (observation.status === 'success' && observation.toolId === 'stethoscope') {
@@ -176,7 +184,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       void audio.play().catch(() => setFeedback('浏览器阻止了自动播放，请点击查体结果卡右上角的声音按钮。'));
       return true;
     }
-    return speakExamObservation(observation.detail);
+    void speakExamObservation(observation.detail);
+    return true;
   }, [speakExamObservation]);
 
   useEffect(() => {
@@ -195,12 +204,9 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     if (!session) return;
     const pending = session.messages.filter((item) => isSpokenActor(item.actor) && !spokenMessageIds.current.has(item.id));
     session.messages.forEach((item) => spokenMessageIds.current.add(item.id));
-    if (!voiceEnabled || pending.length === 0 || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    pending.forEach((item) => {
-      if (isSpokenActor(item.actor)) queueRoleSpeech(item.content, item.actor);
-    });
-  }, [queueRoleSpeech, session, voiceEnabled]);
+    if (!voiceEnabled || pending.length === 0) return;
+    void pending.reduce<Promise<void>>((chain, item) => chain.then(() => { if (isSpokenActor(item.actor)) void playTTS(item.content, item.actor); }), Promise.resolve());
+  }, [playTTS, session, voiceEnabled]);
 
   useEffect(() => {
     if (session?.stage !== 'history') return;

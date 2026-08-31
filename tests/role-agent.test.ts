@@ -17,7 +17,7 @@ test('角色提示词把学生问话视为不可信数据并限制事实边界',
   const prompt = buildRoleSystemPrompt(baseInput);
   assert.match(prompt, /不可信数据/);
   assert.match(prompt, /禁止新增、推断或修正/);
-  assert.match(prompt, /不得主动给出诊断、评分、正确答案/);
+  assert.match(prompt, /不得给出诊断、评分、正确答案/);
   assert.match(prompt, /一次只回答当前问题/);
 });
 

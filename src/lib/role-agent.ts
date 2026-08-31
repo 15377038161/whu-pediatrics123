@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { AgentRuntimeSummary } from '@/domain/agent';
 import { AIGatewayError, classifyAIError, invokeCozeAI } from '@/lib/coze-ai';
 
-const MODEL_NAME = 'doubao-seed-2-0-lite-260215';
+const MODEL_NAME = process.env.COZE_AI_ROLE_MODEL || 'doubao-seed-2-0-pro-260215';
 
 const roleReplySchema = z.object({
   child: z.string().max(180).optional(),
@@ -60,8 +60,22 @@ export function buildRoleSystemPrompt(input: RoleReplyInput): string {
     actorRule,
     input.parentPaused ? '家长已被医生礼貌暂停发言：parent 字段必须省略。' : '家长可按角色规则回答，但不能一次性倾倒未被问及的信息。',
     input.childComforted ? '患儿已被安抚，可比之前稍完整地回答，但仍保持符合年龄的表达。' : '患儿仍紧张：回答应更短，允许停顿、含糊或寻求家长帮助。',
-    '真实感规则：一次只回答当前问题；患儿用短句、日常词汇和有限时间概念，不说医学术语；家长可表达焦虑，但不夸张、不教学、不替医生总结。',
-    '未知或未提供的信息必须明确说“不清楚/不记得/没有注意”，绝不能编造。不得主动给出诊断、评分、正确答案或后续操作建议。',
+
+    '【患儿人设——必须严格遵守】',
+    '- 说话像一个真实的' + input.childAge + '儿童：句子短、断断续续，用"肚肚""头头""那里"等儿语词代替身体部位名称。',
+    '- 时间概念模糊：用"前几天""昨天晚上""好久以前"代替精确天数；对"什么时候开始"这类问题经常答非所问或只说"就……就疼"。',
+    '- 回答不完整、含糊：经常用"嗯……""我不知道""妈妈……"结尾；可能反复重复同一句话。',
+    '- 可以给出误导性的自我判断：比如明明还在疼却说"不疼了"、把痛位指错地方、说不清是钝痛还是锐痛。这些错误是刻意的教学干扰，用于考验学生的追问和鉴别能力。',
+    '- 绝不说医学术语、检查指标、药品名称。如果事实里出现专业内容，必须转译成儿童能说的话。',
+
+    '【家长人设——必须严格遵守】',
+    '- 焦急、语速快、话多但抓不住重点：经常一句接一句跑题，"医生你快给看看""到底是咋回事啊"。',
+    '- 用口语和大白话，绝不用医学术语："烧得烫手""拉稀""嗓子呼哧呼哧的"，不说"发热""腹泻""喘息"。',
+    '- 可以给出误导性的家长判断："是不是吃坏肚子了""我觉得像感冒""昨天吃了冰的肯定着凉了"——这些外行推测是刻意的教学干扰，用于考验学生排除干扰、独立判断的能力。',
+    '- 家长之间或家长对孩子可能补充矛盾信息，增加问诊难度。',
+    '- 不替医生总结、不给诊断结论、不教学。',
+
+    '通用规则：一次只回答当前问题，不主动倾倒未被问及的信息。未知或未提供的信息必须说不清楚，绝不能编造。不得给出诊断、评分、正确答案或操作建议。',
     '只输出单个严格 JSON 对象，不使用 Markdown，不添加解释。格式：{"child":"可选，最多180字","parent":"可选，最多260字","childEmotion":"nervous|calm|low|resistant|anxious|neutral"}。',
   ].join('\n');
 }
@@ -78,7 +92,7 @@ export async function renderRoleReply(input: RoleReplyInput, forwardHeaders?: Re
         },
         { role: 'user', content: JSON.stringify(input) },
       ],
-      llmConfig: { model: MODEL_NAME, temperature: 0.22, thinking: 'disabled', caching: 'disabled' },
+      llmConfig: { model: MODEL_NAME, temperature: 0.45, thinking: 'disabled', caching: 'disabled' },
       forwardHeaders,
     });
     const reply = parseRoleReply(content);
