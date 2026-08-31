@@ -1,5 +1,4 @@
 import { ArrowRight, ClipboardCheck, Clock3, HeartPulse, MessagesSquare, Sparkles, Stethoscope } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { CASE_CATALOG, getPublicCase } from '@/domain/case-catalog';
 import { AgentRepository } from '@/lib/repository';
@@ -32,7 +31,6 @@ export default async function StudentHome() {
           </div>
           <div className="case-note"><span><Clock3 size={14} /> 建议 {activeCase.expectedMinutes} 分钟</span><span><HeartPulse size={14} /> 自主问诊与检查</span><span>过程自动保存</span></div>
         </div>
-        <div className="student-hero-doctor" aria-hidden="true"><span>我在诊室陪你一起思考</span><Image src="/media/brand/pediatric-mascot-v2.webp" alt="" width={760} height={777} priority sizes="(max-width: 699px) 145px, 230px" /></div>
       </section>
 
       <section className="journey-strip" aria-label="训练闭环">

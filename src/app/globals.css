@@ -59,31 +59,23 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .scene-orb-one { width: min(46vw, 620px); aspect-ratio: 1; left: -12vw; top: -22%; border: 1px solid rgba(39,108,99,.14); box-shadow: inset 0 0 0 70px rgba(117,160,150,.035), inset 0 0 0 140px rgba(117,160,150,.025); }
 .scene-orb-two { width: 260px; height: 260px; right: 5%; bottom: -110px; background: rgba(255,218,119,.18); animation-delay: -4s; }
 .luojia-silhouette { position: absolute; left: 5%; bottom: 0; width: min(720px, 62vw); height: 22vh; opacity: .09; background: linear-gradient(90deg, transparent 0 7%, var(--pine) 7% 10%, transparent 10% 16%, var(--pine) 16% 19%, transparent 19% 27%, var(--pine) 27% 33%, transparent 33% 40%, var(--pine) 40% 47%, transparent 47% 56%, var(--pine) 56% 62%, transparent 62% 68%, var(--pine) 68% 76%, transparent 76%); clip-path: polygon(0 100%,0 78%,8% 78%,8% 46%,13% 46%,16% 20%,19% 46%,27% 46%,27% 61%,40% 61%,40% 35%,45% 16%,50% 35%,56% 35%,56% 67%,68% 67%,68% 42%,73% 42%,77% 25%,81% 42%,87% 42%,87% 76%,100% 76%,100% 100%); }
-.landing-ecg { position: absolute; z-index: 0; left: -3%; right: -3%; top: 54%; height: clamp(160px, 26vw, 260px); opacity: .58; transform: rotate(-1.2deg); mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 84%, transparent 100%); }
+.landing-ecg { position: absolute; z-index: 0; left: -3%; right: -3%; top: 54%; height: clamp(160px, 26vw, 260px); opacity: .58; mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 84%, transparent 100%); }
 .landing-ecg svg { width: 100%; height: 100%; overflow: visible; }
 .landing-ecg-ghost, .landing-ecg-line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .landing-ecg-ghost { stroke: rgba(231,119,97,.08); stroke-width: 15; }
 .landing-ecg-line { stroke: rgba(217,91,73,.28); stroke-width: 2.4; stroke-dasharray: 2100; stroke-dashoffset: 2100; filter: drop-shadow(0 0 8px rgba(226,105,86,.18)); animation: ambientEcgTrace 5.8s linear infinite; }
-.landing-ecg-pulse { position: absolute; left: 76%; top: 49%; width: 8px; height: 8px; border-radius: 50%; background: rgba(217,91,73,.62); box-shadow: 0 0 0 10px rgba(217,91,73,.08), 0 0 22px rgba(217,91,73,.28); animation: heartbeat 1.7s ease-in-out infinite; }
 .landing-content { position: relative; z-index: 2; width: min(100%, 1240px); margin: 0 auto; padding: 32px 20px max(28px, env(safe-area-inset-bottom)); color: var(--ink); }
 .landing-intro { min-width: 0; max-width: 760px; }
 .brand-lockup { display: flex; align-items: center; gap: 14px; }
 .brand-logo { width: 62px; height: 62px; object-fit: contain; border-radius: 50%; box-shadow: 0 8px 24px rgba(0,37,84,.12); }
 .brand-name { margin: 0; font-family: var(--font-display); font-size: clamp(29px, 7vw, 48px); letter-spacing: .06em; line-height: 1.15; }
 .brand-kicker { margin: 4px 0 0; color: #68817d; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; }
-.landing-hero-row { position: relative; min-height: 300px; display: grid; grid-template-columns: minmax(0,1fr) 158px; align-items: center; gap: 8px; }
-.landing-copy { min-width: 0; max-width: 620px; margin: 34px 0; }
+.landing-hero-row { position: relative; min-height: 260px; display: flex; align-items: center; }
+.landing-copy { min-width: 0; max-width: 650px; margin: 38px 0 32px; }
 .landing-copy h2 { max-width: 570px; font-family: var(--font-display); font-size: clamp(34px, 7vw, 52px); line-height: 1.18; margin: 15px 0 12px; font-weight: 800; letter-spacing: .03em; }
 .landing-copy p { margin: 0; color: var(--muted); max-width: 460px; font-size: clamp(14px, 2vw, 17px); }
 .welcome-chip { width: fit-content; min-height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border: 1px solid #f3c9bd; border-radius: 999px; color: #a9473c; background: #fff2ed; font-size: 12px; font-weight: 800; }
-.landing-status { width: fit-content; display: flex; align-items: center; gap: 7px; margin-top: 22px; color: var(--pine-dark); font-size: 12px; font-weight: 800; }
-.landing-status svg { color: var(--brick); }
-.landing-status i { width: 4px; height: 4px; border-radius: 50%; background: #a4bbb6; }
-.landing-status strong { color: var(--brick-dark); font: 900 17px ui-rounded, sans-serif; }
-.landing-doctor { position: relative; align-self: center; height: 250px; display: flex; align-items: center; justify-content: center; animation: doctorFloat 4.8s ease-in-out infinite; }
-.landing-doctor img { width: 182px; height: auto; max-height: 250px; object-fit: contain; filter: drop-shadow(0 20px 24px rgba(36,89,79,.18)); }
-.doctor-speech { position: absolute; z-index: 2; right: -2px; top: 17px; width: 100px; padding: 8px 10px; border: 1px solid #f0d38b; border-radius: 14px 14px 14px 4px; color: #705516; background: #fff8d9; box-shadow: var(--shadow-soft); font-size: 11px; font-weight: 800; line-height: 1.4; }
-.landing-trust { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 2px; color: #52716d; font-size: 13px; }
+.landing-trust { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 12px; color: #52716d; font-size: 13px; }
 .landing-trust span { display: inline-flex; align-items: center; gap: 7px; }
 .login-panel { position: relative; padding: 24px; border: 1px solid rgba(25,117,104,.15); border-radius: 28px 28px 40px 28px; background: rgba(255,255,255,.9); color: var(--ink); box-shadow: 0 26px 70px rgba(39,75,71,.13); backdrop-filter: blur(20px); }
 .login-panel-icon { width: 48px; height: 48px; margin-bottom: 14px; display: grid; place-items: center; border-radius: 16px 16px 22px 16px; color: var(--pine-dark); background: var(--mint); transform: rotate(-3deg); }
@@ -141,11 +133,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .hero-actions .btn-secondary { background: white; color: var(--ink); border-color: var(--line); }
 .case-note { display: flex; gap: 12px 18px; flex-wrap: wrap; margin-top: 22px; font-size: 13px; color: #607976; }
 .case-note span { display: inline-flex; align-items: center; gap: 5px; }
-.student-hero { display: grid; grid-template-columns: minmax(0,1fr) 130px; gap: 6px; align-items: center; padding-right: 10px; }
-.student-hero-copy { padding: 8px 0; }
-.student-hero-doctor { position: relative; align-self: end; height: 280px; display: flex; align-items: end; justify-content: center; }
-.student-hero-doctor img { width: 170px; height: auto; max-height: 280px; object-fit: contain; filter: drop-shadow(0 18px 18px rgba(25,83,74,.16)); }
-.student-hero-doctor span { position: absolute; z-index: 2; right: 6px; top: 8px; width: 116px; padding: 8px; border: 1px solid #efd28c; border-radius: 13px 13px 13px 4px; background: #fff9df; color: #715617; font-size: 11px; font-weight: 800; line-height: 1.4; }
+.student-hero { display: block; }
+.student-hero-copy { max-width: 720px; padding: 8px 0; }
 .journey-strip { margin-top: 14px; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
 .journey-strip::-webkit-scrollbar { display: none; }
 .journey-strip div { flex: 0 0 112px; min-height: 62px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; scroll-snap-align: start; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.8); box-shadow: var(--shadow-soft); }
@@ -395,18 +384,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @keyframes worried { 50% { transform: scaleX(.82); } }
 @keyframes pulse { 50% { transform: scale(.94); box-shadow: 0 0 0 12px rgba(103,133,120,.12); } }
 @keyframes ambientEcgTrace { 0% { stroke-dashoffset: 2100; opacity: .16; } 10% { opacity: .9; } 78%,100% { stroke-dashoffset: 0; opacity: .72; } }
-@keyframes heartbeat { 0%,28%,100% { transform: scale(.82); opacity: .5; } 12% { transform: scale(1.2); opacity: 1; } 18% { transform: scale(.92); } 23% { transform: scale(1.08); } }
 @keyframes sceneFloat { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(0,18px,0); } }
-@keyframes doctorFloat { 0%,100% { transform: translateY(0) rotate(-.4deg); } 50% { transform: translateY(-7px) rotate(.4deg); } }
 
 @media (min-width: 700px) {
   .landing { align-items: center; }
   .landing-content { display: grid; grid-template-columns: minmax(0,1.2fr) 390px; gap: clamp(48px,7vw,100px); align-items: center; padding: 50px 40px; transform: translateY(-6vh); }
   .landing-copy h2 { white-space: nowrap; }
-  .landing-hero-row { min-height: 330px; grid-template-columns: minmax(0,1fr) 235px; }
-  .landing-doctor { height: 310px; }
-  .landing-doctor img { width: 248px; max-height: 310px; }
-  .doctor-speech { right: -2px; top: 24px; width: 110px; font-size: 12px; }
+  .landing-hero-row { min-height: 280px; }
   .login-panel { padding: 26px; }
   .entry-list { grid-template-columns: repeat(3,1fr); }
   .case-library { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -419,24 +403,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .report-summary { grid-template-columns: repeat(4,1fr); }
   .practice-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .teacher-metrics { grid-template-columns: repeat(4,1fr); }
-  .student-hero { grid-template-columns: minmax(0,1fr) 230px; padding-right: 22px; }
-  .student-hero-doctor { height: 320px; }
-  .student-hero-doctor img { width: 230px; max-height: 285px; }
   .student-filter { grid-template-columns: minmax(280px,460px) auto; align-items: center; }
   .clinical-submissions { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 699px) {
-  .landing-hero-row { min-height: 330px; display: block; padding-right: 108px; }
-  .landing-doctor { position: absolute; right: -20px; bottom: 4px; width: 155px; height: 220px; }
-  .landing-doctor img { width: 152px; max-height: 220px; }
-  .doctor-speech { right: 5px; top: -5px; width: 96px; }
+  .landing-hero-row { min-height: 260px; display: flex; padding-right: 0; }
   .landing-ecg { top: 48%; height: 190px; opacity: .42; }
   .landing-trust { gap: 8px 13px; }
-  .student-hero { min-height: 390px; display: block; padding-right: 78px; }
-  .student-hero-doctor { position: absolute; right: -15px; bottom: -8px; width: 128px; height: 250px; }
-  .student-hero-doctor img { width: 150px; max-height: 205px; }
-  .student-hero-doctor span { right: 7px; top: 2px; width: 105px; }
   .hero-actions .btn { width: 100%; }
   .case-card-copy { grid-template-columns: 1fr; grid-template-areas: "number" "title" "meta" "symptoms" "action"; }
   .case-card .btn { justify-self: start; margin-top: 5px; }
