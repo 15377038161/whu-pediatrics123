@@ -2,7 +2,7 @@
 
 import {
   Activity, ArrowLeft, Check, ChevronRight, Clock3, Home,
-  ClipboardList, Lightbulb, LoaderCircle, Mic, Send, Stethoscope, UserRound, Volume2, VolumeX,
+  ClipboardList, Lightbulb, LoaderCircle, Mic, Send, Stethoscope, UserRound, Volume2, VolumeX, Waves,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -70,7 +70,15 @@ function communicationContext(session: SessionState) {
   return openingParent ? [openingParent, ...recentClinicalResults] : recentClinicalResults;
 }
 
-function PatientFigure({ patient, selectedTool, onExamine, busy, interactive }: { patient: PublicCaseProfile; selectedTool: string | null; onExamine: (part: string) => void; busy: boolean; interactive: boolean }) {
+type ExamObservation = {
+  bodyPartId: string;
+  title: string;
+  detail: string;
+  toolId: string;
+  status: 'success' | 'blocked';
+};
+
+function PatientFigure({ patient, selectedTool, onExamine, onReplayObservation, observation, busy, interactive }: { patient: PublicCaseProfile; selectedTool: string | null; onExamine: (part: string) => void; onReplayObservation: (observation: ExamObservation) => void; observation: ExamObservation | null; busy: boolean; interactive: boolean }) {
   const hotspots = [
     ['forehead','头面'], ['mouth','口咽'], ['chest','胸部'], ['upper-arm','上臂'], ['finger','手指'], ['hands','双手'],
   ];
@@ -85,9 +93,15 @@ function PatientFigure({ patient, selectedTool, onExamine, busy, interactive }: 
           priority
           sizes="(max-width: 767px) 92vw, (max-width: 1199px) 38vw, 360px"
         />
-        {interactive && hotspots.map(([id,label]) => <button key={id} disabled={busy} type="button" className={`hotspot hotspot-${id === 'upper-arm' ? 'arm' : id}`} onClick={() => onExamine(id)} aria-label={`使用当前器材检查${label}`}><span aria-hidden="true" />{label}</button>)}
+        {interactive && hotspots.map(([id,label]) => <button key={id} disabled={busy} type="button" className={`hotspot hotspot-${id === 'upper-arm' ? 'arm' : id}`} data-observed={observation?.bodyPartId === id ? observation.status : undefined} onClick={() => onExamine(id)} aria-label={`使用当前器材检查${label}`}><span aria-hidden="true" />{label}</button>)}
       </div>
       <div className="patient-caption"><span>{interactive ? <>当前器材：<strong>{tools.find((tool) => tool.id === selectedTool)?.label ?? '未选择'}</strong></> : <strong>观察模式</strong>}</span><span className="emotion-pill">紧张 · 呼吸较快</span></div>
+      {interactive && observation && <div className="exam-observation" data-status={observation.status} data-tool={observation.toolId} role="status" aria-live="polite">
+        <div className="exam-observation-head"><span className="exam-observation-icon" aria-hidden="true">{observation.toolId === 'stethoscope' ? <Stethoscope /> : <Activity />}</span><p><small>{observation.status === 'success' ? '查体结果已获得' : '本次操作未生效'}</small><strong>{observation.title}</strong></p><button type="button" onClick={() => onReplayObservation(observation)} aria-label={observation.toolId === 'stethoscope' && observation.status === 'success' ? '播放真实儿科听诊音' : '语音重播查体结果'} title="播放结果声音"><Volume2 /></button></div>
+        {observation.toolId === 'stethoscope' && observation.status === 'success' && <div className="exam-auscultation" aria-hidden="true"><Waves /><span /><span /><span /><span /><span /></div>}
+        <p className="exam-observation-detail">{observation.detail}</p>
+        <small className="exam-observation-note">{observation.toolId === 'stethoscope' && observation.status === 'success' ? <>真实儿科听诊录音节选 · <a href="https://github.com/SJTU-YONGFU-RESEARCH-GRP/SPRSound" target="_blank" rel="noreferrer">SPRSound / CC BY 4.0</a></> : '标准化患儿教学反馈 · 文字结果来自病例规则'}</small>
+      </div>}
       <p className="patient-disclosure">虚拟标准化患儿 · 非真实病例影像</p>
     </div>
   );
@@ -103,12 +117,14 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const finishing = useRef(false);
   const spokenMessageIds = useRef(new Set<string>());
   const historyChatRef = useRef<HTMLDivElement>(null);
+  const examAudioRef = useRef<HTMLAudioElement>(null);
   const [session, setSession] = useState<SessionState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [question, setQuestion] = useState('');
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const [examObservation, setExamObservation] = useState<ExamObservation | null>(null);
   const [diagnosis, setDiagnosis] = useState('');
   const [summary, setSummary] = useState('');
   const [differentials, setDifferentials] = useState('');
@@ -137,6 +153,31 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     if (!queueRoleSpeech(content, actor)) setFeedback('当前浏览器不支持语音播报，请直接阅读对话文字。');
   }, [queueRoleSpeech]);
+
+  const speakExamObservation = useCallback((content: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(content);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+    const chineseVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith('zh'));
+    if (chineseVoice) utterance.voice = chineseVoice;
+    window.speechSynthesis.speak(utterance);
+    return true;
+  }, []);
+
+  const playExamObservationAudio = useCallback((observation: ExamObservation) => {
+    if (observation.status === 'success' && observation.toolId === 'stethoscope') {
+      const audio = examAudioRef.current;
+      if (!audio) return false;
+      audio.pause();
+      audio.currentTime = 0;
+      void audio.play().catch(() => setFeedback('浏览器阻止了自动播放，请点击查体结果卡右上角的声音按钮。'));
+      return true;
+    }
+    return speakExamObservation(observation.detail);
+  }, [speakExamObservation]);
 
   useEffect(() => {
     if (started.current) return;
@@ -213,7 +254,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
 
   async function navigate(stage: Stage) {
     const result = await sendEvent({ type: 'NAVIGATE_STAGE', data: { stage } });
-    if (result) { setMobileView('task'); setHintIndex(0); setHintOpen(false); }
+    if (result) { setMobileView('task'); setHintIndex(0); setHintOpen(false); setExamObservation(null); }
   }
   async function submitQuestion() {
     if (!question.trim()) return;
@@ -222,8 +263,22 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     if (!result) setQuestion(text);
   }
   async function examine(part: string) {
-    if (!selectedTool) { setError('请先从器材栏选择检查工具。'); return; }
-    await sendEvent({ type: 'EXAM_ACTION', data: { toolId: selectedTool, bodyPartId: part } });
+    const partLabel = ({ forehead: '头面', mouth: '口咽', chest: '胸部', 'upper-arm': '上臂', finger: '手指', hands: '双手' } as Record<string,string>)[part] ?? part;
+    if (!selectedTool) {
+      const detail = '请先从器材车选择检查工具，再点击需要检查的部位。';
+      setError(detail);
+      setExamObservation({ bodyPartId: part, title: partLabel, detail, toolId: 'none', status: 'blocked' });
+      return;
+    }
+    const toolLabel = tools.find((tool) => tool.id === selectedTool)?.label ?? selectedTool;
+    const result = await sendEvent({ type: 'EXAM_ACTION', data: { toolId: selectedTool, bodyPartId: part } });
+    if (!result) return;
+    const latestEvent = result.session.events.at(-1);
+    const success = latestEvent?.type === 'EXAM_ACTION' && latestEvent.correct === true;
+    const detail = success ? (result.newMessages.at(-1)?.content ?? latestEvent.summary) : (result.feedback ?? '本次操作未获得有效查体结果。');
+    const observation: ExamObservation = { bodyPartId: part, title: `${toolLabel} · ${partLabel}`, detail, toolId: selectedTool, status: success ? 'success' : 'blocked' };
+    setExamObservation(observation);
+    if (success && voiceEnabled) playExamObservationAudio(observation);
   }
 
   const currentIndex = stages.findIndex((stage) => stage.id === session?.stage);
@@ -308,6 +363,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
 
   return (
     <main className="training-shell" id="main-content">
+      <audio ref={examAudioRef} src="/media/clinical/audio/pediatric-fine-crackles-right.mp3" preload="auto" />
       <header className="training-head">
         <div className="training-toolbar"><button className="icon-btn" type="button" onClick={leaveTraining} aria-label="暂时退出训练"><ArrowLeft size={18} /></button><div className="training-title"><strong>{caseProfile.title}</strong><span>{session.mode === 'osce' ? 'OSCE 考核模式' : session.mode === 'practice' ? `专项训练 · ${currentFocus ? focusLabels[currentFocus] : '能力补练'}` : '智能体引导模式'}</span></div>{session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <button className="icon-btn" type="button" onClick={leaveTraining} aria-label="回到首页"><Home size={17} /></button>}</div>
         <div className="stage-scroll" aria-label="训练阶段">{stages.map((stage,index) => <button key={stage.id} className="stage-chip" data-current={session.stage === stage.id} data-done={index < currentIndex} disabled={busy || stage.id === 'report' || (session.mode === 'osce' && index < currentIndex)} onClick={() => navigate(stage.id)} aria-label={stage.label}>{stage.short}</button>)}</div>
@@ -316,9 +372,9 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       <div className="training-grid">
         <section className="workspace-panel training-primary" data-stage={session.stage} data-mobile-hidden={mobileView !== 'task'}><div className="panel-head"><h2>{stages[currentIndex]?.label}</h2><div className="panel-actions">{session.stage === 'history' && <button className="voice-toggle" type="button" aria-label={voiceEnabled ? '关闭自动语音播报' : '开启自动语音播报'} aria-pressed={voiceEnabled} onClick={toggleVoice}>{voiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}<span>{voiceEnabled ? '自动播报' : '已静音'}</span></button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>
-        <section className="workspace-panel training-patient" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>患儿交互模型</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}童</span></div><PatientFigure patient={caseProfile} selectedTool={selectedTool} onExamine={examine} busy={busy} interactive={session.stage === 'exam'} />{session.stage !== 'exam' && <div className="case-band">进入查体阶段后解锁器材和体表热区</div>}</section>
+        <section className="workspace-panel training-patient" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>患儿交互模型</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}童</span></div><PatientFigure patient={caseProfile} selectedTool={selectedTool} onExamine={examine} onReplayObservation={(observation) => { if (!playExamObservationAudio(observation)) setFeedback('当前浏览器不支持结果声音播放，请直接阅读查体结果。'); }} observation={examObservation} busy={busy} interactive={session.stage === 'exam'} />{session.stage !== 'exam' && <div className="case-band">进入查体阶段后解锁器材和体表热区</div>}</section>
         <details className="workspace-panel training-record" data-mobile-hidden={mobileView !== 'record'} open><summary className="panel-head"><h2>实时病例记录</h2><span>{evidenceEvents.length} 项本轮证据</span></summary><div className="panel-body"><p className="record-kicker">接诊已知</p><div className="vitals"><div className="vital"><strong>{session.vitals.temperature}</strong><span>体温 ℃</span></div><div className="vital"><strong>{session.vitals.heartRate}</strong><span>心率</span></div><div className="vital"><strong>{session.vitals.respiratoryRate}</strong><span>呼吸</span></div><div className="vital"><strong>{session.vitals.spo2}%</strong><span>SpO₂</span></div></div><div className="record-section-head"><h3>本轮新增</h3><span>随有效操作实时更新</span></div>{evidenceEvents.length === 0 ? <div className="empty-note">尚未获得新的问诊或查体证据。</div> : <div className="evidence-log" aria-live="polite">{evidenceEvents.slice(-8).reverse().map((event) => <div className="evidence-item" key={event.id}><strong>{event.summary}</strong><span>{stages.find((stage) => stage.id === event.stage)?.short ?? '训练'}阶段 · 已记录 {event.evidenceCodes.length} 项证据</span></div>)}</div>}</div></details>
-        {session.stage === 'exam' && <aside className="workspace-panel training-tools" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>器材车</h2><span>{selectedTool ? `已选：${tools.find((tool) => tool.id === selectedTool)?.label}` : '请选择器材'}</span></div><ToolRack selectedTool={selectedTool} onSelect={setSelectedTool} busy={busy} /></aside>}
+        {session.stage === 'exam' && <aside className="workspace-panel training-tools" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>器材车</h2><span>{selectedTool ? `已选：${tools.find((tool) => tool.id === selectedTool)?.label}` : '请选择器材'}</span></div><ToolRack selectedTool={selectedTool} onSelect={(toolId) => { setSelectedTool(toolId); setExamObservation(null); }} busy={busy} /></aside>}
       </div>
       <nav className="mobile-workspace-nav" aria-label="临床工作台抽屉切换">
         <button data-active={mobileView === 'task'} onClick={() => setMobileView('task')}><ClipboardList /> 当前任务</button>

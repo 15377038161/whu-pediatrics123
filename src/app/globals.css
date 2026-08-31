@@ -241,6 +241,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .hotspot::after { content: ""; position: absolute; top: 50%; width: 32px; border-top: 1px solid rgba(23,60,60,.5); }
 .hotspot:hover, .hotspot:focus-visible { border-color: var(--brick); color: var(--brick); transform: translateY(-1px); }
 .hotspot:disabled { opacity: .55; }
+.hotspot[data-observed="success"] { color: #064d43; border-color: #75c9ad; background: #effbf6; box-shadow: 0 0 0 7px rgba(72,177,141,.16), 0 7px 18px rgba(23,60,60,.18); animation: observed-pulse 1.15s ease-out 2; }
+.hotspot[data-observed="blocked"] { color: #7d3930; border-color: #eba99e; background: #fff1ee; animation: observed-shake .34s ease-in-out; }
 .hotspot-forehead, .hotspot-mouth, .hotspot-arm, .hotspot-hands { left: 3%; }
 .hotspot-chest, .hotspot-finger { right: 3%; }
 .hotspot-forehead { top: 12%; }
@@ -252,6 +254,28 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .hotspot-forehead::after, .hotspot-mouth::after, .hotspot-arm::after, .hotspot-hands::after { left: 100%; }
 .hotspot-chest::after, .hotspot-finger::after { right: 100%; }
 .patient-caption { position: absolute; bottom: 13px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 11px; background: rgba(255,253,248,.9); font-size: 12px; backdrop-filter: blur(10px); }
+.exam-observation { position: absolute; z-index: 4; left: 18px; right: 18px; bottom: 58px; padding: 12px; overflow: hidden; border: 1px solid #b9dfd0; border-radius: 15px; background: rgba(240,251,246,.96); box-shadow: 0 14px 32px rgba(23,94,79,.2); backdrop-filter: blur(14px); animation: observation-in .3s ease-out; }
+.exam-observation[data-status="blocked"] { border-color: #efb9ae; background: rgba(255,244,241,.97); }
+.exam-observation-head { display: grid; grid-template-columns: 38px minmax(0,1fr) 34px; gap: 9px; align-items: center; }
+.exam-observation-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; color: #fff; background: var(--pine); }
+.exam-observation[data-status="blocked"] .exam-observation-icon { background: var(--brick); }
+.exam-observation-icon svg { width: 19px; }
+.exam-observation-head p { margin: 0; display: grid; gap: 1px; }
+.exam-observation-head small { color: #687c77; font-size: 10px; }
+.exam-observation-head strong { color: var(--ink); font-size: 13px; }
+.exam-observation-head button { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #cfe0da; border-radius: 50%; color: var(--pine-dark); background: #fff; cursor: pointer; }
+.exam-observation-head button svg { width: 16px; }
+.exam-observation-detail { margin: 9px 0 5px; color: #183f3a; font-size: 13px; line-height: 1.65; font-weight: 700; }
+.exam-observation[data-status="blocked"] .exam-observation-detail { color: #74352f; }
+.exam-observation-note { display: block; color: #70827e; font-size: 9px; line-height: 1.5; }
+.exam-observation-note a { color: var(--pine-dark); text-decoration: underline; text-underline-offset: 2px; }
+.exam-auscultation { height: 34px; margin: 9px 0 2px; padding: 0 10px; display: flex; gap: 6px; align-items: center; border-radius: 10px; color: #2b8e78; background: rgba(255,255,255,.72); }
+.exam-auscultation svg { width: 17px; flex: 0 0 auto; }
+.exam-auscultation span { width: 3px; height: 9px; border-radius: 3px; background: #55af98; animation: lung-wave 1.05s ease-in-out infinite; }
+.exam-auscultation span:nth-of-type(2) { height: 20px; animation-delay: -.82s; }
+.exam-auscultation span:nth-of-type(3) { height: 13px; animation-delay: -.64s; }
+.exam-auscultation span:nth-of-type(4) { height: 25px; animation-delay: -.46s; }
+.exam-auscultation span:nth-of-type(5) { height: 16px; animation-delay: -.28s; }
 .patient-disclosure { position: absolute; right: 18px; top: 18px; margin: 0; padding: 5px 8px; border-radius: 999px; background: rgba(23,60,60,.78); color: white; font-size: 10px; letter-spacing: .02em; }
 .emotion-pill { color: var(--brick); font-weight: 800; }
 .tool-rack { display: flex; gap: 8px; overflow-x: auto; padding: 12px; background: #f0ede5; border-top: 1px solid var(--line); }
@@ -405,6 +429,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @keyframes breathing { 50% { transform: scaleX(1.025) scaleY(1.018); } }
 @keyframes worried { 50% { transform: scaleX(.82); } }
 @keyframes pulse { 50% { transform: scale(.94); box-shadow: 0 0 0 12px rgba(103,133,120,.12); } }
+@keyframes observed-pulse { 50% { transform: scale(1.06); box-shadow: 0 0 0 13px rgba(72,177,141,.05), 0 7px 18px rgba(23,60,60,.18); } }
+@keyframes observed-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@keyframes observation-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+@keyframes lung-wave { 50% { transform: scaleY(.35); opacity: .45; } }
 @keyframes ambientEcgTrace { 0% { stroke-dashoffset: 2100; opacity: .16; } 10% { opacity: .9; } 78%,100% { stroke-dashoffset: 0; opacity: .72; } }
 @keyframes sceneFloat { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(0,18px,0); } }
 
