@@ -276,6 +276,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .exam-auscultation span:nth-of-type(3) { height: 13px; animation-delay: -.64s; }
 .exam-auscultation span:nth-of-type(4) { height: 25px; animation-delay: -.46s; }
 .exam-auscultation span:nth-of-type(5) { height: 16px; animation-delay: -.28s; }
+.exam-auscultation[data-sound="wheeze"] span { border-radius: 999px; animation-duration: 1.7s; animation-timing-function: ease-in-out; }
+.exam-auscultation[data-sound="wheeze"] span:nth-of-type(2), .exam-auscultation[data-sound="wheeze"] span:nth-of-type(4) { height: 23px; }
 .patient-disclosure { position: absolute; right: 18px; top: 18px; margin: 0; padding: 5px 8px; border-radius: 999px; background: rgba(23,60,60,.78); color: white; font-size: 10px; letter-spacing: .02em; }
 .emotion-pill { color: var(--brick); font-weight: 800; }
 .tool-rack { display: flex; gap: 8px; overflow-x: auto; padding: 12px; background: #f0ede5; border-top: 1px solid var(--line); }
