@@ -2,12 +2,12 @@
 
 import {
   Activity, ArrowLeft, Check, ChevronRight, Clock3, Home,
-  ClipboardList, Lightbulb, LoaderCircle, Mic, Send, Stethoscope, UserRound,
+  ClipboardList, Lightbulb, LoaderCircle, Mic, Send, Stethoscope, UserRound, Volume2, VolumeX,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AgentEvent, AgentTurnResult, ApiResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
+import type { AgentEvent, AgentMessage, AgentTurnResult, ApiResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
 import { getPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
@@ -60,6 +60,10 @@ function actorLabel(actor: string): string {
   return ({ student: '你（医生）', child: '患儿', parent: '家长', tutor: '教学智能体', system: '病例系统' } as Record<string,string>)[actor] ?? actor;
 }
 
+function isSpokenActor(actor: AgentMessage['actor']): actor is 'child' | 'parent' {
+  return actor === 'child' || actor === 'parent';
+}
+
 function communicationContext(session: SessionState) {
   const openingParent = session.messages.find((item) => item.actor === 'parent');
   const recentClinicalResults = session.messages.filter((item) => item.actor === 'system' && item.kind === 'navigation').slice(-3);
@@ -93,6 +97,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const router = useRouter();
   const started = useRef(false);
   const finishing = useRef(false);
+  const spokenMessageIds = useRef(new Set<string>());
+  const historyChatRef = useRef<HTMLDivElement>(null);
   const [session, setSession] = useState<SessionState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +115,24 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [mobileView, setMobileView] = useState<'task' | 'patient' | 'record'>('task');
   const [hintIndex, setHintIndex] = useState(0);
   const [hintOpen, setHintOpen] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+
+  const queueRoleSpeech = useCallback((content: string, actor: 'child' | 'parent') => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
+    const utterance = new SpeechSynthesisUtterance(content);
+    utterance.lang = 'zh-CN';
+    utterance.rate = actor === 'child' ? 0.94 : 1;
+    utterance.pitch = actor === 'child' ? 1.2 : 1.04;
+    const chineseVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith('zh'));
+    if (chineseVoice) utterance.voice = chineseVoice;
+    window.speechSynthesis.speak(utterance);
+    return true;
+  }, []);
+
+  const replayRoleSpeech = useCallback((content: string, actor: 'child' | 'parent') => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (!queueRoleSpeech(content, actor)) setFeedback('当前浏览器不支持语音播报，请直接阅读对话文字。');
+  }, [queueRoleSpeech]);
 
   useEffect(() => {
     if (started.current) return;
@@ -121,6 +145,26 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       .catch((cause) => setError(cause instanceof Error ? cause.message : '训练加载失败。'))
       .finally(() => setBusy(false));
   }, [initialCaseId, initialSessionId, mode, practiceFocus, router]);
+
+  useEffect(() => {
+    if (!session) return;
+    const pending = session.messages.filter((item) => isSpokenActor(item.actor) && !spokenMessageIds.current.has(item.id));
+    session.messages.forEach((item) => spokenMessageIds.current.add(item.id));
+    if (!voiceEnabled || pending.length === 0 || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    pending.forEach((item) => {
+      if (isSpokenActor(item.actor)) queueRoleSpeech(item.content, item.actor);
+    });
+  }, [queueRoleSpeech, session, voiceEnabled]);
+
+  useEffect(() => {
+    if (session?.stage !== 'history') return;
+    const frame = window.requestAnimationFrame(() => {
+      const chat = historyChatRef.current;
+      if (chat) chat.scrollTop = chat.scrollHeight;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [session]);
 
   const finish = useCallback(async () => {
     if (!session || finishing.current) return;
@@ -192,6 +236,10 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       : '本次操作已自动保存，确定暂时退出训练吗？');
     if (confirmed) router.push('/student');
   }
+  function toggleVoice() {
+    if (voiceEnabled && typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    setVoiceEnabled((value) => !value);
+  }
   const caseTests = session.caseId === 'peds-wheeze-002'
     ? tests.map((test) => test.id === 'chest-image' ? { ...test, indication: '低氧或首次明显喘息时评估' } : test)
     : tests;
@@ -205,11 +253,14 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <button className="btn btn-primary btn-block" onClick={() => navigate('history')} disabled={busy}>进入自主问诊 <ChevronRight size={17} /></button>
       </>;
       case 'history': return <>
-        <div className="message-list history-chat" aria-live="polite">
-          {session.messages.filter((item) => item.kind !== 'navigation' || item.actor !== 'system').map((item) => <div className="message" data-actor={item.actor} key={item.id}><p className="message-label">{actorLabel(item.actor)} · {item.emotion}</p><div className="message-bubble">{item.content}</div></div>)}
+        <div className="message-list history-chat" aria-live="polite" ref={historyChatRef}>
+          {session.messages.filter((item) => item.kind !== 'navigation' || item.actor !== 'system').map((item) => {
+            const spokenActor = isSpokenActor(item.actor) ? item.actor : null;
+            return <div className="message" data-actor={item.actor} key={item.id}><p className="message-label"><span>{actorLabel(item.actor)} · {item.emotion}</span>{spokenActor && <button className="speak-message" type="button" aria-label={`重播${actorLabel(item.actor)}发言`} onClick={() => replayRoleSpeech(item.content, spokenActor)}><Volume2 size={13} /></button>}</p><div className="message-bubble">{item.content}</div></div>;
+          })}
         </div>
         <div className="composer"><label className="sr-only" htmlFor="question">输入你的问诊问题</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="直接和患儿或家长交流，例如：小朋友别紧张，可以告诉我哪里不舒服吗？" onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitQuestion(); } }} /><div className="composer-actions">{session.mode !== 'osce' && <div className="hint-anchor"><button className="icon-btn hint-trigger" type="button" aria-label="查看问诊提示" aria-expanded={hintOpen} onClick={() => setHintOpen((value) => !value)}><Lightbulb size={17} /></button>{hintOpen && <div className="hint-popover" role="status"><p>{hints[hintIndex % hints.length]}</p><button type="button" onClick={() => setHintIndex((value) => (value + 1) % hints.length)}>换一个方向</button></div>}</div>}<button className="icon-btn" type="button" title="语音识别将在获得浏览器权限后启用" aria-label="语音输入，当前回退为文字输入" onClick={() => setFeedback('语音权限或识别不可用时，系统会自动保留文字输入。')}><Mic size={17} /></button><button className="btn btn-primary" type="button" disabled={busy || !question.trim()} onClick={submitQuestion}><Send size={16} /> 发送</button></div></div>
-        <div className="composer-meta"><p>直接说出安抚或协调家长的话，系统会识别并改变后续应答。</p><button className="stage-next" type="button" onClick={() => navigate('exam')} disabled={busy}>进入查体 <ChevronRight size={15} /></button></div>
+        <div className="composer-meta"><button className="stage-next" type="button" onClick={() => navigate('exam')} disabled={busy}>进入查体 <ChevronRight size={15} /></button></div>
       </>;
       case 'exam': return <>
         <div className="stage-intro"><p className="eyebrow">器材逻辑校验</p><h2>可视化体格检查</h2><p>先选择器材，再点击患儿对应部位。只有准备动作、器材与部位正确，才能解锁深层体征。</p></div>
@@ -254,7 +305,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       <div className="case-band"><span>{session.mode === 'osce' ? '无提示、不可重试' : '操作自动保存 · 提供方向性反馈'}</span><span>病例 v{session.caseVersion}</span><span>证据 {session.unlockedEvidence.length} 项</span></div>
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       <div className="training-grid">
-        <section className="workspace-panel training-primary" data-stage={session.stage} data-mobile-hidden={mobileView !== 'task'}><div className="panel-head"><h2>{stages[currentIndex]?.label}</h2>{busy && <LoaderCircle className="patient-breath" size={18} />}</div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>
+        <section className="workspace-panel training-primary" data-stage={session.stage} data-mobile-hidden={mobileView !== 'task'}><div className="panel-head"><h2>{stages[currentIndex]?.label}</h2><div className="panel-actions">{session.stage === 'history' && <button className="voice-toggle" type="button" aria-label={voiceEnabled ? '关闭自动语音播报' : '开启自动语音播报'} aria-pressed={voiceEnabled} onClick={toggleVoice}>{voiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}<span>{voiceEnabled ? '自动播报' : '已静音'}</span></button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>
         <section className="workspace-panel training-patient" data-mobile-hidden={mobileView !== 'patient'}><div className="panel-head"><h2>患儿交互模型</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}童</span></div><PatientFigure patient={caseProfile} selectedTool={selectedTool} onExamine={examine} busy={busy} interactive={session.stage === 'exam'} />{session.stage === 'exam' ? <div className="tool-rack" aria-label="写实体检器材栏">{tools.map(({ id,label,image }) => <button type="button" className="tool" data-selected={selectedTool === id} onClick={() => setSelectedTool(id)} aria-pressed={selectedTool === id} key={id}><span className="tool-photo-wrap"><Image className="tool-photo" src={image} alt="" fill sizes="72px" /></span><span>{label}</span></button>)}</div> : <div className="case-band">进入查体阶段后解锁器材和体表热区</div>}</section>
         <details className="workspace-panel training-record" data-mobile-hidden={mobileView !== 'record'} open><summary className="panel-head"><h2>实时病例记录</h2><span>{evidenceEvents.length} 项本轮证据</span></summary><div className="panel-body"><p className="record-kicker">接诊已知</p><div className="vitals"><div className="vital"><strong>{session.vitals.temperature}</strong><span>体温 ℃</span></div><div className="vital"><strong>{session.vitals.heartRate}</strong><span>心率</span></div><div className="vital"><strong>{session.vitals.respiratoryRate}</strong><span>呼吸</span></div><div className="vital"><strong>{session.vitals.spo2}%</strong><span>SpO₂</span></div></div><div className="record-section-head"><h3>本轮新增</h3><span>随有效操作实时更新</span></div>{evidenceEvents.length === 0 ? <div className="empty-note">尚未获得新的问诊或查体证据。</div> : <div className="evidence-log" aria-live="polite">{evidenceEvents.slice(-8).reverse().map((event) => <div className="evidence-item" key={event.id}><strong>{event.summary}</strong><span>{stages.find((stage) => stage.id === event.stage)?.short ?? '训练'}阶段 · 已记录 {event.evidenceCodes.length} 项证据</span></div>)}</div>}</div></details>
       </div>
