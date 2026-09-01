@@ -117,6 +117,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .bottom-nav { position: fixed; z-index: 50; left: 0; right: 0; bottom: 0; min-height: calc(66px + env(safe-area-inset-bottom)); padding: 7px 12px env(safe-area-inset-bottom); background: rgba(255,255,255,.96); border-top: 1px solid var(--line); backdrop-filter: blur(18px); display: grid; grid-template-columns: repeat(4,1fr); }
 .bottom-nav a { min-height: 54px; display: grid; place-items: center; align-content: center; gap: 2px; border-radius: 12px; color: #5c706d; font-size: 11px; }
 .bottom-nav a[data-active="true"] { color: var(--pine-dark); background: var(--mint); }
+.bottom-nav a[data-view-switch="true"] { color: #8a6415; background: #fff7dc; }
 .bottom-nav svg { width: 20px; height: 20px; }
 
 .eyebrow { margin: 0 0 6px; color: var(--brick-dark); font-size: 12px; font-weight: 900; letter-spacing: .12em; }
@@ -428,11 +429,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .practice-duration { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 11px; }
 .practice-card h2 { margin: 5px 0 4px; font: 800 21px var(--font-display); }
 .practice-card p { margin: 0; color: var(--muted); font-size: 13px; }
-.osce-hero { display: grid; grid-template-columns: minmax(0,1fr) 112px; gap: 16px; align-items: center; }
-.osce-ticket { min-height: 168px; padding: 15px 9px; display: grid; place-items: center; align-content: center; gap: 6px; border: 1px dashed #d79c8f; border-radius: 18px; color: #8c3e34; background: #fff0e9; transform: rotate(2deg); }
-.osce-ticket span { font-size: 10px; font-weight: 900; letter-spacing: .1em; }
-.osce-ticket strong { font: 900 28px ui-monospace, monospace; }
-.osce-ticket small { font-size: 10px; }
+.osce-hero { display: grid; gap: 22px; align-items: center; }
+.osce-station-bar { min-height: 70px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid #cbe4da; border-radius: 17px; background: rgba(255,255,255,.72); box-shadow: inset 4px 0 0 var(--pine); backdrop-filter: blur(10px); }
+.osce-station-bar > div:first-child { display: grid; gap: 2px; }
+.osce-station-bar span { color: #6c7d79; font-size: 10px; font-weight: 900; letter-spacing: .1em; }
+.osce-station-bar > div:first-child strong { font-size: 15px; }
+.osce-station-timer { min-width: 148px; padding-left: 16px; display: grid; grid-template-columns: 24px auto; grid-template-areas: "icon label" "icon time"; column-gap: 8px; align-items: center; border-left: 1px solid #d4e4de; }
+.osce-station-timer svg { grid-area: icon; width: 22px; color: var(--brick); }
+.osce-station-timer span { grid-area: label; }
+.osce-station-timer strong { grid-area: time; color: var(--brick-dark); font: 900 21px ui-monospace, monospace; line-height: 1.1; }
+.osce-hero-copy { max-width: 760px; }
 .readiness-card { margin-top: 14px; padding: 17px; border: 1px solid var(--line); border-radius: 18px; background: white; }
 .readiness-card h2 { margin: 0 0 11px; font-size: 15px; }
 .readiness-card div { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -500,8 +506,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .hero-actions .btn { width: 100%; }
   .case-card-copy { grid-template-columns: 1fr; grid-template-areas: "number" "title" "meta" "symptoms" "action"; }
   .case-card .btn { justify-self: start; margin-top: 5px; }
-  .osce-hero { grid-template-columns: minmax(0,1fr) 90px; padding-right: 14px; }
-  .osce-ticket { min-height: 148px; }
+  .bottom-nav[data-items="5"] { grid-template-columns: repeat(5,1fr); }
+  .osce-station-bar { align-items: stretch; }
+  .osce-station-timer { min-width: 118px; }
   .report-hero { grid-template-columns: 78px 1fr; padding: 18px; }
   .score-ring { width: 76px; height: 76px; border-width: 6px; }
   .score-ring strong { font-size: 26px; }
@@ -523,6 +530,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .bottom-nav::before { content: "珞珈儿科智训"; position: absolute; top: 25px; left: 25px; color: var(--ink); font: 800 21px var(--font-display); }
   .bottom-nav a { min-height: 48px; padding: 0 14px; display: flex; justify-content: flex-start; gap: 11px; color: #58736f; font-size: 14px; }
   .bottom-nav a[data-active="true"] { color: var(--pine); background: rgba(255,255,255,.8); box-shadow: 0 6px 18px rgba(39,108,99,.08); }
+  .bottom-nav a[data-view-switch="true"] { margin-top: auto; color: #795913; background: #fff7dc; box-shadow: inset 0 0 0 1px #ead99f; }
   .main-content { padding-top: 32px; }
   .training-grid { grid-template-columns: minmax(0, 1.34fr) minmax(0, .96fr) minmax(0, .7fr); align-items: start; padding: 18px 22px; }
   .training-primary { grid-column: 1; }

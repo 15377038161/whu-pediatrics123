@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js';
 import type { UserContext } from '@/domain/agent';
+import { isTestTeacherFid } from '@/lib/access-control';
 import { createReadOnlySupabaseClient } from '@/lib/supabase-ssr';
 import { readPreviewUser } from '@/lib/preview-auth';
 
@@ -22,9 +23,10 @@ function normalize(user: User): UserContext {
   const appMetadata = record(user.app_metadata);
   const app = record(appMetadata.app);
   const chaoxing = record(appMetadata.chaoxing);
+  const role = text(app, 'role') === 'teacher' || isTestTeacherFid(text(chaoxing, 'fid')) ? 'teacher' : 'student';
   return {
     id: user.id,
-    role: text(app, 'role') === 'teacher' ? 'teacher' : 'student',
+    role,
     displayName: text(metadata, 'full_name') || text(chaoxing, 'displayName') || '用户',
     avatarUrl: text(metadata, 'avatar_url') || null,
     studentNo: text(chaoxing, 'studentNo') || null,

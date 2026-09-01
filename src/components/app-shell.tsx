@@ -23,7 +23,10 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
   const [avatarFailed, setAvatarFailed] = useState(false);
   if (pathname.startsWith('/student/training')) return <>{children}</>;
   const teacherView = pathname.startsWith('/teacher');
-  const nav = teacherView ? teacherNav : studentNav;
+  const viewSwitch = user.role === 'teacher'
+    ? { href: teacherView ? '/student' : '/teacher', label: teacherView ? '学生端' : '教师端', icon: GraduationCap, switchView: true }
+    : null;
+  const nav = [...(teacherView ? teacherNav : studentNav), ...(viewSwitch ? [viewSwitch] : [])];
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/');
@@ -48,11 +51,11 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
         </div>
       </header>
       <main className="main-content" id="main-content">{children}</main>
-      <nav className="bottom-nav" aria-label="主要导航">
-        {nav.map(({ href, label, icon: Icon }) => {
+      <nav className="bottom-nav" data-items={nav.length} aria-label="主要导航">
+        {nav.map(({ href, label, icon: Icon, ...item }) => {
           const target = href.split('?')[0];
           const active = target === (teacherView ? '/teacher' : '/student') ? pathname === target : pathname.startsWith(target);
-          return <a key={href} href={href} data-active={active}><Icon aria-hidden="true" /> <span>{label}</span></a>;
+          return <a key={href} href={href} data-active={active} data-view-switch={'switchView' in item}><Icon aria-hidden="true" /> <span>{label}</span></a>;
         })}
       </nav>
     </div>
