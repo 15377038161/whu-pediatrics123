@@ -76,6 +76,7 @@ type ExamObservation = {
   detail: string;
   toolId: string;
   status: 'success' | 'blocked';
+  sound: 'fine-crackles' | 'wheeze' | null;
 };
 
 function PatientFigure({ patient, selectedTool, onExamine, onReplayObservation, observation, busy, interactive }: { patient: PublicCaseProfile; selectedTool: string | null; onExamine: (part: string) => void; onReplayObservation: (observation: ExamObservation) => void; observation: ExamObservation | null; busy: boolean; interactive: boolean }) {
@@ -98,7 +99,7 @@ function PatientFigure({ patient, selectedTool, onExamine, onReplayObservation, 
       <div className="patient-caption"><span>{interactive ? <>当前器材：<strong>{tools.find((tool) => tool.id === selectedTool)?.label ?? '未选择'}</strong></> : <strong>观察模式</strong>}</span><span className="emotion-pill">紧张 · 呼吸较快</span></div>
       {interactive && observation && <div className="exam-observation" data-status={observation.status} data-tool={observation.toolId} role="status" aria-live="polite">
         <div className="exam-observation-head"><span className="exam-observation-icon" aria-hidden="true">{observation.toolId === 'stethoscope' ? <Stethoscope /> : <Activity />}</span><p><small>{observation.status === 'success' ? '查体结果已获得' : '本次操作未生效'}</small><strong>{observation.title}</strong></p><button type="button" onClick={() => onReplayObservation(observation)} aria-label={observation.toolId === 'stethoscope' && observation.status === 'success' ? '播放真实儿科听诊音' : '语音重播查体结果'} title="播放结果声音"><Volume2 /></button></div>
-        {observation.toolId === 'stethoscope' && observation.status === 'success' && <div className="exam-auscultation" aria-hidden="true"><Waves /><span /><span /><span /><span /><span /></div>}
+        {observation.sound && observation.status === 'success' && <div className="exam-auscultation" data-sound={observation.sound} aria-hidden="true"><Waves /><span /><span /><span /><span /><span /></div>}
         <p className="exam-observation-detail">{observation.detail}</p>
         <small className="exam-observation-note">{observation.toolId === 'stethoscope' && observation.status === 'success' ? <>真实儿科听诊录音节选 · <a href="https://github.com/SJTU-YONGFU-RESEARCH-GRP/SPRSound" target="_blank" rel="noreferrer">SPRSound / CC BY 4.0</a></> : '标准化患儿教学反馈 · 文字结果来自病例规则'}</small>
       </div>}
@@ -117,8 +118,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const finishing = useRef(false);
   const spokenMessageIds = useRef(new Set<string>());
   const historyChatRef = useRef<HTMLDivElement>(null);
-  const examAudioRef = useRef<HTMLAudioElement>(null);
-  const roleAudioRef = useRef<HTMLAudioElement | null>(null);
+  const cracklesAudioRef = useRef<HTMLAudioElement>(null);
+  const wheezeAudioRef = useRef<HTMLAudioElement>(null);
   const [session, setSession] = useState<SessionState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,54 +139,46 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [hintOpen, setHintOpen] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
 
-  const fallbackSpeech = useCallback((content: string, actor: 'child' | 'parent' | 'narrator') => {
+  const queueRoleSpeech = useCallback((content: string, actor: 'child' | 'parent') => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
-    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(content);
     utterance.lang = 'zh-CN';
-    utterance.rate = actor === 'child' ? 0.94 : actor === 'narrator' ? 0.92 : 1;
-    utterance.pitch = actor === 'child' ? 1.2 : 1;
-    const zh = window.speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith('zh'));
-    if (zh) utterance.voice = zh;
+    utterance.rate = actor === 'child' ? 0.94 : 1;
+    utterance.pitch = actor === 'child' ? 1.2 : 1.04;
+    const chineseVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith('zh'));
+    if (chineseVoice) utterance.voice = chineseVoice;
     window.speechSynthesis.speak(utterance);
     return true;
   }, []);
 
-  const playTTS = useCallback(async (content: string, persona: 'child' | 'parent' | 'narrator') => {
-    const prev = roleAudioRef.current;
-    if (prev) prev.pause();
-    try {
-      const resp = await fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: content, persona }) });
-      if (!resp.ok) throw new Error('tts_unavailable');
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = roleAudioRef.current ?? (roleAudioRef.current = new Audio());
-      if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
-      audio.src = url;
-      await audio.play();
-      return true;
-    } catch {
-      return fallbackSpeech(content, persona);
-    }
-  }, [fallbackSpeech]);
-
   const replayRoleSpeech = useCallback((content: string, actor: 'child' | 'parent') => {
-    void playTTS(content, actor);
-  }, [playTTS]);
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (!queueRoleSpeech(content, actor)) setFeedback('当前浏览器不支持语音播报，请直接阅读对话文字。');
+  }, [queueRoleSpeech]);
 
-  const speakExamObservation = useCallback((content: string) => playTTS(content, 'narrator'), [playTTS]);
+  const speakExamObservation = useCallback((content: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(content);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 0.92;
+    utterance.pitch = 1;
+    const chineseVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.toLowerCase().startsWith('zh'));
+    if (chineseVoice) utterance.voice = chineseVoice;
+    window.speechSynthesis.speak(utterance);
+    return true;
+  }, []);
 
   const playExamObservationAudio = useCallback((observation: ExamObservation) => {
-    if (observation.status === 'success' && observation.toolId === 'stethoscope') {
-      const audio = examAudioRef.current;
+    if (observation.status === 'success' && observation.sound) {
+      const audio = observation.sound === 'wheeze' ? wheezeAudioRef.current : cracklesAudioRef.current;
       if (!audio) return false;
       audio.pause();
       audio.currentTime = 0;
       void audio.play().catch(() => setFeedback('浏览器阻止了自动播放，请点击查体结果卡右上角的声音按钮。'));
       return true;
     }
-    void speakExamObservation(observation.detail);
-    return true;
+    return speakExamObservation(observation.detail);
   }, [speakExamObservation]);
 
   useEffect(() => {
@@ -204,9 +197,12 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     if (!session) return;
     const pending = session.messages.filter((item) => isSpokenActor(item.actor) && !spokenMessageIds.current.has(item.id));
     session.messages.forEach((item) => spokenMessageIds.current.add(item.id));
-    if (!voiceEnabled || pending.length === 0) return;
-    void pending.reduce<Promise<void>>((chain, item) => chain.then(() => { if (isSpokenActor(item.actor)) void playTTS(item.content, item.actor); }), Promise.resolve());
-  }, [playTTS, session, voiceEnabled]);
+    if (!voiceEnabled || pending.length === 0 || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    pending.forEach((item) => {
+      if (isSpokenActor(item.actor)) queueRoleSpeech(item.content, item.actor);
+    });
+  }, [queueRoleSpeech, session, voiceEnabled]);
 
   useEffect(() => {
     if (session?.stage !== 'history') return;
@@ -273,7 +269,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     if (!selectedTool) {
       const detail = '请先从器材车选择检查工具，再点击需要检查的部位。';
       setError(detail);
-      setExamObservation({ bodyPartId: part, title: partLabel, detail, toolId: 'none', status: 'blocked' });
+      setExamObservation({ bodyPartId: part, title: partLabel, detail, toolId: 'none', status: 'blocked', sound: null });
       return;
     }
     const toolLabel = tools.find((tool) => tool.id === selectedTool)?.label ?? selectedTool;
@@ -282,7 +278,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     const latestEvent = result.session.events.at(-1);
     const success = latestEvent?.type === 'EXAM_ACTION' && latestEvent.correct === true;
     const detail = success ? (result.newMessages.at(-1)?.content ?? latestEvent.summary) : (result.feedback ?? '本次操作未获得有效查体结果。');
-    const observation: ExamObservation = { bodyPartId: part, title: `${toolLabel} · ${partLabel}`, detail, toolId: selectedTool, status: success ? 'success' : 'blocked' };
+    const sound = success && selectedTool === 'stethoscope' ? (result.session.caseId === 'peds-wheeze-002' ? 'wheeze' : 'fine-crackles') : null;
+    const observation: ExamObservation = { bodyPartId: part, title: `${toolLabel} · ${partLabel}`, detail, toolId: selectedTool, status: success ? 'success' : 'blocked', sound };
     setExamObservation(observation);
     if (success && voiceEnabled) playExamObservationAudio(observation);
   }
@@ -369,7 +366,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
 
   return (
     <main className="training-shell" id="main-content">
-      <audio ref={examAudioRef} src="/media/clinical/audio/pediatric-fine-crackles-right.mp3" preload="auto" />
+      <audio ref={cracklesAudioRef} src="/media/clinical/audio/pediatric-fine-crackles-right.mp3" preload="auto" />
+      <audio ref={wheezeAudioRef} src="/media/clinical/audio/pediatric-wheeze.mp3" preload="auto" />
       <header className="training-head">
         <div className="training-toolbar"><button className="icon-btn" type="button" onClick={leaveTraining} aria-label="暂时退出训练"><ArrowLeft size={18} /></button><div className="training-title"><strong>{caseProfile.title}</strong><span>{session.mode === 'osce' ? 'OSCE 考核模式' : session.mode === 'practice' ? `专项训练 · ${currentFocus ? focusLabels[currentFocus] : '能力补练'}` : '智能体引导模式'}</span></div>{session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <button className="icon-btn" type="button" onClick={leaveTraining} aria-label="回到首页"><Home size={17} /></button>}</div>
         <div className="stage-scroll" aria-label="训练阶段">{stages.map((stage,index) => <button key={stage.id} className="stage-chip" data-current={session.stage === stage.id} data-done={index < currentIndex} disabled={busy || stage.id === 'report' || (session.mode === 'osce' && index < currentIndex)} onClick={() => navigate(stage.id)} aria-label={stage.label}>{stage.short}</button>)}</div>
