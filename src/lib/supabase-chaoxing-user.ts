@@ -1,21 +1,16 @@
 import { createHash } from 'node:crypto';
 import type { ChaoxingIdentity } from '@/lib/chaoxing-client';
+import { isTeacherIdentityAllowed } from '@/lib/access-control';
 import { getSupabaseAdminClient } from '@/lib/supabase-client';
 
 function virtualEmail(providerUid: string): string {
   return `chaoxing_${createHash('sha256').update(providerUid).digest('hex').slice(0, 48)}@oauth.invalid`;
 }
 
-function teacherAllowed(identity: ChaoxingIdentity): boolean {
-  const providerTeacher = identity.role.some((role) => /教师|teacher|管理员/i.test(role.roleName));
-  const allowlist = new Set((process.env.CHAOXING_TEACHER_UIDS ?? '').split(',').map((item) => item.trim()).filter(Boolean));
-  return providerTeacher && allowlist.has(identity.uid);
-}
-
 export async function createSupabaseLoginToken(identity: ChaoxingIdentity): Promise<string> {
   const admin = getSupabaseAdminClient();
   const email = virtualEmail(identity.uid);
-  const appRole = teacherAllowed(identity) ? 'teacher' : 'student';
+  const appRole = isTeacherIdentityAllowed(identity) ? 'teacher' : 'student';
   const appMetadata = {
     provider: 'chaoxing',
     app: { role: appRole },

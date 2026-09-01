@@ -46,6 +46,9 @@ CHAOXING_REDIRECT_URI=https://<待填写正式域名>/api/auth/callback/chaoxing
 # 需要通过测试登录获取真实UID后填写
 CHAOXING_TEACHER_UIDS=
 
+# 竞赛测试单位账号：可进入学生端与教师端；普通武汉大学学生不会命中
+CHAOXING_TEST_TEACHER_FIDS=1385
+
 # ============ 可选配置 ============
 ENABLE_UI_PREVIEW=false
 ENABLE_AI_FIXTURE=false
@@ -81,9 +84,10 @@ CHAOXING_REDIRECT_URI=https://luojia-pediatrics.coze.site/api/auth/callback/chao
 
 **当前逻辑：**
 ```typescript
-// 同时满足两个条件才授予教师权限：
-// 1. 超星返回的角色中包含"教师"/"teacher"/"管理员"关键词
-// 2. 该用户的 UID 在 CHAOXING_TEACHER_UIDS 白名单中
+// 满足任一规则即授予教师权限，并可在学生端/教师端之间切换：
+// 1. 机构 FID 位于 CHAOXING_TEST_TEACHER_FIDS（竞赛测试账号默认 1385）；或
+// 2. 超星教师角色匹配且 UID 位于 CHAOXING_TEACHER_UIDS。
+// 普通武汉大学学生不满足上述规则，只能进入学生端且不会显示教师端入口。
 ```
 
 **配置流程：**
@@ -109,6 +113,8 @@ CHAOXING_REDIRECT_URI=https://luojia-pediatrics.coze.site/api/auth/callback/chao
    ```
 
 3. **重新部署**以应用新配置
+
+4. **测试双端切换**：使用 1385 单位账号重新登录，在学生首页右上角应看到“教师端”入口；进入教师端后应看到“学生端”入口。
 
 ---
 

@@ -304,6 +304,7 @@ function handlePlan(session: SessionState, data: Extract<AgentEvent, { type: 'SU
 
 function handleCommunication(session: SessionState, text: string, clientEventId: string): AgentTurnResult {
   session.communication = text;
+  session.unlockedEvidence = uniq([...session.unlockedEvidence, 'COMMUNICATION']);
   const studentMessage = message('student', text);
   const hasEmpathy = /理解|担心|别紧张|一起|我会/.test(text);
   const explainsRisk = /呼吸|血氧|危险|风险/.test(text);
@@ -315,7 +316,7 @@ function handleCommunication(session: SessionState, text: string, clientEventId:
   const parentMessage = message('parent', parentReply, { emotion: good ? 'calm' : 'anxious' });
   session.messages.push(studentMessage, parentMessage);
   session.events.push(clinicalEvent(clientEventId, 'SEND_COMMUNICATION', 'communication', '完成家长沟通', good, ['COMMUNICATION']));
-  session.stage = 'communication';
+  session.stage = session.mode === 'osce' ? 'communication' : 'history';
   session.updatedAt = now();
   return {
     session,

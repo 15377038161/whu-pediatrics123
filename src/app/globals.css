@@ -109,6 +109,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .topbar-brand { min-height: var(--tap); display: flex; gap: 10px; align-items: center; font-weight: 800; }
 .mini-seal { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--pine); border-radius: 11px 11px 15px 11px; color: var(--pine-dark); background: var(--mint); font-family: var(--font-display); font-size: 12px; transform: rotate(-2deg); }
 .topbar-user { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.role-switch { min-height: 36px; padding: 6px 10px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #cde4db; border-radius: 999px; color: var(--pine-dark); background: #eff9f5; font-size: 12px; font-weight: 900; }
+.role-switch:hover { border-color: #9bcfbd; background: #e2f4ed; }
 .avatar { width: 36px; height: 36px; overflow: hidden; border: 2px solid white; border-radius: 50%; display: grid; place-items: center; color: var(--pine); background: var(--sky); box-shadow: 0 0 0 1px var(--line); font-size: 13px; font-weight: 800; }
 .avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .main-content { width: min(100% - 32px, 1240px); margin: 0 auto; padding: 22px 0 32px; }
@@ -181,18 +183,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .stage-chip[data-current="true"] { background: var(--pine); color: white; box-shadow: 0 5px 14px rgba(25,117,104,.22); }
 .stage-chip[data-done="true"]::before { content: "✓ "; color: #9bd1bf; }
 .training-grid { padding: 14px; display: grid; gap: 14px; }
-.mobile-workspace-nav { position: fixed; z-index: 60; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; padding: 6px; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.96); box-shadow: 0 14px 38px rgba(23,60,60,.18); backdrop-filter: blur(16px); }
+.mobile-workspace-nav { position: fixed; z-index: 80; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; padding: 6px; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.96); box-shadow: 0 14px 38px rgba(23,60,60,.18); backdrop-filter: blur(16px); }
 .mobile-workspace-nav button { min-height: 52px; border: 0; border-radius: 12px; background: transparent; color: #60726f; display: grid; place-items: center; align-content: center; gap: 1px; font-size: 11px; }
 .mobile-workspace-nav button svg { width: 19px; height: 19px; }
 .mobile-workspace-nav button[data-active="true"] { color: white; background: var(--pine); }
 .mobile-workspace-nav button:disabled { opacity: .38; cursor: not-allowed; }
 [data-mobile-hidden="true"] { display: none; }
+.mobile-drawer-backdrop { position: fixed; z-index: 65; inset: 0; border: 0; background: rgba(18,49,47,.24); backdrop-filter: blur(2px); }
+[data-mobile-drawer="true"] { position: fixed; z-index: 70; left: 10px; right: 10px; bottom: calc(78px + env(safe-area-inset-bottom)); max-height: min(62svh, 560px); overflow: auto; border-radius: 22px; box-shadow: 0 24px 54px rgba(23,60,60,.28); animation: drawer-rise .22s ease-out; }
+[data-mobile-drawer="true"] > .panel-head, details[data-mobile-drawer="true"] > summary { position: sticky; z-index: 2; top: 0; background: rgba(255,255,255,.96); backdrop-filter: blur(12px); }
+.training-primary[data-stage="exam"][data-mobile-drawer="true"] .exam-stage-intro,
+.training-primary[data-stage="exam"][data-mobile-drawer="true"] .exam-route,
+.training-primary[data-stage="exam"][data-mobile-drawer="true"] .exam-open-patient { display: none; }
+.training-primary[data-stage="exam"][data-mobile-drawer="true"] .panel-body { padding: 12px; }
 .workspace-panel { background: var(--white); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-soft); }
 .panel-head { min-height: 54px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
 .panel-head h2 { margin: 0; font-size: 16px; }
 .panel-actions { display: flex; align-items: center; gap: 8px; }
 .voice-toggle { min-height: 32px; padding: 5px 9px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #cde4db; border-radius: 999px; background: #eff9f5; color: var(--pine-dark); font-size: 11px; font-weight: 800; }
 .voice-toggle[aria-pressed="false"] { border-color: #d8deda; background: #f5f6f4; color: #71817e; }
+.conversation-return { min-height: 32px; padding: 5px 9px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #cde4db; border-radius: 999px; background: #eff9f5; color: var(--pine-dark); font-size: 11px; font-weight: 800; }
 .panel-body { padding: 16px; }
 .case-band { padding: 12px 16px; display: flex; gap: 8px; flex-wrap: wrap; background: #edf7f2; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
 .case-band span { padding-right: 10px; border-right: 1px solid #c9d2cc; }
@@ -212,9 +222,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .message[data-actor="student"] .message-bubble { color: white; background: var(--pine); border-radius: 16px 6px 16px 16px; }
 .message[data-actor="parent"] .message-bubble { background: #fff0e9; }
 .message[data-actor="tutor"] .message-bubble, .message[data-actor="system"] .message-bubble { background: #fff8e5; border: 1px solid #e7d5a5; }
+.conversation-mode-switch { width: fit-content; margin: 0 0 10px; padding: 4px; display: flex; gap: 3px; border: 1px solid #d5e3dd; border-radius: 14px; background: #f3f7f4; }
+.conversation-mode-switch button { min-height: 34px; padding: 5px 10px; display: inline-flex; align-items: center; gap: 5px; border: 0; border-radius: 10px; color: #647773; background: transparent; font-size: 11px; font-weight: 800; }
+.conversation-mode-switch button svg { width: 14px; }
+.conversation-mode-switch button[data-active="true"] { color: white; background: var(--pine); box-shadow: 0 5px 12px rgba(25,117,104,.18); }
 .composer { position: relative; }
 .composer textarea, .clinical-form textarea, .clinical-form input { width: 100%; border: 1px solid #becbc7; border-radius: 13px; background: white; color: var(--ink); padding: 12px 13px; resize: vertical; }
 .composer textarea { min-height: 96px; padding-bottom: 58px; }
+.composer[data-mode="communication"] textarea { border-color: #e2c89a; background: linear-gradient(135deg, #fff, #fffaf0); }
 .composer-actions { position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 7px; }
 .hint-anchor { position: relative; }
 .hint-trigger { color: #8a6815; background: #fff5ca; border-color: #ead58e; }
@@ -222,7 +237,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .hint-popover::after { content: ""; position: absolute; right: 15px; bottom: -6px; width: 11px; height: 11px; border-right: 1px solid #e3cb7e; border-bottom: 1px solid #e3cb7e; background: #fffaf0; transform: rotate(45deg); }
 .hint-popover p { margin: 0; font-size: 12px; line-height: 1.6; }
 .hint-popover button { position: relative; z-index: 1; margin-top: 7px; padding: 0; border: 0; background: transparent; color: #8a6815; font-size: 11px; font-weight: 800; }
-.composer-meta { min-height: 38px; margin: 5px 2px 0; display: flex; align-items: center; justify-content: flex-end; }
+.composer-meta { min-height: 38px; margin: 5px 2px 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.conversation-status { margin-right: auto; color: #6c7d79; font-size: 10px; }
+.conversation-status[data-complete="true"] { color: var(--pine-dark); font-weight: 800; }
 .stage-next { flex: 0 0 auto; min-height: 34px; padding: 5px 9px 5px 11px; display: inline-flex; align-items: center; gap: 3px; border: 0; border-radius: 999px; background: #eaf6f1; color: var(--pine-dark); font-size: 12px; font-weight: 900; }
 .stage-next:hover { background: #dcefe7; }
 .stage-next:disabled { opacity: .5; }
@@ -445,6 +462,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @keyframes observed-pulse { 50% { transform: scale(1.06); box-shadow: 0 0 0 13px rgba(72,177,141,.05), 0 7px 18px rgba(23,60,60,.18); } }
 @keyframes observed-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 @keyframes observation-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+@keyframes drawer-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes lung-wave { 50% { transform: scaleY(.35); opacity: .45; } }
 @keyframes ambientEcgTrace { 0% { stroke-dashoffset: 2100; opacity: .16; } 10% { opacity: .9; } 78%,100% { stroke-dashoffset: 0; opacity: .72; } }
 @keyframes sceneFloat { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(0,18px,0); } }
@@ -471,6 +489,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 @media (max-width: 699px) {
+  .topbar-user { gap: 7px; }
+  .role-switch { width: 38px; padding: 6px; justify-content: center; }
+  .role-switch span { display: none; }
   .hint-popover { right: auto; left: 0; width: min(220px, calc(100vw - 156px)); border-radius: 14px 14px 14px 4px; }
   .hint-popover::after { right: auto; left: 15px; }
   .landing-hero-row { min-height: 260px; display: flex; padding-right: 0; }
@@ -512,7 +533,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .exam-tool-selector .tool { width: 100%; min-height: 72px; }
   .exam-tool-selector .tool-photo-wrap { width: 48px; height: 42px; }
   .exam-open-patient { display: none; }
-  .training-primary[data-stage="history"] .history-chat { min-height: 450px; max-height: 560px; }
+  .training-primary[data-stage="history"] .history-chat, .training-primary[data-stage="communication"] .history-chat { min-height: 450px; max-height: 560px; }
   .training-shell { padding-bottom: 24px; }
   .mobile-workspace-nav { display: none; }
   [data-mobile-hidden="true"] { display: block; }

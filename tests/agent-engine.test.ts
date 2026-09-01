@@ -94,6 +94,25 @@ test('OSCE 模式隐藏提示并禁止阶段回退', async () => {
   await assert.rejects(() => runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'history' } }, 'event-back'), /OSCE_STAGE_BACKTRACK_FORBIDDEN/);
 });
 
+test('训练模式把家长沟通留在会话中心并允许查体后继续问诊', async () => {
+  const session = createInitialSession('student-1', 'guided');
+  await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'exam' } }, 'conversation-exam');
+  const returned = await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'history' } }, 'conversation-return');
+  assert.equal(returned.session.stage, 'history');
+
+  const communicated = await runAgentTurn(session, { type: 'SEND_COMMUNICATION', data: { text: '我理解您很担心，孩子目前呼吸和血氧有风险，我们先监测处理，再告诉您下一步。' } }, 'conversation-explain');
+  assert.equal(communicated.session.stage, 'history');
+  assert.ok(communicated.session.unlockedEvidence.includes('COMMUNICATION'));
+  assert.equal(communicated.newMessages.at(-1)?.actor, 'parent');
+});
+
+test('OSCE 沟通复用会话但仍保留阶段顺序限制', async () => {
+  const session = createInitialSession('student-1', 'osce');
+  const communicated = await runAgentTurn(session, { type: 'SEND_COMMUNICATION', data: { text: '我理解您担心，我们先处理呼吸和血氧风险，再说明下一步检查。' } }, 'osce-communication');
+  assert.equal(communicated.session.stage, 'communication');
+  await assert.rejects(() => runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'history' } }, 'osce-conversation-back'), /OSCE_STAGE_BACKTRACK_FORBIDDEN/);
+});
+
 test('女童病例使用独立病例版本、应答事实与查体结果', async () => {
   const session = createInitialSession('student-1', 'guided', 'peds-wheeze-002');
   assert.equal(session.caseId, 'peds-wheeze-002');

@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart3, BookOpenText, ClipboardCheck, Home, LogOut, Sparkles, Users } from 'lucide-react';
+import { BarChart3, BookOpenText, ClipboardCheck, GraduationCap, Home, LogOut, Sparkles, Users } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { UserContext } from '@/domain/agent';
@@ -22,7 +22,8 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
   const router = useRouter();
   const [avatarFailed, setAvatarFailed] = useState(false);
   if (pathname.startsWith('/student/training')) return <>{children}</>;
-  const nav = user.role === 'teacher' ? teacherNav : studentNav;
+  const teacherView = pathname.startsWith('/teacher');
+  const nav = teacherView ? teacherNav : studentNav;
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/');
@@ -31,11 +32,12 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
   return (
     <div className="app-frame">
       <header className="topbar">
-        <a className="topbar-brand" href={user.role === 'teacher' ? '/teacher' : '/student'}>
+        <a className="topbar-brand" href={teacherView ? '/teacher' : '/student'}>
           <span className="mini-seal" aria-hidden="true">珞珈</span>
           <span>儿科智训</span>
         </a>
         <div className="topbar-user">
+          {user.role === 'teacher' && <a className="role-switch" href={teacherView ? '/student' : '/teacher'} aria-label={teacherView ? '切换到学生端' : '切换到教师端'}><GraduationCap size={15} /><span>{teacherView ? '学生端' : '教师端'}</span></a>}
           <div><strong>{user.displayName}</strong><span className="sr-only">，{user.role === 'teacher' ? '教师' : '学生'}</span></div>
           <div className="avatar" aria-label={`${user.displayName}的头像`}>
             {user.avatarUrl && !avatarFailed
@@ -49,7 +51,7 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
       <nav className="bottom-nav" aria-label="主要导航">
         {nav.map(({ href, label, icon: Icon }) => {
           const target = href.split('?')[0];
-          const active = target === `/${user.role}` ? pathname === target : pathname.startsWith(target);
+          const active = target === (teacherView ? '/teacher' : '/student') ? pathname === target : pathname.startsWith(target);
           return <a key={href} href={href} data-active={active}><Icon aria-hidden="true" /> <span>{label}</span></a>;
         })}
       </nav>
