@@ -4,6 +4,7 @@ import { BarChart3, BookOpenText, ClipboardCheck, GraduationCap, Home, LogOut, S
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { UserContext } from '@/domain/agent';
+import { RoleSwitchFloat } from '@/components/role-switch-float';
 
 const studentNav = [
   { href: '/student', label: '首页', icon: Home },
@@ -21,7 +22,7 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
   const pathname = usePathname();
   const router = useRouter();
   const [avatarFailed, setAvatarFailed] = useState(false);
-  if (pathname.startsWith('/student/training')) return <>{children}</>;
+  if (pathname.startsWith('/student/training')) return <>{children}<RoleSwitchFloat user={user} /></>;
   const teacherView = pathname.startsWith('/teacher');
   const viewSwitch = user.role === 'teacher'
     ? { href: teacherView ? '/student' : '/teacher', label: teacherView ? '学生端' : '教师端', icon: GraduationCap, switchView: true }

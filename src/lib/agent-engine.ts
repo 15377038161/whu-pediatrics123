@@ -92,7 +92,10 @@ function feedbackFor(session: SessionState, text: string): string | null {
   return session.mode === 'osce' ? null : text;
 }
 
+const LOCK_STAGES = process.env.LOCK_STAGES === 'true';
+
 function validateStageNavigation(session: SessionState, target: Stage): boolean {
+  if (!LOCK_STAGES) return true;
   if (session.mode !== 'osce') return true;
   const order = getCase(session.caseId).stages.map((stage) => stage.id);
   return order.indexOf(target) >= order.indexOf(session.stage);
