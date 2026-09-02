@@ -22,12 +22,36 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
   const pathname = usePathname();
   const router = useRouter();
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const [switchBusy, setSwitchBusy] = useState(false);
   if (pathname.startsWith('/student/training')) return <>{children}<RoleSwitchFloat user={user} /></>;
   const teacherView = pathname.startsWith('/teacher');
-  const viewSwitch = user.role === 'teacher'
-    ? { href: teacherView ? '/student' : '/teacher', label: teacherView ? '学生端' : '教师端', icon: GraduationCap, switchView: true }
+  const canSwitch = user.role === 'teacher' || user.provider === 'preview';
+  const switchLabel = teacherView ? '学生端' : '教师端';
+  const switchTarget = teacherView ? '/student' : '/teacher';
+  const viewSwitch = canSwitch
+    ? { href: switchTarget, label: switchLabel, icon: GraduationCap, switchView: true }
     : null;
   const nav = [...(teacherView ? teacherNav : studentNav), ...(viewSwitch ? [viewSwitch] : [])];
+  async function handleSwitch() {
+    if (switchBusy) return;
+    setSwitchBusy(true);
+    try {
+      if (user.provider === 'preview') {
+        const res = await fetch('/api/preview/switch-role', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: teacherView ? 'student' : 'teacher' }),
+        });
+        if (!res.ok) throw new Error('switch failed');
+      }
+      router.push(switchTarget);
+      router.refresh();
+    } catch {
+      router.push(switchTarget);
+    } finally {
+      setSwitchBusy(false);
+    }
+  }
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/');
@@ -41,7 +65,13 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
           <span>儿科智训</span>
         </a>
         <div className="topbar-user">
-          {user.role === 'teacher' && <a className="role-switch" href={teacherView ? '/student' : '/teacher'} aria-label={teacherView ? '切换到学生端' : '切换到教师端'}><GraduationCap size={15} /><span>{teacherView ? '学生端' : '教师端'}</span></a>}
+          {canSwitch && (
+            user.role === 'teacher' ? (
+              <a className="role-switch" href={switchTarget} aria-label={`切换到${switchLabel}`}><GraduationCap size={15} /><span>{switchLabel}</span></a>
+            ) : (
+              <button className="role-switch" type="button" onClick={handleSwitch} disabled={switchBusy} aria-label={`切换到${switchLabel}`}><GraduationCap size={15} /><span>{switchBusy ? '切换中…' : switchLabel}</span></button>
+            )
+          )}
           <div><strong>{user.displayName}</strong><span className="sr-only">，{user.role === 'teacher' ? '教师' : '学生'}</span></div>
           <div className="avatar" aria-label={`${user.displayName}的头像`}>
             {user.avatarUrl && !avatarFailed

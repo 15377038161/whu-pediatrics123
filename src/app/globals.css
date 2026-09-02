@@ -498,8 +498,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 @media (max-width: 699px) {
   .topbar-user { gap: 7px; }
-  .role-switch { width: 38px; padding: 6px; justify-content: center; }
-  .role-switch span { display: none; }
+  .role-switch { padding: 6px 8px; }
+  .role-switch[disabled] { opacity: .6; cursor: wait; }
   .hint-popover { right: auto; left: 0; width: min(220px, calc(100vw - 156px)); border-radius: 14px 14px 14px 4px; }
   .hint-popover::after { right: auto; left: 15px; }
   .landing-hero-row { min-height: 260px; display: flex; padding-right: 0; }
