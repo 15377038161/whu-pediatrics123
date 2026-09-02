@@ -57,8 +57,25 @@ async function assertCohortRoleAccess(userId: string, cohortId: string, role: 's
   if (!data) throw new Error('FORBIDDEN');
 }
 
-async function assertTeacherCohortAccess(teacherId: string, cohortId: string): Promise<void> {
-  await assertCohortRoleAccess(teacherId, cohortId, 'teacher');
+async function ensureTeacherCohortAccess(actor: UserContext, cohortId: string): Promise<void> {
+  if (actor.role !== 'teacher') throw new Error('FORBIDDEN');
+  const admin = getSupabaseAdminClient();
+  const { data, error } = await admin.from('cohort_members')
+    .select('role')
+    .eq('cohort_id', cohortId)
+    .eq('user_id', actor.id)
+    .maybeSingle();
+  if (error) throw error;
+  if (data?.role === 'teacher') return;
+
+  const [{ error: profileError }, { error: membershipError }, { error: identityError }] = await Promise.all([
+    admin.from('profiles').update({ app_role: 'teacher' }).eq('id', actor.id),
+    admin.from('cohort_members').upsert({ cohort_id: cohortId, user_id: actor.id, role: 'teacher' }, { onConflict: 'cohort_id,user_id' }),
+    admin.from('external_identities').update({ provider_role: 'teacher' }).eq('user_id', actor.id).eq('provider', 'chaoxing'),
+  ]);
+  if (profileError) throw profileError;
+  if (membershipError) throw membershipError;
+  if (identityError) throw identityError;
 }
 
 function previewSeedUsers(store: Store): void {
@@ -112,7 +129,8 @@ export class AgentRepository {
       return session;
     }
     const admin = getSupabaseAdminClient();
-    await assertCohortRoleAccess(this.actor.id, DEFAULT_COHORT_ID, 'student');
+    if (this.actor.role === 'teacher') await ensureTeacherCohortAccess(this.actor, DEFAULT_COHORT_ID);
+    else await assertCohortRoleAccess(this.actor.id, DEFAULT_COHORT_ID, 'student');
     const { error } = await admin.from('training_sessions').insert({
       id: session.id,
       user_id: this.actor.id,
@@ -142,7 +160,7 @@ export class AgentRepository {
     const { data, error } = await admin.from('training_sessions').select('state,user_id,cohort_id').eq('id', id).maybeSingle();
     if (error) throw error;
     if (!data) throw new Error('SESSION_NOT_FOUND');
-    if (this.actor.role === 'teacher') await assertTeacherCohortAccess(this.actor.id, data.cohort_id);
+    if (this.actor.role === 'teacher') await ensureTeacherCohortAccess(this.actor, data.cohort_id);
     else if (data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
     return data.state as SessionState;
   }
@@ -256,7 +274,7 @@ export class AgentRepository {
     if (this.actor.role === 'teacher') {
       const { data: session, error: sessionError } = await admin.from('training_sessions').select('cohort_id').eq('id', data.session_id).single();
       if (sessionError) throw sessionError;
-      await assertTeacherCohortAccess(this.actor.id, session.cohort_id);
+      await ensureTeacherCohortAccess(this.actor, session.cohort_id);
     } else if (data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
     return data.data as TrainingReport;
   }
@@ -293,7 +311,7 @@ export class AgentRepository {
         };
       });
     }
-    await assertTeacherCohortAccess(this.actor.id, DEFAULT_COHORT_ID);
+    await ensureTeacherCohortAccess(this.actor, DEFAULT_COHORT_ID);
     const admin = getSupabaseAdminClient();
     const { data: members, error } = await admin.from('cohort_members').select('user_id').eq('cohort_id', DEFAULT_COHORT_ID).eq('role', 'student');
     if (error) throw error;

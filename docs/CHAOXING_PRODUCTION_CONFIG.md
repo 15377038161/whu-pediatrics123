@@ -121,6 +121,8 @@ CHAOXING_REDIRECT_URI=https://luojia-pediatrics.coze.site/api/auth/callback/chao
 
 4. **测试双端切换**：分别使用 1385 单位账号、1024 教师账号和 1024 学生账号登录。前两者在头像旁应看到切换入口，1024 学生不得出现入口且不得访问 `/teacher`。
 
+已有会话若曾被保存为学生，进入教师端时会自动把 `profiles`、`cohort_members` 与 `external_identities` 的角色同步为教师，避免界面身份已恢复但教师学情查询仍因旧成员角色报错。教师切换到学生端进行训练时继续使用教师成员身份，不会被错误要求改回学生成员。
+
 ---
 
 ## 快速验证清单

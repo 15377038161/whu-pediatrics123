@@ -392,6 +392,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .evidence-status[data-ok="false"] { color: var(--danger); }
 
 .teacher-banner { margin-top: 18px; padding: 24px; border: 1px solid #cce6dc; border-radius: 24px 24px 40px 24px; color: var(--ink); background: linear-gradient(135deg, #fff, #eaf8f2 75%, #fff7dc); box-shadow: var(--shadow-soft); }
+.workspace-error { width: min(100%, 620px); margin: clamp(42px, 10vh, 96px) auto; padding: clamp(24px, 5vw, 42px); border: 1px solid #efcdc5; border-radius: 28px; background: linear-gradient(145deg, #fff, #fff8f4); box-shadow: var(--shadow); }
+.workspace-error-icon { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 16px; border-radius: 16px; color: var(--brick); background: #fff0eb; }
+.workspace-error h1 { margin: 6px 0 10px; font: 800 clamp(24px, 5vw, 34px) var(--font-display); }
+.workspace-error > p:not(.eyebrow) { color: var(--muted); }
 .teacher-banner h1 { margin: 4px 0 8px; font: 800 32px var(--font-display); }
 .teacher-banner p { margin: 0; color: #607976; }
 .readonly-badge { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border-radius: 999px; background: var(--mint); color: var(--pine-dark); font-size: 12px; }
