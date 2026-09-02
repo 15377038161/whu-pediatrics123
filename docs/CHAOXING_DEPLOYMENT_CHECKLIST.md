@@ -55,6 +55,7 @@ ENABLE_CHAOXING_AUTH=true
 CHAOXING_APPID=<超星分配的正式 AppID>
 CHAOXING_SECRET=<超星分配的正式 AppSecret，存密钥管理>
 CHAOXING_FIDS=<武汉大学 FID，多个用逗号分隔，如 "1024,1385">
+CHAOXING_PREFERRED_FID=1385
 CHAOXING_REDIRECT_URI=<完整回调地址，如 https://your-app.coze.site/api/auth/callback/chaoxing>
 CHAOXING_TEACHER_UIDS=<教师白名单 UID，逗号分隔，空则无教师权限>
 CHAOXING_PROVIDER_TEACHER_FIDS=1024
@@ -101,7 +102,10 @@ CHAOXING_FIDS=1024:武汉大学,1385:武汉大学医学院
 
 # 多个机构（仅 FID）
 CHAOXING_FIDS=1024,1385
+CHAOXING_PREFERRED_FID=1385
 ```
+
+多个裸 FID 共用一个登录按钮时，系统默认先核验 1385，再回退到其他机构，避免同时属于 1024 与 1385 的竞赛测试账号被提前识别为 1024 学生。
 
 #### 3. 教师权限与测试机构双端权限
 

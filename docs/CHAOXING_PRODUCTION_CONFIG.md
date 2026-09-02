@@ -34,6 +34,7 @@ CHAOXING_SECRET=<仅在Coze密钥管理中配置>
 # ============ 机构配置 ============
 # 武汉大学 FID（需要向超星或校方确认）
 CHAOXING_FIDS=1024,1385
+CHAOXING_PREFERRED_FID=1385
 
 # ============ 回调地址配置 ============
 # 格式：https://<Coze分配的域名>/api/auth/callback/chaoxing

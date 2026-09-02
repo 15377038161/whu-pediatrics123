@@ -10,6 +10,7 @@ const keys = [
   'CHAOXING_APPID',
   'CHAOXING_SECRET',
   'CHAOXING_FIDS',
+  'CHAOXING_PREFERRED_FID',
   'CHAOXING_REDIRECT_URI',
 ] as const;
 
@@ -47,12 +48,20 @@ test('超星配置缺失时只返回明确错误页', async () => {
   }
 });
 
-test('多个裸 FID 使用单按钮，并以首个 FID 发起超星授权', async () => withChaoxingConfig(async () => {
+test('多个裸 FID 使用单按钮，并优先以 1385 测试单位识别双归属账号', async () => withChaoxingConfig(async () => {
   process.env.CHAOXING_FIDS = '1024,1385';
   const response = await beginChaoxingLogin(new NextRequest('http://127.0.0.1:8765/api/auth/chaoxing'));
   const location = new URL(response.headers.get('location') ?? '');
   assert.equal(location.origin, 'https://auth.chaoxing.com');
   assert.equal(location.pathname, '/connect/oauth2/authorize');
+  assert.equal(location.searchParams.get('state'), '1385');
+}));
+
+test('可显式覆盖多机构单按钮的优先识别 FID', async () => withChaoxingConfig(async () => {
+  process.env.CHAOXING_FIDS = '1024,1385';
+  process.env.CHAOXING_PREFERRED_FID = '1024';
+  const response = await beginChaoxingLogin(new NextRequest('http://127.0.0.1:8765/api/auth/chaoxing'));
+  const location = new URL(response.headers.get('location') ?? '');
   assert.equal(location.searchParams.get('state'), '1024');
 }));
 

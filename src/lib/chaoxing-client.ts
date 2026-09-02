@@ -80,6 +80,11 @@ function requiresInstitutionChoice(institutions: Institution[]): boolean {
   return institutions.length > 1 && institutions.some(({ fid, name }) => name !== fid);
 }
 
+function preferredInstitution(institutions: Institution[]): Institution {
+  const preferredFid = process.env.CHAOXING_PREFERRED_FID?.trim() || '1385';
+  return institutions.find(({ fid }) => fid === preferredFid) ?? institutions[0];
+}
+
 function config(): Config {
   const appid = process.env.CHAOXING_APPID?.trim() ?? '';
   const secret = process.env.CHAOXING_SECRET?.trim() ?? '';
@@ -119,7 +124,7 @@ export function getChaoxingAuthorizationConfig(requestedFid: string | null): { a
   if (!requested && requiresInstitutionChoice(institutions)) {
     throw new ChaoxingLoginError('institution_mismatch', '必须选择登录机构');
   }
-  return { appid, redirectUri, stateFid: requested || institutions[0].fid };
+  return { appid, redirectUri, stateFid: requested || preferredInstitution(institutions).fid };
 }
 
 async function postForm(url: string, body: URLSearchParams): Promise<Record<string, unknown>> {
