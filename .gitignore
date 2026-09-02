@@ -17,3 +17,5 @@ __pycache__/
 *.log
 *.tsbuildinfo
 .preview
+.codegraph/
+assets/
