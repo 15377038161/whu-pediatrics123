@@ -4,11 +4,11 @@
 
 ---
 
-## 已获取的超星凭据
+## 超星凭据配置
 
 ```bash
 CHAOXING_APPID=3826e62c2cc0455d86cf8c40c9de6308
-CHAOXING_SECRET=LOE33kcrW2846/BG
+CHAOXING_SECRET=<仅在Coze密钥管理中配置>
 ```
 
 **重要提醒：**
@@ -29,7 +29,7 @@ CHAOXING_SECRET=LOE33kcrW2846/BG
 # ============ 超星OAuth配置 ============
 ENABLE_CHAOXING_AUTH=true
 CHAOXING_APPID=3826e62c2cc0455d86cf8c40c9de6308
-CHAOXING_SECRET=LOE33kcrW2846/BG
+CHAOXING_SECRET=<仅在Coze密钥管理中配置>
 
 # ============ 机构配置 ============
 # 武汉大学 FID（需要向超星或校方确认）
@@ -45,6 +45,9 @@ CHAOXING_REDIRECT_URI=https://<待填写正式域名>/api/auth/callback/chaoxing
 # 空值 = 所有用户都是学生权限
 # 需要通过测试登录获取真实UID后填写
 CHAOXING_TEACHER_UIDS=
+
+# 直接采用超星教师/学生角色的机构；默认武汉大学 FID 1024
+CHAOXING_PROVIDER_TEACHER_FIDS=1024
 
 # 竞赛测试单位账号：可进入学生端与教师端；普通武汉大学学生不会命中
 CHAOXING_TEST_TEACHER_FIDS=1385
@@ -86,13 +89,14 @@ CHAOXING_REDIRECT_URI=https://luojia-pediatrics.coze.site/api/auth/callback/chao
 ```typescript
 // 满足任一规则即授予教师权限，并可在学生端/教师端之间切换：
 // 1. 机构 FID 位于 CHAOXING_TEST_TEACHER_FIDS（竞赛测试账号默认 1385）；或
-// 2. 超星教师角色匹配且 UID 位于 CHAOXING_TEACHER_UIDS。
+// 2. FID 1024 且超星返回教师/管理员角色；或
+// 3. 其他机构的超星教师角色匹配且 UID 位于 CHAOXING_TEACHER_UIDS。
 // 普通武汉大学学生不满足上述规则，只能进入学生端且不会显示教师端入口。
 ```
 
 **配置流程：**
 
-1. **获取教师UID**（必须先完成前3步）：
+1. **核对教师身份**（必须先完成前3步）：
    ```bash
    # 方法1：让教师测试登录，在服务端日志查看
    # 日志示例：
@@ -103,7 +107,7 @@ CHAOXING_REDIRECT_URI=https://luojia-pediatrics.coze.site/api/auth/callback/chao
    # 字段：app_metadata -> chaoxing -> uid
    ```
 
-2. **更新白名单**：
+2. **其他机构按需更新白名单**（FID 1024 教师不需要 UID 白名单）：
    ```bash
    # 单个教师
    CHAOXING_TEACHER_UIDS=12345678
@@ -114,7 +118,7 @@ CHAOXING_REDIRECT_URI=https://luojia-pediatrics.coze.site/api/auth/callback/chao
 
 3. **重新部署**以应用新配置
 
-4. **测试双端切换**：使用 1385 单位账号重新登录，在学生首页右上角应看到“教师端”入口；进入教师端后应看到“学生端”入口。
+4. **测试双端切换**：分别使用 1385 单位账号、1024 教师账号和 1024 学生账号登录。前两者在头像旁应看到切换入口，1024 学生不得出现入口且不得访问 `/teacher`。
 
 ---
 

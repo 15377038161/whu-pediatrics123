@@ -1,6 +1,7 @@
 import type { User } from '@supabase/supabase-js';
 import type { UserContext } from '@/domain/agent';
-import { isTestTeacherFid } from '@/lib/access-control';
+import { isTeacherIdentityAllowed } from '@/lib/access-control';
+import type { ChaoxingRole } from '@/lib/chaoxing-client';
 import { createReadOnlySupabaseClient } from '@/lib/supabase-ssr';
 import { readPreviewUser } from '@/lib/preview-auth';
 
@@ -18,12 +19,29 @@ function text(source: Record<string, unknown>, key: string): string {
   return typeof value === 'string' ? value : '';
 }
 
-function normalize(user: User): UserContext {
+function roles(value: unknown): ChaoxingRole[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry): ChaoxingRole[] => {
+    const role = record(entry);
+    const roleId = text(role, 'roleId');
+    const roleName = text(role, 'roleName');
+    return roleId || roleName ? [{ roleId, roleName }] : [];
+  });
+}
+
+export function normalizeSupabaseUser(user: User): UserContext {
   const metadata = record(user.user_metadata);
   const appMetadata = record(user.app_metadata);
   const app = record(appMetadata.app);
   const chaoxing = record(appMetadata.chaoxing);
-  const role = text(app, 'role') === 'teacher' || isTestTeacherFid(text(chaoxing, 'fid')) ? 'teacher' : 'student';
+  const fid = text(chaoxing, 'fid');
+  const uid = text(chaoxing, 'uid');
+  const providerRoles = roles(chaoxing.role);
+  const hasProviderIdentity = Boolean(fid || uid || providerRoles.length);
+  const teacherAllowed = hasProviderIdentity
+    ? isTeacherIdentityAllowed({ fid, uid, role: providerRoles })
+    : text(app, 'role') === 'teacher';
+  const role = teacherAllowed ? 'teacher' : 'student';
   return {
     id: user.id,
     role,
@@ -42,7 +60,7 @@ export async function getCurrentUser(cookies: CookieReader): Promise<UserContext
     const supabase = createReadOnlySupabaseClient(cookies);
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return null;
-    return normalize(data.user);
+    return normalizeSupabaseUser(data.user);
   } catch {
     return null;
   }

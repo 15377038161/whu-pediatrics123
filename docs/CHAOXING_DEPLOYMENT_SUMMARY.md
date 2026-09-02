@@ -45,7 +45,7 @@
 
 ```bash
 CHAOXING_APPID=3826e62c2cc0455d86cf8c40c9de6308
-CHAOXING_SECRET=LOE33kcrW2846/BG
+CHAOXING_SECRET=<仅在Coze密钥管理中配置>
 ```
 
 ⚠️ **请将 Secret 存储在 Coze 密钥管理中，不要提交到 Git**
@@ -64,7 +64,7 @@ ENABLE_CHAOXING_AUTH=true
 
 # 超星凭据
 CHAOXING_APPID=3826e62c2cc0455d86cf8c40c9de6308
-CHAOXING_SECRET=LOE33kcrW2846/BG
+CHAOXING_SECRET=<仅在Coze密钥管理中配置>
 
 # 机构FID（需向超星或校方确认）
 CHAOXING_FIDS=1024,1385

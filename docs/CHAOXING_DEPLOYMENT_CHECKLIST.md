@@ -57,6 +57,7 @@ CHAOXING_SECRET=<超星分配的正式 AppSecret，存密钥管理>
 CHAOXING_FIDS=<武汉大学 FID，多个用逗号分隔，如 "1024,1385">
 CHAOXING_REDIRECT_URI=<完整回调地址，如 https://your-app.coze.site/api/auth/callback/chaoxing>
 CHAOXING_TEACHER_UIDS=<教师白名单 UID，逗号分隔，空则无教师权限>
+CHAOXING_PROVIDER_TEACHER_FIDS=1024
 CHAOXING_TEST_TEACHER_FIDS=1385
 
 # === 可选配置 ===
@@ -106,7 +107,8 @@ CHAOXING_FIDS=1024,1385
 
 **当前实现逻辑：**
 ```typescript
-// 常规教师需同时满足：超星教师角色 + UID 白名单。
+// FID 1024 直接采用超星返回的教师/学生角色：教师可双端切换，学生不可切换。
+// 其他常规机构教师需同时满足：超星教师角色 + UID 白名单。
 // CHAOXING_TEST_TEACHER_FIDS 中的测试机构账号直接获得教师权限，
 // 并可在学生端与教师端之间切换。默认仅包含 1385。
 ```
@@ -115,6 +117,9 @@ CHAOXING_FIDS=1024,1385
 ```bash
 # 无教师权限（所有用户都是学生）
 CHAOXING_TEACHER_UIDS=
+
+# 武汉大学直接采用超星角色
+CHAOXING_PROVIDER_TEACHER_FIDS=1024
 
 # 单个教师
 CHAOXING_TEACHER_UIDS=12345678
@@ -129,7 +134,7 @@ CHAOXING_TEST_TEACHER_FIDS=1385
 **⚠️ 重要：**
 - `CHAOXING_TEACHER_UIDS` 空值 = 无常规教师白名单；不影响 1385 测试单位规则
 - 必须获取**测试教师的真实 UID**，不能猜测
-- 测试时须分别验证：武汉大学学生无教师入口、1385 账号可双端切换、白名单教师可双端切换
+- 测试时须分别验证：1024 学生无教师入口、1024 教师可双端切换、1385 账号可双端切换
 
 ---
 

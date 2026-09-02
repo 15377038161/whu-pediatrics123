@@ -65,19 +65,19 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
           <span>儿科智训</span>
         </a>
         <div className="topbar-user">
-          {canSwitch && (
-            user.role === 'teacher' ? (
-              <a className="role-switch" href={switchTarget} aria-label={`切换到${switchLabel}`}><GraduationCap size={15} /><span>{switchLabel}</span></a>
-            ) : (
-              <button className="role-switch" type="button" onClick={handleSwitch} disabled={switchBusy} aria-label={`切换到${switchLabel}`}><GraduationCap size={15} /><span>{switchBusy ? '切换中…' : switchLabel}</span></button>
-            )
-          )}
           <div><strong>{user.displayName}</strong><span className="sr-only">，{user.role === 'teacher' ? '教师' : '学生'}</span></div>
           <div className="avatar" aria-label={`${user.displayName}的头像`}>
             {user.avatarUrl && !avatarFailed
               ? <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setAvatarFailed(true)} />
               : <span aria-hidden="true">{user.displayName.slice(0, 1)}</span>}
           </div>
+          {canSwitch && (
+            user.role === 'teacher' ? (
+              <a className="role-switch" href={switchTarget} aria-label={`切换到${switchLabel}`} title={`切换到${switchLabel}`}><GraduationCap size={15} /><span>{switchLabel}</span></a>
+            ) : (
+              <button className="role-switch" type="button" onClick={handleSwitch} disabled={switchBusy} aria-label={`切换到${switchLabel}`} title={`切换到${switchLabel}`}><GraduationCap size={15} /><span>{switchBusy ? '切换中…' : switchLabel}</span></button>
+            )
+          )}
           <button className="icon-btn" type="button" onClick={logout} aria-label="退出登录" title="退出登录"><LogOut size={17} /></button>
         </div>
       </header>
