@@ -44,7 +44,7 @@
 ### 3. 超星凭据（已提供）
 
 ```bash
-CHAOXING_APPID=3826e62c2cc0455d86cf8c40c9de6308
+CHAOXING_APPID=<chaoxing-appid>
 CHAOXING_SECRET=<仅在Coze密钥管理中配置>
 ```
 
@@ -63,7 +63,7 @@ CHAOXING_SECRET=<仅在Coze密钥管理中配置>
 ENABLE_CHAOXING_AUTH=true
 
 # 超星凭据
-CHAOXING_APPID=3826e62c2cc0455d86cf8c40c9de6308
+CHAOXING_APPID=<chaoxing-appid>
 CHAOXING_SECRET=<仅在Coze密钥管理中配置>
 
 # 机构FID（需向超星或校方确认）
@@ -102,7 +102,7 @@ https://luojia-pediatrics.coze.site
 ### Step 4: 配置超星后台
 
 1. 登录 [超星微服务开放平台](https://auth.open.chaoxing.com/)
-2. 找到 AppID `3826e62c2cc0455d86cf8c40c9de6308` 对应的应用
+2. 找到 AppID `<chaoxing-appid>` 对应的应用
 3. 配置回调地址（**必须逐字符一致**）：
    ```
    PC端: https://luojia-pediatrics.coze.site/api/auth/callback/chaoxing

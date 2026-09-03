@@ -1,7 +1,7 @@
 import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, SessionState, SyncEventV1, TrainingReport, UserContext } from '@/domain/agent';
 import { createInitialSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
+import { getSupabaseAdminClient, withDatabaseRetry } from '@/lib/supabase-client';
 
 export interface TeacherStudentSummary {
   id: string;
@@ -157,8 +157,11 @@ export class AgentRepository {
       return clone(session);
     }
     const admin = getSupabaseAdminClient();
-    const { data, error } = await admin.from('training_sessions').select('state,user_id,cohort_id').eq('id', id).maybeSingle();
-    if (error) throw error;
+    const { data } = await withDatabaseRetry(async () => {
+      const result = await admin.from('training_sessions').select('state,user_id,cohort_id').eq('id', id).maybeSingle();
+      if (result.error) throw result.error;
+      return result;
+    });
     if (!data) throw new Error('SESSION_NOT_FOUND');
     if (this.actor.role === 'teacher') await ensureTeacherCohortAccess(this.actor, data.cohort_id);
     else if (data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
@@ -284,8 +287,11 @@ export class AgentRepository {
       return [...memoryStore().reports.values()].filter((report) => report.userId === this.actor.id).map(clone).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
     const admin = getSupabaseAdminClient();
-    const { data, error } = await admin.from('training_reports').select('data').eq('user_id', this.actor.id).order('created_at', { ascending: false });
-    if (error) throw error;
+    const { data } = await withDatabaseRetry(async () => {
+      const result = await admin.from('training_reports').select('data').eq('user_id', this.actor.id).order('created_at', { ascending: false });
+      if (result.error) throw result.error;
+      return result;
+    });
     return (data ?? []).map((row) => row.data as TrainingReport);
   }
 
@@ -313,16 +319,25 @@ export class AgentRepository {
     }
     await ensureTeacherCohortAccess(this.actor, DEFAULT_COHORT_ID);
     const admin = getSupabaseAdminClient();
-    const { data: members, error } = await admin.from('cohort_members').select('user_id').eq('cohort_id', DEFAULT_COHORT_ID).eq('role', 'student');
-    if (error) throw error;
+    const { data: members } = await withDatabaseRetry(async () => {
+      const result = await admin.from('cohort_members').select('user_id').eq('cohort_id', DEFAULT_COHORT_ID).eq('role', 'student');
+      if (result.error) throw result.error;
+      return result;
+    });
     const ids = (members ?? []).map((row) => row.user_id as string);
     if (ids.length === 0) return [];
-    const [{ data: profiles, error: profileError }, { data: reports, error: reportError }] = await Promise.all([
-      admin.from('profiles').select('id,display_name,student_no').in('id', ids),
-      admin.from('training_reports').select('id,session_id,user_id,total_score,mode,created_at').in('user_id', ids).order('created_at', { ascending: false }),
+    const [{ data: profiles }, { data: reports }] = await Promise.all([
+      withDatabaseRetry(async () => {
+        const result = await admin.from('profiles').select('id,display_name,student_no').in('id', ids);
+        if (result.error) throw result.error;
+        return result;
+      }),
+      withDatabaseRetry(async () => {
+        const result = await admin.from('training_reports').select('id,session_id,user_id,total_score,mode,created_at').in('user_id', ids).order('created_at', { ascending: false });
+        if (result.error) throw result.error;
+        return result;
+      }),
     ]);
-    if (profileError) throw profileError;
-    if (reportError) throw reportError;
     return (profiles ?? []).map((profile) => {
       const own = (reports ?? []).filter((report) => report.user_id === profile.id);
       const latest = own[0];
@@ -348,8 +363,11 @@ export class AgentRepository {
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     }
     const admin = getSupabaseAdminClient();
-    const { data, error } = await admin.from('training_sessions').select('state').eq('user_id', this.actor.id).order('updated_at', { ascending: false });
-    if (error) throw error;
+    const { data } = await withDatabaseRetry(async () => {
+      const result = await admin.from('training_sessions').select('state').eq('user_id', this.actor.id).order('updated_at', { ascending: false });
+      if (result.error) throw result.error;
+      return result;
+    });
     return (data ?? []).map((row) => row.state as SessionState);
   }
 
@@ -362,12 +380,18 @@ export class AgentRepository {
       return { session, report: report ? clone(report) : null, student: { id: user.id, displayName: user.displayName, studentNo: user.studentNo } };
     }
     const admin = getSupabaseAdminClient();
-    const [{ data: profile, error: profileError }, { data: reportRow, error: reportError }] = await Promise.all([
-      admin.from('profiles').select('id,display_name,student_no').eq('id', session.userId).single(),
-      admin.from('training_reports').select('data').eq('session_id', id).maybeSingle(),
+    const [{ data: profile }, { data: reportRow }] = await Promise.all([
+      withDatabaseRetry(async () => {
+        const result = await admin.from('profiles').select('id,display_name,student_no').eq('id', session.userId).single();
+        if (result.error) throw result.error;
+        return result;
+      }),
+      withDatabaseRetry(async () => {
+        const result = await admin.from('training_reports').select('data').eq('session_id', id).maybeSingle();
+        if (result.error) throw result.error;
+        return result;
+      }),
     ]);
-    if (profileError) throw profileError;
-    if (reportError) throw reportError;
     return { session, report: reportRow?.data as TrainingReport | null ?? null, student: { id: profile.id, displayName: profile.display_name, studentNo: profile.student_no } };
   }
 }

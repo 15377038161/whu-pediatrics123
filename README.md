@@ -29,6 +29,7 @@
 ## 目录
 
 - `src/domain/case-catalog.ts`：不含隐藏病史的公开病例目录；新增病例先在此登记展示信息。
+- `src/domain/content.ts`：儿科学教学内容总览（病例库、OSCE 考站、专项训练、资源库四大方向）与内容检索函数；规划中的病例与资源以 `planned` 登记，教师审核通过后再落地为正式病例版本。
 - `src/domain/case.ts`：版本化病例事实、体征规则和检查结果；教师材料到位后在此新增或升级病例版本。
 - `src/lib/agent-engine.ts`：统一智能体状态机与确定性临床规则。
 - `src/lib/role-agent.ts`：患儿/家长角色提示词、结构化响应校验与确定性降级。

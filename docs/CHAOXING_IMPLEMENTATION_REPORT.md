@@ -227,7 +227,7 @@ $ pnpm run verify:chaoxing
 
 ```bash
 ENABLE_CHAOXING_AUTH=true
-CHAOXING_APPID=3826e62c2cc0455d86cf8c40c9de6308
+CHAOXING_APPID=<chaoxing-appid>
 CHAOXING_SECRET=<仅在Coze密钥管理中配置>
 CHAOXING_FIDS=1024,1385
 CHAOXING_REDIRECT_URI=  # 留空自动生成
@@ -415,7 +415,7 @@ pnpm run verify:chaoxing
 
 **超星平台**:
 - 开放平台：https://auth.open.chaoxing.com/
-- AppID: 3826e62c2cc0455d86cf8c40c9de6308
+- AppID: <chaoxing-appid>
 
 ---
 
