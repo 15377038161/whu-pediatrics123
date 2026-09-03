@@ -58,7 +58,8 @@ tests/                      # 测试
 ## 数据库与认证集成状态
 
 - **Supabase 已实例化**：数据库变量由平台注入（`COZE_SUPABASE_URL`/`COZE_SUPABASE_ANON_KEY`/`COZE_SUPABASE_SERVICE_ROLE_KEY`），本地开发通过 `coze_workload_identity` 的 `get_project_env_vars()` 获取
-- **迁移已执行**：`supabase/migrations/202608230001_pediatrics_agent.sql` 已在目标数据库执行（16 张业务表 + RLS）。变更表结构必须新增带时间戳前缀的迁移文件，禁止改动已执行的历史迁移
+- **迁移已执行**：`supabase/migrations/202608230001_pediatrics_agent.sql`（16 张业务表 + RLS）与 `supabase/migrations/202609010001_case_categories_symptom_terms.sql`（病例分类/症状字典/病例-症状关联 + 索引 + RLS + 种子，共 21 张表）均已在平台数据库按顺序执行。变更表结构必须新增带时间戳前缀的迁移文件，禁止改动已执行的历史迁移；新环境部署必须按时间戳顺序执行全部迁移
+- **数据库弹性封装**：`src/lib/supabase-client.ts` 提供 `withDatabaseRetry`（默认 3 次、300ms 指数退避，仅重试网络类/5xx 错误），`src/lib/repository.ts` 所有读路径已接入，写路径保持单次执行；`/api/health/integrations` 的 `database` 字段为真实连通性探测（`connected`/`configured_unreachable`/`waiting_for_coze_database`）
 - **超星 OAuth 已实现**：
   - **代码完整**：发起授权、OAuth回调、用户创建与绑定、角色权限映射、错误处理全部就绪
   - **配置灵活**：支持显式配置 `CHAOXING_REDIRECT_URI` 或自动从 `COZE_PROJECT_DOMAIN_DEFAULT` 生成
