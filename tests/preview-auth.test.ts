@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+/* eslint-disable @typescript-eslint/no-require-imports -- 测试内按环境变量动态加载被测模块（withEnvironment 需运行时切换） */
 import test from 'node:test';
 import { isPreviewEnabled } from '@/lib/preview-auth';
 
@@ -59,10 +60,10 @@ test('冲突fail-closed：新旧两个角色Cookie同时存在时拒绝识别（
   const { NextResponse } = require('next/server') as typeof import('next/server');
   const resT = NextResponse.json({ ok: true });
   setPreviewCookie(resT, 'teacher');
-  const teacherCookie = resT.cookies.get('luojia_peds_preview_teacher')?.value;
+  const teacherCookie = resT.cookies.get('luojia_peds_preview_teacher')?.value ?? '';
   const resS = NextResponse.json({ ok: true });
   setPreviewCookie(resS, 'student');
-  const studentCookie = resS.cookies.get('luojia_peds_preview_student')?.value;
+  const studentCookie = resS.cookies.get('luojia_peds_preview_student')?.value ?? '';
   // 网关回放旧教师 Cookie + 浏览器持有新学生 Cookie → 双 Cookie 共存 → fail-closed
   assert.equal(readPreviewUser(makePreviewCookies({ luojia_peds_preview_teacher: teacherCookie, luojia_peds_preview_student: studentCookie })), null);
   // 旧版单名 Cookie 与新角色 Cookie 共存 → 同样拒绝（迁移期防串用）

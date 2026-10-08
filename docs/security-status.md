@@ -84,6 +84,33 @@
 
 **平台契约限制（如实保留）**：authorize-url 仅接受 `redirect_uri`，不支持应用级 state/nonce（平台契约，非应用缺陷）；跨租户合法 token 拒绝测试无样本，标注未测。
 
+### 2026-10-09 补充：登录按钮「点击后恢复」的根因与修复（完整 OAuth 仍未验）
+
+**用户浏览器实测症状**：刷新首页点击「使用超星账号进入」→ 短暂「正在连接超星…」后按钮恢复原状，地址未跳转、无错误提示、无新窗口、Console 无报错。
+
+**根因排查（脱敏运行证据）**：
+
+1. **authorize-url API 排除**：本地直连与网关域名（模拟浏览器头）均 **200** + 真实授权地址 + 正确 CORS——API 层无缺陷。
+2. **双重缺口定位**：
+   - `src/lib/chaoxing-oauth-client.ts` 源码已含诊断代码（NAV_ATTEMPT 标记、空授权地址显式报错）
+   - 但 `platform-chaoxing-login.tsx` 组件**从未消费 `consumeNavigationAttempt`**——标记写入后无人读取，兜底按钮不存在
+   - `.next` 产物为旧构建（BUILD_ID 旧值），不含任何新特征——`tsx watch` 热重载只影响 server.ts 入口，不重编 Next 客户端产物
+3. **症状吻合路径**：`window.location.assign(外部授权域)` 被内置浏览器环境拦截 → 页面重载回 `/` → React 状态重置（视觉即「按钮恢复」）→ sessionStorage 中的拦截标记因组件未消费而失效。**此为最吻合假说，尚未经浏览器最终确认**（不把外部导航拦截假说当确认根因）。
+
+**修复（已实施，本地提交不推送）**：
+
+- 组件挂载时 `useEffect` 消费 `consumeNavigationAttempt()`：存在标记 → 显示 `自动跳转超星登录页被当前浏览器环境拦截` 错误提示 + 「手动打开超星登录页」按钮（`window.open` 新窗口，`noopener,noreferrer`）
+- 库层既有防线不变：网络失败 / 非 200 / 空/畸形授权地址均显式报错，不静默恢复按钮
+- 重新构建并经 tsx watch 重载：新 BUILD_ID 已上线，新特征（`手动打开超星登录页` / `cx_nav_attempt`）已确认存在于**经域名实际服务的 chunk** 中
+
+**页面可见验收标志（浏览器复验用）**：
+
+1. 刷新首页 → 点击「使用超星账号进入」
+2. 若导航被拦截：按钮恢复后应出现 **红色错误提示**「自动跳转超星登录页被当前浏览器环境拦截」+ **「手动打开超星登录页」按钮**（点击新窗口打开授权页）——若仍无任何提示则说明拦截标记未生效，需回报
+3. 若导航成功：地址跳转超星授权页，扫码/登录后回跳本站自动建立会话
+
+**状态声明：完整 OAuth 登录链路（authorize → 扫码 → 回跳 → exchange → session 落地 → 角色重定向）仍未验证**——需要真实超星账号在浏览器中完成人工授权步骤。此前 authorize-url/checklogin 的 HTTP 200 仅证明 API 层可用，不构成完整登录成功。
+
 ### 草稿功能授权：严格交集恢复
 
 `/api/teacher/case-drafts`（`src/app/api/teacher/case-drafts/route.ts` GET L20 / POST L37）与页面 `/teacher/case-drafts` 均恢复为：**应用层教师角色（`requireAuth(request, 'teacher')` / `requirePageUser('teacher')`）AND 数据库白名单（`app_is_teacher` RPC）**，非 OR、非仅白名单。
