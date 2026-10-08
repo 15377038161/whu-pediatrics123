@@ -58,6 +58,18 @@
 
 GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](docs/实施方案/GITHUB_CODER_DEPLOY.md)，代码与私有病例资料须分别部署。
 
+## 教师病例草稿导入
+
+教师（数据库 `teacher_emails` 白名单身份）可在教师端导航「病例草稿」页粘贴结构化 JSON 病例资料，预校验后保存为草稿。使用步骤：
+
+1. 以教师身份登录，进入教师端「病例草稿」页（`/teacher/case-drafts`）。
+2. 点击「填入示例模板」，按模板补齐必填字段（年龄/性别/主诉/病史/查体/辅助检查/诊断/诊疗计划）；缺失字段会在预校验中如实列出，系统不自动补造患者事实。
+3. 勾选「正文已确认脱敏」与「媒体已审核」后先「预校验」确认无问题，再「保存草稿」。
+4. 修订时递增草稿版本（如 `v1` → `v2`）：旧版本不会被覆盖，同一版本重复导入会被明确拒绝。
+5. 学生发布流程本阶段未实现：草稿仅教师可见，与运行中病例事实（`case_snapshot_*`）完全隔离，不进入学生训练。
+
+技术边界：草稿表 `case_draft_imports` 仅教师可读/插入（RLS `app_is_teacher()`），无 UPDATE/DELETE 权限防篡改；API 与页面授权均调用与 RLS 相同的白名单谓词，不自封教师身份。3 个无独立来源病种（新生儿脑梗死、支气管肺炎、格林巴利综合征）保持待补状态。验收脚本：`pnpm tsx scripts/verify-case-drafts.ts`（16 项断言：保存/预校验缺字段/重复导入拒绝/学生匿名越权拒绝/RLS 直插直读拒绝/真实服务重启后复读）。
+
 资料准备依赖 Python（`scripts/requirements-cases.txt`）、LibreOffice（旧版 Word 转换）、FFmpeg（视频转码）。安装后执行 `pnpm prepare:cases`；流程仅生成教学衍生文件，不修改原件。先前生成的旧版 Word 与 MP4 会被复用。
 
 `pnpm verify:cases` 对本地 `127.0.0.1:8876` 的独立学生预览逐例执行完整流程，并检查素材访问。验证服务应显式设置 `ENABLE_UI_PREVIEW=true`、`ENABLE_AI_FIXTURE=true` 和随机 `PREVIEW_SIGNING_SECRET`；脚本禁止连接远程地址，避免写入正式学情库。详情见覆盖核对文档。

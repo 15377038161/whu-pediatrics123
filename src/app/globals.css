@@ -671,3 +671,29 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .quiz-toolbar { flex-direction: column; align-items: stretch; }
   .quiz-panel { padding: 16px 14px; }
 }
+
+/* ---- 教师病例草稿导入 ---- */
+.case-draft-importer { display: grid; gap: 22px; margin-top: 20px; }
+.case-draft-importer section { border: 1px solid var(--line); border-radius: 16px; background: var(--white); padding: 18px 20px; display: grid; gap: 12px; }
+.case-draft-importer h2 { font-size: 16px; margin: 0; }
+.case-draft-importer label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.case-draft-importer label.checkbox-row { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.case-draft-importer input[type="text"], .case-draft-importer input:not([type]) { min-height: var(--tap); border: 1px solid #becbc7; border-radius: 12px; padding: 9px 12px; background: var(--white); }
+.case-draft-importer textarea { width: 100%; min-height: 220px; border: 1px solid #becbc7; border-radius: 13px; background: var(--white); color: var(--ink); padding: 12px 13px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.6; }
+.case-draft-importer .action-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.case-draft-importer .action-row button { border-radius: 13px; padding: 10px 16px; border: 1px solid transparent; font-weight: 800; background: var(--pine); color: white; }
+.case-draft-importer .action-row button:nth-child(n+2) { background: var(--white); color: var(--ink); border-color: rgba(23,60,60,.18); }
+.case-draft-importer .action-row button:disabled { cursor: not-allowed; opacity: .55; }
+.case-draft-importer .form-error { color: #b4442f; font-weight: 700; margin: 0; }
+.case-draft-importer .form-ok { color: #2e7d4f; font-weight: 700; margin: 0; }
+.case-draft-importer .issue-list { margin: 0; padding-left: 20px; color: #8a5b2f; display: grid; gap: 6px; font-size: 14px; }
+.case-draft-importer .issue-list li::marker { color: #c9852e; }
+.case-draft-importer .draft-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.case-draft-importer .draft-table th { text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+.case-draft-importer .draft-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.case-draft-importer .hint { font-size: 12px; color: #6b7b78; margin: 0; }
+@media (max-width: 699px) {
+  .case-draft-importer section { padding: 14px 12px; }
+  .case-draft-importer .draft-table { font-size: 12px; }
+  .case-draft-importer .draft-table th, .case-draft-importer .draft-table td { padding: 6px 6px; }
+}

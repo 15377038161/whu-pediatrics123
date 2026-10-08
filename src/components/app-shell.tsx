@@ -16,6 +16,7 @@ const studentNav = [
 
 const teacherNav = [
   { href: '/teacher', label: '学生学情', icon: Users },
+  { href: '/teacher/case-drafts', label: '病例草稿', icon: BookOpenCheck },
   { href: '/about/agent', label: '智能体说明', icon: BookOpenText },
 ];
 

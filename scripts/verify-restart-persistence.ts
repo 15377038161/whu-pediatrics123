@@ -153,7 +153,7 @@ async function main(): Promise<void> {
   if (answeredId) {
     const target = afterRecords.find((r) => r.id === answeredId);
     check('重启后已作答题目记录保留（答案为首次提交值）',
-      Boolean(target) && (baselineAnswer === null || target.submittedAnswer === baselineAnswer),
+      Boolean(target) && (baselineAnswer === null || target?.submittedAnswer === baselineAnswer),
       target ? `submittedAnswer=${target.submittedAnswer}` : '记录丢失');
   }
 
