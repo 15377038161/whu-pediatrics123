@@ -127,9 +127,23 @@ function retryAfterMsOf(error: unknown): number | null {
   return Number.isFinite(seconds) ? Math.max(0, Math.ceil(seconds * 1000)) : null;
 }
 
+/**
+ * 官方 coder-coding-dev-sdk 的 APIError/NetworkError 与旧 coze-coding-dev-sdk 同名类
+ * 是不同包的独立构造器，跨包 instanceof 恒为 false。旧 SDK（保留用于 TTS/HeaderUtils）
+ * 抛出的错误按 name 做 duck-typing 兼容归一，属性差异（status/data vs statusCode/response）
+ * 由 apiErrorStatus / retryAfterMsOf 处理。
+ */
+function isAPIErrorLike(error: unknown): boolean {
+  return error instanceof APIError || (error instanceof Error && error.name === 'APIError');
+}
+
+function isNetworkErrorLike(error: unknown): boolean {
+  return error instanceof NetworkError || (error instanceof Error && error.name === 'NetworkError');
+}
+
 export function classifyAIError(error: unknown): AIErrorInfo {
   if (error instanceof AIGatewayError) return error.info;
-  if (error instanceof APIError) {
+  if (isAPIErrorLike(error)) {
     const status = apiErrorStatus(error);
     if (status === 429) return { kind: 'rate_limited', retryable: true, statusCode: status, detail: detailOf(error) };
     if (status === 401 || status === 403) return { kind: 'auth', retryable: false, statusCode: status, detail: detailOf(error) };
@@ -138,7 +152,7 @@ export function classifyAIError(error: unknown): AIErrorInfo {
     if (status !== undefined) return { kind: 'invalid_request', retryable: false, statusCode: status, detail: detailOf(error) };
     return { kind: 'server', retryable: true, detail: detailOf(error) };
   }
-  if (error instanceof NetworkError) return { kind: 'network', retryable: true, detail: detailOf(error) };
+  if (isNetworkErrorLike(error)) return { kind: 'network', retryable: true, detail: detailOf(error) };
   const detail = detailOf(error);
   if (detail.includes(TIMEOUT_SENTINEL) || /timeout|超时|ECONNABORTED|ETIMEDOUT|ECONNRESET/i.test(detail)) {
     return { kind: 'timeout', retryable: true, detail };

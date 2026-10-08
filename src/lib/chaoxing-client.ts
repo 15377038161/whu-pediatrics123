@@ -69,10 +69,17 @@ function getRedirectUri(): string {
     return `${base}/api/auth/callback/chaoxing`;
   }
 
-  // Priority 3: Fallback (should not happen in production)
+  // Priority 3: Build from CODER_PROJECTS_DOMAIN (sandbox/dev injected by platform)
+  const sandboxDomain = process.env.CODER_PROJECTS_DOMAIN?.trim();
+  if (sandboxDomain) {
+    const base = sandboxDomain.startsWith('http') ? sandboxDomain : `https://${sandboxDomain}`;
+    return `${base}/api/auth/callback/chaoxing`;
+  }
+
+  // Priority 4: Fallback (should not happen in production)
   throw new ChaoxingLoginError(
     'config_missing',
-    '无法确定回调地址：CHAOXING_REDIRECT_URI 和 COZE_PROJECT_DOMAIN_DEFAULT 都未配置',
+    '无法确定回调地址：CHAOXING_REDIRECT_URI、COZE_PROJECT_DOMAIN_DEFAULT 和 CODER_PROJECTS_DOMAIN 都未配置',
   );
 }
 
