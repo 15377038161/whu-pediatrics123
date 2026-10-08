@@ -1,6 +1,6 @@
 import { ArrowRight, BookOpenCheck, CheckCircle2, CircleAlert, RotateCcw } from 'lucide-react';
 import type { TrainingReport } from '@/domain/agent';
-import { getPublicCase } from '@/domain/case-catalog';
+import { findPublicCase } from '@/domain/case-catalog';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
   { key: 'history', label: '儿科问诊', max: 25 },
@@ -13,7 +13,9 @@ const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string;
 
 export function ReportView({ report, readonly = false }: { report: TrainingReport; readonly?: boolean }) {
   const mode = report.mode === 'osce' ? 'OSCE考核' : report.mode === 'practice' ? '专项训练' : '引导训练';
-  const caseProfile = getPublicCase(report.caseId);
+  // 降级查询：历史报告可能引用目录外 caseId（如早期探针/归档病例），降级展示 ID 而非 500
+  const caseProfile = findPublicCase(report.caseId);
+  const caseTitle = caseProfile?.title ?? `病例 ${report.caseId}`;
   const processReport = report.scoreBasis === 'process';
   return (
     <div>
@@ -21,7 +23,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         <div className="score-ring" aria-label={`总分 ${report.totalScore} 分`}><strong>{report.totalScore}</strong></div>
         <div>
           <p className="eyebrow">{mode} · {readonly ? '只读报告' : '训练完成'}</p>
-          <h1>{caseProfile.title}</h1>
+          <h1>{caseTitle}</h1>
           <p>{processReport ? '分数表示训练过程完成度。原病例诊断与诊疗经过用于对照，诊断和处置的正确性由教师复核。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
         </div>
       </section>

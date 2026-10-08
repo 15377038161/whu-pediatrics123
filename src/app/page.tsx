@@ -2,8 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowRight, HeartPulse, MessageCircleHeart, Sparkles, Stethoscope } from 'lucide-react';
-import { ChaoxingLoginEntry } from '@/components/chaoxing-login-entry';
-import { getChaoxingLoginOptions } from '@/lib/chaoxing-client';
+import { PlatformChaoxingLogin } from '@/components/platform-chaoxing-login';
 import { getCurrentUser } from '@/lib/supabase-auth';
 import { isPreviewEnabled } from '@/lib/preview-auth';
 
@@ -11,7 +10,6 @@ export default async function LoginPage() {
   const user = await getCurrentUser(await cookies());
   if (user) redirect(user.role === 'teacher' ? '/teacher' : '/student');
   const preview = isPreviewEnabled();
-  const loginOptions = getChaoxingLoginOptions();
   return (
     <main className="landing" id="main-content">
       <div className="landing-scene" aria-hidden="true">
@@ -47,7 +45,7 @@ export default async function LoginPage() {
           <span className="login-panel-icon"><Stethoscope size={21} /></span>
           <h2 className="section-title" id="login-title">进入儿科临床学习空间</h2>
           <div className="login-actions">
-            <ChaoxingLoginEntry {...loginOptions} />
+            <PlatformChaoxingLogin />
             {preview && (
               <>
                 <a className="btn btn-secondary btn-block" href="/api/preview/login?role=student">评委预览 · 学生端</a>

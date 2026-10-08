@@ -1,5 +1,7 @@
-import { APIError, Config, LLMClient, NetworkError, VERSION } from 'coze-coding-dev-sdk';
-import type { LLMConfig, Message } from 'coze-coding-dev-sdk';
+// 文本 LLM 使用官方 coder-coding-dev-sdk（读取平台注入的 CODER_CODING_* 凭据）。
+// 注：coze-coding-dev-sdk（0.7.x）读取 COZE_* 变量，沙箱未注入，实测调用失败，仅保留 TTS/HeaderUtils 用途。
+import { APIError, Config, LLMClient, NetworkError, VERSION } from 'coder-coding-dev-sdk';
+import type { LLMConfig, Message } from 'coder-coding-dev-sdk';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_ATTEMPTS = 3;
@@ -106,9 +108,19 @@ function detailOf(error: unknown): string {
   return String(error);
 }
 
+/** 官方 coder-coding-dev-sdk 的 APIError 暴露 status/data；旧 coze SDK 为 statusCode/response。做兼容归一。 */
+function apiErrorStatus(error: unknown): number | undefined {
+  if (!(error instanceof Error)) return undefined;
+  const status = (error as { status?: unknown }).status;
+  if (typeof status === 'number') return status;
+  const statusCode = (error as { statusCode?: unknown }).statusCode;
+  if (typeof statusCode === 'number') return statusCode;
+  return undefined;
+}
+
 function retryAfterMsOf(error: unknown): number | null {
-  if (!(error instanceof APIError)) return null;
-  const headers = (error.response as { headers?: Record<string, unknown> } | undefined)?.headers;
+  if (!(error instanceof Error)) return null;
+  const headers = (error as { response?: { headers?: Record<string, unknown> } }).response?.headers;
   const raw = headers?.['retry-after'];
   if (typeof raw !== 'string' && typeof raw !== 'number') return null;
   const seconds = Number(raw);
@@ -118,7 +130,7 @@ function retryAfterMsOf(error: unknown): number | null {
 export function classifyAIError(error: unknown): AIErrorInfo {
   if (error instanceof AIGatewayError) return error.info;
   if (error instanceof APIError) {
-    const status = error.statusCode;
+    const status = apiErrorStatus(error);
     if (status === 429) return { kind: 'rate_limited', retryable: true, statusCode: status, detail: detailOf(error) };
     if (status === 401 || status === 403) return { kind: 'auth', retryable: false, statusCode: status, detail: detailOf(error) };
     if (status === 408) return { kind: 'timeout', retryable: true, statusCode: status, detail: detailOf(error) };

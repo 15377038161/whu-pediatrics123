@@ -1,0 +1,146 @@
+'use client';
+
+/**
+ * 超星 OAuth2.0 一键登录（平台官方契约）。
+ * 端点：authorize-url / checklogin / exchange 全走平台代理（/v1/api/coder/proxy/），
+ * 凭证只在服务端，前端只拿跳转地址与 session JSON。
+ * session 落地：浏览器不持有 anonKey（平台不暴露真实节点地址），
+ * exchange 结果 POST 本应用 /api/auth/callback/platform-session，由服务端 setSession 写 httpOnly cookie。
+ * 契约来源：supabase-auth 技能 references/chaoxing-oauth.md。
+ */
+
+const PROJECT_ID = process.env.NEXT_PUBLIC_CODER_PROJECTS_ID;
+// 生产模式该变量不存在 → 空字符串 → 相对路径，由平台网关转发。
+const AUTH_BASE = process.env.NEXT_PUBLIC_CODER_AUTH_PROXY_URL || '';
+
+// 登录成功后的业务首页：学生/教师登录后由服务端页面各自重定向，此处统一回到根路径。
+export const POST_LOGIN_HOME = '/';
+
+const AUTH_HEADERS = {
+  'Content-Type': 'application/json',
+  'ngrok-skip-browser-warning': 'true',
+} as const;
+
+export interface LoginResult {
+  success: boolean;
+  error?: string;
+}
+
+/** 超星 OAuth2.0 一键登录：换取授权跳转地址后顶层导航（fetch 跟随跨域 302 会被 CORS 拦截）。 */
+export async function loginWithChaoxingOAuth(): Promise<LoginResult> {
+  const redirectUri = window.location.href.split('#')[0];
+  const res = await fetch(
+    `${AUTH_BASE}/v1/api/coder/proxy/auth/chaoxing-oauth/authorize-url?redirect_uri=${encodeURIComponent(redirectUri)}`,
+    { headers: AUTH_HEADERS },
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}) as { message?: string });
+    return { success: false, error: body.message || `获取授权地址失败 (${res.status})` };
+  }
+  const { authorizeUrl } = (await res.json()) as { authorizeUrl: string };
+  window.location.assign(authorizeUrl);
+  return { success: true };
+}
+
+// in-flight 去重（模块级）：一次性授权码的并发防线（StrictMode 双执行/多挂载点）。
+let inflight: Promise<LoginResult> | null = null;
+
+function cleanOAuthParamsFromUrl(): void {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('code');
+  url.searchParams.delete('state');
+  url.searchParams.delete('userinfo');
+  window.history.replaceState({}, '', url.toString());
+}
+
+/** exchange 兑换：code（+可选 userinfo 密文）→ Supabase session → setSession → 清理 URL。 */
+async function doExchange(code: string, userinfo?: string): Promise<LoginResult> {
+  const res = await fetch(`${AUTH_BASE}/v1/api/coder/proxy/auth/chaoxing-oauth/exchange`, {
+    method: 'POST',
+    headers: AUTH_HEADERS,
+    body: JSON.stringify({ code, projectId: PROJECT_ID, ...(userinfo ? { userinfo } : {}) }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}) as { message?: string });
+    cleanOAuthParamsFromUrl();
+    return { success: false, error: body.message || '登录链接已失效，请重新登录' };
+  }
+  const session = (await res.json()) as { access_token: string; refresh_token: string };
+  // session 落地走本应用服务端路由（写 httpOnly cookie），浏览器不持有 anonKey。
+  const persist = await fetch('/api/auth/callback/platform-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(session),
+  });
+  if (!persist.ok) {
+    cleanOAuthParamsFromUrl();
+    return { success: false, error: '会话建立失败，请重新登录' };
+  }
+  cleanOAuthParamsFromUrl();
+  return { success: true };
+}
+
+// ── checklogin 中转 ────────────────────────────────────────────
+const CX_CODE_KEY = 'cx_oauth_code';
+const CX_RELAY_KEY = 'cx_checklogin_relay';
+const RELAY_WINDOW_MS = 5000;
+
+/**
+ * 入口页登录闭环编排（唯一公开入口）：code → 暂存 → checklogin 中转 → userinfo 回跳 → exchange。
+ * 幂等：模块级 in-flight 去重；中转窗口内无 code/userinfo 的再入绝不兑换（防抢跑消费一次性 code）。
+ */
+export function handleOAuthLoginFlow(): Promise<LoginResult> {
+  if (inflight) return inflight;
+  inflight = doHandleOAuthLoginFlow().finally(() => {
+    inflight = null;
+  });
+  return inflight;
+}
+
+async function doHandleOAuthLoginFlow(): Promise<LoginResult> {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const userinfo = params.get('userinfo');
+  const relayTs = Number(sessionStorage.getItem(CX_RELAY_KEY) || '0');
+  const inRelayWindow = relayTs > 0 && Date.now() - relayTs < RELAY_WINDOW_MS;
+
+  if (code && !inRelayWindow) {
+    sessionStorage.setItem(CX_CODE_KEY, code);
+    sessionStorage.setItem(CX_RELAY_KEY, String(Date.now()));
+    cleanOAuthParamsFromUrl();
+    try {
+      const backurl = window.location.href.split('#')[0];
+      const res = await fetch(
+        `${AUTH_BASE}/v1/api/coder/proxy/auth/chaoxing-checklogin/url?backurl=${encodeURIComponent(backurl)}`,
+        { headers: AUTH_HEADERS },
+      );
+      if (res.ok) {
+        const { checkloginUrl } = (await res.json()) as { checkloginUrl: string };
+        window.location.assign(checkloginUrl);
+        return { success: false };
+      }
+      sessionStorage.removeItem(CX_RELAY_KEY);
+    } catch {
+      sessionStorage.removeItem(CX_RELAY_KEY);
+    }
+  }
+
+  if (inRelayWindow && !code && !userinfo) {
+    return { success: false };
+  }
+
+  const relayedUserinfo = userinfo ? userinfo.replace(/ /g, '+') : undefined;
+  const pendingCode = sessionStorage.getItem(CX_CODE_KEY) || code;
+  if (pendingCode) {
+    try {
+      return await doExchange(pendingCode, relayedUserinfo);
+    } finally {
+      sessionStorage.removeItem(CX_RELAY_KEY);
+      sessionStorage.removeItem(CX_CODE_KEY);
+      cleanOAuthParamsFromUrl();
+    }
+  }
+  sessionStorage.removeItem(CX_RELAY_KEY);
+  cleanOAuthParamsFromUrl();
+  return { success: false };
+}

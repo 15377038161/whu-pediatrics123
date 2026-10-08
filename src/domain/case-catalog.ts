@@ -79,6 +79,15 @@ export function getPublicCase(caseId: string): PublicCaseProfile {
   return caseProfile;
 }
 
+
+/**
+ * 目录外 caseId 降级查询（历史报告/归档会话展示用）：
+ * 返回 null 而非抛错，调用方降级展示病例 ID；训练核心链路仍走 getPublicCase 硬防线。
+ */
+export function findPublicCase(caseId: string): PublicCaseProfile | null {
+  return CASE_CATALOG.find((item) => item.id === caseId) ?? null;
+}
+
 export function isTrainableCase(caseId: string): boolean {
   return CASE_CATALOG.some((item) => item.id === caseId);
 }
