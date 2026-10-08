@@ -37,8 +37,9 @@ export function PlatformChaoxingLogin() {
   useEffect(() => {
     const attempted = consumeNavigationAttempt();
     if (attempted) {
-      setBlockedUrl(attempted);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- 一次性消费 sessionStorage 拦截标记（与 student/quiz 页初始外系统同步同模式）
+      setBlockedUrl(attempted);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 同上：单次同步外部系统快照，无级联渲染
       setError('自动跳转超星登录页被当前浏览器环境拦截');
     }
   }, []);

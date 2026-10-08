@@ -124,6 +124,34 @@ function validateStageNavigation(session: SessionState, target: Stage): boolean 
   return order.indexOf(target) >= order.indexOf(session.stage);
 }
 
+/**
+ * OSCE 事件-阶段门控：学生不得在问诊阶段经 API 直发查体/检查/诊断/处置/沟通事件，
+ * 提前获取该病例真实查体结果、检查结果或推进评分阶段（服务端校验，不依赖前端隐藏）。
+ * 沉浸式教学保持自由探索：可跨阶段尝试，反馈与 OSCE 分离（feedbackFor 已区分两种模式）。
+ */
+function validateEventStage(session: SessionState, event: AgentEvent): boolean {
+  if (session.mode !== 'osce') return true;
+  const order = getCase(session.caseId, session.sourceSnapshotVersion).stages.map((stage) => stage.id);
+  const currentIndex = order.indexOf(session.stage);
+  switch (event.type) {
+    case 'ASK_QUESTION':
+    case 'DOCTOR_INTERVENTION':
+    case 'SEND_COMMUNICATION':
+      return true; // 问诊/沟通干预/家长沟通在任意阶段均合法（回复为通用话术，不泄露病例事实）
+    case 'EXAM_ACTION':
+      return currentIndex >= order.indexOf('exam');
+    case 'ORDER_TEST':
+      return currentIndex >= order.indexOf('tests');
+    case 'SUBMIT_DECISION':
+      return currentIndex >= order.indexOf('assessment');
+    case 'SUBMIT_PLAN':
+      return currentIndex >= order.indexOf('plan');
+    case 'NAVIGATE_STAGE':
+    case 'FINISH_SESSION':
+      return true; // NAVIGATE_STAGE 由 validateStageNavigation 单独校验；FINISH 走完成门控
+  }
+}
+
 function detectSpokenIntervention(text: string): Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'] | null {
   if (/家长.{0,8}(先别|先不要|稍后|等会|暂时).{0,6}(说|回答|补充)|让.{0,4}(孩子|患儿).{0,6}(先说|先回答)|我想先听.{0,6}(孩子|患儿)/.test(text)) return 'pause_parent';
   if (/(别紧张|不要紧张|不用怕|别害怕|不要害怕|慢慢说|我会陪你|不会疼)/.test(text)) return 'comfort_child';
@@ -429,6 +457,8 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
   if (session.events.some((item) => item.clientEventId === clientEventId)) {
     return { session, newMessages: [], feedback: null, trace: [trace('病例状态', '重复事件已按幂等键忽略')] };
   }
+  // OSCE 事件-阶段门控：问诊阶段直发查体/检查/诊断等事件被拒绝，防止经 API 提前获取病例事实
+  if (!validateEventStage(session, event)) throw new Error('OSCE_EVENT_STAGE_FORBIDDEN');
 
   switch (event.type) {
     case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders);

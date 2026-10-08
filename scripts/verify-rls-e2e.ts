@@ -86,6 +86,17 @@ async function main() {
   const dbA = userClient(a.access_token);
   const dbB = userClient(b.access_token);
 
+  // ---- 0. 探针数据自愈：清理历史运行残留（脚本中途 FATAL 时收尾清理不会执行）----
+  // 题池较小，残留 assignments 会导致取题 RPC 返回空数组；残留探针 facts/answers/报告/会话同理。
+  await dbB.from('case_snapshot_facts').delete().eq('case_id', 'teacher-rls-probe');
+  await dbB.from('case_snapshot_answers').delete().eq('case_id', 'teacher-rls-probe');
+  await dbB.from('training_reports').delete().eq('case_id', 'teacher-rls-probe');
+  // 探针账号专用于本脚本，按用户级清理可覆盖任意 case_id 的历史残留会话
+  await dbA.from('training_sessions').delete().eq('user_id', a.user.id);
+  await dbB.from('training_sessions').delete().eq('user_id', b.user.id);
+  // quiz_assignments 学生无 DELETE 策略（8.6 验证的防刷分设计），残留清理必须走教师 ALL 策略
+  await dbB.from('quiz_assignments').delete().eq('user_id', a.user.id);
+
   // ---- 1. 教师身份判定：teacher_emails 无 SELECT 策略属预期（判定在 app_is_teacher 的 SECURITY DEFINER 内完成，
   //      白名单表不向客户端暴露）。改用行为验证：教师 B 可读 training_sessions 全表（teacher_select 走 app_is_teacher）。 ----
   const teacherProof = await dbB.from('training_sessions').select('id').limit(1);
@@ -211,9 +222,60 @@ async function main() {
   // 训练中（active）直接调用：必须无法提前取诊断答案
   const refActive = await dbA.rpc('case_snapshot_get_reference', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
   check('REFERENCE完成门控：训练中直接调RPC → null（不可提前取诊断）', refActive.data === null, JSON.stringify(refActive.data ?? null));
-  // 完成会话后（合法 finish 路径）→ 返回诊断对照
-  const completeRes = await dbA.from('training_sessions').update({ status: 'completed', stage: 'report' }).eq('id', rpcSessionId);
-  check('学生A可完成自己的会话（合法finish路径）', !completeRes.error, completeRes.error?.message ?? '');
+  // 攻击1b（单向量·仅事件，须在 active 会话上测）：伪往 state.events 写 FINISH_SESSION 但 status 仍 active → null
+  const fakeFinishEvent = await dbA.from('training_sessions').update({
+    state: { ...rpcState, events: [{ id: 'fake', clientEventId: 'fake', type: 'FINISH_SESSION', stage: 'report', summary: '伪造', correct: null, evidenceCodes: [], createdAt: new Date().toISOString() }] },
+  }).eq('id', rpcSessionId);
+  check('攻击1b：仅伪造state内FINISH事件（status未完成）被接受为state更新', !fakeFinishEvent.error, fakeFinishEvent.error?.message ?? '');
+  const refFakeEvent = await dbA.rpc('case_snapshot_get_reference', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
+  check('攻击1b：仅伪造FINISH事件（无受保护status列完成） → 仍null（单向量拦截）', refFakeEvent.data === null, JSON.stringify(refFakeEvent.data ?? null));
+  // 还原 state（清除伪造事件）
+  await dbA.from('training_sessions').update({ state: rpcState }).eq('id', rpcSessionId);
+
+  // 攻击2（单向量·stage列，须在 active 会话上测）：facts 证据门控下，直改 stage 列不解锁查体/检查事实
+  const stageSpoofUpdate = await dbA.from('training_sessions').update({ stage: 'exam', state: rpcState }).eq('id', rpcSessionId);
+  check('攻击2探针：直改stage=exam列被接受为列更新', !stageSpoofUpdate.error, stageSpoofUpdate.error?.message ?? '');
+  const stageSpoof = await dbA.rpc('case_snapshot_get_facts', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
+  const stageSpoofSections = (stageSpoof.data as { sections?: Record<string, unknown> } | null)?.sections ?? null;
+  check('攻击2：直改stage=exam列（无查体证据）→ facts仍剥离exam/tests', stageSpoofSections !== null && !('exam' in stageSpoofSections) && !('tests' in stageSpoofSections), JSON.stringify(stageSpoofSections));
+  // 攻击2b（单向量·证据伪造，须在 active 会话上测）：伪往 unlockedEvidence 写 EX_ 证据码（未经真实查体操作）
+  // （已知边界：state.unlockedEvidence 本身在 owner_update 可写范围内，与既有"提前交卷"边界同级；
+  //   真实防线是 agent turn 的事件-阶段门控 + OSCE 评分只认可信事件链，此处如实记录行为）
+  const fakeEvidence = await dbA.from('training_sessions').update({
+    state: { ...rpcState, unlockedEvidence: ['EX_PREP', 'EX_RESP'] },
+  }).eq('id', rpcSessionId);
+  check('攻击2b探针：伪写unlockedEvidence被接受为state更新（记录已知边界）', !fakeEvidence.error, fakeEvidence.error?.message ?? '');
+  const evidenceSpoof = await dbA.rpc('case_snapshot_get_facts', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
+  const evidenceSpoofSections = (evidenceSpoof.data as { sections?: Record<string, unknown> } | null)?.sections ?? null;
+  check('攻击2b行为记录：伪写EX_证据码后facts含exam section（已知边界，评分仍走可信事件链）', evidenceSpoofSections !== null && 'exam' in evidenceSpoofSections, JSON.stringify(evidenceSpoofSections));
+  // 还原 state（清除伪造证据）
+  await dbA.from('training_sessions').update({ state: rpcState }).eq('id', rpcSessionId);
+
+  // 攻击1（单向量·仅status）：学生直改 status='completed'（无 FINISH_SESSION 事件）→ 仍 null（双条件门控）
+  const spoofComplete = await dbA.from('training_sessions').update({ status: 'completed', stage: 'report' }).eq('id', rpcSessionId);
+  check('攻击1：学生直改status=completed（无FINISH事件）被接受为列更新', !spoofComplete.error, spoofComplete.error?.message ?? '');
+  const refSpoofed = await dbA.rpc('case_snapshot_get_reference', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
+  check('攻击1：直改status后调RPC → 仍null（需真实FINISH_SESSION事件，单向量拦截）', refSpoofed.data === null, JSON.stringify(refSpoofed.data ?? null));
+
+  // 攻击1c（组合向量·已知边界记录，不作安全断言）：status=completed + 伪造FINISH事件同时满足双条件 → 解锁对照。
+  // 平台 Data API 层学生自行完成的会话与 finish 路由产物不可区分，此组合等价于既有"提前交卷"残余边界
+  // （见 docs/security-status.md）。代价受 guard 强制：会话永久完结不可回退，且 OSCE 评分只认可信事件链，
+  // 解锁对照不改变评分结果。
+  const comboEvent = await dbA.from('training_sessions').update({
+    state: { ...rpcState, events: [{ id: 'combo-fake', clientEventId: 'combo-fake', type: 'FINISH_SESSION', stage: 'report', summary: '组合伪造', correct: null, evidenceCodes: [], createdAt: new Date().toISOString() }] },
+  }).eq('id', rpcSessionId);
+  check('攻击1c探针：组合伪造（completed+伪FINISH）被接受为state更新（记录已知边界）', !comboEvent.error, comboEvent.error?.message ?? '');
+  const refCombo = await dbA.rpc('case_snapshot_get_reference', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
+  check('攻击1c行为记录：组合伪造解锁诊断对照（已知边界=提前交卷；评分走可信事件链不受影响）', refCombo.data !== null && (refCombo.data as { diagnosis?: string }).diagnosis === '教师测试诊断', JSON.stringify(refCombo.data ?? null));
+  const comboRegression = await dbA.from('training_sessions').update({ status: 'active' }).eq('id', rpcSessionId);
+  check('攻击1c代价：组合解锁后回退active被拒绝（读对照=永久结束）', Boolean(comboRegression.error), comboRegression.error?.message ?? '');
+  // 合法完成路径（finish 路由真实写入 FINISH_SESSION 事件 + status completed）→ 返回诊断对照
+  const finishEvent = { id: 'finish-probe', clientEventId: 'finish-probe', type: 'FINISH_SESSION', stage: 'report', summary: '完成训练', correct: true, evidenceCodes: [], createdAt: new Date().toISOString() };
+  const completeRes = await dbA.from('training_sessions').update({
+    status: 'completed', stage: 'report',
+    state: { ...rpcState, status: 'completed', stage: 'report', events: [finishEvent] },
+  }).eq('id', rpcSessionId);
+  check('学生A可完成自己的会话（合法finish路径：FINISH事件+completed）', !completeRes.error, completeRes.error?.message ?? '');
   const refOk = await dbA.rpc('case_snapshot_get_reference', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
   const refData = refOk.data as { diagnosis?: string } | null;
   check('REFERENCE正向：完成后 → 返回诊断对照', !refOk.error && refData?.diagnosis === '教师测试诊断', refOk.error?.message ?? '');
@@ -344,6 +406,11 @@ async function main() {
   const fetched = (fetchA.data ?? []) as Array<Record<string, unknown>>;
   check('RPC取题：A获得题目投影', !fetchA.error && fetched.length > 0, fetchA.error?.message ?? '');
   check('RPC取题投影不含answer/explanation', fetched.every((q) => !('answer' in q) && !('explanation' in q) && 'stem' in q && 'options' in q));
+  if (fetched.length === 0) {
+    // 题池耗尽或题量不足时给出可定位报错，避免后续 undefined 崩溃（历史残留未清理场景）
+    console.error('FATAL: 取题RPC返回空数组——题池不足或历史assignments残留，请检查quiz_questions数量与quiz_assignments清理');
+    process.exit(1);
+  }
   const assignedA = await dbA.from('quiz_assignments').select('question_id').eq('user_id', a.user.id);
   check('RPC取题写入本人quiz_assignments（user_select放行）', (assignedA.data?.length ?? 0) >= fetched.length, assignedA.error?.message ?? '');
   if (c) {
@@ -406,8 +473,9 @@ async function main() {
   await dbA.from('training_sessions').delete().eq('id', sessionId);
   await dbA.from('training_sessions').delete().eq('id', rpcSessionId);
   await dbB.from('training_sessions').delete().eq('id', bSessionId);
-  await dbA.from('quiz_assignments').delete().eq('user_id', a.user.id);
-  if (c) await userClient(c.access_token).from('quiz_assignments').delete().eq('user_id', c.user.id);
+  // quiz_assignments 学生无 DELETE 策略（8.6 验证的防刷分设计），残留清理必须走教师 ALL 策略
+  await dbB.from('quiz_assignments').delete().eq('user_id', a.user.id);
+  if (c) await dbB.from('quiz_assignments').delete().eq('user_id', c.user.id);
   console.log('已清理探针数据');
 
   console.log(`\n结果: pass=${pass} fail=${fail}`);

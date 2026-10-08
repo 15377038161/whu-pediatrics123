@@ -27,7 +27,12 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     let resolved = await realpath(path.join(root, relative));
     if (!resolved.startsWith(`${resolvedRoot}${path.sep}`)) return new Response('Resource not found', { status: 404 });
     const sourceExtension = path.extname(resolved).toLowerCase();
-    if (user.role === 'student' && ['.doc', '.docx', '.pdf', '.ppt', '.pptx', '.xlsx'].includes(sourceExtension)) {
+    // 病例原文（DOC/PDF 等来源文件）：整份文本含出院诊断/诊疗经过，属教师参考答案范畴。
+    // 学生训练只经训练会话按阶段获取允许事实（问诊/查体/检查逐步解锁），不发整份原文。
+    if (user.role !== 'teacher' && ['.doc', '.docx', '.pdf', '.ppt', '.pptx', '.xlsx'].includes(sourceExtension)) {
+      return new Response('Case source text available to teachers only', { status: 403 });
+    }
+    if (user.role === 'teacher' && ['.doc', '.docx', '.pdf', '.ppt', '.pptx', '.xlsx'].includes(sourceExtension)) {
       const source = readTeacherCaseData(id);
       const document = source?.documents.find((item) => item.source === path.relative(resolvedRoot, resolved).replaceAll('\\', '/'));
       if (!document) return new Response('暂无可读正文', { status: 404 });

@@ -234,3 +234,31 @@
 
 
 在当前止血状态下，学生端 UI 验收需使用**真实超星学生账号**登录后进行（平台账号登录为唯一入口）；预览身份入口已安全关闭，无法用于 UI 验收。
+
+
+## 2026-10-10 补充：OSCE 事实投影证据门控（迁移 20261010120000）
+
+
+### 整改范围（无权限扩大/删除/发布）
+
+
+1. **facts 投影改依据「已执行操作证据」**：此前 `case_snapshot_get_facts` 的阶段投影读受保护 `stage` 列，但学生可经 owner_update 直改 stage 列逐格推进后读全量 facts。现改为依据 state 内证据（`unlockedEvidence` 的 SOURCE_EX_/EX_ 码解锁查体事实；`orderedTests` 非空解锁检查事实），直改 stage 列不再解锁任何额外事实。
+2. **reference 完成门控补真实 FINISH_SESSION 事件**：直改 `status='completed'` 无 FINISH 事件（单向量）→ 返回 null；仅伪造 FINISH 事件而 status 仍 active（单向量）→ 返回 null。
+3. 学生 DOC 资源访问（`/api/cases/[id]/resource`）403 拦截，教师保留全量读取；OSCE 模式 agent turn 事件-阶段门控（沉浸式教学自由探索不变）。
+
+
+### 实测验证（verify-rls-e2e.ts，81/0 pass）
+
+
+- 单向量攻击全拦截：直改 stage / 直改 status / 仅伪造事件 → 投影不变、对照 null
+- 组合伪造（completed + 伪 FINISH 事件）**属既有「提前交卷」边界**：Data API 层学生自行完成会话与 finish 路由产物不可区分（与攻击1根因同源）。代价受 guard 强制：会话永久完结不可回退（SESSION_STATUS_REGRESSION），且 OSCE 评分只认可信事件链，解锁对照不改变评分。脚本以「行为记录」断言如实记录，不作安全断言。
+- 验证脚本修正：探针残留自愈清理改教师身份删除（学生无 DELETE 策略属防刷分设计）；取题空数组改防御性退出并给出定位信息；单向量攻击移至 active 会话上测试（时序 bug）。
+- 静态检查 typecheck/lint 通过；单测 88/0 pass（4 项跳过为 Coze live 联调，环境依赖，与本次无关）。
+
+
+### 未验边界（如实记录）
+
+
+1. 真实浏览器端交互验收（需真实超星账号）
+2. 跨租户会话隔离验证
+3. 平台正式部署环境的完整链路验证

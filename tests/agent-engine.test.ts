@@ -195,3 +195,35 @@ test('真实问诊可识别咳嗽特点与院前用药', async () => {
   assert.ok(result.session.askedIntents.includes('treatment'));
   assert.match(result.newMessages.map((item) => item.content).join(''), /干咳|退热药/);
 });
+
+
+test('OSCE 问诊阶段直发查体/检查/诊断事件被服务端拒绝，沉浸式保持自由探索', async () => {
+  // OSCE 模式：初始 history 阶段，直发 EXAM_ACTION 应被事件-阶段门控拒绝
+  const osce = createInitialSession('student-osce', 'osce');
+  await assert.rejects(
+    runAgentTurn(osce, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'osce-early-exam'),
+    /OSCE_EVENT_STAGE_FORBIDDEN/,
+  );
+  await assert.rejects(
+    runAgentTurn(osce, { type: 'ORDER_TEST', data: { testId: 'cbc-crp' } }, 'osce-early-test'),
+    /OSCE_EVENT_STAGE_FORBIDDEN/,
+  );
+  await assert.rejects(
+    runAgentTurn(osce, { type: 'SUBMIT_DECISION', data: { diagnosis: '肺炎', summary: '提前提交', differentials: '' } }, 'osce-early-decision'),
+    /OSCE_EVENT_STAGE_FORBIDDEN/,
+  );
+  // 拒绝后不产生任何临床事件（无提前解锁副作用）
+  assert.equal(osce.events.length, 0);
+  assert.deepEqual(osce.unlockedEvidence, []);
+  // 问诊与导航事件在任意阶段合法
+  await runAgentTurn(osce, { type: 'ASK_QUESTION', data: { text: '什么时候开始发热的？' } }, 'osce-question');
+  await runAgentTurn(osce, { type: 'NAVIGATE_STAGE', data: { stage: 'exam' } }, 'osce-navigate');
+  // 进入查体阶段后 EXAM_ACTION 合法（含准备动作校验的正常反馈路径）
+  const exam = await runAgentTurn(osce, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'osce-exam-allowed');
+  assert.ok(exam.session.events.some((event) => event.type === 'EXAM_ACTION'));
+
+  // 沉浸式模式：同一事件不被门控拦截（自由探索教学，反馈与 OSCE 分离）
+  const immersive = createInitialSession('student-immersive', 'immersive');
+  const immersiveExam = await runAgentTurn(immersive, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'immersive-early-exam');
+  assert.ok(immersiveExam.session.events.some((event) => event.type === 'EXAM_ACTION'));
+});

@@ -103,7 +103,10 @@ test('登录学生可访问脱敏文档但原始媒体受限，教师可取原�
     const fileUrl = `http://localhost/api/cases/${id}/resource?path=sample.jpg`;
     // 学生：原始本地媒体（未确认脱敏）默认拒绝，等待教师审核
     assert.equal((await getResource(request(fileUrl, 'student'), context)).status, 403);
-    const document = await getResource(request(`http://localhost/api/cases/${id}/resource?path=sample.doc`, 'student'), context);
+    // 学生：整份病例原文含出院诊断/诊疗经过（教师参考答案范畴），训练中拒绝；
+    // 学生训练只经会话按阶段获取允许事实。教师保留原文读取。
+    assert.equal((await getResource(request(`http://localhost/api/cases/${id}/resource?path=sample.doc`, 'student'), context)).status, 403);
+    const document = await getResource(request(`http://localhost/api/cases/${id}/resource?path=sample.doc`, 'teacher'), context);
     assert.equal(document.status, 200);
     assert.equal(await document.text(), '[身份信息已隐去]。咳嗽3天。');
     const teacherRequest = request(fileUrl, 'teacher');
