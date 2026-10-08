@@ -1,9 +1,68 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { APIError, NetworkError } from 'coze-coding-dev-sdk';
+import {
+  APIError as CoderAPIError,
+  NetworkError as CoderNetworkError,
+} from 'coder-coding-dev-sdk';
 import { AIGatewayError, classifyAIError, invokeCozeAI } from '@/lib/coze-ai';
 
 const messages = [{ role: 'user', content: '测试' }] as const;
+
+test('classifyAIError 官方 coder-coding-dev-sdk 错误类分类（当前文本链路实际抛出）', () => {
+  // 官方 SDK APIError：message, status?, data?（源码 invokeCozeAI 走 coder-coding-dev-sdk）
+  assert.equal(classifyAIError(new CoderAPIError('too many requests', 429)).kind, 'rate_limited');
+  assert.equal(classifyAIError(new CoderAPIError('too many requests', 429)).retryable, true);
+  assert.equal(classifyAIError(new CoderAPIError('too many requests', 429)).statusCode, 429);
+  assert.equal(classifyAIError(new CoderAPIError('unauthorized', 401)).kind, 'auth');
+  assert.equal(classifyAIError(new CoderAPIError('unauthorized', 401)).retryable, false);
+  assert.equal(classifyAIError(new CoderAPIError('forbidden', 403)).kind, 'auth');
+  assert.equal(classifyAIError(new CoderAPIError('bad request', 400)).kind, 'invalid_request');
+  assert.equal(classifyAIError(new CoderAPIError('bad gateway', 502)).kind, 'server');
+  assert.equal(classifyAIError(new CoderAPIError('bad gateway', 502)).retryable, true);
+  assert.equal(classifyAIError(new CoderAPIError('service unavailable', 503)).kind, 'server');
+  assert.equal(classifyAIError(new CoderAPIError('request timeout', 408)).kind, 'timeout');
+  assert.equal(classifyAIError(new CoderAPIError('opaque upstream')).kind, 'server');
+  assert.equal(classifyAIError(new CoderAPIError('opaque upstream')).retryable, true);
+  assert.equal(classifyAIError(new CoderNetworkError('socket hang up')).kind, 'network');
+  assert.equal(classifyAIError(new CoderNetworkError('socket hang up')).retryable, true);
+});
+
+test('invokeCozeAI 官方 SDK 错误类触发限流退避重试（当前文本链路覆盖）', async () => {
+  let calls = 0;
+  const sleeps: number[] = [];
+  const result = await invokeCozeAI(
+    { messages: [...messages], maxAttempts: 3, retryBaseMs: 100 },
+    {
+      invoke: async () => {
+        calls += 1;
+        if (calls === 1) throw new CoderAPIError('rate limited', 429);
+        return { content: 'recovered-official-sdk' };
+      },
+      sleep: async (ms) => { sleeps.push(ms); },
+    },
+  );
+  assert.equal(result.content, 'recovered-official-sdk');
+  assert.equal(result.attempts, 2);
+  assert.ok(sleeps.length >= 1 && sleeps[0] >= 100);
+});
+
+test('invokeCozeAI 官方 SDK 认证错误不重试直接抛出', async () => {
+  let calls = 0;
+  const sleeps: number[] = [];
+  await assert.rejects(
+    invokeCozeAI(
+      { messages: [...messages], maxAttempts: 4, retryBaseMs: 50 },
+      {
+        invoke: async () => { calls += 1; throw new CoderAPIError('forbidden', 403); },
+        sleep: async (ms) => { sleeps.push(ms); },
+      },
+    ),
+    (error: unknown) => error instanceof AIGatewayError && error.info.kind === 'auth' && error.attempts === 1,
+  );
+  assert.equal(calls, 1);
+  assert.equal(sleeps.length, 0);
+});
 
 test('classifyAIError 覆盖限流、权限、超时、服务端、网络与非法请求', () => {
   assert.deepEqual(

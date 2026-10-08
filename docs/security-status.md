@@ -65,3 +65,38 @@
 - **platform-session 路由 Origin 防护**：POST 前校验 `Origin`（同源或平台预览域名 `CODER_PROJECTS_DOMAIN`），跨站一律 403；无 Origin 头的非浏览器客户端放行，由 token 签名校验兜底。`scripts/verify-platform-session-security.ts` 扩至 **13/13 通过**（新增 A3 跨站 Origin 403 拒绝、A4 同源放行至 token 校验）。
 - **真实服务重启持久化**：`scripts/verify-restart-persistence.ts` **9/9 通过**——学生登录落 cookie → 作答一题 → touch 入口触发 `tsx watch` 真实重启（服务 PID 实际变化，非 DB 复读等价替代）→ 同 cookie 复读作答记录完整保留（含首次提交答案）→ 重新登录新 cookie 仍可读 → logout 后原 cookie 访问受保护接口 401。
 - **cookie 会话安全**：会话由服务端 SSR 客户端 setSession 写 httpOnly cookie，重启后凭数据库持久会话自动恢复；退出后 cookie 立即失效，无泄露残留。
+
+## 2026-10-09 补充：登录入口链路核验与草稿严格交集恢复
+
+### 平台内置超星 OAuth 登录链路（首页主入口，实测）
+
+首页登录按钮为 `PlatformChaoxingLogin`（`src/components/platform-chaoxing-login.tsx`），完整链路：
+
+| 步骤 | 端点 | 实测状态 |
+|------|------|----------|
+| 1. 点击「使用超星账号进入」 | `GET {平台代理}/v1/api/coder/proxy/auth/chaoxing-oauth/authorize-url?redirect_uri=<首页>` | **200**，返回真实超星授权地址（`auth.chaoxing.com/connect/oauth2/authorize`，appid 由平台持有） |
+| 2. 顶层跳转授权页，用户扫码授权 | 超星授权页（人工操作） | 需真实超星账号登录 |
+| 3. 回跳首页带 code → checklogin 中转 | `GET {平台代理}/v1/api/coder/proxy/auth/chaoxing-checklogin/url?backurl=<首页>` | **200** |
+| 4. userinfo 回跳 → exchange 兑换 | `POST {平台代理}/v1/api/coder/proxy/auth/chaoxing-oauth/exchange` | 平台侧兑换 Supabase session |
+| 5. session 落地 | `POST /api/auth/callback/platform-session` | 空 body **400**、跨站 Origin **403**、伪造 token **401**（不落 cookie） |
+
+**与旧接口的区分**：`/api/auth/chaoxing`（旧自有 OAuth，依赖 `CHAOXING_APPID/SECRET`）当前 307 → `config_missing`，属**旧链路 fail-closed**，不代表平台内置登录失败。首页已不使用旧接口。
+
+**平台契约限制（如实保留）**：authorize-url 仅接受 `redirect_uri`，不支持应用级 state/nonce（平台契约，非应用缺陷）；跨租户合法 token 拒绝测试无样本，标注未测。
+
+### 草稿功能授权：严格交集恢复
+
+`/api/teacher/case-drafts`（`src/app/api/teacher/case-drafts/route.ts` GET L20 / POST L37）与页面 `/teacher/case-drafts` 均恢复为：**应用层教师角色（`requireAuth(request, 'teacher')` / `requirePageUser('teacher')`）AND 数据库白名单（`app_is_teacher` RPC）**，非 OR、非仅白名单。
+
+实测（`scripts/verify-case-drafts.ts`，12/0）：
+
+- 非双重授权探针B（DB 白名单通过、应用层 role=student）：GET 草稿 **403**、POST precheck **403**、页面 **307 → /student**
+- 学生A：GET/POST **403**；匿名 **401**
+- Data API 直插（学生 **403**）、直读（学生 0 行、匿名 401）——RLS 层独立有效
+- 真实服务重启（PID 变化）后 fail-closed 不漂移：探针B **403**、学生 **403**
+
+**未验项（如实）**：双重授权教师（应用层教师角色 + 数据库白名单同时满足）的 HTTP 保存/列表/重启复读——当前沙箱无此类样本（白名单探针B无应用层教师元数据）。此前 16/0 为白名单单一判定下的结果，不能冒充严格交集的成功链路。Data API 层（RLS）单独记录如上。
+
+### AI 测试：官方 SDK 错误类覆盖补充
+
+`tests/coze-ai.test.ts` 新增官方 `coder-coding-dev-sdk` 错误类断言（当前文本链路实际抛出的类型）：429/401/403/400/408/502/503/无状态码/NetworkError 分类、限流退避重试（attempts=2、sleep≥base）、认证错误不重试（attempts=1、sleep=0）。与旧 `coze-coding-dev-sdk` 对照断言并存。**单测 84/0 / 4 skip 全绿**。

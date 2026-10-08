@@ -16,7 +16,8 @@ import { isTeacherByWhitelist, normalizeDraftVersion, parseDraftPayload, prechec
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireAuth(request);
+    // 严格交集：应用层教师角色（requireAuth 'teacher'）AND 数据库白名单（app_is_teacher），非 OR、非仅白名单。
+    const user = await requireAuth(request, 'teacher');
     if (!user.accessToken) return fail({ code: 'AUTH_REQUIRED', message: '缺少访问令牌', retryable: false }, undefined, 401);
     if (!isDatabaseConfigured()) return fail({ code: 'DATABASE_NOT_CONFIGURED', message: '数据库未配置', retryable: false }, undefined, 503);
     if (!(await isTeacherByWhitelist(user.accessToken))) {
@@ -32,7 +33,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth(request);
+    // 严格交集：应用层教师角色（requireAuth 'teacher'）AND 数据库白名单（app_is_teacher），非 OR、非仅白名单。
+    const user = await requireAuth(request, 'teacher');
     if (!user.accessToken) return fail({ code: 'AUTH_REQUIRED', message: '缺少访问令牌', retryable: false }, undefined, 401);
     if (!isDatabaseConfigured()) return fail({ code: 'DATABASE_NOT_CONFIGURED', message: '数据库未配置', retryable: false }, undefined, 503);
     if (!(await isTeacherByWhitelist(user.accessToken))) {
