@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createInitialSession, runAgentTurn } from '@/lib/agent-engine';
+import { CASE_CATALOG } from '@/domain/case-catalog';
+import { getCase } from '@/domain/case';
+import { buildReport } from '@/lib/scoring';
 
 process.env.ENABLE_AI_FIXTURE = 'true';
 
@@ -134,6 +137,55 @@ test('专项训练会话保留明确训练重点', () => {
   const session = createInitialSession('student-1', 'practice', 'peds-respiratory-001', 'communication');
   assert.equal(session.mode, 'practice');
   assert.equal(session.practiceFocus, 'communication');
+});
+
+test('沉浸式会话保留统一病例内核并初始化场景状态', () => {
+  const session = createInitialSession('student-1', 'immersive');
+  assert.equal(session.mode, 'immersive');
+  assert.equal(session.immersive?.scene, 'arrival');
+  assert.deepEqual(session.immersive?.visitedScenes, ['arrival']);
+  assert.equal(session.expiresAt, null);
+});
+
+test('全部教师病例均可创建训练、沉浸式与OSCE会话', () => {
+  const teacherCases = CASE_CATALOG.filter((item) => item.id.startsWith('teacher-'));
+  assert.equal(teacherCases.length, 70);
+  for (const item of teacherCases) {
+    assert.equal(getCase(item.id).id, item.id);
+    for (const mode of ['guided', 'immersive', 'osce'] as const) {
+      const session = createInitialSession('student-1', mode, item.id);
+      assert.equal(session.caseId, item.id);
+      assert.equal(session.mode, mode);
+      assert.ok(session.caseOptions);
+    }
+  }
+});
+
+test('历史占位会话升级后清理肺炎事实，并采用过程记录报告', async () => {
+  const legacy = createInitialSession('student-1', 'guided');
+  legacy.caseId = 'teacher-支气管哮喘';
+  legacy.askedIntents = ['danger'];
+  legacy.unlockedEvidence = ['EX_RESP', 'EX_SPO2'];
+  const result = await runAgentTurn(legacy, { type: 'FINISH_SESSION', data: {} }, 'legacy-finish');
+  assert.equal(result.session.status, 'completed');
+  assert.equal(result.session.caseVersion, 2);
+  assert.deepEqual(result.session.askedIntents, []);
+  assert.equal(result.session.unlockedEvidence.includes('EX_SPO2'), false);
+  const report = buildReport(legacy);
+  assert.equal(report.scoreBasis, 'process');
+  assert.equal(report.abilities.examination, 0);
+  assert.equal(report.evidence.some((item) => item.code === 'RUBRIC_SAFETY'), false);
+});
+
+test('教师病例处置不会统一改善血氧，缺资料病种不编造问诊事实', async () => {
+  const session = createInitialSession('student-1', 'guided', 'teacher-新生儿脑梗死');
+  assert.deepEqual(session.vitals, { temperature: null, heartRate: null, respiratoryRate: null, spo2: null });
+  const question = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '什么时候开始发烧？' } }, 'missing-source-question');
+  assert.ok(question.newMessages.some((message) => message.content.includes('说不清楚')));
+  assert.deepEqual(question.session.askedIntents, []);
+  await runAgentTurn(session, { type: 'SUBMIT_PLAN', data: { priority: '吸氧监测', detail: '结合资料进一步评估' } }, 'source-plan');
+  assert.equal(session.vitals.spo2, null);
+  assert.equal(session.events.find((event) => event.type === 'SUBMIT_PLAN')?.correct, null);
 });
 
 test('真实问诊可识别咳嗽特点与院前用药', async () => {

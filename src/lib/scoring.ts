@@ -1,4 +1,5 @@
 import type { AbilityScores, ScoreEvidence, SessionState, TrainingReport } from '@/domain/agent';
+import { getCase } from '@/domain/case';
 
 function includesAny(value: string, terms: string[]): boolean {
   const normalized = value.toLowerCase();
@@ -10,6 +11,8 @@ function eventIdsFor(session: SessionState, codes: string[]): string[] {
 }
 
 export function buildReport(session: SessionState, reportId = crypto.randomUUID()): TrainingReport {
+  const pediatricCase = getCase(session.caseId);
+  if (pediatricCase.sourceFacts !== undefined) return buildSourceReport(session, reportId);
   const asked = new Set(session.askedIntents);
   const evidence = new Set(session.unlockedEvidence);
   const decisionText = `${session.decision?.diagnosis ?? ''} ${session.decision?.summary ?? ''} ${session.decision?.differentials ?? ''}`;
@@ -121,4 +124,25 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
     status: 'ready',
     createdAt: new Date().toISOString(),
   };
+}
+
+function buildSourceReport(session: SessionState, reportId: string): TrainingReport {
+  const source = getCase(session.caseId).sourceFacts;
+  const checks: Array<{ key: keyof AbilityScores; label: string; max: number; codes: string[]; complete: boolean; detail: string }> = [
+    { key: 'history', label: '病史采集记录', max: 25, codes: session.askedIntents.filter((code) => code.startsWith('SOURCE_HX_')), complete: session.askedIntents.some((code) => code.startsWith('SOURCE_HX_')), detail: '是否通过问诊获取该病例实际提供的病史。' },
+    { key: 'examination', label: '查体证据记录', max: 25, codes: session.unlockedEvidence.filter((code) => code.startsWith('SOURCE_EX_')), complete: session.unlockedEvidence.some((code) => code.startsWith('SOURCE_EX_')), detail: '是否完成检查准备并获取原病例的查体结果。' },
+    { key: 'reasoning', label: '诊断思路提交', max: 20, codes: ['DECISION'], complete: Boolean(session.decision?.diagnosis && session.decision.summary), detail: '记录病情摘要与诊断思路；本项评价任务完成，不判断诊断正确性。' },
+    { key: 'safety', label: '处置计划提交', max: 15, codes: ['PLAN'], complete: Boolean(session.plan?.priority && session.plan.detail), detail: '记录优先级与后续计划；临床合理性由教师结合原病例复核。' },
+    { key: 'communication', label: '家长沟通记录', max: 10, codes: ['COMMUNICATION'], complete: Boolean(session.communication?.trim()), detail: '是否提交向患儿及家长说明病情、风险和后续安排的沟通原文。' },
+    { key: 'professionalism', label: '检查准备', max: 5, codes: ['EX_PREP'], complete: session.unlockedEvidence.includes('EX_PREP'), detail: '是否完成手卫生与检查说明。' },
+  ];
+  const abilities = Object.fromEntries(checks.map((check) => [check.key, check.complete ? check.max : 0])) as unknown as AbilityScores;
+  const evidence: ScoreEvidence[] = checks.map((check) => ({ code: `SOURCE_PROCESS_${check.key}`, label: check.label, achieved: check.complete, score: check.complete ? check.max : 0, maxScore: check.max, detail: check.detail, eventIds: eventIdsFor(session, check.codes) }));
+  if (source?.sections.diagnosis) evidence.push({ code: 'SOURCE_DIAGNOSIS_REFERENCE', label: '原病例诊断对照', achieved: true, score: 0, maxScore: 0, detail: source.sections.diagnosis, eventIds: [] });
+  if (source?.sections.plan) evidence.push({ code: 'SOURCE_PLAN_REFERENCE', label: '原病例诊疗经过对照', achieved: true, score: 0, maxScore: 0, detail: source.sections.plan, eventIds: [] });
+  return { id: reportId, sessionId: session.id, userId: session.userId, caseId: session.caseId, mode: session.mode,
+    totalScore: Object.values(abilities).reduce((sum, score) => sum + score, 0), abilities, evidence,
+    strengths: checks.filter((check) => check.complete).map((check) => check.label), improvements: checks.filter((check) => !check.complete).map((check) => check.label),
+    recommendation: source ? '对照原病例诊断与诊疗经过，解释自己的证据与判断；请教师复核诊断及处置。' : '本病种暂无独立原始病历，请整理自己的问诊与诊疗思路，待补充资料后再对照复盘。',
+    scoreBasis: 'process', status: 'pending_review', createdAt: new Date().toISOString() };
 }

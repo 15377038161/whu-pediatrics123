@@ -14,6 +14,7 @@ const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string;
 export function ReportView({ report, readonly = false }: { report: TrainingReport; readonly?: boolean }) {
   const mode = report.mode === 'osce' ? 'OSCE考核' : report.mode === 'practice' ? '专项训练' : '引导训练';
   const caseProfile = getPublicCase(report.caseId);
+  const processReport = report.scoreBasis === 'process';
   return (
     <div>
       <section className="report-hero">
@@ -21,16 +22,16 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         <div>
           <p className="eyebrow">{mode} · {readonly ? '只读报告' : '训练完成'}</p>
           <h1>{caseProfile.title}</h1>
-          <p>报告依据实际问答、器材操作、临床决策与沟通原文生成。</p>
+          <p>{processReport ? '分数表示训练过程完成度。原病例诊断与诊疗经过用于对照，诊断和处置的正确性由教师复核。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
         </div>
       </section>
       <div className="report-grid">
         <section className="report-section">
-          <h2>六维能力画像</h2>
+          <h2>{processReport ? '六环节完成度' : '六维能力画像'}</h2>
           <div className="dimension-list">
             {dimensions.map(({ key, label, max }) => (
               <div className="dimension" key={key}>
-                <span>{label}</span>
+                <span>{processReport ? report.evidence.find((item) => item.code === `SOURCE_PROCESS_${key}`)?.label ?? label : label}</span>
                 <div className="dimension-track" aria-hidden="true"><i style={{ width: `${report.abilities[key] / max * 100}%` }} /></div>
                 <strong>{report.abilities[key]}</strong>
               </div>
@@ -46,7 +47,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         </section>
       </div>
       <section className="report-section" style={{ marginTop: 14 }}>
-        <h2>评分证据</h2>
+        <h2>{processReport ? '过程证据与原病例对照' : '评分证据'}</h2>
         <div style={{ overflowX: 'auto' }}>
           <table className="evidence-table">
             <thead><tr><th>评分项</th><th>状态</th><th>得分</th><th>原始证据说明</th></tr></thead>
@@ -55,7 +56,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
                 <tr key={item.code}>
                   <td><strong>{item.label}</strong></td>
                   <td className="evidence-status" data-ok={item.achieved}>{item.achieved ? <><CheckCircle2 size={14} /> 达成</> : <><CircleAlert size={14} /> 待补练</>}</td>
-                  <td>{item.score}/{item.maxScore}</td>
+                  <td>{item.maxScore === 0 ? '原文对照' : `${item.score}/${item.maxScore}`}</td>
                   <td>{item.detail}</td>
                 </tr>
               ))}

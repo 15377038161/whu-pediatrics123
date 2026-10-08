@@ -38,6 +38,12 @@ Coze PostgreSQL → sync_outbox → 超星表单
 - `src/lib/scoring.ts`：证据化六维评分。
 - `src/lib/repository.ts`：预览内存适配器与 Coze PostgreSQL 适配器。
 - `src/lib/chaoxing-sync.ts`：可靠同步、幂等与重试。
+- `src/domain/teacher-case-links.ts`：清单异名及具体亚型关联，保留真实资料来源。
+- `src/lib/teacher-case-data.ts`：私有 `knowledge/teaching-cases/` 的格式校验与读取。
+
+全部教师病例已向学生开放。教师资料病例 v2 仍使用同一 `SessionState` 与 `AgentEvent`，额外携带不包含检查答案的 `caseOptions`。服务端从原始病例衍生文本按阶段检索病史、查体和检查记录；客户端按病例展示选项。未知生命体征为 `null`。教师资料没有独立临床量表时，报告 `scoreBasis='process'`、`status='pending_review'`，只评价环节记录完成度，诊疗正确性由教师复核。原有两个示例仍使用自身临床量表。
+
+学生资料访问经过登录校验，文档返回身份字段已隐去的文本；教师保留原稿核对能力。所有素材留在私有知识库，不作为公开静态资源。旧版视频通过离线 FFmpeg 转为 MP4，接口支持 Range，避免一次读取大文件。
 
 ## 4. 失败语义
 

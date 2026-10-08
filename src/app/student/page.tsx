@@ -1,16 +1,18 @@
-import { ArrowRight, ClipboardCheck, Clock3, HeartPulse, MessagesSquare, Sparkles, Stethoscope } from 'lucide-react';
+import { ArrowRight, Bone, ClipboardCheck, Clock3, HeartPulse, MessagesSquare, Sparkles, Stethoscope } from 'lucide-react';
 import Link from 'next/link';
-import { CASE_CATALOG, getPublicCase } from '@/domain/case-catalog';
+import { CASE_CATALOG, getPublicCase, isTrainableCase } from '@/domain/case-catalog';
 import { AgentRepository } from '@/lib/repository';
 import { requirePageUser } from '@/lib/page-auth';
+import { CaseLibrary } from '@/components/case-library';
 
 export default async function StudentHome() {
   const user = await requirePageUser('student');
   const repository = new AgentRepository(user);
   const [reports, sessions] = await Promise.all([repository.listOwnReports(), repository.listOwnSessions()]);
   const latestReport = reports[0];
-  const active = sessions.find((session) => session.status === 'active');
-  const activeCase = active ? getPublicCase(active.caseId) : CASE_CATALOG[0];
+  const active = sessions.find((session) => session.status === 'active' && isTrainableCase(session.caseId));
+  const activeProfile = active ? getPublicCase(active.caseId) : CASE_CATALOG[0];
+  const activeCase = active?.caseOptions ? { ...activeProfile, age: active.caseOptions.age } : activeProfile;
   const abilities = latestReport?.abilities;
   return (
     <>
@@ -22,14 +24,14 @@ export default async function StudentHome() {
         <div className="student-hero-copy">
           <p className="eyebrow">{active ? '欢迎回来 · 进度已保存' : '本周旗舰病例'}</p>
           <h1>{active ? '接着上次的临床思路继续' : `今天接诊一位${activeCase.age}患儿`}</h1>
-          <p>就诊线索：{activeCase.presentingSymptoms.join('、')}。病史和检查结果需要由你亲自问出来、查出来。</p>
+          <p>{activeCase.presentingSymptoms.length ? `就诊线索：${activeCase.presentingSymptoms.join('、')}。` : `本次学习：${activeCase.title}。`}病史和检查结果需要由你亲自问出来、查出来。</p>
           <div className="hero-actions">
             <a className="btn btn-primary" href={active ? `/student/training?session=${active.id}` : `/student/training?mode=guided&case=${activeCase.id}`}>
               {active ? '继续训练' : '开始接诊'} <ArrowRight size={17} />
             </a>
             <a className="btn btn-secondary" href="/student/practice"><Sparkles size={16} /> 先做专项热身</a>
           </div>
-          <div className="case-note"><span><Clock3 size={14} /> 建议 {activeCase.expectedMinutes} 分钟</span><span><HeartPulse size={14} /> 自主问诊与检查</span><span>过程自动保存</span></div>
+          <div className="case-note">{activeCase.expectedMinutes > 0 && <span><Clock3 size={14} /> 建议 {activeCase.expectedMinutes} 分钟</span>}<span><HeartPulse size={14} /> 自主问诊与检查</span><span>过程自动保存</span></div>
         </div>
       </section>
 
@@ -38,21 +40,7 @@ export default async function StudentHome() {
       </section>
 
       <div className="section-head" id="case-library"><h2 className="section-title">模拟病例库</h2><span className="eyebrow">仅展示就诊线索</span></div>
-      <div className="case-library">
-        {CASE_CATALOG.map((caseItem, index) => (
-          <article className="case-card" key={caseItem.id}>
-            <div className="case-card-copy">
-              <p className="case-number">病例 {String(index + 1).padStart(2, '0')}</p>
-              <h3>{caseItem.title}</h3>
-              <div className="case-meta"><span>{caseItem.age}</span><span>{caseItem.difficulty}</span><span>{caseItem.expectedMinutes} 分钟</span></div>
-              <div className="symptom-list" aria-label="就诊症状">
-                {caseItem.presentingSymptoms.map((symptom) => <span key={symptom}>{symptom}</span>)}
-              </div>
-              <a className="btn btn-secondary" href={`/student/training?mode=guided&case=${caseItem.id}`}>进入病例 <ArrowRight size={15} /></a>
-            </div>
-          </article>
-        ))}
-      </div>
+      <CaseLibrary />
 
       <div className="section-head"><h2 className="section-title">选择你的训练方式</h2><span className="eyebrow">从完整病例到单项补练</span></div>
       <div className="entry-list">
@@ -65,9 +53,12 @@ export default async function StudentHome() {
         <a className="entry" href="/student/osce">
           <span className="entry-mark"><ClipboardCheck /></span><h3>OSCE 考站</h3><p>同一病例切换为限时、无提示、不可重试的证据化考核。</p><span className="entry-meta">查看考站说明 <ArrowRight size={14} /></span>
         </a>
+        <a className="entry" href="/student/anatomy">
+          <span className="entry-mark"><Bone /></span><h3>3D 解剖实验室</h3><p>用爆炸视图认识人体骨骼结构，为查体和病例定位建立空间基础。</p><span className="entry-meta">进入实验室 <ArrowRight size={14} /></span>
+        </a>
       </div>
 
-      <div className="section-head"><h2 className="section-title">最近能力画像</h2><Link className="text-link" href="/student/reports">查看报告</Link></div>
+      <div className="section-head"><h2 className="section-title">{latestReport?.scoreBasis === 'process' ? '最近训练过程完成度' : '最近能力画像'}</h2><Link className="text-link" href="/student/reports">查看报告</Link></div>
       <section className="ability-strip">
         {[
           ['问诊', abilities?.history, 25], ['查体', abilities?.examination, 25], ['推理', abilities?.reasoning, 20],

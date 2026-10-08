@@ -1,5 +1,5 @@
 export type AppRole = 'student' | 'teacher';
-export type SessionMode = 'guided' | 'practice' | 'osce';
+export type SessionMode = 'guided' | 'practice' | 'osce' | 'immersive';
 export type PracticeFocus = 'history' | 'exam' | 'safety' | 'communication';
 export type Stage =
   | 'triage'
@@ -13,6 +13,7 @@ export type Stage =
 
 export type Actor = 'student' | 'child' | 'parent' | 'tutor' | 'system';
 export type Emotion = 'nervous' | 'calm' | 'low' | 'resistant' | 'anxious' | 'neutral';
+export type ImmersiveScene = 'arrival' | 'history' | 'exam' | 'tests' | 'assessment' | 'plan' | 'communication' | 'debrief';
 
 export interface UserContext {
   id: string;
@@ -45,10 +46,10 @@ export interface ClinicalEvent {
 }
 
 export interface VitalSigns {
-  temperature: number;
-  heartRate: number;
-  respiratoryRate: number;
-  spo2: number;
+  temperature: number | null;
+  heartRate: number | null;
+  respiratoryRate: number | null;
+  spo2: number | null;
 }
 
 export interface SessionState {
@@ -89,6 +90,20 @@ export interface SessionState {
   };
   vitals: VitalSigns;
   reportId: string | null;
+  caseOptions?: {
+    sourceName: string;
+    age: string;
+    sex: string;
+    hasSource: boolean;
+    exams: Array<{ toolId: string; bodyPartId: string; label: string }>;
+    tests: Array<{ id: string; label: string; indication: string }>;
+  };
+  immersive?: {
+    scene: ImmersiveScene;
+    sceneStep: number;
+    visitedScenes: ImmersiveScene[];
+    patientCooperation: number;
+  };
 }
 
 export type AgentEvent =
@@ -162,6 +177,7 @@ export interface TrainingReport {
   improvements: string[];
   recommendation: string;
   status: 'ready' | 'pending_review';
+  scoreBasis?: 'clinical' | 'process';
   createdAt: string;
 }
 

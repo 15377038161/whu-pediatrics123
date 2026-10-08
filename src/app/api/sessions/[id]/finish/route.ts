@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return ok(report, undefined, 201);
   } catch (error) {
     const detail = errorFromUnknown(error);
-    const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : detail.code === 'SESSION_NOT_FOUND' ? 404 : 500;
+    const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : detail.code === 'SESSION_NOT_FOUND' || detail.code === 'CASE_NOT_FOUND' ? 404 : 500;
     return fail(detail, undefined, status);
   }
 }

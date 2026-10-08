@@ -1,5 +1,5 @@
 import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, SessionState, SyncEventV1, TrainingReport, UserContext } from '@/domain/agent';
-import { createInitialSession } from '@/lib/agent-engine';
+import { createInitialSession, refreshSourceSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
 import { getSupabaseAdminClient, withDatabaseRetry } from '@/lib/supabase-client';
 
@@ -8,6 +8,7 @@ export interface TeacherStudentSummary {
   displayName: string;
   studentNo: string | null;
   latestScore: number | null;
+  latestScoreBasis?: 'clinical' | 'process';
   latestMode: SessionMode | null;
   reportCount: number;
   latestReportId: string | null;
@@ -154,7 +155,7 @@ export class AgentRepository {
       const session = memoryStore().sessions.get(id);
       if (!session) throw new Error('SESSION_NOT_FOUND');
       if (this.actor.role !== 'teacher' && session.userId !== this.actor.id) throw new Error('FORBIDDEN');
-      return clone(session);
+      return refreshSourceSession(clone(session));
     }
     const admin = getSupabaseAdminClient();
     const { data } = await withDatabaseRetry(async () => {
@@ -165,7 +166,7 @@ export class AgentRepository {
     if (!data) throw new Error('SESSION_NOT_FOUND');
     if (this.actor.role === 'teacher') await ensureTeacherCohortAccess(this.actor, data.cohort_id);
     else if (data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
-    return data.state as SessionState;
+    return refreshSourceSession(data.state as SessionState);
   }
 
   async saveSession(session: SessionState): Promise<void> {
@@ -309,6 +310,7 @@ export class AgentRepository {
           displayName: user.displayName,
           studentNo: user.studentNo,
           latestScore: latest?.totalScore ?? [86, 78, 92][index] ?? null,
+          latestScoreBasis: latest?.scoreBasis ?? 'clinical',
           latestMode: latest?.mode ?? 'osce',
           reportCount: reports.length || 1,
           latestReportId: latest?.id ?? null,
@@ -333,7 +335,7 @@ export class AgentRepository {
         return result;
       }),
       withDatabaseRetry(async () => {
-        const result = await admin.from('training_reports').select('id,session_id,user_id,total_score,mode,created_at').in('user_id', ids).order('created_at', { ascending: false });
+        const result = await admin.from('training_reports').select('id,session_id,user_id,total_score,mode,created_at,data').in('user_id', ids).order('created_at', { ascending: false });
         if (result.error) throw result.error;
         return result;
       }),
@@ -346,6 +348,7 @@ export class AgentRepository {
         displayName: profile.display_name,
         studentNo: profile.student_no,
         latestScore: latest?.total_score ?? null,
+        latestScoreBasis: (latest?.data as TrainingReport | undefined)?.scoreBasis ?? 'clinical',
         latestMode: (latest?.mode as SessionMode | undefined) ?? null,
         reportCount: own.length,
         latestReportId: latest?.id ?? null,

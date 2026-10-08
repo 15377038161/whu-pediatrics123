@@ -14,6 +14,10 @@
 - 超星 FID 1385 作为竞赛测试机构获得教师权限，可在学生端与教师端双向切换；普通武汉大学学生只保留学生端入口。常规教师仍需同时满足超星教师角色与 `CHAOXING_TEACHER_UIDS` 白名单。
 - 已实现：Coze 原生模型只负责标准化患儿/家长角色表达；提示词强制事实边界、年龄化表达、家长插话状态、未知信息不编造和提示词注入隔离。查体结果、临床规则和正式评分仍由确定性代码控制。
 - 已实现：Coze PostgreSQL 数据迁移与 RLS、超星 OAuth 服务端适配器、超星表单可靠同步队列、临时知识来源追踪、集成健康状态。
+- 全部教师病例已开放：54 条病种清单与 53 个实际目录双向登记为 70 条记录，加原有 2 个示例，学生病例库共 72 个入口。支持搜索、系统筛选、引导训练、沉浸式教学与 OSCE 练习。
+- 全部 53 个资料目录接入真实正文；14 条清单异名或具体亚型通过 `teacher-case-links.ts` 明确关联，67 条教师记录有来源。新生儿脑梗死、支气管肺炎、格林巴利综合征没有独立原始正文，入口开放为自主研习，不编造患者事实。
+- 173 份 Word/PDF 与 1 份病例分享 PPT 已提取可读文本（含转换后的 19 份旧版 Word）；正文按病史、查体、辅助检查、诊断、诊疗经过拆分。4 段 AVI 视频转换为 MP4，通过登录校验与分段读取提供。学生资料面板分页浏览全部资源，不再只显示前 80 项。
+- 教师资料病例复用现有会话与 UI，查体、检查项目随病例变化；生命体征仅取原文，缺失显示“未记录”，提交处置不会统一改变血氧。报告标明“过程完成度”，提供原病例诊断和诊疗经过对照，临床正确性待教师复核；原有两个示例的评分保持独立。历史占位会话自动清理虚构事实并升级为资料驱动病例 v2。
 - 待外部联调：Coze 项目数据库、超星 APPID/APPKEY/FID、超星表单写入接口。未取得凭据前，界面和文档均保持“等待授权联调”状态。
 - 评委预览身份默认关闭；按部署需要显式配置 `ENABLE_UI_PREVIEW=true` 后可在任意环境开放，生产启用时必须同时配置高强度 `PREVIEW_SIGNING_SECRET`。
 
@@ -29,6 +33,9 @@
 ## 目录
 
 - `src/domain/case-catalog.ts`：不含隐藏病史的公开病例目录；新增病例先在此登记展示信息。
+- `src/domain/teacher-case-catalog.ts`：由 `scripts/generate-teacher-case-catalog.py` 从病种清单和实际目录双向生成的资料登记表。
+- `src/domain/teacher-case-links.ts`：异名和具体亚型映射，不把不同亚型病例合并成一份虚构病历。
+- `src/lib/teacher-case-data.ts`：读取私有知识库中的教学文本，校验数据格式与病例来源。
 - `src/domain/content.ts`：儿科学教学内容总览（病例库、OSCE 考站、专项训练、资源库四大方向）与内容检索函数；规划中的病例与资源以 `planned` 登记，教师审核通过后再落地为正式病例版本。
 - `src/domain/case.ts`：版本化病例事实、体征规则和检查结果；教师材料到位后在此新增或升级病例版本。
 - `src/lib/agent-engine.ts`：统一智能体状态机与确定性临床规则。
@@ -39,8 +46,18 @@
 - `public/media/brand/chaoxing-logo.png`：超星官方登录站点使用的品牌图标。
 - `supabase/migrations/`：数据表、索引和行级权限。
 - `docs/实施方案/`：架构、UI、接口联调、验收和导入文档。
+- `docs/实施方案/病例资料覆盖核对.md`：覆盖结果、资料生成、开放规则和运行验收方式。
 - `demo/`：旧静态原型的历史说明，不再作为运行入口。
 
 ## 外部边界
 
 所有密钥只配置在 Coze 开发/生产环境变量中。不要将 `.env.local`、令牌、用户数据、数据库导出、浏览器 Cookie 或授权请求头放入 Git、截图、日志或导入 ZIP。
+原始 `knowledge/` 与 `output/case-drafts/` 被 Git 忽略，不放入 `public/` 或公开代码包。生产环境须私有挂载完整 `knowledge/` 到 `PEDIATRICS_KNOWLEDGE_ROOT`（包含 `儿科常见病/`、`teaching-cases/`、`teaching-media/`）；代码包本身不包含病例素材。资料接口 `/api/cases/[id]/resources` 与 `/api/cases/[id]/resource?path=...` 允许已登录学生和教师，未登录返回 401。学生文档返回身份字段已隐去的教学文本，教师可以核对原始文件；影像和音视频从受鉴权接口读取。
+
+## 病例资料生成与验收
+
+GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](docs/实施方案/GITHUB_CODER_DEPLOY.md)，代码与私有病例资料须分别部署。
+
+资料准备依赖 Python（`scripts/requirements-cases.txt`）、LibreOffice（旧版 Word 转换）、FFmpeg（视频转码）。安装后执行 `pnpm prepare:cases`；流程仅生成教学衍生文件，不修改原件。先前生成的旧版 Word 与 MP4 会被复用。
+
+`pnpm verify:cases` 对本地 `127.0.0.1:8876` 的独立学生预览逐例执行完整流程，并检查素材访问。验证服务应显式设置 `ENABLE_UI_PREVIEW=true`、`ENABLE_AI_FIXTURE=true` 和随机 `PREVIEW_SIGNING_SECRET`；脚本禁止连接远程地址，避免写入正式学情库。详情见覆盖核对文档。

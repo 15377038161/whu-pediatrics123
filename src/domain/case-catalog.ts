@@ -1,3 +1,6 @@
+import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
+import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
+
 export interface PublicCaseProfile {
   id: string;
   version: number;
@@ -6,13 +9,15 @@ export interface PublicCaseProfile {
   category: string;
   presentingSymptoms: string[];
   age: string;
-  sex: '男' | '女';
+  sex: '男' | '女' | '待核验';
   difficulty: string;
   expectedMinutes: number;
   patientName: string;
   patientImage: string;
   patientAlt: string;
-  contentStatus: 'flagship-fixture' | 'demo-pending-review';
+  contentStatus: 'flagship-fixture' | 'demo-pending-review' | 'teacher-materials-indexed' | 'teacher-catalog-only' | 'teacher-folder-only';
+  mediaCount?: number;
+  documentCount?: number;
 }
 
 export const CASE_CATALOG: PublicCaseProfile[] = [
@@ -48,10 +53,32 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
     patientAlt: '5岁虚拟女童正面站立于儿科诊室，轻度紧张并伴呼吸稍快',
     contentStatus: 'demo-pending-review',
   },
+  ...TEACHER_CASE_CATALOG.map((item): PublicCaseProfile => ({
+    id: item.id,
+    version: 1,
+    title: item.name,
+    subtitle: `${item.category} · ${TEACHER_CASE_LINKS[item.id]?.relation === 'subtype' ? '关联真实亚型病例' : '教师病例学习'}`,
+    category: item.category,
+    presentingSymptoms: [],
+    age: '待核验',
+    sex: '待核验',
+    difficulty: item.folder || TEACHER_CASE_LINKS[item.id] ? '真实案例学习' : '病种自主研习',
+    expectedMinutes: 0,
+    patientName: '小朋友',
+    patientImage: '/media/clinical/virtual-child-front.png',
+    patientAlt: '用于检查部位定位的教学示意模型，不代表原病例患儿外貌',
+    contentStatus: item.status === 'materials-indexed' ? 'teacher-materials-indexed' : item.status === 'folder-only' ? 'teacher-folder-only' : 'teacher-catalog-only',
+    mediaCount: item.mediaCount,
+    documentCount: item.documentCount,
+  })),
 ];
 
 export function getPublicCase(caseId: string): PublicCaseProfile {
   const caseProfile = CASE_CATALOG.find((item) => item.id === caseId);
   if (!caseProfile) throw new Error('CASE_NOT_FOUND');
   return caseProfile;
+}
+
+export function isTrainableCase(caseId: string): boolean {
+  return CASE_CATALOG.some((item) => item.id === caseId);
 }

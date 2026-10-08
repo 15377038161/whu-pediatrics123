@@ -12,10 +12,14 @@
     "test": "tsx --test tests/**/*.test.ts",
     "validate": "pnpm run typecheck && pnpm run lint && pnpm run test",
     "verify:chaoxing": "node scripts/verify-chaoxing-config.js",
+    "prepare:cases": "python scripts/extract-case-drafts.py && python scripts/prepare-teacher-cases.py && node scripts/prepare-case-media.mjs",
+    "verify:cases": "tsx scripts/verify-case-library.ts",
     "predeploy": "pnpm run validate && pnpm run verify:chaoxing",
     "bundle": "pwsh -NoProfile -File scripts/package-coze.ps1"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "2.110.8",
     "coze-coding-dev-sdk": "^0.7.24",
@@ -24,6 +28,7 @@
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "three": "^0.186.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {

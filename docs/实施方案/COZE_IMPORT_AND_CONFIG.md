@@ -64,6 +64,9 @@ pnpm bundle
 | `COZE_AI_ROLE_MODEL` | `doubao-seed-2-0-pro-260215` | 角色应答模型，可选覆盖 |
 | `COZE_AI_API_KEY` / `COZE_AI_BASE_URL` | 空（用平台注入） | 仅在需要显式密钥/域名时配置 |
 | `COZE_AI_TIMEOUT_MS` / `COZE_AI_MAX_ATTEMPTS` / `COZE_AI_RETRY_BASE_MS` | `30000` / `3` / `600` | AI 调用弹性参数 |
+| `PEDIATRICS_KNOWLEDGE_ROOT` | 项目下 `knowledge/` | 病例资料的私有绝对挂载目录，内含原件与教学衍生数据 |
+
+病例资料必须随部署私有挂载，代码导入包不会自动上传 `knowledge/`。在资料准备机器安装 `scripts/requirements-cases.txt`、LibreOffice、FFmpeg，并执行 `pnpm prepare:cases`；将 `knowledge/儿科常见病/`、`knowledge/teaching-cases/`、`knowledge/teaching-media/` 一起放入目标私有目录。部署后用学生身份确认具体病例正文、图片和视频均可读取；仅看到病例卡片不代表素材已挂载成功。
 
 ## 5. 上线门槛
 

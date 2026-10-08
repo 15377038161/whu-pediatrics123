@@ -77,6 +77,13 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
     },
     vitals: { ...pediatricCase.initialVitals },
     reportId: null,
+    ...(pediatricCase.sourceFacts !== undefined ? { caseOptions: {
+      sourceName: pediatricCase.sourceFacts?.sourceName ?? pediatricCase.title,
+      age: pediatricCase.age, sex: pediatricCase.sex, hasSource: Boolean(pediatricCase.sourceFacts),
+      exams: pediatricCase.exams.map(({ toolId, bodyPartId, label }) => ({ toolId, bodyPartId, label })),
+      tests: pediatricCase.tests.map(({ id, label, indication }) => ({ id, label, indication })),
+    } } : {}),
+    immersive: mode === 'immersive' ? { scene: 'arrival', sceneStep: 0, visitedScenes: ['arrival'], patientCooperation: 35 } : undefined,
   };
 }
 
@@ -90,6 +97,21 @@ function trace(skill: AgentTraceItem['skill'], label: string, sourceIds: string[
 
 function feedbackFor(session: SessionState, text: string): string | null {
   return session.mode === 'osce' ? null : text;
+}
+
+export function refreshSourceSession(session: SessionState): SessionState {
+  if (!session.caseId.startsWith('teacher-') || (session.caseVersion >= 2 && session.caseOptions)) return session;
+  const fresh = createInitialSession(session.userId, session.mode, session.caseId, session.practiceFocus ?? undefined);
+  session.caseVersion = fresh.caseVersion;
+  session.caseOptions = fresh.caseOptions;
+  session.vitals = fresh.vitals;
+  session.messages = [...fresh.messages, ...session.messages.filter((item) => item.actor === 'student')];
+  session.events = session.events.filter((event) => ['SUBMIT_DECISION', 'SUBMIT_PLAN', 'SEND_COMMUNICATION', 'DOCTOR_INTERVENTION', 'NAVIGATE_STAGE', 'FINISH_SESSION'].includes(event.type)).map((event) => ({ ...event, correct: null }));
+  session.askedIntents = [];
+  session.unlockedEvidence = session.unlockedEvidence.filter((code) => ['DECISION', 'PLAN', 'COMMUNICATION'].includes(code));
+  session.orderedTests = [];
+  session.preparationActions = [];
+  return session;
 }
 
 const LOCK_STAGES = process.env.LOCK_STAGES === 'true';
@@ -123,6 +145,10 @@ function applyInterventionState(session: SessionState, action: Extract<AgentEven
 async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>): Promise<AgentTurnResult> {
   const spokenIntervention = detectSpokenIntervention(text);
   const pediatricCase = getCase(session.caseId);
+  if (pediatricCase.sourceFacts !== undefined) {
+    if (spokenIntervention) applyInterventionState(session, spokenIntervention);
+    return handleSourceQuestion(session, text, clientEventId, forwardHeaders);
+  }
   const intents = identifyHistoryIntents(session.caseId, text);
   if (spokenIntervention && intents.length === 0) return handleIntervention(session, spokenIntervention, clientEventId, text);
   if (spokenIntervention) applyInterventionState(session, spokenIntervention);
@@ -158,6 +184,10 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
     preferredActor,
     parentPaused: session.parentInterruption === 'paused',
     childComforted: session.childEmotion === 'calm',
+    scene: session.mode === 'immersive' ? `沉浸式${session.stage}场景` : session.stage,
+    recentMessages: session.messages.slice(-6).map((item) => ({ actor: item.actor, content: item.content })),
+    cooperation: session.behavior.cooperation,
+    disclosedFacts: session.askedIntents,
   }, forwardHeaders);
   const modelReply = roleResult.reply;
   const childAnswer = modelReply?.child ?? childFact;
@@ -191,6 +221,54 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   traces.push(trace('病例状态', `仅解锁“${labels}”对应的预置病史事实`));
   traces.push(trace('知识检索', '检索问诊结构与儿童危险信号公开测试资料', sources));
   return { session, newMessages, feedback: feedbackFor(session, `已形成“${labels}”的过程证据。`), trace: traces, runtime: roleResult.runtime };
+}
+
+async function handleSourceQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>): Promise<AgentTurnResult> {
+  const pediatricCase = getCase(session.caseId);
+  const source = pediatricCase.sourceFacts;
+  const history = source?.sections.history ?? '';
+  const sentences = history.split(/[。；;\n]/).filter((line) => line.trim());
+  const topics = [
+    { question: /哪里不舒服|怎么了|什么不舒服|主要|为什么来|主诉/, source: /./ },
+    { question: /多久|什么时候|几天|开始|起病/, source: /天|周|月|小时|分钟|起病|出现/ },
+    { question: /发烧|发热|体温|退烧/, source: /发热|发烧|体温|退热/ },
+    { question: /精神|吃饭|食欲|吃东西|饮食|睡|喝水|大小便|小便/, source: /精神|饮食|食欲|睡眠|小便|大便|吃奶|喂养|尿/ },
+    { question: /出生|早产|胎龄|怀孕|发育|生长|喂养/, source: /胎|产|出生|窒息|喂养|发育|生长/ },
+    { question: /以前|既往|住院|过敏|疫苗|接种|家族/, source: /既往|平素|过敏|接种|家族|否认/ },
+    { question: /吃药|用药|治疗|处理|在家|药/, source: /治疗|用药|予|在家|药|处理/ },
+    { question: /喘|憋|呼吸|咳|痰/, source: /喘|呼吸|憋|咳|痰/ },
+    { question: /水肿|肿|浮肿|尿|血尿/, source: /肿|浮肿|尿/ },
+    { question: /疼|痛|肚子|呕吐|腹泻|拉肚子/, source: /痛|腹|呕吐|腹泻|大便/ },
+    { question: /抽搐|惊厥|发作|意识|昏迷/, source: /抽搐|惊厥|发作|意识|昏迷/ },
+    { question: /黄|皮疹|皮肤|出血/, source: /黄|皮疹|皮肤|出血/ },
+  ];
+  let matches: Array<{ fact: string; index: number }> = [];
+  if (/多大|几岁|年龄|男孩|女孩|性别/.test(text) && source) {
+    matches = [{ fact: `孩子${source.age}，${source.sex}。`, index: -1 }];
+  } else {
+    const selected = topics.filter((topic) => topic.question.test(text));
+    const terms = text.match(/[\u4e00-\u9fff]{2,}/g)?.flatMap((word) => Array.from({ length: Math.max(0, word.length - 1) }, (_, index) => word.slice(index, index + 2))) ?? [];
+    const relevantTerms = [...new Set(terms)].filter((term) => !['孩子', '医生', '小朋', '朋友', '可以', '告诉', '知道', '什么', '情况', '有没', '没有', '多久', '开始', '么时', '时候'].includes(term));
+    matches = sentences.map((fact, index) => ({ fact: fact.trim().replace(/^[一二三四五六七八九十\d]+[、.．]\s*(?=[\u4e00-\u9fff])/, ''), index,
+      relevance: relevantTerms.filter((term) => fact.includes(term)).length * 3 + selected.filter((topic) => topic.source.test(fact)).length }))
+      .filter((item) => item.relevance > 0).sort((a, b) => b.relevance - a.relevance).slice(0, 3);
+    if (/哪里不舒服|怎么了|主诉|为什么来/.test(text) && source) matches = [{ fact: source.complaint, index: -2 }];
+  }
+  const fact = matches.map((item) => item.fact).join('。');
+  const roleResult = fact ? await renderRoleReply({ childAge: pediatricCase.age, childSex: pediatricCase.sex,
+    question: text, childFact: '', parentFact: fact, preferredActor: 'parent', parentPaused: session.parentInterruption === 'paused',
+    childComforted: session.childEmotion === 'calm', recentMessages: session.messages.slice(-6),
+  }, forwardHeaders) : null;
+  const reply = fact ? roleResult?.reply?.parent ?? `当时的情况是这样：${fact.replaceAll('患儿', '孩子')}` : '这部分我说不清楚，需要再核实一下。';
+  const newMessages = [message('student', text), message(session.parentInterruption === 'paused' ? 'child' : 'parent', session.parentInterruption === 'paused' ? '这个我说不清楚，可以请家长补充吗？' : reply, { emotion: session.childEmotion })];
+  const codes = session.parentInterruption === 'paused' ? [] : matches.map((item) => `SOURCE_HX_${item.index}`);
+  session.askedIntents = uniq([...session.askedIntents, ...codes]);
+  session.unlockedEvidence = uniq([...session.unlockedEvidence, ...codes]);
+  session.messages.push(...newMessages);
+  session.events.push(clinicalEvent(clientEventId, 'ASK_QUESTION', 'history', codes.length ? `依据病例正文回答：${text}` : `问诊记录：${text}；该信息尚未获得`, null, codes));
+  session.stage = 'history'; session.updatedAt = now();
+  return { session, newMessages, feedback: feedbackFor(session, codes.length ? '回答依据该病例的原始病史，已记录来源证据。' : '请记录需要补充核实的信息，继续采集其他病史。'),
+    trace: [trace('知识检索', '按本病例病史检索已提供事实', source ? [source.caseId] : []), trace('病例状态', '保留未知信息，不补写病史')], runtime: roleResult?.runtime };
 }
 
 function handleIntervention(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'], clientEventId: string, spokenText?: string): AgentTurnResult {
@@ -241,7 +319,7 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   }
   session.unlockedEvidence = uniq([...session.unlockedEvidence, rule.evidenceCode]);
   if (rule.id === 'prep-hygiene') session.preparationActions = uniq([...session.preparationActions, rule.id]);
-  if (rule.evidenceCode === 'EX_SPO2') session.vitals.spo2 = 92;
+  if (rule.evidenceCode === 'EX_SPO2' && getCase(session.caseId).sourceFacts === undefined) session.vitals.spo2 = 92;
   session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}：${rule.result}`, true, [rule.evidenceCode]));
   session.stage = 'exam';
   session.updatedAt = now();
@@ -268,7 +346,7 @@ function handleTest(session: SessionState, testId: string, clientEventId: string
   return {
     session,
     newMessages: [resultMessage],
-    feedback: feedbackFor(session, test.appropriate ? `${test.label}与当前证据相符。` : '当前证据不支持常规选择该检查，已记录低价值检查。'),
+    feedback: feedbackFor(session, test.appropriate === null ? '已打开本病例提供的检查记录，请结合病史判断其价值。' : test.appropriate ? `${test.label}与当前证据相符。` : '当前证据不支持常规选择该检查，已记录低价值检查。'),
     trace: [trace('病例状态', '记录检查选择并解锁预置结果'), trace('安全校验', '判断检查适宜性')],
   };
 }
@@ -278,7 +356,8 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
   session.events.push(clinicalEvent(clientEventId, 'SUBMIT_DECISION', 'assessment', `提交初步诊断：${data.diagnosis}`, null, ['DECISION']));
   session.stage = 'assessment';
   session.updatedAt = now();
-  const sources = retrieveKnowledge(`${data.diagnosis} 低氧 呼吸`).map((source) => source.id);
+  const pediatricCase = getCase(session.caseId);
+  const sources = pediatricCase.sourceFacts !== undefined ? pediatricCase.sourceFacts ? [pediatricCase.sourceFacts.caseId] : [] : retrieveKnowledge(`${data.diagnosis} 低氧 呼吸`).map((source) => source.id);
   return {
     session,
     newMessages: [],
@@ -289,6 +368,11 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
 
 function handlePlan(session: SessionState, data: Extract<AgentEvent, { type: 'SUBMIT_PLAN' }>['data'], clientEventId: string): AgentTurnResult {
   session.plan = data;
+  if (getCase(session.caseId).sourceFacts !== undefined) {
+    session.events.push(clinicalEvent(clientEventId, 'SUBMIT_PLAN', 'plan', `提交处置计划：${data.priority}`, null, ['PLAN']));
+    session.stage = 'plan'; session.updatedAt = now();
+    return { session, newMessages: [], feedback: feedbackFor(session, '计划已记录。完成后可对照病例诊疗经过复盘。'), trace: [trace('病例状态', '保存处置思路，生命体征保持原始记录')] };
+  }
   const safe = /吸氧|氧疗|监测/.test(`${data.priority} ${data.detail}`);
   if (safe) {
     session.vitals.spo2 = 97;
@@ -310,11 +394,12 @@ function handleCommunication(session: SessionState, text: string, clientEventId:
   session.unlockedEvidence = uniq([...session.unlockedEvidence, 'COMMUNICATION']);
   const studentMessage = message('student', text);
   const hasEmpathy = /理解|担心|别紧张|一起|我会/.test(text);
-  const explainsRisk = /呼吸|血氧|危险|风险/.test(text);
+  const isSourceCase = getCase(session.caseId).sourceFacts !== undefined;
+  const explainsRisk = (isSourceCase ? /危险|风险|注意|症状|病情|可能|观察/ : /呼吸|血氧|危险|风险/).test(text);
   const nextStep = /下一步|先|监测|检查|处理/.test(text);
   const good = hasEmpathy && explainsRisk && nextStep;
   const parentReply = good
-    ? '谢谢医生，我明白您会先处理呼吸和血氧问题，再一步一步告诉我检查结果。'
+    ? isSourceCase ? '谢谢医生，您这样解释我明白一些了，接下来我会配合检查和观察。' : '谢谢医生，我明白您会先处理呼吸和血氧问题，再一步一步告诉我检查结果。'
     : '医生，我还是有些担心。现在到底有什么风险，接下来要做什么呢？';
   const parentMessage = message('parent', parentReply, { emotion: good ? 'calm' : 'anxious' });
   session.messages.push(studentMessage, parentMessage);
@@ -334,6 +419,8 @@ export interface AgentTurnOptions {
 }
 
 export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string, options?: AgentTurnOptions): Promise<AgentTurnResult> {
+  refreshSourceSession(session);
+  getCase(session.caseId);
   if (session.status !== 'active') throw new Error('SESSION_COMPLETED');
   if (session.expiresAt && Date.parse(session.expiresAt) <= Date.now() && event.type !== 'FINISH_SESSION') {
     throw new Error('SESSION_EXPIRED');

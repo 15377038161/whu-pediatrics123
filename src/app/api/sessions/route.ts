@@ -22,6 +22,6 @@ export async function POST(request: NextRequest) {
     return ok(await new AgentRepository(user).createSession(parsed.data.mode, parsed.data.caseId, parsed.data.focus), undefined, 201);
   } catch (error) {
     const detail = errorFromUnknown(error);
-    return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : 500);
+    return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'CASE_NOT_FOUND' ? 404 : 500);
   }
 }
