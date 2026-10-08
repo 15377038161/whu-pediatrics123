@@ -262,3 +262,33 @@
 1. 真实浏览器端交互验收（需真实超星账号）
 2. 跨租户会话隔离验证
 3. 平台正式部署环境的完整链路验证
+
+
+## 2026-10-10 收尾验收：reference 收紧后的 finish 降级链与运行时实证
+
+### 构建与重启（真实产物证据）
+
+- `pnpm run build` 成功，BUILD_ID 由 `_ff7_vx7EhS7QrBNgQCvn` 更新为 `G9qELajNO0SLYE4ql8_l0`；经既有 tsx watch 入口触发真实重启（app.log 06:09:45 Restarting → 06:09:47 ready）。
+- `/api/health/integrations`：`app: ready`、`database: connected`、AI `configured`（平台注入凭据）。
+- `ENABLE_UI_PREVIEW=false` 生效：`/api/preview/login` 返回 404（服务端拒绝，非仅隐藏按钮）。
+
+### reference=null 收紧语义的降级验证（注入式回归 + HTTP 断言）
+
+- **注入式回归（tests/finish-null-reference.test.ts，3/3 pass，内存 Repository 不碰外部服务、不伪造 JWT/cookie）**：
+  - 合法 finish（reference=null）→ 报告生成 → 再读取报告全链路无异常、幂等（二次 finish 返回既有报告）；
+  - 报告**无诊断/处置标准答案回填**（reference 字段为空，过程反馈不含「标准诊断/参考答案」字样）；
+  - 总分严格等于六维过程证据分项之和（评分仅来自明确过程反馈）；无过程证据只得过程低分（查体/检查维度 0 分）；
+  - 学生 B 读学生 A 报告被拒。
+- **HTTP 断言（scripts/verify-finish-http-assertions.ts，本地直连 12/12 pass，凭据运行时随机生成不打印）**：
+  - 匿名访问 sessions/reports/cases/quiz 全部 401；学生 B 读 A 会话 404（不泄露存在性）；读不存在报告 404；非白名单用户访问教师接口 403；探针数据已清理。
+- **正式评分语义如实记录**：reference 收紧后学生报告仅含过程反馈分；正式评分（含诊断对照评分）仍为阻断项，待平台可信服务端写通道方案（A/B/C）由用户选型，未默认任何方案。
+
+### 教师合法读取 reference/answers
+
+- 数据库层教师直读 RLS 策略保留（`case_snapshot_answers` 仅 `app_is_teacher()`）；沙箱当前无合法教师样本（应用层超星教师元数据 + 数据库白名单双重授权均需满足），**教师正向 HTTP 读取标未验**。
+
+### 剩余已知边界（不写全部完成）
+
+1. **facts 伪证据边界**：`state.unlockedEvidence`/`orderedTests` 仍在学生 owner_update 可写范围内——学生伪造证据码仍可经 facts RPC 读到查体/检查事实（教学性事实，非诊断答案）。诊断/处置对照（reference/answers）已收紧为教师专用，不受此影响。彻底闭合需服务端事件链判定证据真实性（与正式评分 A/B/C 选型同源），待用户决定。
+2. 真实浏览器端交互验收（需真实超星账号）、跨租户隔离、平台正式部署链路。
+3. 网关域名链路 Cookie 剥离（平台限制，见前述章节），本轮 HTTP 断言均在本地直连完成。

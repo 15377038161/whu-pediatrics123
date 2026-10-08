@@ -7,6 +7,7 @@
  * 运行：pnpm tsx scripts/verify-platform-session-chain.ts
  * 前置：真实测试学生账号（rls-probe-a@luojia.dev，密码经环境变量 RLS_PROBE_A_PWD 注入，缺失即报错退出）。
  */
+export {};
 const URL_BASE = process.env.DIAG_URL_BASE ?? 'https://sandbox-e82d7fe2-d5e2-4b3b-ba03-2ff680d15bf2-5173.cxiagents.com';
 const LOCAL_BASE = 'http://localhost:5173';
 const COOKIE_AUTH = 'luojia-peds-auth';
