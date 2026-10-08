@@ -18,16 +18,23 @@ export function getSupabaseCredentials(): SupabaseCredentials {
 
 function createSupabaseClient(key: string, token?: string): SupabaseClient {
   const { url } = getSupabaseCredentials();
+  const headers: Record<string, string> = {};
+  const tenantId = process.env.COZE_SUPABASE_TENANT_ID?.trim();
+  if (tenantId) headers['X-Instance-ID'] = tenantId;
+  if (token) headers.Authorization = `Bearer ${token}`;
   return createClient(url, key, {
-    global: token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
+    global: { headers },
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
 
 export function getSupabaseAdminClient(): SupabaseClient {
-  const key = process.env.COZE_SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!key) throw new Error('DATABASE_NOT_CONFIGURED');
-  return createSupabaseClient(key);
+  const serviceRoleKey = process.env.COZE_SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (serviceRoleKey) return createSupabaseClient(serviceRoleKey);
+  // 平台沙箱不注入 SERVICE_ROLE_KEY：回退到 anon 凭据 + X-Instance-ID 租户头。
+  // 业务侧权限由 repository 层的归属校验（FORBIDDEN 检查）与 RLS 策略共同约束。
+  const { anonKey } = getSupabaseCredentials();
+  return createSupabaseClient(anonKey);
 }
 
 interface DatabaseRetryOptions {
