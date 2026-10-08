@@ -58,6 +58,28 @@
 - **agent_call_records 唯一约束修复实证**：`scripts/verify-agent-turn.ts` 7/7 通过（连续两轮问诊 200、幂等重复提交 200、跨学生 turn 403、未登录 401、落库两行独立记录）。此前「学生每轮对话 AI 应答在持久化调用记录时 409」的问题已解决。
 - **platform-session 路由安全核验**：`scripts/verify-platform-session-security.ts` 11/11 通过（伪造 token/假签名 JWT 401 不落 cookie、假 cookie 401、学生访问教师路由 403、body 注入 role 无效、身份经 auth.getUser 网络验证）。
 - **已知行为如实记录**：Supabase setSession 在 access 有效期内不校验 refresh（混合 token 返回 200）。评估结论：身份仍由真实 access token + getUser 网络验证保证，不可伪造他人身份；无效 refresh 导致会话不可续期、短期自动失效，非身份伪造漏洞，不以 401 断言宣称拦截。
+
+## 2026-10-09 沙箱网关 Cookie 透传限制（平台阻断证据，fail-closed）
+
+**现象**：真实浏览器完成完整 OAuth 链路（authorize-url 200 → 超星授权 → checklogin 中转 → exchange 200 → `POST /api/auth/callback/platform-session` 200），最终仍停留在登录首页，未登录。
+
+**诊断结论：应用侧无缺陷，沙箱预览网关限制**。证据链（脱敏复跑脚本 `scripts/verify-platform-session-chain.ts`，全部 PASS）：
+
+| 实验 | 结果 | 证据 |
+|---|---|---|
+| 本地直连 `platform-session`（真实学生 session） | HTTP 200，Set-Cookie 名含 `luojia-peds-auth` | 落地正常 |
+| 本地直连 `GET /`（带会话 cookie） | **HTTP 307 → /student** | 服务端鉴权 + 角色重定向全通 |
+| 网关域名 `platform-session` | HTTP 200，Set-Cookie 正确下发 | 落地路由正常 |
+| 网关域名 `GET /`（显式携带会话 cookie） | HTTP 200 登录页 | cookie 到达应用时被剥离（app.log 该请求 `cookies:none`） |
+| 网关 Cookie 透传对照（唯一路径 `/diag-cookie-fwd-*`，显式发送 `fwd-probe=1` 与 `luojia-peds-auth=shortdummy`） | 应用日志仅见网关 jar 回放的 `luojia_peds_preview_teacher`，**两个显式 cookie 均未到达** | 网关不透传客户端 Cookie，与 secure 标志无关 |
+
+**根因**：沙箱预览网关不透传客户端请求的 Cookie 头，仅回放其共享 cookie jar 中缓存的值。`platform-session` 正确下发的 `Set-Cookie` 因此无法在后续请求中回传，服务端 `getUser` 鉴权永远收不到会话。
+
+**已排除的安全降级方案**：去掉 auth cookie 的 secure 标志可让其进入网关共享 jar 被回放，但会导致 **http 明文传输 + 所有沙箱访客串用同一会话**（此前预览身份串用已实证该机制），属安全红线，不采用。
+
+**未验边界**：完整 OAuth 链路（authorize → 扫码授权 → exchange → 会话落地 → 角色重定向）的浏览器端验收被此平台限制阻断；本地直连链路已实证可用。待平台网关支持客户端 Cookie 透传后复验。
+
+**恢复条件**：平台网关支持 Cookie 透传（或提供非网关的正式部署域名）后，用真实超星账号走一遍登录即可复验，应用代码无需改动。
 - **选项 B 契约再核验**：`list_task_flow` 返回空——平台当前无任何预定义任务流，选项 B（评分下移任务流）依赖平台配置，缺口未闭合。选项 A/C 状态不变。
 
 ## 2026-10-09 补充：Origin/CSRF 防护与真实重启持久化实测
