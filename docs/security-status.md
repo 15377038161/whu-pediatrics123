@@ -100,3 +100,55 @@
 ### AI 测试：官方 SDK 错误类覆盖补充
 
 `tests/coze-ai.test.ts` 新增官方 `coder-coding-dev-sdk` 错误类断言（当前文本链路实际抛出的类型）：429/401/403/400/408/502/503/无状态码/NetworkError 分类、限流退避重试（attempts=2、sleep≥base）、认证错误不重试（attempts=1、sleep=0）。与旧 `coze-coding-dev-sdk` 对照断言并存。**单测 84/0 / 4 skip 全绿**。
+
+
+## 2026-10-09 预览身份入口安全关闭（止血）
+
+
+### 背景与根因
+
+
+真实浏览器复验（45d718b 之后）确认：退出登录后刷新 `/teacher` 仍显示「评委预览教师」。app.log 取证实证沙箱网关行为：**网关会向无 Cookie 请求回放其 Cookie jar 中最近一次 Set-Cookie 的有效预览 Cookie**（退出下发的 `Max-Age=0` 清除头无法阻止网关重放旧的有效值）。角色后缀 Cookie + 冲突 fail-closed 可防双角色串用，但**无法防单一旧有效 Cookie 的网关回放**——应用侧任何 Cookie 方案都无法对抗该平台层行为。
+
+
+### 止血措施（收紧演示访问，未扩大任何权限）
+
+
+1. 运行环境开关：`.env.local` 中 `ENABLE_UI_PREVIEW` 由 `true` 改为 **`false`**（该文件被 gitignore，属运行时配置，不入库）
+2. 源码层确认（既有实现，无需改动即遵守开关）：
+   - `src/app/api/preview/login/route.ts` L6：开关关闭返回 **404**
+   - `src/app/api/preview/switch-role/route.ts` L12：开关关闭拒绝切换（**403**）
+   - `src/lib/preview-auth.ts` L91 `readPreviewUser`：开关关闭一律返回 null（**服务端拒绝，非仅隐藏按钮**）
+   - `src/app/page.tsx` L12/L51-52：首页预览按钮受 `isPreviewEnabled()` 条件渲染，关闭后不再显示
+3. 保留正式超星账号登录（`PlatformChaoxingLogin` 平台代理链路）及其原有权限，未改动任何真实角色/RLS/鉴权边界
+
+
+### 脱敏 HTTP 断言（实测通过，2026-10-09 19:45 UTC）
+
+
+重载方式：`touch src/server.ts` 触发既有 `tsx watch`（PID 345，08:33:56 启动）热重载。
+
+
+| 断言 | 本地直连 | 网关域名链路 |
+|------|----------|--------------|
+| `POST /api/preview/switch-role`（旧角色 Cookie） | **403** 拒绝 | — |
+| `GET /api/preview/login?role=student` | **404** | **404** |
+| `GET /student`（携带旧教师+学生+旧单名三种 Cookie 名） | **307 → 登录首页** | **307 → 登录首页** |
+| `GET /teacher`（携带旧教师 Cookie） | **307 → 登录首页** | **307 → 登录首页** |
+
+
+**结论**：`readPreviewUser` 在开关关闭下不认任何预览 Cookie（包括网关回放的旧有效值），预览身份已完全失效；仅平台账号登录可用。
+
+
+### 平台限制证据（等待平台解决）
+
+
+- 网关 Cookie 回放：退出请求下发清除头后，网关仍对后续无 Cookie 请求注入旧有效预览 Cookie（app.log 多次实证：`GET /` 在浏览器 jar 为空时携带 `luojia_peds_preview` 到达）
+- 浏览器强制刷新无法清除 HttpOnly Cookie，且网关回放使退出语义在平台层不可靠
+- 因此预览身份入口保持关闭，直到平台网关支持可靠的 Cookie 清除/不复放语义。届时将 `ENABLE_UI_PREVIEW` 恢复 `true` 即可重新启用（源码链路完整保留）。
+
+
+### 后续 390px 学生 UI 验收说明
+
+
+在当前止血状态下，学生端 UI 验收需使用**真实超星学生账号**登录后进行（平台账号登录为唯一入口）；预览身份入口已安全关闭，无法用于 UI 验收。
