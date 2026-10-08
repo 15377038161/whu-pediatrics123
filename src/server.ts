@@ -6,8 +6,10 @@ import next from 'next';
 
 if (!process.env.NODE_ENV) Reflect.set(process.env, 'NODE_ENV', 'production');
 const dev = false;
-const hostname = process.env.HOSTNAME || '127.0.0.1';
-const port = Number.parseInt(process.env.PORT || '5000', 10);
+// HOSTNAME 在容器中是 pod 主机名（绑定后外部不可达），监听地址一律 0.0.0.0。
+const hostname = process.env.HOST || '0.0.0.0';
+// 平台端口优先 DEPLOY_RUN_PORT，其次 PORT，最后默认 5173（沙箱约定端口）。
+const port = Number.parseInt(process.env.DEPLOY_RUN_PORT || process.env.PORT || '5173', 10);
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 

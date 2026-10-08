@@ -1,0 +1,1691 @@
+{
+  "generatedAt": "2026-10-08T10:53:22.174Z",
+  "kbDoc": "3821591",
+  "kbImage": "3821625",
+  "totalCases": 70,
+  "summary": {
+    "docDirect": 42,
+    "withFolder": 53,
+    "catalogOnly": 17,
+    "aliasedOrSubtype": 14,
+    "noSourceAtAll": [
+      "teacher-新生儿脑梗死",
+      "teacher-支气管肺炎",
+      "teacher-格林巴利综合征"
+    ],
+    "failures": []
+  },
+  "cases": [
+    {
+      "caseId": "teacher-单纯肥胖症",
+      "caseName": "单纯肥胖症",
+      "category": "营养性疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-儿童-肥胖症",
+        "relation": "subtype"
+      },
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-新生儿呼吸窘迫综合征",
+      "caseName": "新生儿呼吸窘迫综合征",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿呼吸窘迫综合征",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "新生儿呼吸窘迫综合征_完整影像资料册.pdf",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 5
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 22
+    },
+    {
+      "caseId": "teacher-新生儿败血症",
+      "caseName": "新生儿败血症",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿败血症",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 2,
+        "sources": [
+          "recall-0",
+          "recall-1"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 1
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-新生儿高胆红素血症",
+      "caseName": "新生儿高胆红素血症",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿高胆红素血症",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 4
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 20
+    },
+    {
+      "caseId": "teacher-新生儿abo溶血性黄疸",
+      "caseName": "新生儿ABO溶血性黄疸",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿ABO溶血性黄疸",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 16
+    },
+    {
+      "caseId": "teacher-新生儿rh溶血性黄疸",
+      "caseName": "新生儿RH溶血性黄疸",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿RH溶血性黄疸",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-新生儿肺炎",
+      "caseName": "新生儿肺炎",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿肺炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 3,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-新生儿胎粪吸入肺炎",
+      "caseName": "新生儿胎粪吸入肺炎",
+      "category": "新生儿与新生儿疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-新生儿胎粪吸入性肺炎",
+        "relation": "alias"
+      },
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 1
+    },
+    {
+      "caseId": "teacher-新生儿化脓性脑膜炎",
+      "caseName": "新生儿化脓性脑膜炎",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿化脓性脑膜炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-新生儿重度窒息",
+      "caseName": "新生儿重度窒息",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿重度窒息",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 20
+    },
+    {
+      "caseId": "teacher-新生儿脑梗死",
+      "caseName": "新生儿脑梗死",
+      "category": "新生儿与新生儿疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 0,
+        "sources": []
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-先天性肾上腺皮质增生症",
+      "caseName": "先天性肾上腺皮质增生症",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/先天性肾上腺皮质增生症",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "先天性肾上腺皮质增生症_完整影像资料册.pdf",
+          "recall-2",
+          "recall-3",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 16
+    },
+    {
+      "caseId": "teacher-新生儿缺血缺氧性脑病",
+      "caseName": "新生儿缺血缺氧性脑病",
+      "category": "新生儿与新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿缺血缺氧性脑病",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "新生儿缺血缺氧性脑病_完整影像资料册.pdf"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 20
+    },
+    {
+      "caseId": "teacher-风湿热",
+      "caseName": "风湿热",
+      "category": "免疫性疾病",
+      "folder": "knowledge/儿科常见病/免疫系统疾病/风湿热",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "风湿热_完整影像资料册.pdf"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-过敏性紫癜",
+      "caseName": "过敏性紫癜",
+      "category": "免疫性疾病",
+      "folder": "knowledge/儿科常见病/免疫系统疾病/过敏性紫癜",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 2
+    },
+    {
+      "caseId": "teacher-川崎病",
+      "caseName": "川崎病",
+      "category": "免疫性疾病",
+      "folder": "knowledge/儿科常见病/免疫系统疾病/川崎病",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 3,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-传染行单核细胞增多症",
+      "caseName": "传染行单核细胞增多症",
+      "category": "感染性疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-传染性单核细胞增多症",
+        "relation": "alias"
+      },
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 1
+    },
+    {
+      "caseId": "teacher-轮状病毒性肠炎",
+      "caseName": "轮状病毒性肠炎",
+      "category": "消化系统疾病",
+      "folder": "knowledge/儿科常见病/消化系统疾病/轮状病毒性肠炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-细菌性肠炎",
+      "caseName": "细菌性肠炎",
+      "category": "消化系统疾病",
+      "folder": "knowledge/儿科常见病/消化系统疾病/细菌性肠炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 3,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-婴儿胆汁淤积症-巨细胞病毒",
+      "caseName": "婴儿胆汁淤积症（巨细胞病毒）",
+      "category": "消化系统疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-婴儿胆汁淤积症-巨细胞病毒感染",
+        "relation": "alias"
+      },
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "婴儿胆汁淤积症（巨细胞病毒感染）_完整影像资料册.pdf"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 16
+    },
+    {
+      "caseId": "teacher-急性喉炎",
+      "caseName": "急性喉炎",
+      "category": "呼吸系统疾病",
+      "folder": "knowledge/儿科常见病/消化系统疾病/急性喉炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-异物吸入性窒息",
+      "caseName": "异物吸入性窒息",
+      "category": "呼吸系统疾病",
+      "folder": "knowledge/儿科常见病/呼吸系统疾病/异物吸入性窒息",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "异物吸入性窒息_完整影像资料册.pdf",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 25
+    },
+    {
+      "caseId": "teacher-急性喘息性支气管炎",
+      "caseName": "急性喘息性支气管炎",
+      "category": "呼吸系统疾病",
+      "folder": "knowledge/儿科常见病/呼吸系统疾病/急性喘息性支气管炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 1
+    },
+    {
+      "caseId": "teacher-毛细支气管炎",
+      "caseName": "毛细支气管炎",
+      "category": "呼吸系统疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-急性毛细支气管炎",
+        "relation": "subtype"
+      },
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 1
+    },
+    {
+      "caseId": "teacher-支气管哮喘",
+      "caseName": "支气管哮喘",
+      "category": "呼吸系统疾病",
+      "folder": "knowledge/儿科常见病/呼吸系统疾病/支气管哮喘",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 2,
+        "sources": [
+          "recall-0",
+          "支气管哮喘.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-支气管肺炎",
+      "caseName": "支气管肺炎",
+      "category": "呼吸系统疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 0,
+        "sources": []
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-大叶性肺炎",
+      "caseName": "大叶性肺炎",
+      "category": "呼吸系统疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-肺炎支原体肺炎",
+        "relation": "subtype"
+      },
+      "docRecall": {
+        "snippetCount": 2,
+        "sources": [
+          "病例目录与调用交接.txt",
+          "recall-1"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-肺炎支原体性肺炎",
+      "caseName": "肺炎支原体性肺炎",
+      "category": "呼吸系统疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-肺炎支原体肺炎",
+        "relation": "alias"
+      },
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 20
+    },
+    {
+      "caseId": "teacher-心律失常-阵发性室上性心动过速",
+      "caseName": "心律失常（阵发性室上性心动过速）",
+      "category": "心血管系统疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-心律失常-室上性心动过速",
+        "relation": "subtype"
+      },
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "病例目录与调用交接.txt",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-暴发性心肌炎",
+      "caseName": "暴发性心肌炎",
+      "category": "心血管系统疾病",
+      "folder": "knowledge/儿科常见病/心血管系统/暴发性心肌炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "recall-0"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-急性肾小球肾炎",
+      "caseName": "急性肾小球肾炎",
+      "category": "泌尿系统疾病",
+      "folder": "knowledge/儿科常见病/泌尿系统疾病/急性肾小球肾炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-肾病综合征",
+      "caseName": "肾病综合征",
+      "category": "泌尿系统疾病",
+      "folder": "knowledge/儿科常见病/泌尿系统疾病/肾病综合征",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 3,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-泌尿道感染",
+      "caseName": "泌尿道感染",
+      "category": "泌尿系统疾病",
+      "folder": "knowledge/儿科常见病/泌尿系统疾病/泌尿道感染",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "recall-0"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-急性肾衰竭",
+      "caseName": "急性肾衰竭",
+      "category": "泌尿系统疾病",
+      "folder": "knowledge/儿科常见病/泌尿系统疾病/急性肾衰竭",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "急性肾衰竭_完整影像资料册_分册01.pdf",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 19
+    },
+    {
+      "caseId": "teacher-再生障碍性贫血",
+      "caseName": "再生障碍性贫血",
+      "category": "造血系统疾病",
+      "folder": "knowledge/儿科常见病/血液系统疾病/再生障碍性贫血",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 3,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-蚕豆病",
+      "caseName": "蚕豆病",
+      "category": "造血系统疾病",
+      "folder": "knowledge/儿科常见病/血液系统疾病/蚕豆病",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 3,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-特发性血小板减少性紫癜",
+      "caseName": "特发性血小板减少性紫癜",
+      "category": "造血系统疾病",
+      "folder": "knowledge/儿科常见病/血液系统疾病/特发性血小板减少性紫癜",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-急性白血病",
+      "caseName": "急性白血病",
+      "category": "造血系统疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-急性白血病-急性淋巴细胞白血病",
+        "relation": "subtype"
+      },
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 1
+    },
+    {
+      "caseId": "teacher-噬血细胞综合征",
+      "caseName": "噬血细胞综合征",
+      "category": "造血系统疾病",
+      "folder": "knowledge/儿科常见病/血液系统疾病/噬血细胞综合征",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 2,
+        "sources": [
+          "recall-0",
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-发热性惊厥",
+      "caseName": "发热性惊厥",
+      "category": "神经系统",
+      "folder": "knowledge/儿科常见病/神经系统疾病/发热性惊厥",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 19
+    },
+    {
+      "caseId": "teacher-癫痫",
+      "caseName": "癫痫",
+      "category": "神经系统",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-癫痫全面性发作阵挛性发作",
+        "relation": "subtype"
+      },
+      "docRecall": {
+        "snippetCount": 0,
+        "sources": []
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-病毒性脑炎",
+      "caseName": "病毒性脑炎",
+      "category": "神经系统",
+      "folder": "knowledge/儿科常见病/神经系统疾病/病毒性脑炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "recall-0"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-化脓性脑膜炎",
+      "caseName": "化脓性脑膜炎",
+      "category": "神经系统",
+      "folder": "knowledge/儿科常见病/神经系统疾病/化脓性脑膜炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "化脓性脑膜炎_完整影像资料册.pdf",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 25
+    },
+    {
+      "caseId": "teacher-结核性脑炎",
+      "caseName": "结核性脑炎",
+      "category": "神经系统",
+      "folder": "knowledge/儿科常见病/神经系统疾病/结核性脑炎",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "结核性脑炎_完整影像资料册_分册01.pdf",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 25
+    },
+    {
+      "caseId": "teacher-格林巴利综合征",
+      "caseName": "格林巴利综合征",
+      "category": "神经系统",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 0,
+        "sources": []
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-先天性肌无力综合征",
+      "caseName": "先天性肌无力综合征",
+      "category": "神经系统",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-先天性肌无力",
+        "relation": "alias"
+      },
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-生长激素缺乏症-矮小症",
+      "caseName": "生长激素缺乏症、矮小症",
+      "category": "内分泌疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-矮小症",
+        "relation": "subtype"
+      },
+      "docRecall": {
+        "snippetCount": 2,
+        "sources": [
+          "病例目录与调用交接.txt",
+          "recall-1"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-中枢性尿崩症",
+      "caseName": "中枢性尿崩症",
+      "category": "内分泌疾病",
+      "folder": "knowledge/儿科常见病/内分泌系统/中枢性尿崩症",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "中枢性尿崩症_完整影像资料册.pdf",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 15
+    },
+    {
+      "caseId": "teacher-外周性性早熟",
+      "caseName": "外周性性早熟",
+      "category": "内分泌疾病",
+      "folder": "knowledge/儿科常见病/内分泌系统/外周性性早熟",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-中枢性性早熟",
+      "caseName": "中枢性性早熟",
+      "category": "内分泌疾病",
+      "folder": "knowledge/儿科常见病/内分泌系统/中枢性性早熟",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 2,
+        "sources": [
+          "recall-0",
+          "recall-1"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-i型糖尿病伴有酮症酸中毒",
+      "caseName": "I型糖尿病伴有酮症酸中毒",
+      "category": "内分泌疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-1型糖尿病伴有酮症酸中毒",
+        "relation": "alias"
+      },
+      "docRecall": {
+        "snippetCount": 3,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-肝豆状核变性",
+      "caseName": "肝豆状核变性",
+      "category": "遗传性疾病",
+      "folder": "knowledge/儿科常见病/遗传性疾病/肝豆状核变性",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "肝豆状核变性_完整影像资料册_分册04.pdf"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 25
+    },
+    {
+      "caseId": "teacher-糖原贮积病",
+      "caseName": "糖原贮积病",
+      "category": "遗传性疾病",
+      "folder": null,
+      "status": "catalog-only",
+      "source": "list",
+      "linkedTo": {
+        "sourceId": "teacher-糖原贮积病iv型",
+        "relation": "subtype"
+      },
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "糖原贮积病IV型_完整影像资料册.pdf",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 24
+    },
+    {
+      "caseId": "teacher-急性百草枯中毒",
+      "caseName": "急性百草枯中毒",
+      "category": "急性中毒",
+      "folder": "knowledge/儿科常见病/急性中毒/急性百草枯中毒",
+      "status": "materials-indexed",
+      "source": "list",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "急性百草枯中毒_完整影像资料册_分册05.pdf",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 24
+    },
+    {
+      "caseId": "teacher-1型糖尿病伴有酮症酸中毒",
+      "caseName": "1型糖尿病伴有酮症酸中毒",
+      "category": "内分泌系统",
+      "folder": "knowledge/儿科常见病/内分泌系统/1型糖尿病伴有酮症酸中毒",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 3,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-矮小症",
+      "caseName": "矮小症",
+      "category": "内分泌系统",
+      "folder": "knowledge/儿科常见病/内分泌系统/矮小症",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "recall-0"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-急性毛细支气管炎",
+      "caseName": "急性毛细支气管炎",
+      "category": "呼吸系统疾病",
+      "folder": "knowledge/儿科常见病/呼吸系统疾病/急性毛细支气管炎",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 1
+    },
+    {
+      "caseId": "teacher-肺不张",
+      "caseName": "肺不张",
+      "category": "呼吸系统疾病",
+      "folder": "knowledge/儿科常见病/呼吸系统疾病/肺不张",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "肺不张_完整影像资料册.pdf"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 3
+    },
+    {
+      "caseId": "teacher-肺炎支原体肺炎",
+      "caseName": "肺炎支原体肺炎",
+      "category": "呼吸系统疾病",
+      "folder": "knowledge/儿科常见病/呼吸系统疾病/肺炎支原体肺炎",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "肺炎支原体肺炎_完整影像资料册.pdf",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 25
+    },
+    {
+      "caseId": "teacher-重症肺炎",
+      "caseName": "重症肺炎",
+      "category": "呼吸系统疾病",
+      "folder": "knowledge/儿科常见病/呼吸系统疾病/重症肺炎",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "recall-0"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-心律失常-室上性心动过速",
+      "caseName": "心律失常 室上性心动过速",
+      "category": "心血管系统",
+      "folder": "knowledge/儿科常见病/心血管系统/心律失常 室上性心动过速",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 1,
+        "sources": [
+          "recall-0"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-传染性单核细胞增多症",
+      "caseName": "传染性单核细胞增多症",
+      "category": "感染性疾病",
+      "folder": "knowledge/儿科常见病/感染性疾病/传染性单核细胞增多症",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 3,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 1
+    },
+    {
+      "caseId": "teacher-新生儿胎粪吸入性肺炎",
+      "caseName": "新生儿胎粪吸入性肺炎",
+      "category": "新生儿疾病",
+      "folder": "knowledge/儿科常见病/新生儿疾病/新生儿胎粪吸入性肺炎",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 2,
+        "sources": [
+          "recall-0",
+          "recall-1"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": false,
+      "docMatchKind": null,
+      "imageUrlsFound": 0
+    },
+    {
+      "caseId": "teacher-婴儿胆汁淤积症-巨细胞病毒感染",
+      "caseName": "婴儿胆汁淤积症（巨细胞病毒感染）",
+      "category": "消化系统疾病",
+      "folder": "knowledge/儿科常见病/消化系统疾病/婴儿胆汁淤积症（巨细胞病毒感染）",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "婴儿胆汁淤积症（巨细胞病毒感染）_完整影像资料册.pdf"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 16
+    },
+    {
+      "caseId": "teacher-中枢神经系统脱髓鞘病",
+      "caseName": "中枢神经系统脱髓鞘病",
+      "category": "神经系统疾病",
+      "folder": "knowledge/儿科常见病/神经系统疾病/中枢神经系统脱髓鞘病",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "中枢神经系统脱髓鞘病_完整影像资料册.pdf"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 20
+    },
+    {
+      "caseId": "teacher-先天性肌无力",
+      "caseName": "先天性肌无力",
+      "category": "神经系统疾病",
+      "folder": "knowledge/儿科常见病/神经系统疾病/先天性肌无力",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "先天性肌无力_完整影像资料册.pdf",
+          "recall-2",
+          "recall-3",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 25
+    },
+    {
+      "caseId": "teacher-癫痫全面性发作阵挛性发作",
+      "caseName": "癫痫全面性发作阵挛性发作",
+      "category": "神经系统疾病",
+      "folder": "knowledge/儿科常见病/神经系统疾病/癫痫全面性发作阵挛性发作",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "recall-3",
+          "癫痫全面性发作阵挛性发作_完整影像资料册.pdf"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 12
+    },
+    {
+      "caseId": "teacher-儿童-肥胖症",
+      "caseName": "儿童 肥胖症",
+      "category": "营养性疾病",
+      "folder": "knowledge/儿科常见病/营养性疾病/儿童 肥胖症",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "儿童 肥胖症_完整影像资料册.pdf",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 25
+    },
+    {
+      "caseId": "teacher-急性白血病-急性淋巴细胞白血病",
+      "caseName": "急性白血病-急性淋巴细胞白血病",
+      "category": "血液系统疾病",
+      "folder": "knowledge/儿科常见病/血液系统疾病/急性白血病-急性淋巴细胞白血病",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 4,
+        "sources": [
+          "recall-0",
+          "recall-1",
+          "recall-2",
+          "病例目录与调用交接.txt"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "case-id",
+      "imageUrlsFound": 1
+    },
+    {
+      "caseId": "teacher-糖原贮积病iv型",
+      "caseName": "糖原贮积病IV型",
+      "category": "遗传性疾病",
+      "folder": "knowledge/儿科常见病/遗传性疾病/糖原贮积病IV型",
+      "status": "folder-only",
+      "source": "folder",
+      "linkedTo": null,
+      "docRecall": {
+        "snippetCount": 5,
+        "sources": [
+          "recall-0",
+          "糖原贮积病IV型_完整影像资料册.pdf",
+          "recall-2",
+          "recall-3",
+          "recall-4"
+        ]
+      },
+      "imageRecall": {
+        "snippetCount": 0
+      },
+      "docMatched": true,
+      "docMatchKind": "title-name",
+      "imageUrlsFound": 24
+    }
+  ]
+}

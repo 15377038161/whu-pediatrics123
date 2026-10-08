@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { AgentRepository } from '@/lib/repository';
-import { requireUser } from '@/lib/request-auth';
+import { requireAuth } from '@/lib/request-auth';
 import { isTrainableCase } from '@/domain/case-catalog';
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser(request);
+    const user = await requireAuth(request);
     const { id } = await context.params;
     const session = await new AgentRepository(user).getSession(id);
     if (!isTrainableCase(session.caseId)) throw new Error('CASE_NOT_FOUND');

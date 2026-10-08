@@ -28,12 +28,21 @@ export function getAIGatewaySettings(): AIGatewaySettings {
 }
 
 /**
- * API key 与基础域名默认取平台注入的 COZE_WORKLOAD_IDENTITY_API_KEY /
- * COZE_INTEGRATION_BASE_URL；仅当显式配置 COZE_AI_API_KEY / COZE_AI_BASE_URL 时覆盖。
+ * API key 与基础域名默认取平台注入的 CODER_CODING_API_KEY / CODER_CODING_BASE_URL
+ * （兼容旧的 COZE_WORKLOAD_IDENTITY_API_KEY / COZE_INTEGRATION_BASE_URL）；
+ * 仅当显式配置 COZE_AI_API_KEY / COZE_AI_BASE_URL 时覆盖。
  */
 export function getAIConfig(): Config {
-  const apiKey = process.env.COZE_AI_API_KEY?.trim() || undefined;
-  const baseUrl = process.env.COZE_AI_BASE_URL?.trim() || undefined;
+  const apiKey = process.env.COZE_AI_API_KEY?.trim()
+    || process.env.CODER_CODING_API_KEY?.trim()
+    || process.env.CODER_CODING_MODEL_API_KEY?.trim()
+    || process.env.COZE_WORKLOAD_IDENTITY_API_KEY?.trim()
+    || undefined;
+  const baseUrl = process.env.COZE_AI_BASE_URL?.trim()
+    || process.env.CODER_CODING_BASE_URL?.trim()
+    || process.env.CODER_CODING_MODEL_BASE_URL?.trim()
+    || process.env.COZE_INTEGRATION_BASE_URL?.trim()
+    || undefined;
   return new Config({
     ...(apiKey ? { apiKey } : {}),
     ...(baseUrl ? { baseUrl } : {}),
@@ -55,7 +64,7 @@ export function describeAIConfig(): AIConfigSummary {
   const config = getAIConfig();
   const apiKeySource = process.env.COZE_AI_API_KEY?.trim()
     ? 'env_override'
-    : process.env.COZE_WORKLOAD_IDENTITY_API_KEY
+    : (process.env.CODER_CODING_API_KEY?.trim() || process.env.CODER_CODING_MODEL_API_KEY?.trim() || process.env.COZE_WORKLOAD_IDENTITY_API_KEY?.trim())
       ? 'platform_injected'
       : 'missing';
   const { timeoutMs, maxAttempts, retryBaseMs } = getAIGatewaySettings();

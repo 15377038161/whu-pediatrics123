@@ -1,61 +1,22 @@
-import { createHash } from 'node:crypto';
 import type { ChaoxingIdentity } from '@/lib/chaoxing-client';
-import { isTeacherIdentityAllowed } from '@/lib/access-control';
-import { getSupabaseAdminClient } from '@/lib/supabase-client';
+import { ChaoxingLoginError } from '@/lib/chaoxing-client';
 
-function virtualEmail(providerUid: string): string {
-  return `chaoxing_${createHash('sha256').update(providerUid).digest('hex').slice(0, 48)}@oauth.invalid`;
-}
-
+/**
+ * 平台安全约束（fail-closed）：
+ * 登录令牌签发需要 Supabase Auth Admin API（createUser / generateLink / updateUserById），
+ * 该接口仅接受 SERVICE_ROLE_KEY 级特权凭据；平台明确禁止生成应用读取或持有此类密钥。
+ * 因此本函数不构造任何 admin 客户端：环境未提供可用特权凭据时直接抛出明确错误，
+ * 登录回调将其映射到 oauth_failed 错误页，绝不回退匿名或用户身份伪造签名。
+ *
+ * 当前部署环境下的有效登录路径：
+ * - 邮箱密码登录（Supabase 原生，Auth 配置 external_email_enabled = true）；
+ * - 平台代理的超星 OAuth（/v1/api/coder/proxy/auth/chaoxing-oauth/*）。
+ * 应用自带的超星 OAuth 回调（CHAOXING_APPID/SECRET）在未配置时本就不可达。
+ */
 export async function createSupabaseLoginToken(identity: ChaoxingIdentity): Promise<string> {
-  const admin = getSupabaseAdminClient();
-  const email = virtualEmail(identity.uid);
-  const appRole = isTeacherIdentityAllowed(identity) ? 'teacher' : 'student';
-  const appMetadata = {
-    provider: 'chaoxing',
-    app: { role: appRole },
-    chaoxing: {
-      openid: identity.openid,
-      uid: identity.uid,
-      name: identity.name,
-      displayName: identity.displayName,
-      studentNo: identity.studentNo,
-      fid: identity.fid,
-      orgName: identity.orgName,
-      role: identity.role,
-      loginNames: identity.loginNames,
-    },
-  };
-  const userMetadata = { full_name: identity.displayName, avatar_url: identity.avatar };
-  await admin.auth.admin.createUser({ email, email_confirm: true, app_metadata: appMetadata, user_metadata: userMetadata });
-  const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
-  if (linkError || !link.properties?.hashed_token || !link.user?.id) throw new Error('SESSION_CREATE_FAILED');
-  await admin.auth.admin.updateUserById(link.user.id, {
-    app_metadata: { ...link.user.app_metadata, ...appMetadata },
-    user_metadata: { ...link.user.user_metadata, ...userMetadata },
-  });
-  const { error: profileError } = await admin.from('profiles').upsert({
-    id: link.user.id,
-    display_name: identity.displayName,
-    app_role: appRole,
-    student_no: appRole === 'student' ? identity.studentNo || null : null,
-    chaoxing_uid: identity.uid,
-    institution_fid: identity.fid,
-  }, { onConflict: 'id' });
-  if (profileError) throw profileError;
-  const { error: identityError } = await admin.from('external_identities').upsert({
-    user_id: link.user.id,
-    provider: 'chaoxing',
-    provider_uid: identity.uid,
-    provider_role: appRole,
-    metadata: { fid: identity.fid, orgName: identity.orgName, roles: identity.role },
-  }, { onConflict: 'provider,provider_uid' });
-  if (identityError) throw identityError;
-  const { error: cohortError } = await admin.from('cohort_members').upsert({
-    cohort_id: '10000000-0000-4000-8000-000000000102',
-    user_id: link.user.id,
-    role: appRole,
-  }, { onConflict: 'cohort_id,user_id' });
-  if (cohortError) throw cohortError;
-  return link.properties.hashed_token;
+  void identity;
+  throw new ChaoxingLoginError(
+    'oauth_failed',
+    '登录令牌签发依赖特权凭据（Auth Admin API），当前平台环境未提供，已按安全规范 fail-closed',
+  );
 }

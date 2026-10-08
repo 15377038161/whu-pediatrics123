@@ -3,6 +3,7 @@ import path from 'node:path';
 import { z } from 'zod';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
+import { getCachedSnapshot } from '@/lib/case-snapshot';
 
 const recordSchema = z.object({
   caseId: z.string(), sourceName: z.string(), sourceDocument: z.string(),
@@ -28,9 +29,17 @@ export function readTeacherCaseData(caseId: string): TeacherCaseData | null {
   try {
     const file = path.join(getKnowledgeRoot(), 'teaching-cases', `${sourceId}.json`);
     const record = recordSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
-    return record.caseId === sourceId ? record : null;
+    if (record.caseId === sourceId) return record;
+    return null;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      // 本地 teaching-cases 快照缺失（部署环境 knowledge/ 不入库）：
+      // 回退到进程内知识库召回快照（由 ensureCaseSnapshot 预热），保证真实来源、不补造事实。
+      const snapshot = getCachedSnapshot(sourceId);
+      if (!snapshot) return null;
+      const parsed = recordSchema.safeParse(snapshot);
+      return parsed.success ? parsed.data : null;
+    }
     throw new Error('CASE_SOURCE_INVALID');
   }
 }

@@ -4,12 +4,13 @@ import { chaoxingFormConfigured } from '@/lib/chaoxing-sync';
 import { isChaoxingConfigured } from '@/lib/chaoxing-client';
 import { describeAIConfig } from '@/lib/coze-ai';
 import { isPreviewEnabled } from '@/lib/preview-auth';
-import { getSupabaseAdminClient, isDatabaseConfigured } from '@/lib/supabase-client';
+import { getSupabaseCredentialsClient, isDatabaseConfigured } from '@/lib/supabase-client';
 
 async function probeDatabase(timeoutMs = 4000): Promise<'connected' | 'configured_unreachable'> {
   try {
-    const admin = getSupabaseAdminClient();
-    const probe = admin.from('cohorts').select('id').limit(1);
+    // 探测公开只读表（cases 已发布行），不依赖任何特权身份
+    const client = getSupabaseCredentialsClient();
+    const probe = client.from('cases').select('id').limit(1);
     await Promise.race([
       probe,
       new Promise((_, reject) => setTimeout(() => reject(new Error('database probe timeout')), timeoutMs)),
@@ -31,6 +32,6 @@ export async function GET(_request: NextRequest) {
     ai: { ...ai, status: ai.apiKeySource === 'missing' ? 'waiting_for_credentials' : 'configured' },
     chaoxingAuth: authentication ? 'configured_awaiting_live_verification' : 'waiting_for_authorization',
     chaoxingForm: chaoxingFormConfigured() ? 'configured_awaiting_live_verification' : 'waiting_for_write_contract',
-    preview: isPreviewEnabled() ? (process.env.COZE_PROJECT_ENV === 'PROD' ? 'enabled_production' : 'enabled_non_production') : 'disabled',
+    preview: isPreviewEnabled() ? ((process.env.CODER_PROJECTS_ENV || process.env.COZE_PROJECT_ENV) === 'PROD' ? 'enabled_production' : 'enabled_non_production') : 'disabled',
   });
 }

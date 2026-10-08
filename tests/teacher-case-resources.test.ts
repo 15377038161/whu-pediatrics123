@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { GET as getResource } from '@/app/api/cases/[id]/resource/route';
 import { GET as getResources } from '@/app/api/cases/[id]/resources/route';
+import { primeSnapshotMediaForTest } from '@/lib/case-snapshot';
 import { PREVIEW_COOKIE, setPreviewCookie } from '@/lib/preview-auth';
 import { getTeacherCaseResourceRoot } from '@/lib/teacher-case-resources';
 
@@ -18,6 +19,46 @@ function request(url: string, role: 'student' | 'teacher'): NextRequest {
   const cookie = response.cookies.get(PREVIEW_COOKIE);
   return new NextRequest(url, { headers: { cookie: `${PREVIEW_COOKIE}=${cookie?.value}` } });
 }
+
+test('学生不可获得知识库原图外链：本地目录缺失时仅教师返回媒体URL，匿名拒绝', async () => {
+  const oldPreview = process.env.ENABLE_UI_PREVIEW;
+  const oldRoot = process.env.PEDIATRICS_KNOWLEDGE_ROOT;
+  const temp = await mkdtemp(path.join(os.tmpdir(), 'pediatrics-kbmedia-'));
+  process.env.ENABLE_UI_PREVIEW = 'true';
+  process.env.PEDIATRICS_KNOWLEDGE_ROOT = temp;
+  // 本地 teaching-cases 与资源目录均缺失 → 走知识库快照媒体回退路径
+  await mkdir(path.join(temp, 'teaching-cases'), { recursive: true });
+  try {
+    const catalogOnly = TEACHER_CASE_CATALOG.find((item) => item.status === 'catalog-only');
+    assert.ok(catalogOnly, '目录中应存在 catalog-only 病例');
+    const context = { params: Promise.resolve({ id: catalogOnly.id }) };
+    process.env.PEDIATRICS_SNAPSHOT_TEST_PRIME = '1';
+    primeSnapshotMediaForTest(catalogOnly.id, [
+      { url: 'https://p.cldisk.com/test-real-mri-1.jpg', caption: '病例来源图片' },
+      { url: 'https://p.cldisk.com/test-real-mri-2.jpg', caption: '病例来源图片' },
+    ]);
+    // 匿名拒绝
+    assert.equal((await getResources(new NextRequest(`http://localhost/api/cases/${catalogOnly.id}/resources`), context)).status, 401);
+    // 学生：无本地目录时列表为空，绝不返回知识库原图 URL
+    const studentPayload = await getResources(request(`http://localhost/api/cases/${catalogOnly.id}/resources`, 'student'), context);
+    assert.equal(studentPayload.status, 200);
+    const studentData = await studentPayload.json();
+    assert.equal(studentData.data.length, 0, '学生不应获得知识库原图 URL');
+    assert.ok(!JSON.stringify(studentData).includes('p.cldisk.com'), '学生响应不得含任何原图域名');
+    // 教师：可验证访问原图外链
+    const teacherPayload = await getResources(request(`http://localhost/api/cases/${catalogOnly.id}/resources`, 'teacher'), context);
+    assert.equal(teacherPayload.status, 200);
+    const teacherData = await teacherPayload.json();
+    assert.equal(teacherData.data.length, 2, '教师应可见知识库来源影像');
+    assert.ok(teacherData.data.every((item: { url?: string }) => (item.url ?? '').startsWith('https://p.cldisk.com/')));
+  } finally {
+    delete process.env.PEDIATRICS_SNAPSHOT_TEST_PRIME;
+    await rm(temp, { recursive: true, force: true });
+    if (oldPreview === undefined) delete process.env.ENABLE_UI_PREVIEW; else process.env.ENABLE_UI_PREVIEW = oldPreview;
+    if (oldRoot === undefined) delete process.env.PEDIATRICS_KNOWLEDGE_ROOT; else process.env.PEDIATRICS_KNOWLEDGE_ROOT = oldRoot;
+  }
+});
+
 
 test('教师清单和病例目录双向覆盖，编码ID和异名均可关联资料', () => {
   assert.equal(TEACHER_CASE_CATALOG.length, 70);

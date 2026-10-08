@@ -65,3 +65,31 @@ export async function getCurrentUser(cookies: CookieReader): Promise<UserContext
     return null;
   }
 }
+
+export interface AuthContext {
+  user: UserContext;
+  /** 当前会话的 Supabase access token（JWT）。预览身份无 token，为 null。 */
+  accessToken: string | null;
+}
+
+/**
+ * 获取认证上下文（用户身份 + 会话 JWT）。
+ * JWT 用于服务端以用户身份访问数据库（getSupabaseUserClient），行级权限由 RLS 依 auth.uid() 判定。
+ */
+export async function getCurrentAuth(cookies: CookieReader): Promise<AuthContext | null> {
+  const preview = readPreviewUser(cookies);
+  if (preview) return { user: preview, accessToken: null };
+  try {
+    const supabase = createReadOnlySupabaseClient(cookies);
+    // tokens-only cookie 模式：session.user 不在 cookie 存储中（服务端访问会抛错），
+    // 必须用 getUser(access_token) 网络验证并取回完整用户身份。
+    const sessionResult = await supabase.auth.getSession();
+    if (sessionResult.error || !sessionResult.data.session) return null;
+    const accessToken = sessionResult.data.session.access_token;
+    const userResult = await supabase.auth.getUser(accessToken);
+    if (userResult.error || !userResult.data.user) return null;
+    return { user: normalizeSupabaseUser(userResult.data.user), accessToken };
+  } catch {
+    return null;
+  }
+}

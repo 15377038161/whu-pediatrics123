@@ -1,7 +1,9 @@
 import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, SessionState, SyncEventV1, TrainingReport, UserContext } from '@/domain/agent';
 import { createInitialSession, refreshSourceSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
-import { getSupabaseAdminClient, withDatabaseRetry } from '@/lib/supabase-client';
+import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client';
+import { ensureCaseSnapshot, getSnapshotVersion, restoreCaseSnapshotFacts } from '@/lib/case-snapshot';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface TeacherStudentSummary {
   id: string;
@@ -51,34 +53,6 @@ function clone<T>(value: T): T {
 
 const DEFAULT_COHORT_ID = '10000000-0000-4000-8000-000000000102';
 
-async function assertCohortRoleAccess(userId: string, cohortId: string, role: 'student' | 'teacher'): Promise<void> {
-  const admin = getSupabaseAdminClient();
-  const { data, error } = await admin.from('cohort_members').select('user_id').eq('cohort_id', cohortId).eq('user_id', userId).eq('role', role).maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error('FORBIDDEN');
-}
-
-async function ensureTeacherCohortAccess(actor: UserContext, cohortId: string): Promise<void> {
-  if (actor.role !== 'teacher') throw new Error('FORBIDDEN');
-  const admin = getSupabaseAdminClient();
-  const { data, error } = await admin.from('cohort_members')
-    .select('role')
-    .eq('cohort_id', cohortId)
-    .eq('user_id', actor.id)
-    .maybeSingle();
-  if (error) throw error;
-  if (data?.role === 'teacher') return;
-
-  const [{ error: profileError }, { error: membershipError }, { error: identityError }] = await Promise.all([
-    admin.from('profiles').update({ app_role: 'teacher' }).eq('id', actor.id),
-    admin.from('cohort_members').upsert({ cohort_id: cohortId, user_id: actor.id, role: 'teacher' }, { onConflict: 'cohort_id,user_id' }),
-    admin.from('external_identities').update({ provider_role: 'teacher' }).eq('user_id', actor.id).eq('provider', 'chaoxing'),
-  ]);
-  if (profileError) throw profileError;
-  if (membershipError) throw membershipError;
-  if (identityError) throw identityError;
-}
-
 function previewSeedUsers(store: Store): void {
   const seeds: UserContext[] = [
     { id: 'preview-student-001', role: 'student', displayName: '张同学', studentNo: '20240001', provider: 'preview', chaoxingUid: null },
@@ -114,25 +88,39 @@ function previewSeedUsers(store: Store): void {
   }
 }
 
+/**
+ * 数据库访问身份（fail-closed）：
+ * - 预览身份（provider === 'preview'）走进程内存，不触碰数据库；
+ * - 真实身份必须携带会话 JWT（accessToken），以用户身份访问数据库，行级权限完全由 RLS 依 auth.uid() 判定；
+ * - 缺少 JWT 时抛 AUTH_REQUIRED，绝不回退匿名/admin 身份。
+ */
 export class AgentRepository {
-  constructor(private readonly actor: UserContext) {}
+  constructor(private readonly actor: UserContext & { accessToken: string | null }) {}
 
   private isPreview(): boolean {
     return this.actor.provider === 'preview';
   }
 
+  private db(): SupabaseClient {
+    if (this.isPreview() || !this.actor.accessToken) throw new Error('AUTH_REQUIRED');
+    return getSupabaseUserClient(this.actor.accessToken);
+  }
+
   async createSession(mode: SessionMode, caseId?: string, practiceFocus?: PracticeFocus): Promise<SessionState> {
+    // 本地 teaching-cases 缺失时，先预热知识库召回快照（失败降级，不阻塞建会话）。
+    // 教师触发时同时持久化 answers（诊断/原文/媒体，仅教师可读），学生仅持久化教学事实。
+    if (caseId?.startsWith('teacher-')) await ensureCaseSnapshot(caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
     const session = createInitialSession(this.actor.id, mode, caseId, practiceFocus);
+    // 首次加载即绑定快照版本：之后（含重启后）按此版本恢复病例事实，防召回漂移换患者。
+    if (caseId?.startsWith('teacher-')) session.sourceSnapshotVersion = getSnapshotVersion(caseId);
     if (this.isPreview()) {
       const store = memoryStore();
       store.users.set(this.actor.id, this.actor);
       store.sessions.set(session.id, clone(session));
       return session;
     }
-    const admin = getSupabaseAdminClient();
-    if (this.actor.role === 'teacher') await ensureTeacherCohortAccess(this.actor, DEFAULT_COHORT_ID);
-    else await assertCohortRoleAccess(this.actor.id, DEFAULT_COHORT_ID, 'student');
-    const { error } = await admin.from('training_sessions').insert({
+    const db = this.db();
+    const { error } = await db.from('training_sessions').insert({
       id: session.id,
       user_id: this.actor.id,
       cohort_id: DEFAULT_COHORT_ID,
@@ -155,18 +143,36 @@ export class AgentRepository {
       const session = memoryStore().sessions.get(id);
       if (!session) throw new Error('SESSION_NOT_FOUND');
       if (this.actor.role !== 'teacher' && session.userId !== this.actor.id) throw new Error('FORBIDDEN');
+      if (session.caseId.startsWith('teacher-')) await ensureCaseSnapshot(session.caseId);
       return refreshSourceSession(clone(session));
     }
-    const admin = getSupabaseAdminClient();
+    const db = this.db();
     const { data } = await withDatabaseRetry(async () => {
-      const result = await admin.from('training_sessions').select('state,user_id,cohort_id').eq('id', id).maybeSingle();
+      const result = await db.from('training_sessions').select('state,user_id,cohort_id').eq('id', id).maybeSingle();
       if (result.error) throw result.error;
       return result;
     });
     if (!data) throw new Error('SESSION_NOT_FOUND');
-    if (this.actor.role === 'teacher') await ensureTeacherCohortAccess(this.actor, data.cohort_id);
-    else if (data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
-    return refreshSourceSession(data.state as SessionState);
+    // 教师访问由 RLS（teacher_select via app_is_teacher）放行；学生仅限本人
+    if (this.actor.role !== 'teacher' && data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
+    const restored = data.state as SessionState;
+    if (restored.caseId?.startsWith('teacher-')) {
+      // 版本绑定：会话已有绑定版本时按版本从数据库恢复教学事实（防召回漂移/TTL过期/重启换患者）；
+      // 未绑定版本（旧会话）绑定当前快照版本。
+      if (restored.sourceSnapshotVersion) {
+        const facts = await restoreCaseSnapshotFacts(restored.caseId, restored.sourceSnapshotVersion, this.actor.accessToken);
+        if (!facts) await ensureCaseSnapshot(restored.caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
+        else restored.sourceSnapshotVersion = restored.sourceSnapshotVersion;
+      } else {
+        await ensureCaseSnapshot(restored.caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
+        const version = getSnapshotVersion(restored.caseId);
+        if (version) {
+          restored.sourceSnapshotVersion = version;
+          await db.from('training_sessions').update({ state: restored }).eq('id', id).eq('user_id', this.actor.id);
+        }
+      }
+    }
+    return refreshSourceSession(restored);
   }
 
   async saveSession(session: SessionState): Promise<void> {
@@ -175,8 +181,8 @@ export class AgentRepository {
       return;
     }
     if (session.userId !== this.actor.id) throw new Error('FORBIDDEN');
-    const admin = getSupabaseAdminClient();
-    const { error } = await admin.from('training_sessions').update({
+    const db = this.db();
+    const { error } = await db.from('training_sessions').update({
       stage: session.stage,
       status: session.status,
       state: session,
@@ -184,7 +190,7 @@ export class AgentRepository {
     }).eq('id', session.id).eq('user_id', this.actor.id);
     if (error) throw error;
     if (session.messages.length > 0) {
-      const { error: messageError } = await admin.from('training_messages').upsert(session.messages.map((item) => ({
+      const { error: messageError } = await db.from('training_messages').upsert(session.messages.map((item) => ({
         id: item.id,
         session_id: session.id,
         actor: item.actor,
@@ -196,7 +202,7 @@ export class AgentRepository {
       if (messageError) throw messageError;
     }
     if (session.events.length > 0) {
-      const { error: operationError } = await admin.from('clinical_operations').upsert(session.events.map((item) => ({
+      const { error: operationError } = await db.from('clinical_operations').upsert(session.events.map((item) => ({
         id: item.id,
         session_id: session.id,
         client_event_id: item.clientEventId,
@@ -212,8 +218,8 @@ export class AgentRepository {
 
   async saveAgentCall(sessionId: string, clientEventId: string, trace: AgentTraceItem[], runtime?: AgentRuntimeSummary): Promise<void> {
     if (this.isPreview()) return;
-    const admin = getSupabaseAdminClient();
-    const { error } = await admin.from('agent_call_records').upsert({
+    const db = this.db();
+    const { error } = await db.from('agent_call_records').upsert({
       session_id: sessionId,
       client_event_id: clientEventId,
       execution: runtime?.execution ?? 'deterministic',
@@ -232,8 +238,8 @@ export class AgentRepository {
       return;
     }
     if (report.userId !== this.actor.id) throw new Error('FORBIDDEN');
-    const admin = getSupabaseAdminClient();
-    const { error } = await admin.from('training_reports').upsert({
+    const db = this.db();
+    const { error } = await db.from('training_reports').upsert({
       id: report.id,
       session_id: report.sessionId,
       user_id: report.userId,
@@ -245,7 +251,7 @@ export class AgentRepository {
       created_at: report.createdAt,
     }, { onConflict: 'id' });
     if (error) throw error;
-    const { error: abilityError } = await admin.from('ability_profiles').upsert({
+    const { error: abilityError } = await db.from('ability_profiles').upsert({
       user_id: report.userId,
       dimensions: report.abilities,
       recommendation: { text: report.recommendation, improvements: report.improvements },
@@ -253,7 +259,7 @@ export class AgentRepository {
       updated_at: report.createdAt,
     }, { onConflict: 'user_id' });
     if (abilityError) throw abilityError;
-    const { error: syncError } = await admin.from('sync_outbox').upsert({
+    const { error: syncError } = await db.from('sync_outbox').upsert({
       event_id: event.eventId,
       aggregate_type: event.recordType,
       aggregate_id: report.id,
@@ -271,15 +277,12 @@ export class AgentRepository {
       if (this.actor.role !== 'teacher' && report.userId !== this.actor.id) throw new Error('FORBIDDEN');
       return clone(report);
     }
-    const admin = getSupabaseAdminClient();
-    const { data, error } = await admin.from('training_reports').select('data,user_id,session_id').eq('id', id).maybeSingle();
+    const db = this.db();
+    // RLS：学生仅本人可见（owner_read）；教师经 teacher_select（app_is_teacher）可见全部
+    const { data, error } = await db.from('training_reports').select('data,user_id,session_id').eq('id', id).maybeSingle();
     if (error) throw error;
     if (!data) throw new Error('REPORT_NOT_FOUND');
-    if (this.actor.role === 'teacher') {
-      const { data: session, error: sessionError } = await admin.from('training_sessions').select('cohort_id').eq('id', data.session_id).single();
-      if (sessionError) throw sessionError;
-      await ensureTeacherCohortAccess(this.actor, session.cohort_id);
-    } else if (data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
+    if (this.actor.role !== 'teacher' && data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
     return data.data as TrainingReport;
   }
 
@@ -287,9 +290,9 @@ export class AgentRepository {
     if (this.isPreview()) {
       return [...memoryStore().reports.values()].filter((report) => report.userId === this.actor.id).map(clone).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
-    const admin = getSupabaseAdminClient();
+    const db = this.db();
     const { data } = await withDatabaseRetry(async () => {
-      const result = await admin.from('training_reports').select('data').eq('user_id', this.actor.id).order('created_at', { ascending: false });
+      const result = await db.from('training_reports').select('data').eq('user_id', this.actor.id).order('created_at', { ascending: false });
       if (result.error) throw result.error;
       return result;
     });
@@ -319,30 +322,31 @@ export class AgentRepository {
         };
       });
     }
-    await ensureTeacherCohortAccess(this.actor, DEFAULT_COHORT_ID);
-    const admin = getSupabaseAdminClient();
-    const { data: members } = await withDatabaseRetry(async () => {
-      const result = await admin.from('cohort_members').select('user_id').eq('cohort_id', DEFAULT_COHORT_ID).eq('role', 'student');
-      if (result.error) throw result.error;
-      return result;
-    });
-    const ids = (members ?? []).map((row) => row.user_id as string);
-    if (ids.length === 0) return [];
-    const [{ data: profiles }, { data: reports }] = await Promise.all([
+    const db = this.db();
+    // 教师可见范围由 RLS 放行（training_sessions/training_reports 的 teacher_select，基于 teacher_emails 白名单）
+    const [{ data: reports }, { data: sessions }] = await Promise.all([
       withDatabaseRetry(async () => {
-        const result = await admin.from('profiles').select('id,display_name,student_no').in('id', ids);
+        const result = await db.from('training_reports').select('id,session_id,user_id,total_score,mode,created_at,data').order('created_at', { ascending: false });
         if (result.error) throw result.error;
         return result;
       }),
       withDatabaseRetry(async () => {
-        const result = await admin.from('training_reports').select('id,session_id,user_id,total_score,mode,created_at,data').in('user_id', ids).order('created_at', { ascending: false });
+        const result = await db.from('training_sessions').select('user_id,updated_at').order('updated_at', { ascending: false });
         if (result.error) throw result.error;
         return result;
       }),
     ]);
+    const ids = [...new Set([
+      ...(reports ?? []).map((row) => row.user_id as string),
+      ...(sessions ?? []).map((row) => row.user_id as string),
+    ])];
+    if (ids.length === 0) return [];
+    const { data: profiles, error: profileError } = await db.from('profiles').select('id,display_name,student_no').in('id', ids);
+    if (profileError) throw profileError;
     return (profiles ?? []).map((profile) => {
       const own = (reports ?? []).filter((report) => report.user_id === profile.id);
       const latest = own[0];
+      const lastSession = (sessions ?? []).find((row) => row.user_id === profile.id) ?? null;
       return {
         id: profile.id,
         displayName: profile.display_name,
@@ -353,7 +357,7 @@ export class AgentRepository {
         reportCount: own.length,
         latestReportId: latest?.id ?? null,
         latestSessionId: latest?.session_id ?? null,
-        lastActiveAt: latest?.created_at ?? null,
+        lastActiveAt: lastSession?.updated_at ?? latest?.created_at ?? null,
       };
     });
   }
@@ -365,9 +369,9 @@ export class AgentRepository {
         .map(clone)
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     }
-    const admin = getSupabaseAdminClient();
+    const db = this.db();
     const { data } = await withDatabaseRetry(async () => {
-      const result = await admin.from('training_sessions').select('state').eq('user_id', this.actor.id).order('updated_at', { ascending: false });
+      const result = await db.from('training_sessions').select('state').eq('user_id', this.actor.id).order('updated_at', { ascending: false });
       if (result.error) throw result.error;
       return result;
     });
@@ -382,15 +386,15 @@ export class AgentRepository {
       const report = [...memoryStore().reports.values()].find((item) => item.sessionId === id) ?? null;
       return { session, report: report ? clone(report) : null, student: { id: user.id, displayName: user.displayName, studentNo: user.studentNo } };
     }
-    const admin = getSupabaseAdminClient();
+    const db = this.db();
     const [{ data: profile }, { data: reportRow }] = await Promise.all([
       withDatabaseRetry(async () => {
-        const result = await admin.from('profiles').select('id,display_name,student_no').eq('id', session.userId).single();
+        const result = await db.from('profiles').select('id,display_name,student_no').eq('id', session.userId).single();
         if (result.error) throw result.error;
         return result;
       }),
       withDatabaseRetry(async () => {
-        const result = await admin.from('training_reports').select('data').eq('session_id', id).maybeSingle();
+        const result = await db.from('training_reports').select('data').eq('session_id', id).maybeSingle();
         if (result.error) throw result.error;
         return result;
       }),

@@ -3,12 +3,12 @@ import type { SyncEventV1 } from '@/domain/agent';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { runAgentTurn } from '@/lib/agent-engine';
 import { AgentRepository } from '@/lib/repository';
-import { requireUser } from '@/lib/request-auth';
+import { requireAuth } from '@/lib/request-auth';
 import { buildReport } from '@/lib/scoring';
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser(request, 'student');
+    const user = await requireAuth(request, 'student');
     const { id } = await context.params;
     const repository = new AgentRepository(user);
     const session = await repository.getSession(id);

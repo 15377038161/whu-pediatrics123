@@ -12,10 +12,16 @@ interface PreviewPayload {
 }
 
 export function isPreviewEnabled(): boolean {
-  return process.env.ENABLE_UI_PREVIEW === 'true';
+  if (process.env.ENABLE_UI_PREVIEW !== 'true') return false;
+  // 生产环境 fail-closed：未显式提供签名密钥时禁用预览，
+  // 否则任何人可用公开的默认密钥伪造教师身份 cookie。
+  const production = process.env.CODER_PROJECT_ENV === 'PROD' || process.env.COZE_PROJECT_ENV === 'PROD';
+  if (production) return Boolean(process.env.PREVIEW_SIGNING_SECRET?.trim());
+  return true;
 }
 
 function secret(): string {
+  // 仅非生产环境允许回退到本地默认密钥；生产环境由 isPreviewEnabled 保证密钥必填
   return process.env.PREVIEW_SIGNING_SECRET?.trim() || 'local-preview-only-luojia-pediatrics';
 }
 

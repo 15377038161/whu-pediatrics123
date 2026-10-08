@@ -90,6 +90,8 @@ export interface SessionState {
   };
   vitals: VitalSigns;
   reportId: string | null;
+  /** 病例快照版本绑定：首次加载时固定，之后（含重启后）按此版本恢复病例事实，防止召回漂移换患者。 */
+  sourceSnapshotVersion?: string | null;
   caseOptions?: {
     sourceName: string;
     age: string;

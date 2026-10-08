@@ -5,13 +5,25 @@ interface SupabaseCredentials {
   anonKey: string;
 }
 
+/**
+ * 平台凭证优先级：CODER_*（平台沙箱/部署注入）> COZE_*（本地 .env 兼容别名）。
+ * 禁止手工 env 桥接；沙箱内进程自动继承 CODER_* 注入。
+ */
+function envValue(...names: string[]): string | undefined {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+  return undefined;
+}
+
 export function isDatabaseConfigured(): boolean {
-  return Boolean(process.env.COZE_SUPABASE_URL?.trim() && process.env.COZE_SUPABASE_ANON_KEY?.trim());
+  return Boolean(envValue('CODER_SUPABASE_URL', 'COZE_SUPABASE_URL') && envValue('CODER_SUPABASE_ANON_KEY', 'COZE_SUPABASE_ANON_KEY'));
 }
 
 export function getSupabaseCredentials(): SupabaseCredentials {
-  const url = process.env.COZE_SUPABASE_URL?.trim();
-  const anonKey = process.env.COZE_SUPABASE_ANON_KEY?.trim();
+  const url = envValue('CODER_SUPABASE_URL', 'COZE_SUPABASE_URL');
+  const anonKey = envValue('CODER_SUPABASE_ANON_KEY', 'COZE_SUPABASE_ANON_KEY');
   if (!url || !anonKey) throw new Error('DATABASE_NOT_CONFIGURED');
   return { url, anonKey };
 }
@@ -19,7 +31,7 @@ export function getSupabaseCredentials(): SupabaseCredentials {
 function createSupabaseClient(key: string, token?: string): SupabaseClient {
   const { url } = getSupabaseCredentials();
   const headers: Record<string, string> = {};
-  const tenantId = process.env.COZE_SUPABASE_TENANT_ID?.trim();
+  const tenantId = envValue('CODER_SUPABASE_TENANT_ID', 'COZE_SUPABASE_TENANT_ID');
   if (tenantId) headers['X-Instance-ID'] = tenantId;
   if (token) headers.Authorization = `Bearer ${token}`;
   return createClient(url, key, {
@@ -28,13 +40,17 @@ function createSupabaseClient(key: string, token?: string): SupabaseClient {
   });
 }
 
-export function getSupabaseAdminClient(): SupabaseClient {
-  const serviceRoleKey = process.env.COZE_SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (serviceRoleKey) return createSupabaseClient(serviceRoleKey);
-  // 平台沙箱不注入 SERVICE_ROLE_KEY：回退到 anon 凭据 + X-Instance-ID 租户头。
-  // 业务侧权限由 repository 层的归属校验（FORBIDDEN 检查）与 RLS 策略共同约束。
+export function getSupabaseCredentialsClient(): SupabaseClient {
+  // 公开数据只读客户端：anon key + X-Instance-ID 租户头，仅用于公开表（RLS 允许 anon SELECT 的表）
   const { anonKey } = getSupabaseCredentials();
   return createSupabaseClient(anonKey);
+}
+
+export function getSupabaseUserClient(accessToken: string): SupabaseClient {
+  // 用户身份客户端：anon key + 用户 JWT，RLS 按 auth.uid() 判定行级权限。
+  // token 来自请求头 x-sandbox-authorization（平台 Nginx 已重命名 Authorization）。
+  const { anonKey } = getSupabaseCredentials();
+  return createSupabaseClient(anonKey, accessToken);
 }
 
 interface DatabaseRetryOptions {

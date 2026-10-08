@@ -3,7 +3,7 @@
 import { FileText, Image as ImageIcon, Play, Volume2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-type Resource = { path: string; name: string; kind: 'image' | 'audio' | 'video' | 'document'; bytes: number };
+type Resource = { path: string; name: string; kind: 'image' | 'audio' | 'video' | 'document'; bytes: number; url?: string };
 const PAGE_SIZE = 24;
 
 export function CaseResourcePanel({ caseId, title = '病例资料', initialOpen = false }: { caseId: string; title?: string; initialOpen?: boolean }) {
@@ -23,7 +23,7 @@ export function CaseResourcePanel({ caseId, title = '病例资料', initialOpen 
   }, [caseId]);
   const visible = useMemo(() => filter === 'all' ? resources : resources.filter((item) => item.kind === filter), [filter, resources]);
   const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
-  const resourceUrl = (item: Resource) => `/api/cases/${encodeURIComponent(caseId)}/resource?path=${encodeURIComponent(item.path)}`;
+  const resourceUrl = (item: Resource) => item.url ?? `/api/cases/${encodeURIComponent(caseId)}/resource?path=${encodeURIComponent(item.path)}`;
   return <section className="case-resource-panel">
     <button type="button" className="resource-panel-toggle" onClick={() => setOpen((value) => !value)} aria-expanded={open}><span><FileText size={16} /> {title} <small>{loading ? '加载中' : `${resources.length} 项`}</small></span><strong>{open ? '收起' : '展开'}</strong></button>
     {open && <div className="resource-panel-body">

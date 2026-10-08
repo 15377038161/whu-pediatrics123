@@ -1,8 +1,8 @@
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { getKnowledgeRoot, getTeacherSourceId } from '@/lib/teacher-case-data';
 import { createHash } from 'node:crypto';
-import { existsSync } from 'node:fs';
 
 const catalog = new Map(TEACHER_CASE_CATALOG.map((item) => [item.id, item]));
 
@@ -19,6 +19,9 @@ export function getTeacherCaseResourceRoot(caseId: string): string | null {
   const knowledgeRoot = getKnowledgeRoot();
   const root = path.normalize([knowledgeRoot, ...item.folder.split('/').slice(1)].join(path.sep));
   if (!root.startsWith(`${knowledgeRoot}${path.sep}`)) return null;
+  // knowledge/ 目录不入库（.gitignore），部署环境缺失时优雅降级为无资源，
+  // 与 catalog-only 病例行为一致，避免 readdir ENOENT 导致 500。
+  if (!existsSync(root)) return null;
   return root;
 }
 

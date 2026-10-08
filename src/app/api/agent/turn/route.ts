@@ -4,12 +4,12 @@ import type { AgentEvent } from '@/domain/agent';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { runAgentTurn } from '@/lib/agent-engine';
 import { AgentRepository } from '@/lib/repository';
-import { requireUser } from '@/lib/request-auth';
+import { requireAuth } from '@/lib/request-auth';
 import { agentTurnSchema } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireUser(request, 'student');
+    const user = await requireAuth(request, 'student');
     const parsed = agentTurnSchema.safeParse(await request.json());
     if (!parsed.success) return fail({ code: 'INVALID_REQUEST', message: '操作内容不完整，请检查后重试。', retryable: false }, undefined, 422);
     const repository = new AgentRepository(user);
