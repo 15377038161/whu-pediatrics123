@@ -39,8 +39,8 @@ function clinicalEvent(
   return { id: crypto.randomUUID(), clientEventId, type, stage, summary, correct, evidenceCodes, createdAt: now() };
 }
 
-export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id, practiceFocus?: PracticeFocus): SessionState {
-  const pediatricCase = getCase(caseId);
+export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id, practiceFocus?: PracticeFocus, sourceSnapshotVersion?: string | null): SessionState {
+  const pediatricCase = getCase(caseId, sourceSnapshotVersion);
   const startedAt = now();
   const expiresAt = mode === 'osce' ? new Date(Date.now() + 8 * 60_000).toISOString() : null;
   return {
@@ -101,7 +101,8 @@ function feedbackFor(session: SessionState, text: string): string | null {
 
 export function refreshSourceSession(session: SessionState): SessionState {
   if (!session.caseId.startsWith('teacher-') || (session.caseVersion >= 2 && session.caseOptions)) return session;
-  const fresh = createInitialSession(session.userId, session.mode, session.caseId, session.practiceFocus ?? undefined);
+  // 刷新时按会话绑定的快照版本取教学事实（version 未绑定时取裸键最新版），防并发/漂移换患者
+  const fresh = createInitialSession(session.userId, session.mode, session.caseId, session.practiceFocus ?? undefined, session.sourceSnapshotVersion);
   session.caseVersion = fresh.caseVersion;
   session.caseOptions = fresh.caseOptions;
   session.vitals = fresh.vitals;
@@ -119,7 +120,7 @@ const LOCK_STAGES = process.env.LOCK_STAGES === 'true';
 function validateStageNavigation(session: SessionState, target: Stage): boolean {
   if (!LOCK_STAGES) return true;
   if (session.mode !== 'osce') return true;
-  const order = getCase(session.caseId).stages.map((stage) => stage.id);
+  const order = getCase(session.caseId, session.sourceSnapshotVersion).stages.map((stage) => stage.id);
   return order.indexOf(target) >= order.indexOf(session.stage);
 }
 
@@ -144,7 +145,7 @@ function applyInterventionState(session: SessionState, action: Extract<AgentEven
 
 async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>): Promise<AgentTurnResult> {
   const spokenIntervention = detectSpokenIntervention(text);
-  const pediatricCase = getCase(session.caseId);
+  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion);
   if (pediatricCase.sourceFacts !== undefined) {
     if (spokenIntervention) applyInterventionState(session, spokenIntervention);
     return handleSourceQuestion(session, text, clientEventId, forwardHeaders);
@@ -224,7 +225,7 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
 }
 
 async function handleSourceQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>): Promise<AgentTurnResult> {
-  const pediatricCase = getCase(session.caseId);
+  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion);
   const source = pediatricCase.sourceFacts;
   const history = source?.sections.history ?? '';
   const sentences = history.split(/[。；;\n]/).filter((line) => line.trim());
@@ -272,7 +273,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
 }
 
 function handleIntervention(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'], clientEventId: string, spokenText?: string): AgentTurnResult {
-  const patientName = getCase(session.caseId).patientName;
+  const patientName = getCase(session.caseId, session.sourceSnapshotVersion).patientName;
   const copy = {
     child_answer: `${patientName}，接下来请你自己告诉我哪里不舒服，可以慢慢说。`,
     pause_parent: '我想先听孩子本人回答，家长稍后再补充，可以吗？',
@@ -319,7 +320,7 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   }
   session.unlockedEvidence = uniq([...session.unlockedEvidence, rule.evidenceCode]);
   if (rule.id === 'prep-hygiene') session.preparationActions = uniq([...session.preparationActions, rule.id]);
-  if (rule.evidenceCode === 'EX_SPO2' && getCase(session.caseId).sourceFacts === undefined) session.vitals.spo2 = 92;
+  if (rule.evidenceCode === 'EX_SPO2' && getCase(session.caseId, session.sourceSnapshotVersion).sourceFacts === undefined) session.vitals.spo2 = 92;
   session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}：${rule.result}`, true, [rule.evidenceCode]));
   session.stage = 'exam';
   session.updatedAt = now();
@@ -356,7 +357,7 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
   session.events.push(clinicalEvent(clientEventId, 'SUBMIT_DECISION', 'assessment', `提交初步诊断：${data.diagnosis}`, null, ['DECISION']));
   session.stage = 'assessment';
   session.updatedAt = now();
-  const pediatricCase = getCase(session.caseId);
+  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion);
   const sources = pediatricCase.sourceFacts !== undefined ? pediatricCase.sourceFacts ? [pediatricCase.sourceFacts.caseId] : [] : retrieveKnowledge(`${data.diagnosis} 低氧 呼吸`).map((source) => source.id);
   return {
     session,
@@ -368,7 +369,7 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
 
 function handlePlan(session: SessionState, data: Extract<AgentEvent, { type: 'SUBMIT_PLAN' }>['data'], clientEventId: string): AgentTurnResult {
   session.plan = data;
-  if (getCase(session.caseId).sourceFacts !== undefined) {
+  if (getCase(session.caseId, session.sourceSnapshotVersion).sourceFacts !== undefined) {
     session.events.push(clinicalEvent(clientEventId, 'SUBMIT_PLAN', 'plan', `提交处置计划：${data.priority}`, null, ['PLAN']));
     session.stage = 'plan'; session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, '计划已记录。完成后可对照病例诊疗经过复盘。'), trace: [trace('病例状态', '保存处置思路，生命体征保持原始记录')] };
@@ -394,7 +395,7 @@ function handleCommunication(session: SessionState, text: string, clientEventId:
   session.unlockedEvidence = uniq([...session.unlockedEvidence, 'COMMUNICATION']);
   const studentMessage = message('student', text);
   const hasEmpathy = /理解|担心|别紧张|一起|我会/.test(text);
-  const isSourceCase = getCase(session.caseId).sourceFacts !== undefined;
+  const isSourceCase = getCase(session.caseId, session.sourceSnapshotVersion).sourceFacts !== undefined;
   const explainsRisk = (isSourceCase ? /危险|风险|注意|症状|病情|可能|观察/ : /呼吸|血氧|危险|风险/).test(text);
   const nextStep = /下一步|先|监测|检查|处理/.test(text);
   const good = hasEmpathy && explainsRisk && nextStep;
@@ -420,7 +421,7 @@ export interface AgentTurnOptions {
 
 export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string, options?: AgentTurnOptions): Promise<AgentTurnResult> {
   refreshSourceSession(session);
-  getCase(session.caseId);
+  getCase(session.caseId, session.sourceSnapshotVersion);
   if (session.status !== 'active') throw new Error('SESSION_COMPLETED');
   if (session.expiresAt && Date.parse(session.expiresAt) <= Date.now() && event.type !== 'FINISH_SESSION') {
     throw new Error('SESSION_EXPIRED');

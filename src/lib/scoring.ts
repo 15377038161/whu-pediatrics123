@@ -10,9 +10,16 @@ function eventIdsFor(session: SessionState, codes: string[]): string[] {
   return session.events.filter((event) => event.evidenceCodes.some((code) => codes.includes(code))).map((event) => event.id);
 }
 
-export function buildReport(session: SessionState, reportId = crypto.randomUUID()): TrainingReport {
-  const pediatricCase = getCase(session.caseId);
-  if (pediatricCase.sourceFacts !== undefined) return buildSourceReport(session, reportId);
+/** 评分对照来源：优先使用会话绑定版本的安全读取结果（RPC/教师直读），
+ *  避免直接使用进程内快照（可能因召回漂移与绑定版本不一致）。 */
+export interface ReportReference {
+  diagnosis?: string;
+  plan?: string;
+}
+
+export function buildReport(session: SessionState, reportId = crypto.randomUUID(), reference?: ReportReference): TrainingReport {
+  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion);
+  if (pediatricCase.sourceFacts !== undefined) return buildSourceReport(session, reportId, reference);
   const asked = new Set(session.askedIntents);
   const evidence = new Set(session.unlockedEvidence);
   const decisionText = `${session.decision?.diagnosis ?? ''} ${session.decision?.summary ?? ''} ${session.decision?.differentials ?? ''}`;
@@ -126,8 +133,12 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
   };
 }
 
-function buildSourceReport(session: SessionState, reportId: string): TrainingReport {
-  const source = getCase(session.caseId).sourceFacts;
+function buildSourceReport(session: SessionState, reportId: string, reference?: ReportReference): TrainingReport {
+  // 对照来源优先级：会话绑定版本的安全读取（RPC/教师直读）> 进程内缓存快照（本地 knowledge 场景）。
+  // 学生会话无绑定版本对照时保持"资料不足"，不用漂移数据补造。
+  const source = getCase(session.caseId, session.sourceSnapshotVersion).sourceFacts;
+  const diagnosisReference = reference?.diagnosis ?? source?.sections.diagnosis ?? '';
+  const planReference = reference?.plan ?? source?.sections.plan ?? '';
   const checks: Array<{ key: keyof AbilityScores; label: string; max: number; codes: string[]; complete: boolean; detail: string }> = [
     { key: 'history', label: '病史采集记录', max: 25, codes: session.askedIntents.filter((code) => code.startsWith('SOURCE_HX_')), complete: session.askedIntents.some((code) => code.startsWith('SOURCE_HX_')), detail: '是否通过问诊获取该病例实际提供的病史。' },
     { key: 'examination', label: '查体证据记录', max: 25, codes: session.unlockedEvidence.filter((code) => code.startsWith('SOURCE_EX_')), complete: session.unlockedEvidence.some((code) => code.startsWith('SOURCE_EX_')), detail: '是否完成检查准备并获取原病例的查体结果。' },
@@ -138,8 +149,8 @@ function buildSourceReport(session: SessionState, reportId: string): TrainingRep
   ];
   const abilities = Object.fromEntries(checks.map((check) => [check.key, check.complete ? check.max : 0])) as unknown as AbilityScores;
   const evidence: ScoreEvidence[] = checks.map((check) => ({ code: `SOURCE_PROCESS_${check.key}`, label: check.label, achieved: check.complete, score: check.complete ? check.max : 0, maxScore: check.max, detail: check.detail, eventIds: eventIdsFor(session, check.codes) }));
-  if (source?.sections.diagnosis) evidence.push({ code: 'SOURCE_DIAGNOSIS_REFERENCE', label: '原病例诊断对照', achieved: true, score: 0, maxScore: 0, detail: source.sections.diagnosis, eventIds: [] });
-  if (source?.sections.plan) evidence.push({ code: 'SOURCE_PLAN_REFERENCE', label: '原病例诊疗经过对照', achieved: true, score: 0, maxScore: 0, detail: source.sections.plan, eventIds: [] });
+  if (diagnosisReference) evidence.push({ code: 'SOURCE_DIAGNOSIS_REFERENCE', label: '原病例诊断对照', achieved: true, score: 0, maxScore: 0, detail: diagnosisReference, eventIds: [] });
+  if (planReference) evidence.push({ code: 'SOURCE_PLAN_REFERENCE', label: '原病例诊疗经过对照', achieved: true, score: 0, maxScore: 0, detail: planReference, eventIds: [] });
   return { id: reportId, sessionId: session.id, userId: session.userId, caseId: session.caseId, mode: session.mode,
     totalScore: Object.values(abilities).reduce((sum, score) => sum + score, 0), abilities, evidence,
     strengths: checks.filter((check) => check.complete).map((check) => check.label), improvements: checks.filter((check) => !check.complete).map((check) => check.label),

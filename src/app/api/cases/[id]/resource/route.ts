@@ -38,6 +38,10 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const ext = path.extname(resolved).toLowerCase();
     const contentType = MIME_TYPES[ext];
     if (!contentType) return new Response('Resource type not supported', { status: 415 });
+    // 本地媒体（原图/影像/视频）默认仅教师：来自本地目录不等于已脱敏，未经审核学生不可取原始文件。
+    if (user.role !== 'teacher' && process.env.PEDIATRICS_MEDIA_STUDENT_ACCESS !== 'true') {
+      return new Response('Media pending teacher review', { status: 403 });
+    }
     const info = await stat(resolved);
     if (!info.isFile()) return new Response('Resource not found', { status: 404 });
     if (info.size === 0) return new Response(null, { status: 200, headers: { 'Content-Type': contentType, 'Content-Length': '0', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' } });

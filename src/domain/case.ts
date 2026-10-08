@@ -188,18 +188,20 @@ export const FEMALE_WHEEZE_CASE: FlagshipCase = {
 
 export const PEDIATRIC_CASES: FlagshipCase[] = [FLAGSHIP_CASE, FEMALE_WHEEZE_CASE];
 
-export function getCase(caseId: string): FlagshipCase {
+/** version 提供时（会话已绑定快照版本）：teacher 病例仅使用该版本的教学事实，
+ *  版本缺失/不一致时返回"资料不足"形态（sourceFacts 为 null），不回退漂移数据。 */
+export function getCase(caseId: string, version?: string | null): FlagshipCase {
   const pediatricCase = PEDIATRIC_CASES.find((item) => item.id === caseId);
   if (pediatricCase) return pediatricCase;
   if (caseId.startsWith('teacher-')) {
-    return createSourceCase(caseId);
+    return createSourceCase(caseId, version);
   }
   throw new Error('CASE_NOT_FOUND');
 }
 
-function createSourceCase(caseId: string): FlagshipCase {
+function createSourceCase(caseId: string, version?: string | null): FlagshipCase {
   const profile = getPublicCase(caseId);
-  const source = readTeacherCaseData(caseId);
+  const source = readTeacherCaseData(caseId, version);
   const unknown = { temperature: null, heartRate: null, respiratoryRate: null, spo2: null };
   const examText = source?.sections.exam ?? '';
   const snippets = (pattern: RegExp) => examText.split(/[，,；;。\n]/).filter((part) => pattern.test(part)).join('，');

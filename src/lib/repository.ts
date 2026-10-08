@@ -160,9 +160,13 @@ export class AgentRepository {
       // 版本绑定：会话已有绑定版本时按版本从数据库恢复教学事实（防召回漂移/TTL过期/重启换患者）；
       // 未绑定版本（旧会话）绑定当前快照版本。
       if (restored.sourceSnapshotVersion) {
-        const facts = await restoreCaseSnapshotFacts(restored.caseId, restored.sourceSnapshotVersion, this.actor.accessToken);
-        if (!facts) await ensureCaseSnapshot(restored.caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
-        else restored.sourceSnapshotVersion = restored.sourceSnapshotVersion;
+        // 学生走受控 RPC（会话归属+版本绑定校验）；教师直读。RPC 返回 null（校验失败/无数据）
+        // 时不做兜底召回换患者：保持会话绑定的空事实（资料不足），由 ensureCaseSnapshot 仅在
+        // 召回版本与会话绑定版本一致时才允许刷新（见 ensureCaseSnapshotCompat）。
+        const facts = await restoreCaseSnapshotFacts(restored.caseId, restored.sourceSnapshotVersion, this.actor.accessToken, this.actor.role, restored.id);
+        if (!facts && this.actor.role === 'teacher') {
+          await ensureCaseSnapshot(restored.caseId, { accessToken: this.actor.accessToken, teacher: true });
+        }
       } else {
         await ensureCaseSnapshot(restored.caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
         const version = getSnapshotVersion(restored.caseId);

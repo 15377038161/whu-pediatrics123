@@ -23,7 +23,7 @@ export function getKnowledgeRoot(): string {
   return path.resolve(process.env.PEDIATRICS_KNOWLEDGE_ROOT || [process.cwd(), 'knowledge'].join(path.sep));
 }
 
-export function readTeacherCaseData(caseId: string): TeacherCaseData | null {
+export function readTeacherCaseData(caseId: string, version?: string | null): TeacherCaseData | null {
   const sourceId = getTeacherSourceId(caseId);
   if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId && item.folder)) return null;
   try {
@@ -35,7 +35,9 @@ export function readTeacherCaseData(caseId: string): TeacherCaseData | null {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       // 本地 teaching-cases 快照缺失（部署环境 knowledge/ 不入库）：
       // 回退到进程内知识库召回快照（由 ensureCaseSnapshot 预热），保证真实来源、不补造事实。
-      const snapshot = getCachedSnapshot(sourceId);
+      // 会话已绑定版本时仅命中该版本（sourceId@version / 裸键版本一致），
+      // 版本不一致返回 null（资料不足），不回退漂移数据换患者。
+      const snapshot = getCachedSnapshot(sourceId, version);
       if (!snapshot) return null;
       const parsed = recordSchema.safeParse(snapshot);
       return parsed.success ? parsed.data : null;

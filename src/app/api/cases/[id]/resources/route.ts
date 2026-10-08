@@ -17,6 +17,11 @@ export interface CaseResourceEntry {
 
 const MAX_KB_MEDIA = 60;
 
+/** 学生访问本地/知识库媒体需教师脱敏审核后显式开启（默认关闭：未经审核的真实影像不向学生开放）。 */
+function isStudentMediaAccessEnabled(): boolean {
+  return process.env.PEDIATRICS_MEDIA_STUDENT_ACCESS === 'true';
+}
+
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireUser(request, 'student');
@@ -24,6 +29,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const root = getTeacherCaseResourceRoot(id);
     const files: CaseResourceEntry[] = [];
     if (root) {
+      // 本地目录媒体同样默认教师受限：来自本地目录不等于已脱敏，未经审核不向学生返回原图/原文清单。
+      if (user.role !== 'teacher' && !isStudentMediaAccessEnabled()) return ok(files);
       const caseRoot = root;
       async function walk(folder: string): Promise<void> {
         for (const entry of await readdir(folder, { withFileTypes: true })) {

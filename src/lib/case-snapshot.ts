@@ -255,7 +255,11 @@ export async function ensureCaseSnapshot(caseId: string, options?: { accessToken
       const media: CaseSnapshotMedia[] = [];
       for (const chunk of chunks) media.push(...extractImageUrls(chunk.text));
       const snapshot = buildSnapshot(sourceId, item.name, chunks, media);
-      snapshotStore.set(sourceId, { data: snapshot.data, media: snapshot.media, meta: snapshot.meta, expiresAt: Date.now() + SNAPSHOT_TTL_MS });
+      const expiresAt = Date.now() + SNAPSHOT_TTL_MS;
+      // 多版本键：同病例不同快照版本独立缓存（sourceId@version），并发会话各取绑定版本，互不覆盖"换患者"；
+      // sourceId 裸键仅作"最新版本"指针，供会话首次绑定（getSnapshotVersion）与教师预热读取。
+      snapshotStore.set(`${sourceId}@${snapshot.meta.version}`, { data: snapshot.data, media: snapshot.media, meta: snapshot.meta, expiresAt });
+      snapshotStore.set(sourceId, { data: snapshot.data, media: snapshot.media, meta: snapshot.meta, expiresAt });
       await persistSnapshot(options?.accessToken ?? null, snapshot, Boolean(options?.teacher));
       return snapshot;
     } catch (error) {
@@ -290,9 +294,9 @@ function buildFactsPayload(snapshot: SnapshotResult): Omit<SnapshotCaseData, 'se
 }
 
 
-/** 召回成功后写持久缓存：facts（登录可读，防学生投毒用 ignoreDuplicates 插入）；answers（仅教师行）。 */
+/** 召回成功后写持久缓存（仅教师：facts+answers 双写。学生身份无写入权限，RLS 拦截，代码侧同步跳过）。 */
 async function persistSnapshot(accessToken: string | null, snapshot: SnapshotResult, teacher: boolean): Promise<void> {
-  if (!accessToken || !isDatabaseConfigured()) return;
+  if (!teacher || !accessToken || !isDatabaseConfigured()) return;
   try {
     const db = getSupabaseUserClient(accessToken);
     const { error: factsError } = await db.from('case_snapshot_facts')
@@ -318,23 +322,39 @@ async function persistSnapshot(accessToken: string | null, snapshot: SnapshotRes
 }
 
 
-/** 按绑定版本从数据库恢复教学事实（服务重启/TTL过期后防患者事实漂移）；失败返回 null。 */
-export async function restoreCaseSnapshotFacts(caseId: string, version: string, accessToken: string | null): Promise<SnapshotCaseData | null> {
+/** 按绑定版本从数据库恢复教学事实（服务重启/TTL过期后防患者事实漂移）；失败返回 null。
+ *  权限收紧后：学生不再直读 case_snapshot_facts（仅教师 RLS），改走受控 RPC case_snapshot_get_facts
+ *  （服务端校验：登录 + 会话归属本人 + 版本绑定一致 + 病例匹配）。教师仍直读。 */
+export async function restoreCaseSnapshotFacts(caseId: string, version: string, accessToken: string | null, role?: string, sessionId?: string): Promise<SnapshotCaseData | null> {
   const sourceId = getTeacherSourceId(caseId);
   if (!accessToken || !isDatabaseConfigured()) return null;
   try {
     const db = getSupabaseUserClient(accessToken);
-    const { data, error } = await db.from('case_snapshot_facts').select('facts').eq('case_id', sourceId).eq('version', version).maybeSingle();
-    if (error) throw error;
-    if (!data) return null;
-    const facts = data.facts as ReturnType<typeof buildFactsPayload>;
+    let facts: ReturnType<typeof buildFactsPayload> | null = null;
+    if (role === 'student' && sessionId) {
+      // 学生：受控 RPC（会话归属+版本绑定+病例匹配，缺一返回 null）
+      const { data: rpcData, error: rpcError } = await db.rpc('case_snapshot_get_facts', {
+        p_case_id: sourceId, p_version: version, p_session_id: sessionId,
+      });
+      if (rpcError) throw rpcError;
+      if (rpcData) facts = rpcData as ReturnType<typeof buildFactsPayload>;
+    } else {
+      // 教师直读（RLS app_is_teacher 放行）
+      const { data, error } = await db.from('case_snapshot_facts').select('facts').eq('case_id', sourceId).eq('version', version).maybeSingle();
+      if (error) throw error;
+      if (data) facts = data.facts as ReturnType<typeof buildFactsPayload>;
+    }
+    if (!facts) return null;
     const restored: SnapshotCaseData = {
       ...facts,
       sections: { ...facts.sections, diagnosis: '', plan: '' },
       documents: [],
     };
+    // 版本键缓存：恢复结果写入 sourceId@version，供该版本会话后续命中；
+    // 不覆盖裸键（裸键是"最新版本"指针，只由 ensureCaseSnapshot 召回刷新），
+    // 保证并发会话各取绑定版本，互不换患者。
     const previous = snapshotStore.get(sourceId);
-    snapshotStore.set(sourceId, {
+    snapshotStore.set(`${sourceId}@${version}`, {
       data: restored,
       media: previous?.media ?? [],
       meta: { caseId: sourceId, sourceName: facts.sourceName, sourceKb: KB_DOC_ID, builtAt: new Date().toISOString(), chunkCount: 0, mediaCount: previous?.media.length ?? 0, version },
@@ -347,15 +367,57 @@ export async function restoreCaseSnapshotFacts(caseId: string, version: string, 
   }
 }
 
+/** 按会话绑定版本读取评分对照（原病例诊断/诊疗经过，不含原文分片与媒体）。
+ *  学生走受控 RPC case_snapshot_get_reference（会话归属+版本绑定+病例匹配校验）；
+ *  教师直读 case_snapshot_answers（RLS app_is_teacher 放行）。失败返回 null（评分对照留空，不回退漂移数据）。 */
+export async function restoreCaseSnapshotReference(caseId: string, version: string, accessToken: string | null, role?: string, sessionId?: string): Promise<{ diagnosis: string; plan: string } | null> {
+  const sourceId = getTeacherSourceId(caseId);
+  if (!accessToken || !isDatabaseConfigured() || !sessionId) return null;
+  try {
+    const db = getSupabaseUserClient(accessToken);
+    if (role === 'student') {
+      const { data, error } = await db.rpc('case_snapshot_get_reference', {
+        p_case_id: sourceId, p_version: version, p_session_id: sessionId,
+      });
+      if (error) throw error;
+      if (data && typeof data === 'object') {
+        const reference = data as { diagnosis?: unknown; plan?: unknown };
+        return {
+          diagnosis: typeof reference.diagnosis === 'string' ? reference.diagnosis : '',
+          plan: typeof reference.plan === 'string' ? reference.plan : '',
+        };
+      }
+      return null;
+    }
+    // 教师直读（RLS 放行），仅取对照所需两列
+    const { data, error } = await db.from('case_snapshot_answers').select('diagnosis,plan').eq('case_id', sourceId).eq('version', version).maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return { diagnosis: data.diagnosis ?? '', plan: data.plan ?? '' };
+  } catch (error) {
+    if (process.env.LOG_LEVEL === 'debug') console.warn('[case-snapshot] reference restore failed', sourceId, (error as Error).message);
+    return null;
+  }
+}
+
 /** 读取当前进程内快照的版本指纹（无缓存返回 null），用于会话首次绑定。 */
 export function getSnapshotVersion(caseId: string): string | null {
   const sourceId = getTeacherSourceId(caseId);
   return snapshotStore.get(sourceId)?.meta?.version ?? null;
 }
 
-/** 读取当前进程内已缓存的快照（不触发召回），供同步路径 readTeacherCaseData 使用。 */
-export function getCachedSnapshot(caseId: string): SnapshotCaseData | null {
+/** 读取当前进程内已缓存的快照（不触发召回），供同步路径 readTeacherCaseData 使用。
+ *  version 提供时（会话已绑定版本）：仅命中该版本的缓存键（sourceId@version，或裸键版本一致时），
+ *  版本不一致返回 null（资料不足），绝不回退到其他版本的漂移数据。 */
+export function getCachedSnapshot(caseId: string, version?: string | null): SnapshotCaseData | null {
   const sourceId = getTeacherSourceId(caseId);
+  if (version) {
+    const pinned = snapshotStore.get(`${sourceId}@${version}`);
+    if (pinned && pinned.expiresAt > Date.now()) return pinned.data;
+    const latest = snapshotStore.get(sourceId);
+    if (latest && latest.expiresAt > Date.now() && latest.meta?.version === version) return latest.data;
+    return null;
+  }
   const entry = snapshotStore.get(sourceId);
   if (!entry || entry.expiresAt <= Date.now()) return null;
   return entry.data;

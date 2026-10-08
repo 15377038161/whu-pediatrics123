@@ -5,6 +5,7 @@ import { runAgentTurn } from '@/lib/agent-engine';
 import { AgentRepository } from '@/lib/repository';
 import { requireAuth } from '@/lib/request-auth';
 import { buildReport } from '@/lib/scoring';
+import { restoreCaseSnapshotReference } from '@/lib/case-snapshot';
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -14,7 +15,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const session = await repository.getSession(id);
     if (session.reportId) return ok(await repository.getReport(session.reportId));
     if (session.status === 'active') await runAgentTurn(session, { type: 'FINISH_SESSION', data: {} }, `finish-${session.id}`);
-    const report = buildReport(session, session.id);
+    // 评分对照按会话绑定版本安全读取（学生走受控 RPC：归属+版本+病例校验；教师直读），
+    // 不使用进程内快照的漂移数据；读取失败时对照留空（资料不足），不影响过程分。
+    const reference = session.caseId?.startsWith('teacher-') && session.sourceSnapshotVersion
+      ? await restoreCaseSnapshotReference(session.caseId, session.sourceSnapshotVersion, user.accessToken, user.role, session.id)
+      : null;
+    const report = buildReport(session, session.id, reference ?? undefined);
     session.reportId = report.id;
     session.status = 'completed';
     session.stage = 'report';

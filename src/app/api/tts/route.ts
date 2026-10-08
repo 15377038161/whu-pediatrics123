@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HeaderUtils } from 'coze-coding-dev-sdk';
-import { fail } from '@/lib/api-result';
+import { errorFromUnknown, fail } from '@/lib/api-result';
 import { requireUser } from '@/lib/request-auth';
 import { synthesizeSpeech, type VoicePersona } from '@/lib/tts';
 
@@ -31,6 +31,11 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    // 鉴权类错误（AUTH_REQUIRED/FORBIDDEN）如实返回 401/403，不再吞成 502
+    const detail = errorFromUnknown(error);
+    if (detail.code === 'AUTH_REQUIRED' || detail.code === 'FORBIDDEN') {
+      return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : 403);
+    }
     console.warn('[api/tts] error:', error instanceof Error ? error.message : error);
     return fail({ code: 'TTS_UNAVAILABLE', message: '语音服务暂时不可用。', retryable: true }, undefined, 502);
   }
