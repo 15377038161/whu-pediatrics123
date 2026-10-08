@@ -18,7 +18,7 @@
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── api/                # API Routes（agent/auth/cases/health/internal/preview/reports/sessions/teacher）
+│   ├── api/                # API Routes（agent/auth/cases/health/internal/preview/quiz/reports/sessions/teacher/tts）
 │   ├── about/              # 关于页
 │   ├── auth/               # 认证页
 │   ├── student/            # 学生端页面
@@ -43,7 +43,9 @@ tests/                      # 测试
 - `src/domain/case.ts`：版本化病例事实、体征规则、检查结果
 - `src/lib/agent-engine.ts`：统一智能体状态机与确定性临床规则
 - `src/lib/coze-ai.ts`：Coze 原生 AI 统一接入层（配置、错误分类、超时/重试弹性调用）
-- `src/app/api/`：认证、会话、智能体、报告、教师查询、同步接口
+- `src/lib/quiz-pool.ts`：43 题安全题库（取题/判分/复盘全走 SECURITY DEFINER RPC，答案仅判分后可见）
+- `src/app/api/quiz/`：题库三路由（`questions` 取题、`answer` 幂等判分、`review` 本人错题复盘）
+- `src/app/api/`：认证、会话、智能体、题库、报告、教师查询、同步接口
 - `src/server.ts`：生产环境入口（build 后 `node dist/server.js` 启动）
 
 ## 运行与预览

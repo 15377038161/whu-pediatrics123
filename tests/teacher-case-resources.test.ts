@@ -72,7 +72,7 @@ test('教师清单和病例目录双向覆盖，编码ID和异名均可关联资
   assert.equal(getTeacherCaseResourceRoot('teacher-肺炎支原体性肺炎'), getTeacherCaseResourceRoot('teacher-肺炎支原体肺炎'));
 });
 
-test('登录学生可访问病例资料，文档提供脱敏文本，未登录和越界请求被拒绝', async () => {
+test('登录学生可访问脱敏文档但原始媒体受限，教师可取原始文件，未登录和越界请求被拒绝', async () => {
   const oldPreview = process.env.ENABLE_UI_PREVIEW;
   const oldRoot = process.env.PEDIATRICS_KNOWLEDGE_ROOT;
   const temp = await mkdtemp(path.join(os.tmpdir(), 'pediatrics-resources-'));
@@ -99,7 +99,8 @@ test('登录学生可访问病例资料，文档提供脱敏文本，未登录�
     assert.equal(encodedListing.status, 200);
     assert.equal((await encodedListing.json()).data.length, 2);
     const fileUrl = `http://localhost/api/cases/${id}/resource?path=sample.jpg`;
-    assert.equal((await getResource(request(fileUrl, 'student'), context)).status, 200);
+    // 学生：原始本地媒体（未确认脱敏）默认拒绝，等待教师审核
+    assert.equal((await getResource(request(fileUrl, 'student'), context)).status, 403);
     const document = await getResource(request(`http://localhost/api/cases/${id}/resource?path=sample.doc`, 'student'), context);
     assert.equal(document.status, 200);
     assert.equal(await document.text(), '[身份信息已隐去]。咳嗽3天。');

@@ -242,19 +242,21 @@ export class AgentRepository {
       return;
     }
     if (report.userId !== this.actor.id) throw new Error('FORBIDDEN');
+    if (!this.actor.accessToken) throw new Error('AUTH_REQUIRED');
     const db = this.db();
-    const { error } = await db.from('training_reports').upsert({
-      id: report.id,
-      session_id: report.sessionId,
-      user_id: report.userId,
-      case_id: report.caseId,
-      mode: report.mode,
-      total_score: report.totalScore,
-      data: report,
-      status: report.status,
-      created_at: report.createdAt,
-    }, { onConflict: 'id' });
-    if (error) throw error;
+    // 报告写入走受控 RPC（会话归属+完成态+幂等校验，分数由服务端 buildReport 计算）：
+    // 学生无任何直接 INSERT/UPDATE 策略，无法自插自选分数的报告行。
+    const { data: saved, error: rpcError } = await db.rpc('report_save_completed', {
+      p_report_id: report.id,
+      p_session_id: report.sessionId,
+      p_case_id: report.caseId,
+      p_mode: report.mode,
+      p_total_score: report.totalScore,
+      p_status: report.status,
+      p_data: report,
+    });
+    if (rpcError) throw rpcError;
+    if (saved !== true) throw new Error('REPORT_SAVE_REJECTED');
     const { error: abilityError } = await db.from('ability_profiles').upsert({
       user_id: report.userId,
       dimensions: report.abilities,
@@ -282,11 +284,16 @@ export class AgentRepository {
       return clone(report);
     }
     const db = this.db();
-    // RLS：学生仅本人可见（owner_read）；教师经 teacher_select（app_is_teacher）可见全部
+    // 学生走受控 RPC（受保护 user_id 列判定）；教师直读（RLS teacher_select 放行）
+    if (this.actor.role === 'student') {
+      const { data, error } = await db.rpc('report_get_mine', { p_report_id: id });
+      if (error) throw error;
+      if (!data || typeof data !== 'object') throw new Error('REPORT_NOT_FOUND');
+      return (data as { data: TrainingReport }).data as TrainingReport;
+    }
     const { data, error } = await db.from('training_reports').select('data,user_id,session_id').eq('id', id).maybeSingle();
     if (error) throw error;
     if (!data) throw new Error('REPORT_NOT_FOUND');
-    if (this.actor.role !== 'teacher' && data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
     return data.data as TrainingReport;
   }
 
@@ -295,6 +302,12 @@ export class AgentRepository {
       return [...memoryStore().reports.values()].filter((report) => report.userId === this.actor.id).map(clone).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
     const db = this.db();
+    // 学生走受控 RPC（受保护 user_id 列判定，无直读策略）；教师走 RLS 直读后过滤本人
+    if (this.actor.role === 'student') {
+      const { data, error } = await db.rpc('report_list_mine');
+      if (error) throw error;
+      return ((data ?? []) as Array<{ data: TrainingReport }>).map((row) => row.data as TrainingReport);
+    }
     const { data } = await withDatabaseRetry(async () => {
       const result = await db.from('training_reports').select('data').eq('user_id', this.actor.id).order('created_at', { ascending: false });
       if (result.error) throw result.error;

@@ -170,9 +170,12 @@ async function main() {
   });
   check('学生A可插入RPC测试会话', !rpcSessionInsert.error, rpcSessionInsert.error?.message ?? '');
 
-  // (a) 正向：会话归属+版本绑定+病例匹配全部满足 → 返回 facts
+  // (a) 正向：会话归属+版本绑定+病例匹配全部满足 → 返回 facts（history 阶段投影：仅 history section）
   const rpcOk = await dbA.rpc('case_snapshot_get_facts', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
+  const rpcOkSections = (rpcOk.data as { sections?: Record<string, unknown> } | null)?.sections ?? null;
   check('RPC正向：A本人会话+绑定版本+病例匹配 → 返回facts', !rpcOk.error && Boolean(rpcOk.data), rpcOk.error?.message ?? '');
+  check('RPC阶段投影：history阶段剥离exam/tests（不可预读查体检查）', rpcOkSections !== null && !('exam' in rpcOkSections) && !('tests' in rpcOkSections) && rpcOkSections.history === 'probe', JSON.stringify(rpcOkSections));
+  check('RPC阶段投影：diagnosis/plan 永不从 facts 返回', rpcOkSections !== null && !('diagnosis' in rpcOkSections) && !('plan' in rpcOkSections));
 
   // (b) 版本不匹配 → null
   const rpcBadVersion = await dbA.rpc('case_snapshot_get_facts', { p_case_id: 'teacher-rls-probe', p_version: 'wrong-version', p_session_id: rpcSessionId });
@@ -182,18 +185,49 @@ async function main() {
   const rpcBadCase = await dbA.rpc('case_snapshot_get_facts', { p_case_id: 'teacher-OTHER-case', p_version: probeVersion, p_session_id: rpcSessionId });
   check('RPC病例匹配校验：请求病例≠会话病例 → null', rpcBadCase.data === null);
 
-  // (d) 归属校验：教师B用A的会话调 RPC → null（auth.uid()≠state.userId）
+  // (d) 归属校验：教师B用A的会话调 RPC → null（受保护 user_id 列判定，非 state）
   const rpcWrongOwner = await dbB.rpc('case_snapshot_get_facts', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
   check('RPC归属校验：B用A的会话 → null', rpcWrongOwner.data === null);
 
-  // ---- 5.2 case_snapshot_get_reference RPC：学生评分对照读取三重校验 ----
+  // (d2) 归属伪造：A 把 state->userId 改成 B 后由 B 调用 RPC → 仍 null（归属读受保护 user_id 列）
+  await dbA.from('training_sessions').update({
+    state: { ...rpcState, userId: b.user.id },
+  }).eq('id', rpcSessionId);
+  const rpcSpoofOwner = await dbB.rpc('case_snapshot_get_facts', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
+  check('RPC归属防伪造：state.userId改成B后B调用仍拒绝（受保护列判定）', rpcSpoofOwner.data === null, JSON.stringify(rpcSpoofOwner.data ?? null));
+  await dbA.from('training_sessions').update({ state: rpcState }).eq('id', rpcSessionId);
+
+  // (d3) guard 触发器：绑定版本/病例不可改（防换患者/换版本串案）
+  const forgeVersion = await dbA.from('training_sessions').update({
+    state: { ...rpcState, sourceSnapshotVersion: 'v-forged' },
+  }).eq('id', rpcSessionId);
+  check('guard：学生改绑定快照版本被拒绝（SESSION_SNAPSHOT_BINDING_IMMUTABLE）', Boolean(forgeVersion.error), forgeVersion.error?.message ?? '');
+  const forgeCase = await dbA.from('training_sessions').update({
+    state: { ...rpcState, caseId: 'teacher-other-case' },
+  }).eq('id', rpcSessionId);
+  check('guard：学生改会话病例被拒绝（防串案）', Boolean(forgeCase.error), forgeCase.error?.message ?? '');
+
+  // ---- 5.2 case_snapshot_get_reference RPC：完成态门控实测 ----
+  // 训练中（active）直接调用：必须无法提前取诊断答案
+  const refActive = await dbA.rpc('case_snapshot_get_reference', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
+  check('REFERENCE完成门控：训练中直接调RPC → null（不可提前取诊断）', refActive.data === null, JSON.stringify(refActive.data ?? null));
+  // 完成会话后（合法 finish 路径）→ 返回诊断对照
+  const completeRes = await dbA.from('training_sessions').update({ status: 'completed', stage: 'report' }).eq('id', rpcSessionId);
+  check('学生A可完成自己的会话（合法finish路径）', !completeRes.error, completeRes.error?.message ?? '');
   const refOk = await dbA.rpc('case_snapshot_get_reference', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
   const refData = refOk.data as { diagnosis?: string } | null;
-  check('REFERENCE正向：A本人会话 → 返回诊断对照', !refOk.error && refData?.diagnosis === '教师测试诊断', refOk.error?.message ?? '');
+  check('REFERENCE正向：完成后 → 返回诊断对照', !refOk.error && refData?.diagnosis === '教师测试诊断', refOk.error?.message ?? '');
+  // 完成后事实：completed 会话全量 sections（复盘）
+  const rpcCompleted = await dbA.rpc('case_snapshot_get_facts', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
+  const completedSections = (rpcCompleted.data as { sections?: Record<string, unknown> } | null)?.sections ?? null;
+  check('facts复盘：完成后返回全量sections（history+exam+tests）', completedSections !== null && 'history' in completedSections && 'exam' in completedSections && 'tests' in completedSections, JSON.stringify(completedSections));
   const refBadVersion = await dbA.rpc('case_snapshot_get_reference', { p_case_id: 'teacher-rls-probe', p_version: 'wrong-version', p_session_id: rpcSessionId });
   check('REFERENCE版本绑定校验：版本不匹配 → null', refBadVersion.data === null);
   const refWrongOwner = await dbB.rpc('case_snapshot_get_reference', { p_case_id: 'teacher-rls-probe', p_version: probeVersion, p_session_id: rpcSessionId });
   check('REFERENCE归属校验：B用A的会话 → null', refWrongOwner.data === null);
+  // 完成后不可回退（读对照代价=永久结束）
+  const regression = await dbA.from('training_sessions').update({ status: 'active', stage: 'history' }).eq('id', rpcSessionId);
+  check('guard：completed会话回退active被拒绝（读对照代价=永久结束）', Boolean(regression.error), regression.error?.message ?? '');
 
   // ---- 5.3 匿名（anon）：无 JWT 直读/RPC 全拦截 ----
   const anon = anonClient();
@@ -232,35 +266,146 @@ async function main() {
   const answersRead = await dbA.from('case_snapshot_answers').select('case_id').eq('case_id', 'teacher-rls-probe').limit(1);
   check('学生A读不到case_snapshot_answers任何行（teacher-only拦截）', (answersRead.data?.length ?? 0) === 0);
 
-  // ---- 7. training_reports 真实数据隔离：A/B 各插一份报告，验证 A 读不到 B、B（教师）可读全部 ----
-  const reportAId = crypto.randomUUID();
-  const reportBId = crypto.randomUUID();
+  // ---- 7. training_reports 防伪造：学生无直接读写策略，全走受控 RPC ----
+  // 7.1 学生直插（自选分数伪造成绩）/直读全被拒
+  const forgeReportId = crypto.randomUUID();
   const insertReportA = await dbA.from('training_reports').insert({
-    id: reportAId, session_id: sessionId, user_id: a.user.id, case_id: 'case-bronchiolitis',
-    mode: 'osce', total_score: 72, status: 'completed', data: { probe: 'A' },
+    id: forgeReportId, session_id: sessionId, user_id: a.user.id, case_id: 'case-bronchiolitis',
+    mode: 'osce', total_score: 100, status: 'completed', data: { probe: 'A' },
   });
-  check('学生A可插入自己的training_reports', !insertReportA.error, insertReportA.error?.message ?? '');
-  const insertReportB = await dbB.from('training_reports').insert({
-    id: reportBId, session_id: bSessionId, user_id: b.user.id, case_id: 'case-y',
-    mode: 'osce', total_score: 88, status: 'completed', data: { probe: 'B' },
-  });
-  check('教师B可插入自己的training_reports', !insertReportB.error, insertReportB.error?.message ?? '');
+  check('学生A直插training_reports自选分数被拒绝（无INSERT策略）', Boolean(insertReportA.error), insertReportA.error?.message ?? '');
+  const readReportA = await dbA.from('training_reports').select('id').eq('user_id', a.user.id).limit(5);
+  check('学生A直读training_reports被拒绝（无SELECT策略，0行）', (readReportA.data?.length ?? 0) === 0 || Boolean(readReportA.error));
+  if (c) {
+    const insertReportC = await userClient(c.access_token).from('training_reports').insert({
+      id: crypto.randomUUID(), session_id: sessionId, user_id: a.user.id, case_id: 'x',
+      mode: 'osce', total_score: 100, status: 'completed', data: {},
+    });
+    check('学生C冒充A插报告被拒绝（无INSERT策略）', Boolean(insertReportC.error));
+  }
 
-  const { data: reportAReadB } = await dbA.from('training_reports').select('id').eq('id', reportBId).maybeSingle();
-  check('学生A读不到教师B的报告（owner_read隔离）', reportAReadB === null);
-  const { data: reportBReadA } = await dbB.from('training_reports').select('id,user_id').eq('id', reportAId).maybeSingle();
-  check('教师B可读学生A的报告（teacher_select放行）', reportBReadA?.user_id === a.user.id);
-  const forgeScore = await dbA.from('training_reports').update({ total_score: 100 }).eq('id', reportBId);
-  check('学生A不能篡改教师B报告的分数（owner_update拦截，命中0行）', !forgeScore.error && (await dbB.from('training_reports').select('total_score').eq('id', reportBId).maybeSingle()).data?.total_score === 88);
+  // 7.2 report_save_completed 门控：active 会话拒绝；completed 会话成功；重复写入拒绝（幂等）
+  const savedActive = await dbA.rpc('report_save_completed', {
+    p_report_id: crypto.randomUUID(), p_session_id: sessionId, p_case_id: 'case-bronchiolitis',
+    p_mode: 'osce', p_total_score: 72, p_status: 'completed', p_data: { probe: 'A' },
+  });
+  check('report RPC：会话未完成（active）→ 拒绝写入', savedActive.data !== true, JSON.stringify(savedActive.data ?? null));
+  // 用 5.2 已完成的 rpcSessionId 走合法写路径
+  const reportAId = crypto.randomUUID();
+  const savedCompleted = await dbA.rpc('report_save_completed', {
+    p_report_id: reportAId, p_session_id: rpcSessionId, p_case_id: 'teacher-rls-probe',
+    p_mode: 'guided', p_total_score: 72, p_status: 'completed', p_data: { probe: 'A', id: reportAId, totalScore: 72 },
+  });
+  check('report RPC：本人完成会话 → 写入成功', savedCompleted.data === true, JSON.stringify(savedCompleted.data ?? null));
+  const savedDup = await dbA.rpc('report_save_completed', {
+    p_report_id: crypto.randomUUID(), p_session_id: rpcSessionId, p_case_id: 'teacher-rls-probe',
+    p_mode: 'guided', p_total_score: 99, p_status: 'completed', p_data: { probe: 'dup' },
+  });
+  check('report RPC：同会话重复写入被拒（幂等，防刷分）', savedDup.data !== true);
+  // 他人的会话（B）→ 拒绝
+  const savedOthers = await dbA.rpc('report_save_completed', {
+    p_report_id: crypto.randomUUID(), p_session_id: bSessionId, p_case_id: 'y',
+    p_mode: 'osce', p_total_score: 88, p_status: 'completed', p_data: {},
+  });
+  check('report RPC：A用B的会话写报告 → 拒绝（归属校验）', savedOthers.data !== true);
+
+  // 7.3 受控读：report_get_mine / report_list_mine；教师直读放行
+  const mineById = await dbA.rpc('report_get_mine', { p_report_id: reportAId });
+  check('report_get_mine：A读自己的报告 → 返回数据', Boolean(mineById.data) && (mineById.data as { total_score?: number }).total_score === 72, JSON.stringify(mineById.data ?? null).slice(0, 120));
+  const mineList = await dbA.rpc('report_list_mine');
+  check('report_list_mine：A列表含自己的报告', Array.isArray(mineList.data) && (mineList.data as Array<{ id?: string }>).some((row) => row.id === reportAId));
+  if (c) {
+    const mineOthers = await userClient(c.access_token).rpc('report_get_mine', { p_report_id: reportAId });
+    check('report_get_mine：C读A的报告 → null（受保护列判定）', mineOthers.data === null);
+  }
+  const { data: teacherRead } = await dbB.from('training_reports').select('id,user_id').eq('id', reportAId).maybeSingle();
+  check('教师B可读学生A的报告（teacher_select放行）', teacherRead?.user_id === a.user.id);
+  const forgeScore = await dbA.from('training_reports').update({ total_score: 100 }).eq('id', reportAId);
+  check('学生A直改报告分数被拒绝（无UPDATE策略）', Boolean(forgeScore.error) || (await dbB.from('training_reports').select('total_score').eq('id', reportAId).maybeSingle()).data?.total_score === 72, forgeScore.error?.message ?? '');
+
+  // 7.4 已知残余风险如实记录（不作安全断言）：completed 会话的学生经 Data API 直调
+  //     report_save_completed 仍可传入自选分数（平台无服务端特权身份区分应用与用户调用）。
+  //     见 docs/security-status.md「已知残余风险」。
+
+  // ---- 8. 题库安全：quiz_questions 答案列不可被学生直读，取题/判分走受控 RPC ----
+  // 8.1 学生/匿名直读 quiz_questions 全列拦截（answer/explanation 不暴露）
+  const quizReadA = await dbA.from('quiz_questions').select('id,answer,explanation').limit(5);
+  check('学生A直读quiz_questions被拦截（0行，答案列不暴露）', !quizReadA.error && (quizReadA.data?.length ?? 0) === 0, quizReadA.error?.message ?? '');
+  const quizReadC = c ? (await userClient(c.access_token).from('quiz_questions').select('id').limit(5)) : null;
+  if (c) check('学生C直读quiz_questions被拦截', (quizReadC?.data?.length ?? 1) === 0);
+  const quizAnon = await anon.from('quiz_questions').select('id').limit(5);
+  check('匿名直读quiz_questions被拦截', (quizAnon.data?.length ?? 0) === 0 || Boolean(quizAnon.error));
+  // 8.2 教师全量维护：可读全列（含答案）
+  const quizReadB = await dbB.from('quiz_questions').select('id,answer').limit(5);
+  check('教师B可全表读quiz_questions含答案列（app_is_teacher放行）', !quizReadB.error && (quizReadB.data?.length ?? 0) > 0, quizReadB.error?.message ?? '');
+
+  // 8.3 受控取题 RPC：投影不含 answer/explanation，且写入本人 assignments
+  const fetchA = await dbA.rpc('quiz_fetch_questions', { p_count: 3 });
+  const fetched = (fetchA.data ?? []) as Array<Record<string, unknown>>;
+  check('RPC取题：A获得题目投影', !fetchA.error && fetched.length > 0, fetchA.error?.message ?? '');
+  check('RPC取题投影不含answer/explanation', fetched.every((q) => !('answer' in q) && !('explanation' in q) && 'stem' in q && 'options' in q));
+  const assignedA = await dbA.from('quiz_assignments').select('question_id').eq('user_id', a.user.id);
+  check('RPC取题写入本人quiz_assignments（user_select放行）', (assignedA.data?.length ?? 0) >= fetched.length, assignedA.error?.message ?? '');
+  if (c) {
+    const assignedC = await userClient(c.access_token).from('quiz_assignments').select('question_id').eq('user_id', a.user.id);
+    check('学生C读不到A的quiz_assignments（user_select隔离）', (assignedC.data?.length ?? 1) === 0);
+  }
+  // 8.4 判分 RPC：未分配题目不可作答；已分配题目作答后返回答案解析
+  const notAssignedId = quizReadB.data?.find((q) => !fetched.some((f) => f.id === q.id))?.id ?? crypto.randomUUID();
+  const submitUnassigned = await dbA.rpc('quiz_submit_answer', { p_question_id: notAssignedId, p_answer: 'A.试探' });
+  check('判分RPC：未分配给A的题目 → NOT_ASSIGNED', !submitUnassigned.error && (submitUnassigned.data as { error?: string })?.error === 'NOT_ASSIGNED', submitUnassigned.error?.message ?? '');
+  const probeQ = fetched[0];
+  const submitWrong = await dbA.rpc('quiz_submit_answer', { p_question_id: probeQ.id as string, p_answer: 'Z.必错项' });
+  const wrongRes = submitWrong.data as { correct?: boolean; answer?: string; explanation?: string; alreadyAnswered?: boolean } | null;
+  check('判分RPC：答错 → correct=false且返回answer/explanation', !submitWrong.error && wrongRes?.correct === false && Boolean(wrongRes?.answer), submitWrong.error?.message ?? '');
+  // 幂等/不刷分：同一题再次提交"正确答案"，必须保持首次结果（alreadyAnswered=true 且 correct=false）
+  const resubmit = await dbA.rpc('quiz_submit_answer', { p_question_id: probeQ.id as string, p_answer: 'A.假装第一次答对' });
+  const resubmitRes = resubmit.data as { correct?: boolean; alreadyAnswered?: boolean } | null;
+  check('判分RPC幂等：重复提交不覆盖首次结果（不刷分）', !resubmit.error && resubmitRes?.alreadyAnswered === true && resubmitRes?.correct === false, JSON.stringify(resubmitRes ?? null));
+  // 用第二题验证答对路径（第一题已被首次作答终局锁定）
+  const probeQ2 = fetched[1];
+  if (probeQ2) {
+    const probe2AnswerRow = await dbB.from('quiz_questions').select('answer').eq('id', probeQ2.id as string).maybeSingle();
+    const submitRight = await dbA.rpc('quiz_submit_answer', { p_question_id: probeQ2.id as string, p_answer: probe2AnswerRow.data?.answer ?? '' });
+    check('判分RPC：答对（教师视角答案对照） → correct=true', (submitRight.data as { correct?: boolean } | null)?.correct === true, probe2AnswerRow.error?.message ?? '');
+  }
+  if (c) {
+    const submitC = await userClient(c.access_token).rpc('quiz_submit_answer', { p_question_id: probeQ.id as string, p_answer: 'A.越权' });
+    check('判分RPC：C对A的题目作答 → NOT_ASSIGNED', (submitC.data as { error?: string } | null)?.error === 'NOT_ASSIGNED');
+  }
+  // 8.5 匿名调题库 RPC 全拦截
+  const anonFetch = await anon.rpc('quiz_fetch_questions', { p_count: 3 });
+  check('匿名调quiz_fetch_questions被拦截（无登录）', anonFetch.error !== null || anonFetch.data === null);
+  const anonSubmit = await anon.rpc('quiz_submit_answer', { p_question_id: probeQ.id as string, p_answer: 'A.匿名' });
+  check('匿名调quiz_submit_answer被拦截（无登录）', anonSubmit.error !== null || anonSubmit.data === null);
+
+  // ---- 8.6 防伪造：学生直插/直改 quiz_assignments 全拦截 ----
+  // 直插伪造分配（自分配任意题目后即可调判分RPC提前取答案）必须被 RLS 拒绝
+  const forgeInsert = await dbA.from('quiz_assignments').insert({ user_id: a.user.id, question_id: notAssignedId });
+  check('学生A直插quiz_assignments伪造分配被拒绝（仅受控取题RPC可写）', Boolean(forgeInsert.error), forgeInsert.error?.message ?? '');
+  // 伪造他人分配（给C塞题）同样拒绝
+  if (c) {
+    const forgeForC = await dbA.from('quiz_assignments').insert({ user_id: c.user.id, question_id: notAssignedId });
+    check('学生A给C伪造分配被拒绝', Boolean(forgeForC.error));
+  }
+  // 直改自己的作答记录（刷正确率）必须无效果
+  const forgeUpdate = await dbA.from('quiz_assignments').update({ is_correct: true, submitted_answer: 'A.篡改' }).eq('user_id', a.user.id).eq('question_id', probeQ.id as string);
+  const afterForge = await dbA.from('quiz_assignments').select('is_correct,submitted_answer').eq('user_id', a.user.id).eq('question_id', probeQ.id as string).maybeSingle();
+  check('学生A直改自己的is_correct/答案记录被拒绝（无UPDATE策略，数据未变）', !forgeUpdate.error && afterForge.data?.is_correct === false && afterForge.data?.submitted_answer === 'Z.必错项', JSON.stringify(afterForge.data ?? null));
+  // 直删重练（删记录后重新作答刷分）同样拒绝
+  const forgeDelete = await dbA.from('quiz_assignments').delete().eq('user_id', a.user.id).eq('question_id', probeQ.id as string);
+  const afterDelete = await dbA.from('quiz_assignments').select('question_id').eq('user_id', a.user.id).eq('question_id', probeQ.id as string).maybeSingle();
+  check('学生A直删作答记录重练被拒绝（记录仍在）', !forgeDelete.error && afterDelete.data !== null);
 
   // ---- 清理探针数据 ----
-  await dbA.from('training_reports').delete().eq('id', reportAId);
-  await dbB.from('training_reports').delete().eq('id', reportBId);
+  await dbB.from('training_reports').delete().eq('id', reportAId);
   await dbB.from('case_snapshot_answers').delete().eq('case_id', 'teacher-rls-probe');
   await dbB.from('case_snapshot_facts').delete().eq('case_id', 'teacher-rls-probe');
   await dbA.from('training_sessions').delete().eq('id', sessionId);
   await dbA.from('training_sessions').delete().eq('id', rpcSessionId);
   await dbB.from('training_sessions').delete().eq('id', bSessionId);
+  await dbA.from('quiz_assignments').delete().eq('user_id', a.user.id);
+  if (c) await userClient(c.access_token).from('quiz_assignments').delete().eq('user_id', c.user.id);
   console.log('已清理探针数据');
 
   console.log(`\n结果: pass=${pass} fail=${fail}`);

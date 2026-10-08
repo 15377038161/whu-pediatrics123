@@ -15,14 +15,17 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     const session = await repository.getSession(id);
     if (session.reportId) return ok(await repository.getReport(session.reportId));
     if (session.status === 'active') await runAgentTurn(session, { type: 'FINISH_SESSION', data: {} }, `finish-${session.id}`);
-    // 评分对照按会话绑定版本安全读取（学生走受控 RPC：归属+版本+病例校验；教师直读），
+    // 先持久化 completed 状态（RPC 完成态门控依据受保护的数据库列），再读评分对照。
+    // 学生读对照的代价是会话永久结束（guard 触发器禁止 completed 回退）。
+    session.updatedAt = new Date().toISOString();
+    await repository.saveSession(session);
+    // 评分对照按会话绑定版本安全读取（学生走受控 RPC：归属+版本+病例+完成态校验；教师直读），
     // 不使用进程内快照的漂移数据；读取失败时对照留空（资料不足），不影响过程分。
     const reference = session.caseId?.startsWith('teacher-') && session.sourceSnapshotVersion
       ? await restoreCaseSnapshotReference(session.caseId, session.sourceSnapshotVersion, user.accessToken, user.role, session.id)
       : null;
     const report = buildReport(session, session.id, reference ?? undefined);
     session.reportId = report.id;
-    session.status = 'completed';
     session.stage = 'report';
     session.updatedAt = new Date().toISOString();
     const event: SyncEventV1 = {

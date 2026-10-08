@@ -640,3 +640,34 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .explode-control { left: 12px; right: 12px; grid-template-columns: 1fr auto; }
   .explode-control input { grid-column: 1 / -1; grid-row: 2; width: 100%; }
 }
+
+
+/* ---- 题库训练页 ---- */
+.quiz-toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.quiz-panel { padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--white); display: flex; flex-direction: column; gap: 14px; }
+.quiz-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: #6b7b78; }
+.quiz-meta span[data-difficulty] { padding: 3px 10px; border-radius: 999px; background: #eef4f1; font-weight: 700; }
+.quiz-meta span[data-difficulty="hard"] { background: #fdeeee; color: #b4442f; }
+.quiz-meta span[data-difficulty="medium"] { background: #fff6e3; color: #9a6a12; }
+.quiz-meta span[data-difficulty="easy"] { background: #e9f4ec; color: #2e7d4f; }
+.quiz-meta span[data-correct="true"] { color: #2e7d4f; font-weight: 700; }
+.quiz-meta span[data-correct="false"] { color: #b4442f; font-weight: 700; }
+.quiz-stem { font-size: 16px; line-height: 1.65; }
+.quiz-panel .choice[data-selected] { border-color: var(--pine); box-shadow: 0 0 0 2px rgba(25,117,104,.16); }
+.quiz-panel .choice[data-correct] { border-color: #2e7d4f; background: #edf5f0; }
+.quiz-panel .choice[data-wrong] { border-color: #b4442f; background: #fdf0ec; }
+.quiz-panel .choice:disabled { cursor: default; opacity: .92; }
+.quiz-verdict { display: flex; align-items: center; gap: 8px; font-weight: 800; margin: 0; }
+.quiz-verdict[data-correct="true"] { color: #2e7d4f; }
+.quiz-verdict[data-correct="false"] { color: #b4442f; }
+.quiz-verdict svg { width: 18px; height: 18px; }
+.quiz-review-list { display: grid; gap: 14px; }
+.quiz-review-item { padding: 14px 16px; border: 1px solid var(--line); border-radius: 13px; background: #fbfdfc; display: flex; flex-direction: column; gap: 8px; }
+.quiz-review-item[data-correct="true"] { border-left: 4px solid #2e7d4f; }
+.quiz-review-item[data-correct="false"] { border-left: 4px solid #b4442f; }
+.quiz-review-item h3 { font-size: 14px; line-height: 1.6; }
+.quiz-submitted { margin: 0; font-size: 13px; color: #6b7b78; }
+@media (max-width: 699px) {
+  .quiz-toolbar { flex-direction: column; align-items: stretch; }
+  .quiz-panel { padding: 16px 14px; }
+}
