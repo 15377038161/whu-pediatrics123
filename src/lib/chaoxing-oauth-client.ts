@@ -26,6 +26,21 @@ export interface LoginResult {
   error?: string;
 }
 
+/**
+ * 可见诊断阶段标志（用户可读、不含任何 URL/token/授权码）。
+ * 供登录组件实时展示登录链路走到了哪一步，替代「按钮恢复但无提示」的盲区：
+ * 浏览器点击后每个阶段直接可见，不依赖 sessionStorage 假定。
+ */
+export type LoginStage =
+  | 'fetch-start'        // 发起 authorize-url 请求
+  | 'fetch-network-error' // 网络层失败
+  | 'fetch-http-error'   // 网关返回非 2xx
+  | 'authorize-url-ok'   // 已拿到授权地址（仅状态，不显示地址）
+  | 'authorize-url-invalid' // 返回内容不含有效授权地址
+  | 'nav-assign';        // 即将执行顶层导航 window.location.assign
+
+export const LOGIN_DIAG_VERSION = 'login-diag-20261010-a';
+
 // 跳转拦截检测：assign 外部授权域前落标记；若页面随后重载回本站（导航被环境拦截），
 // 组件读到标记后显示手动跳转链接兜底，而不是静默恢复按钮。
 const NAV_ATTEMPT_KEY = 'cx_nav_attempt';
@@ -52,9 +67,12 @@ function isValidHttpUrl(value: unknown): value is string {
 }
 
 /** 超星 OAuth2.0 一键登录：换取授权跳转地址后顶层导航（fetch 跟随跨域 302 会被 CORS 拦截）。 */
-export async function loginWithChaoxingOAuth(): Promise<LoginResult> {
+export async function loginWithChaoxingOAuth(
+  onStage?: (stage: LoginStage, detail?: string) => void,
+): Promise<LoginResult> {
   const redirectUri = window.location.href.split('#')[0];
   let res: Response;
+  onStage?.('fetch-start');
   try {
     res = await fetch(
       `${AUTH_BASE}/v1/api/coder/proxy/auth/chaoxing-oauth/authorize-url?redirect_uri=${encodeURIComponent(redirectUri)}`,
@@ -62,27 +80,33 @@ export async function loginWithChaoxingOAuth(): Promise<LoginResult> {
     );
   } catch {
     // fetch 网络层失败（网关不可达/断网）：显式报错，不静默恢复按钮。
+    onStage?.('fetch-network-error');
     return { success: false, error: '网络异常，无法连接登录服务，请检查网络后重试' };
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}) as { message?: string });
+    onStage?.('fetch-http-error', `HTTP ${res.status}`);
     return { success: false, error: body.message || `获取授权地址失败 (${res.status})` };
   }
   let authorizeUrl: unknown;
   try {
     ({ authorizeUrl } = await res.json());
   } catch {
+    onStage?.('authorize-url-invalid');
     return { success: false, error: '登录服务返回异常，请稍后重试' };
   }
   if (!isValidHttpUrl(authorizeUrl)) {
     // 空/畸形授权地址：window.location.assign 会静默重载当前页——必须显式报错。
+    onStage?.('authorize-url-invalid');
     return { success: false, error: '登录服务未返回有效的授权地址，请稍后重试或联系管理员' };
   }
+  onStage?.('authorize-url-ok');
   try {
     sessionStorage.setItem(NAV_ATTEMPT_KEY, authorizeUrl);
   } catch {
     // sessionStorage 不可用不影响主流程
   }
+  onStage?.('nav-assign');
   window.location.assign(authorizeUrl);
   return { success: true };
 }

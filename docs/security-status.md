@@ -111,6 +111,39 @@
 
 **状态声明：完整 OAuth 登录链路（authorize → 扫码 → 回跳 → exchange → session 落地 → 角色重定向）仍未验证**——需要真实超星账号在浏览器中完成人工授权步骤。此前 authorize-url/checklogin 的 HTTP 200 仅证明 API 层可用，不构成完整登录成功。
 
+### 2026-10-10 诊断阶段：登录按钮可见阶段标志（login-diag-20261010-a）
+
+**背景**：上一轮修复（拦截标记消费 + 手动跳转兜底）经真实浏览器复验**未通过**——点击登录后按钮恢复、无红色提示、无手动按钮、地址未跳转。按判据确认「标记机制未达验收」，本轮不再新增 cookie/跳转兜底补丁，改为**可见诊断阶段标志**以区分根因归属。
+
+**实际挂载的调用关系与分支**（源码核实）：
+
+- `PlatformChaoxingLogin.login()`：`setPending(true)` → `loginWithChaoxingOAuth()` → 失败分支必渲染 `login-error`；成功分支保持 pending 等待跳转
+- `loginWithChaoxingOAuth()` 四个失败分支（网络 catch / 非 2xx / JSON 解析失败 / URL 校验失败）均返回 `{success:false}` → 必显示错误文案
+- 唯一成功路径：fetch 200 → 有效授权地址 → `window.location.assign`
+- **推论**：用户症状（按钮恢复且无任何提示）在当前源码分支下无法由「失败分支」产生——要么 `assign` 后页面重载（状态重置），要么浏览器运行的不是当前源码产物。此为待区分假说，**不当作确认根因**
+
+**本轮改动（可见诊断，不新增跳转绕过）**：
+
+- `chaoxing-oauth-client.ts`：`loginWithChaoxingOAuth` 接受可选 `onStage` 回调，六个阶段（fetch-start / fetch-network-error / fetch-http-error / authorize-url-ok / authorize-url-invalid / nav-assign）逐阶段上报，仅状态与 HTTP 状态码，不含 URL/token/授权码
+- `platform-chaoxing-login.tsx`：实时渲染阶段文案（阶段1/2/3 中文标签）、`data-login-diag="login-diag-20261010-a"` 版本标志（data 属性可被用户在 DOM 检查确认）、`nav-assign` 后 3 秒未跳转的可见提示；错误分类提示保留
+- 诊断信息全部用户可见，不以 sessionStorage 持久性假定浏览器行为
+
+**产物验证（经域名实际服务确认）**：
+
+- 版本标志 `login-diag-20261010-a` 存在于域名服务的 chunk `ed9b81af51d599c1.js`
+- 六个阶段标识符全部存在于该 chunk；组件 JSX（`data-stage`/`data-login-diag`/`login-stage-hint`）存在于 chunk `2e9cb1db8738bf42.js`
+- 首页 HTML（200）同时引用两个 chunk 且 SSR 渲染登录入口
+- typecheck / eslint 0 错误
+
+**浏览器验收判据（用户点击用）**：
+
+1. 强刷首页 → DevTools Elements 检查登录卡片容器应有 `data-login-diag="login-diag-20261010-a"`（确认新产物已加载；若无此属性则浏览器缓存旧 chunk）
+2. 点击「使用超星账号进入」→ 观察按钮下方阶段文案：
+   - 停在「阶段1失败」→ 请求层问题（网络/网关），报具体 HTTP 状态码
+   - 到「阶段2：已获取授权地址」后无下文 → fetch 成功但 assign 不可达（浏览器/网关拦截顶层导航）
+   - 到「阶段3：正在跳转超星授权页」且 3 秒未跳转 → 出现可见提示，确认顶层导航被环境拦截
+3. **未验边界**：完整 OAuth（含 assign 实际跳转、扫码授权、exchange、session 落地）**仍未验证**；本轮仅为诊断可见化，不声明登录已修复
+
 ### 草稿功能授权：严格交集恢复
 
 `/api/teacher/case-drafts`（`src/app/api/teacher/case-drafts/route.ts` GET L20 / POST L37）与页面 `/teacher/case-drafts` 均恢复为：**应用层教师角色（`requireAuth(request, 'teacher')` / `requirePageUser('teacher')`）AND 数据库白名单（`app_is_teacher` RPC）**，非 OR、非仅白名单。

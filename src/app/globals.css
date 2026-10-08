@@ -81,6 +81,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .login-panel-icon { width: 48px; height: 48px; margin-bottom: 14px; display: grid; place-items: center; border-radius: 16px 16px 22px 16px; color: var(--pine-dark); background: var(--mint); transform: rotate(-3deg); }
 .login-footnote { margin: 16px 0 0; display: flex; justify-content: center; align-items: center; gap: 4px; color: #78908b; font-size: 11px; }
 .chaoxing-login-entry { display: grid; gap: 12px; }
+.login-stage { margin: 0; padding: 8px 12px; border: 1px solid rgba(25,117,104,.2); border-radius: 10px; background: rgba(240,249,246,.9); color: var(--pine-dark); font-size: 12px; font-weight: 700; }
+.login-stage-hint { margin: 0; color: #9a6b15; font-size: 11px; font-weight: 600; }
+.login-error { margin: 0; padding: 8px 12px; border: 1px solid rgba(191,72,55,.25); border-radius: 10px; background: #fff3f0; color: var(--brick, #bf4837); font-size: 12px; font-weight: 700; }
 .chaoxing-mark { width: 24px; height: 24px; flex: 0 0 auto; border-radius: 6px; object-fit: contain; background: white; box-shadow: 0 0 0 2px rgba(255,255,255,.82); }
 .login-field { display: grid; gap: 7px; font-size: 13px; font-weight: 700; color: var(--muted); }
 .login-field select { width: 100%; min-height: var(--tap); border: 1px solid var(--line); border-radius: 12px; background: var(--white); color: var(--ink); padding: 9px 12px; font: inherit; }
