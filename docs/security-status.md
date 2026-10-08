@@ -59,3 +59,9 @@
 - **platform-session 路由安全核验**：`scripts/verify-platform-session-security.ts` 11/11 通过（伪造 token/假签名 JWT 401 不落 cookie、假 cookie 401、学生访问教师路由 403、body 注入 role 无效、身份经 auth.getUser 网络验证）。
 - **已知行为如实记录**：Supabase setSession 在 access 有效期内不校验 refresh（混合 token 返回 200）。评估结论：身份仍由真实 access token + getUser 网络验证保证，不可伪造他人身份；无效 refresh 导致会话不可续期、短期自动失效，非身份伪造漏洞，不以 401 断言宣称拦截。
 - **选项 B 契约再核验**：`list_task_flow` 返回空——平台当前无任何预定义任务流，选项 B（评分下移任务流）依赖平台配置，缺口未闭合。选项 A/C 状态不变。
+
+## 2026-10-09 补充：Origin/CSRF 防护与真实重启持久化实测
+
+- **platform-session 路由 Origin 防护**：POST 前校验 `Origin`（同源或平台预览域名 `CODER_PROJECTS_DOMAIN`），跨站一律 403；无 Origin 头的非浏览器客户端放行，由 token 签名校验兜底。`scripts/verify-platform-session-security.ts` 扩至 **13/13 通过**（新增 A3 跨站 Origin 403 拒绝、A4 同源放行至 token 校验）。
+- **真实服务重启持久化**：`scripts/verify-restart-persistence.ts` **9/9 通过**——学生登录落 cookie → 作答一题 → touch 入口触发 `tsx watch` 真实重启（服务 PID 实际变化，非 DB 复读等价替代）→ 同 cookie 复读作答记录完整保留（含首次提交答案）→ 重新登录新 cookie 仍可读 → logout 后原 cookie 访问受保护接口 401。
+- **cookie 会话安全**：会话由服务端 SSR 客户端 setSession 写 httpOnly cookie，重启后凭数据库持久会话自动恢复；退出后 cookie 立即失效，无泄露残留。

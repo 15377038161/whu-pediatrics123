@@ -351,7 +351,9 @@ async function main() {
     check('学生C读不到A的quiz_assignments（user_select隔离）', (assignedC.data?.length ?? 1) === 0);
   }
   // 8.4 判分 RPC：未分配题目不可作答；已分配题目作答后返回答案解析
-  const notAssignedId = quizReadB.data?.find((q) => !fetched.some((f) => f.id === q.id))?.id ?? crypto.randomUUID();
+  // 探针选择：必须排除 A 的全部已分配题目（含历史多轮运行分配），否则挑中已分配题会返回 alreadyAnswered 而非 NOT_ASSIGNED
+  const assignedIdSet = new Set((assignedA.data ?? []).map((r) => (r as { question_id: string }).question_id));
+  const notAssignedId = quizReadB.data?.find((q) => !assignedIdSet.has(q.id as string))?.id ?? crypto.randomUUID();
   const submitUnassigned = await dbA.rpc('quiz_submit_answer', { p_question_id: notAssignedId, p_answer: 'A.试探' });
   check('判分RPC：未分配给A的题目 → NOT_ASSIGNED', !submitUnassigned.error && (submitUnassigned.data as { error?: string })?.error === 'NOT_ASSIGNED', submitUnassigned.error?.message ?? '');
   const probeQ = fetched[0];

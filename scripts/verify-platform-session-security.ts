@@ -80,6 +80,23 @@ async function main(): Promise<void> {
     !forgedA.setCookies.some((c) => c.startsWith('luojia-peds-auth=')),
     `cookies=${forgedA.setCookies.length}`);
 
+  // A3. 跨站 Origin 拒绝（CSRF 防线）：Origin 与 Host 不同源 → 403
+  const csrfResp = await fetch(`${BASE}/api/auth/callback/platform-session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Origin: 'https://evil.example.com' },
+    body: JSON.stringify({ access_token: 'any', refresh_token: 'any' }),
+  });
+  check('A3. 跨站 Origin 请求被拒（403）', csrfResp.status === 403, `status=${csrfResp.status}`);
+
+  // A4. 同源 Origin 放行进入 token 校验（非 403；伪造 token 由 401 兜底）
+  const sameOriginResp = await fetch(`${BASE}/api/auth/callback/platform-session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Origin: BASE },
+    body: JSON.stringify({ access_token: 'forged', refresh_token: 'forged' }),
+  });
+  check('A4. 同源 Origin 放行至 token 校验（非403，伪造token 401）',
+    sameOriginResp.status !== 403, `status=${sameOriginResp.status}`);
+
   // A2. 结构合法但内容伪造（无有效签名的假 JWT）
   const fakeJwt = ['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9', 'eyJzdWIiOiJmb3JnZWQifQ', 'fake-signature'].join('.');
   const forgedB = await postSession({ access_token: fakeJwt, refresh_token: 'also-fake' });
