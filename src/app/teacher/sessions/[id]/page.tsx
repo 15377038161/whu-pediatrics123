@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ReportView } from '@/components/report-view';
 import { AgentRepository } from '@/lib/repository';
 import { requirePageUser } from '@/lib/page-auth';
+import { formatTime } from '@/lib/format-date';
 
 export default async function TeacherSessionPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePageUser('teacher');
@@ -25,7 +26,7 @@ export default async function TeacherSessionPage({ params }: { params: Promise<{
       </section>
       <div className="report-grid">
         <section className="report-section"><h2><MessageSquareText size={17} style={{ verticalAlign: -3 }} /> 问答与沟通原文</h2><div className="message-list">{questions.map((message) => <div className="message" data-actor={message.actor} key={message.id}><p className="message-label">{message.actor === 'student' ? '学生（医生）' : message.actor === 'child' ? '患儿' : '家长'} · {message.emotion}</p><div className="message-bubble">{message.content}</div></div>)}</div></section>
-        <section className="report-section"><h2><Stethoscope size={17} style={{ verticalAlign: -3 }} /> 操作与决策时间线</h2><ol className="timeline">{detail.session.events.map((event) => <li key={event.id}><strong>{event.summary}</strong><span><Clock3 size={12} style={{ verticalAlign: -2 }} /> {new Date(event.createdAt).toLocaleTimeString('zh-CN')} · {event.evidenceCodes.join('、') || '阶段操作'}</span></li>)}</ol></section>
+        <section className="report-section"><h2><Stethoscope size={17} style={{ verticalAlign: -3 }} /> 操作与决策时间线</h2><ol className="timeline">{detail.session.events.map((event) => <li key={event.id}><strong>{event.summary}</strong><span><Clock3 size={12} style={{ verticalAlign: -2 }} /> {formatTime(event.createdAt)} · {event.evidenceCodes.join('、') || '阶段操作'}</span></li>)}</ol></section>
       </div>
   </>;
 }

@@ -45,6 +45,8 @@ tests/                      # 测试
 - `src/lib/coze-ai.ts`：Coze 原生 AI 统一接入层（配置、错误分类、超时/重试弹性调用）
 - `src/lib/quiz-pool.ts`：43 题安全题库（取题/判分/复盘全走 SECURITY DEFINER RPC，答案仅判分后可见）
 - `src/app/api/quiz/`：题库三路由（`questions` 取题、`answer` 幂等判分、`review` 本人错题复盘）
+- `src/lib/preview-auth.ts`：预览身份 HMAC Cookie（生产 fail-closed：无 `PREVIEW_SIGNING_SECRET` 则禁用）
+- `src/lib/format-date.ts`：确定性日期格式化（固定 `Asia/Shanghai` + 完整 Intl 选项），**组件内禁止裸用 `toLocaleString/toLocaleDateString/toLocaleTimeString`**（SSR/CSR 时区差异会触发 React 水合错误 #418/#423），一律改用 `formatDateTime/formatDate/formatTime`
 - `src/app/api/`：认证、会话、智能体、题库、报告、教师查询、同步接口
 - `src/server.ts`：生产环境入口（build 后 `node dist/server.js` 启动）
 

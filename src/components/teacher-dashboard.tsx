@@ -2,6 +2,7 @@
 
 import { Activity, ArrowRight, Award, Eye, Search, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { formatDate } from '@/lib/format-date';
 import type { TeacherStudentSummary } from '@/lib/repository';
 import type { TeacherCaseCatalogItem } from '@/domain/teacher-case-catalog';
 
@@ -26,7 +27,7 @@ export function TeacherDashboard({ students, referenceTime, caseCatalog }: { stu
         <div><span className="metric-icon"><Activity /></span><p>近 7 日活跃</p><strong>{activeThisWeek}</strong><small>有训练记录</small></div>
         <div data-alert={needsAttention > 0}><span className="metric-icon"><TriangleAlert /></span><p>建议关注</p><strong>{needsAttention}</strong><small>最近得分低于 80</small></div>
       </section>
-      <section className="teacher-case-library"><div><span className="eyebrow">教师病例资料</span><h2>病例资源盘点</h2><p>全部病例已向学生开放；异名及具体亚型保留对应来源。学生查看资料文本和媒体，教师可核对原始文档并复核诊疗思路。</p></div><div className="teacher-case-stats"><strong>{caseCatalog.filter((item) => item.source === 'list').length}</strong><span>清单病种</span><strong>{caseCatalog.filter((item) => item.status === 'materials-indexed').length}</strong><span>精确匹配</span><strong>{caseCatalog.filter((item) => item.status === 'catalog-only').length}</strong><span>清单待核对</span><strong>{caseCatalog.filter((item) => item.status === 'folder-only').length}</strong><span>目录待核对</span></div></section>
+      <section className="teacher-case-library"><div><span className="eyebrow">教师病例资料</span><h2>病例资源盘点</h2><p>公开目录已向学生开放（未审核病例与媒体除外）；异名及具体亚型保留对应来源。学生仅可查看已脱敏的资料文本与已审核媒体，教师可核对原始文档并复核诊疗思路。</p></div><div className="teacher-case-stats"><strong>{caseCatalog.filter((item) => item.source === 'list').length}</strong><span>清单病种</span><strong>{caseCatalog.filter((item) => item.status === 'materials-indexed').length}</strong><span>精确匹配</span><strong>{caseCatalog.filter((item) => item.status === 'catalog-only').length}</strong><span>清单待核对</span><strong>{caseCatalog.filter((item) => item.status === 'folder-only').length}</strong><span>目录待核对</span></div></section>
       <details className="teacher-case-index"><summary>查看全部 {caseCatalog.length} 条病例资料记录</summary><div>{caseCatalog.map((item) => <a key={item.id} href={`/teacher/cases/${encodeURIComponent(item.id)}`}><strong>{item.name}</strong><span>{item.status === 'materials-indexed' ? '精确匹配' : item.status === 'catalog-only' ? '清单待核对' : '目录待核对'}</span></a>)}</div></details>
       <div className="student-filter">
         <label className="sr-only" htmlFor="student-search">按姓名或学号搜索</label>
@@ -41,7 +42,7 @@ export function TeacherDashboard({ students, referenceTime, caseCatalog }: { stu
             <td data-label="最近训练">{student.latestMode === 'osce' ? 'OSCE 考核' : student.latestMode === 'practice' ? '专项训练' : '模拟病例'}</td>
             <td data-label="最近得分"><span className="score-tag" data-level={student.latestScore === null ? 'empty' : student.latestScore >= 85 ? 'strong' : student.latestScore >= 80 ? 'steady' : 'attention'}>{student.latestScoreBasis === 'process' ? `过程 ${student.latestScore ?? '—'}` : student.latestScore ?? '—'}</span></td>
             <td data-label="报告数">{student.reportCount}</td>
-            <td data-label="最近活跃">{student.lastActiveAt ? new Date(student.lastActiveAt).toLocaleDateString('zh-CN') : '—'}</td>
+            <td data-label="最近活跃">{student.lastActiveAt ? formatDate(student.lastActiveAt) : '—'}</td>
             <td data-label="过程记录">{student.latestSessionId ? <a className="text-link" href={`/teacher/sessions/${student.latestSessionId}`}>查看全过程 <ArrowRight size={13} /></a> : <span style={{ color: '#7d8c89' }}>暂无证据</span>}</td>
           </tr>)}</tbody>
         </table>

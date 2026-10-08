@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { formatDateTime } from '@/lib/format-date';
 
 interface PrecheckResult {
   caseId: string;
@@ -168,7 +169,7 @@ export function CaseDraftImporter() {
                   <td>{d.desensitized ? '已确认' : '未确认'}</td>
                   <td>{d.mediaReviewed ? '已审核' : '未审核'}</td>
                   <td>{d.missingFields.length > 0 ? `缺 ${d.missingFields.length} 项` : '齐备'}</td>
-                  <td>{new Date(d.createdAt).toLocaleString('zh-CN')}</td>
+                  <td>{formatDateTime(d.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
