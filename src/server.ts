@@ -54,12 +54,37 @@ function startSyncWorker(): void {
 
 app.prepare().then(() => {
   const server = createServer(async (req, res) => {
+    const startedAt = Date.now();
+    // 沙箱网关会把「相对 Location」改写为代理前缀路径（/sandboxes/<id>/proxy/5173/...），
+    // 而该前缀路径请求不会被网关剥离即透传给应用，导致浏览器 404。
+    // 统一在出口处把相对 Location 补全为对外 https 绝对 URL，网关对绝对 Location 不做前缀改写。
+    const originalSetHeader = res.setHeader.bind(res);
+    res.setHeader = ((name: string, value: unknown) => {
+      if (name.toLowerCase() === 'location' && typeof value === 'string' && !/^https?:\/\//i.test(value)) {
+        const platform = process.env.CODER_PROJECTS_DOMAIN?.trim();
+        const origin = platform
+          ? (platform.startsWith('http') ? platform : `https://${platform}`)
+          : `https://${req.headers.host || `${hostname}:${port}`}`;
+        try {
+          return originalSetHeader(name, new URL(value, origin).toString());
+        } catch {
+          /* 非法 Location 原样保留 */
+        }
+      }
+      return originalSetHeader(name, value as never);
+    }) as typeof res.setHeader;
     try {
       await handle(req, res, parseRequestUrl(req));
     } catch (error) {
       console.error('Request handling failed', req.url, error);
       res.statusCode = 500;
       res.end('Internal server error');
+    } finally {
+      // 全局请求日志：仅记录方法/路径/状态/耗时与 cookie 名（不含值），供部署后运行日志读取。
+      const cookieNames = (req.headers.cookie || '').split(';').map((c) => c.split('=')[0].trim()).filter(Boolean).join(',');
+      console.log(
+        `[req] ${new Date().toISOString()} ${req.method} ${req.url?.split('?')[0]} -> ${res.statusCode} ${Date.now() - startedAt}ms cookies:${cookieNames || 'none'}`,
+      );
     }
   });
   server.listen(port, hostname, () => {
