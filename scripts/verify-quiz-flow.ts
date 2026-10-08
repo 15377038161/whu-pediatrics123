@@ -9,14 +9,15 @@
  * 运行：pnpm tsx scripts/verify-quiz-flow.ts
  */
 export {};
+import { PROBE_USER_A, PROBE_USER_B } from './probe-credentials';
 
 const BASE = process.env.QUIZ_FLOW_BASE_URL || `http://localhost:${process.env.DEPLOY_RUN_PORT || 5173}`;
 const SUPA_URL = process.env.CODER_SUPABASE_URL as string;
 const SUPA_ANON_KEY = process.env.CODER_SUPABASE_ANON_KEY as string;
 const SUPA_TENANT_ID = process.env.CODER_SUPABASE_TENANT_ID as string;
 
-const STUDENT = { email: 'rls-probe-a@luojia.dev', password: 'RlsProbe#2026A' };
-const TEACHER = { email: 'rls-probe-b@luojia.dev', password: 'RlsProbe#2026B' };
+const STUDENT = PROBE_USER_A;
+const TEACHER = PROBE_USER_B;
 
 if (!SUPA_URL || !SUPA_ANON_KEY || !SUPA_TENANT_ID) {
   console.error('FATAL: 缺少 CODER_SUPABASE_* 环境变量');

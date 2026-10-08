@@ -13,6 +13,7 @@
 import { execSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { PROBE_USER_A } from './probe-credentials';
 
 export {};
 
@@ -22,7 +23,7 @@ const SUPA_ANON_KEY = process.env.CODER_SUPABASE_ANON_KEY as string;
 const SUPA_TENANT_ID = process.env.CODER_SUPABASE_TENANT_ID as string;
 const PROJECT_ROOT = resolve(process.cwd());
 
-const STUDENT = { email: 'rls-probe-a@luojia.dev', password: 'RlsProbe#2026A' };
+const STUDENT = PROBE_USER_A;
 
 if (!SUPA_URL || !SUPA_ANON_KEY || !SUPA_TENANT_ID) {
   console.error('FATAL: 缺少 CODER_SUPABASE_* 环境变量');

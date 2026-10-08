@@ -12,6 +12,7 @@
 import { execSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { PROBE_USER_A, PROBE_USER_B } from './probe-credentials';
 
 const BASE = process.env.RESTART_BASE_URL || `http://localhost:${process.env.DEPLOY_RUN_PORT || 5173}`;
 const SUPA_URL = process.env.CODER_SUPABASE_URL as string;
@@ -19,8 +20,8 @@ const SUPA_ANON_KEY = process.env.CODER_SUPABASE_ANON_KEY as string;
 const SUPA_TENANT_ID = process.env.CODER_SUPABASE_TENANT_ID as string;
 const PROJECT_ROOT = resolve(process.cwd());
 
-const TEACHER = { email: 'rls-probe-b@luojia.dev', password: 'RlsProbe#2026B' };
-const STUDENT_A = { email: 'rls-probe-a@luojia.dev', password: 'RlsProbe#2026A' };
+const TEACHER = PROBE_USER_B;
+const STUDENT_A = PROBE_USER_A;
 
 const PROBE_CASE_ID = 'teacher-新生儿呼吸窘迫综合征';
 const PROBE_VERSION = `probe-${Date.now()}`;

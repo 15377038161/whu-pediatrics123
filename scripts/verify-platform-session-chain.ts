@@ -5,7 +5,7 @@
  * 不输出任何 token/cookie 值，仅状态码与 cookie 名。
  *
  * 运行：pnpm tsx scripts/verify-platform-session-chain.ts
- * 前置：真实测试学生账号（rls-probe-a@luojia.dev，密码经环境变量 RLS_PROBE_A_PWD 注入或默认值）。
+ * 前置：真实测试学生账号（rls-probe-a@luojia.dev，密码经环境变量 RLS_PROBE_A_PWD 注入，缺失即报错退出）。
  */
 const URL_BASE = process.env.DIAG_URL_BASE ?? 'https://sandbox-e82d7fe2-d5e2-4b3b-ba03-2ff680d15bf2-5173.cxiagents.com';
 const LOCAL_BASE = 'http://localhost:5173';
@@ -21,11 +21,16 @@ function authHeaders(): Record<string, string> {
 }
 
 async function loginProbeUser(): Promise<{ access_token: string; refresh_token: string } | null> {
+  const pwd = process.env.RLS_PROBE_A_PWD;
+  if (!pwd) {
+    console.error('FATAL: 缺少环境变量 RLS_PROBE_A_PWD（探针用户密码，不硬编码、无默认回退）');
+    process.exit(1);
+  }
   const authUrl = `${process.env.CODER_SUPABASE_URL}/auth/v1/token?grant_type=password`;
   const res = await fetch(authUrl, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ email: 'rls-probe-a@luojia.dev', password: process.env.RLS_PROBE_A_PWD ?? 'RlsProbe#2026A' }),
+    body: JSON.stringify({ email: 'rls-probe-a@luojia.dev', password: pwd }),
   });
   if (!res.ok) return null;
   return (await res.json()) as { access_token: string; refresh_token: string };

@@ -8,6 +8,7 @@
  * 运行：pnpm tsx scripts/verify-attacks.ts
  */
 import { createClient } from '@supabase/supabase-js';
+import { PROBE_USER_A, PROBE_USER_B } from './probe-credentials';
 
 const url = process.env.CODER_SUPABASE_URL;
 const anonKey = process.env.CODER_SUPABASE_ANON_KEY;
@@ -22,8 +23,8 @@ const SUPA_URL = url as string;
 const SUPA_ANON_KEY = anonKey as string;
 const SUPA_TENANT_ID = tenantId as string;
 
-const USER_A = { email: 'rls-probe-a@luojia.dev', password: 'RlsProbe#2026A' };
-const USER_B = { email: 'rls-probe-b@luojia.dev', password: 'RlsProbe#2026B' };
+const USER_A = PROBE_USER_A;
+const USER_B = PROBE_USER_B;
 
 type TokenResult = { access_token: string; user: { id: string; email?: string } };
 
