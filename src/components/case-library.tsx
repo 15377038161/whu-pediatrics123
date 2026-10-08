@@ -12,7 +12,7 @@ export function CaseLibrary() {
   const categories = [...new Set(CASE_CATALOG.map((item) => item.category))];
   const visible = useMemo(() => CASE_CATALOG.filter((item) => (category === 'all' || item.category === category) && `${item.title} ${item.category} ${item.presentingSymptoms.join(' ')}`.includes(query.trim())), [category, query]);
   return <>
-    <div className="case-library-filter"><label><Search size={17} /><input aria-label="搜索病例" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索病种、症状或系统" /></label><select aria-label="筛选疾病系统" value={category} onChange={(event) => setCategory(event.target.value)}><option value="all">全部系统</option>{categories.map((value) => <option key={value} value={value}>{value}</option>)}</select><span>全部开放 · {visible.length} / {CASE_CATALOG.length} 项</span></div>
+    <div className="case-library-filter"><label><Search size={17} /><input aria-label="搜索病例" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索病种、症状或系统" /></label><select aria-label="筛选疾病系统" value={category} onChange={(event) => setCategory(event.target.value)}><option value="all">全部系统</option>{categories.map((value) => <option key={value} value={value}>{value}</option>)}</select><span>目录可见 · {visible.length} / {CASE_CATALOG.length} 项（正文与媒体以教师审核放行为准）</span></div>
     <div className="case-library">{visible.map((item) => {
       const link = TEACHER_CASE_LINKS[item.id];
       const source = TEACHER_CASE_CATALOG.find((entry) => entry.id === (link?.sourceId ?? item.id));

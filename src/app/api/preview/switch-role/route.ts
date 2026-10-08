@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { PREVIEW_COOKIE, clearPreviewCookie, isPreviewEnabled, readPreviewUser, setPreviewCookie } from '@/lib/preview-auth';
+import { clearPreviewCookie, isPreviewEnabled, readPreviewUser, setPreviewCookie } from '@/lib/preview-auth';
 import { ok } from '@/lib/api-result';
 
 const MAX_AGE = 60 * 60 * 8;

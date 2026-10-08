@@ -8,7 +8,7 @@ import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { GET as getResource } from '@/app/api/cases/[id]/resource/route';
 import { GET as getResources } from '@/app/api/cases/[id]/resources/route';
 import { primeSnapshotMediaForTest } from '@/lib/case-snapshot';
-import { PREVIEW_COOKIE, setPreviewCookie } from '@/lib/preview-auth';
+import { setPreviewCookie } from '@/lib/preview-auth';
 import { getTeacherCaseResourceRoot } from '@/lib/teacher-case-resources';
 
 const id = 'teacher-支气管哮喘';
@@ -16,8 +16,10 @@ const id = 'teacher-支气管哮喘';
 function request(url: string, role: 'student' | 'teacher'): NextRequest {
   const response = NextResponse.json({});
   setPreviewCookie(response, role);
-  const cookie = response.cookies.get(PREVIEW_COOKIE);
-  return new NextRequest(url, { headers: { cookie: `${PREVIEW_COOKIE}=${cookie?.value}` } });
+  // 修复后预览 Cookie 按角色使用后缀名（防网关回放串用）
+  const name = role === 'teacher' ? 'luojia_peds_preview_teacher' : 'luojia_peds_preview_student';
+  const cookie = response.cookies.get(name);
+  return new NextRequest(url, { headers: { cookie: `${name}=${cookie?.value}` } });
 }
 
 test('学生不可获得知识库原图外链：本地目录缺失时仅教师返回媒体URL，匿名拒绝', async () => {
