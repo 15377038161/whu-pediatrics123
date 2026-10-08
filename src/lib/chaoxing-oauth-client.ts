@@ -26,18 +26,63 @@ export interface LoginResult {
   error?: string;
 }
 
+// 跳转拦截检测：assign 外部授权域前落标记；若页面随后重载回本站（导航被环境拦截），
+// 组件读到标记后显示手动跳转链接兜底，而不是静默恢复按钮。
+const NAV_ATTEMPT_KEY = 'cx_nav_attempt';
+
+/** 读取并清除一次「跳转被拦截」标记（页面重载后由登录组件调用）。 */
+export function consumeNavigationAttempt(): string | null {
+  try {
+    const url = sessionStorage.getItem(NAV_ATTEMPT_KEY);
+    if (url) sessionStorage.removeItem(NAV_ATTEMPT_KEY);
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function isValidHttpUrl(value: unknown): value is string {
+  if (typeof value !== 'string' || !value.trim()) return false;
+  try {
+    const u = new URL(value);
+    return (u.protocol === 'https:' || u.protocol === 'http:') && !!u.hostname;
+  } catch {
+    return false;
+  }
+}
+
 /** 超星 OAuth2.0 一键登录：换取授权跳转地址后顶层导航（fetch 跟随跨域 302 会被 CORS 拦截）。 */
 export async function loginWithChaoxingOAuth(): Promise<LoginResult> {
   const redirectUri = window.location.href.split('#')[0];
-  const res = await fetch(
-    `${AUTH_BASE}/v1/api/coder/proxy/auth/chaoxing-oauth/authorize-url?redirect_uri=${encodeURIComponent(redirectUri)}`,
-    { headers: AUTH_HEADERS },
-  );
+  let res: Response;
+  try {
+    res = await fetch(
+      `${AUTH_BASE}/v1/api/coder/proxy/auth/chaoxing-oauth/authorize-url?redirect_uri=${encodeURIComponent(redirectUri)}`,
+      { headers: AUTH_HEADERS },
+    );
+  } catch {
+    // fetch 网络层失败（网关不可达/断网）：显式报错，不静默恢复按钮。
+    return { success: false, error: '网络异常，无法连接登录服务，请检查网络后重试' };
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}) as { message?: string });
     return { success: false, error: body.message || `获取授权地址失败 (${res.status})` };
   }
-  const { authorizeUrl } = (await res.json()) as { authorizeUrl: string };
+  let authorizeUrl: unknown;
+  try {
+    ({ authorizeUrl } = await res.json());
+  } catch {
+    return { success: false, error: '登录服务返回异常，请稍后重试' };
+  }
+  if (!isValidHttpUrl(authorizeUrl)) {
+    // 空/畸形授权地址：window.location.assign 会静默重载当前页——必须显式报错。
+    return { success: false, error: '登录服务未返回有效的授权地址，请稍后重试或联系管理员' };
+  }
+  try {
+    sessionStorage.setItem(NAV_ATTEMPT_KEY, authorizeUrl);
+  } catch {
+    // sessionStorage 不可用不影响主流程
+  }
   window.location.assign(authorizeUrl);
   return { success: true };
 }
