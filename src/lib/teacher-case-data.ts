@@ -5,7 +5,7 @@ import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 import { getCachedSnapshot } from '@/lib/case-snapshot';
 
-const recordSchema = z.object({
+export const recordSchema = z.object({
   caseId: z.string(), sourceName: z.string(), sourceDocument: z.string(),
   age: z.string(), sex: z.string(), complaint: z.string(),
   sections: z.object({ history: z.string(), exam: z.string(), tests: z.string(), diagnosis: z.string(), plan: z.string() }),

@@ -24,45 +24,47 @@ async function probeDatabase(timeoutMs = 4000): Promise<'connected' | 'configure
 }
 
 /**
- * 病例知识库装载健康维度（仅非敏感计数，替代"静默资料不足"）：
- * - localCaseFiles：本地 knowledge/teaching-cases JSON 文件数（缺 53 源时运维可明确判断）；
+ * 病例知识库装载健康维度（2026-10-13 第四轮最小化改造）：
+ * - localFiles：本地 knowledge/teaching-cases JSON 是否存在（'present' | 'missing'，不再返回文件计数）；
  * - recall：知识库召回配置状态（平台注入凭据是否存在）；
- * - persistedFactsVersions / persistedAnswerVersions：DB 持久化快照版本计数
- *   （case_knowledge_health_counts RPC，SECURITY DEFINER 仅返回聚合计数，无病例内容）。
- * 不输出任何病例 ID、患者事实或版本内容。
+ * - persisted：DB 持久化快照装载状态，仅最小枚举（新 RPC case_knowledge_status）：
+ *     'ready'        双通道装载完成（facts>0 且 answers>0）
+ *     'partial'      教学事实已装载、教师对照答案缺失（facts>0 且 answers=0）
+ *     'empty'        未装载（facts 0 行）
+ *     'unknown'      RPC 不可用（未迁移/网络异常），如实显示未知
+ * 公开端点零业务计数、零病例 ID、零版本内容、零内部路径：
+ * 原 persistedFactsVersions/persistedAnswerVersions/localCaseFiles 计数与
+ * bound_teacher_sessions 会话数属业务运营信息，已从公开响应移除（教师侧详细计数
+ * 由收紧后的 case_knowledge_health_counts RPC 仅教师可查）。
  */
 async function probeCaseKnowledge(): Promise<{
-  localCaseFiles: number;
+  localFiles: 'present' | 'missing';
   recall: 'configured' | 'missing_credentials';
-  persistedFactsVersions: number | null;
-  persistedAnswerVersions: number | null;
+  persisted: 'ready' | 'partial' | 'empty' | 'unknown';
 }> {
-  let localCaseFiles = 0;
+  let localPresent = false;
   try {
-    localCaseFiles = readdirSync(`${process.env.PEDIATRICS_KNOWLEDGE_ROOT || 'knowledge'}/teaching-cases`)
-      .filter((name) => name.endsWith('.json')).length;
+    localPresent = readdirSync(`${process.env.PEDIATRICS_KNOWLEDGE_ROOT || 'knowledge'}/teaching-cases`)
+      .some((name) => name.endsWith('.json'));
   } catch {
-    localCaseFiles = 0;
+    localPresent = false;
   }
-  let persistedFactsVersions: number | null = null;
-  let persistedAnswerVersions: number | null = null;
+  let persisted: 'ready' | 'partial' | 'empty' | 'unknown' = 'unknown';
   if (isDatabaseConfigured()) {
     try {
       const client = getSupabaseCredentialsClient();
-      const { data, error } = await client.rpc('case_knowledge_health_counts');
-      if (!error && data && typeof data === 'object') {
-        persistedFactsVersions = Number((data as { persisted_facts_versions?: number }).persisted_facts_versions ?? 0);
-        persistedAnswerVersions = Number((data as { persisted_answer_versions?: number }).persisted_answer_versions ?? 0);
+      const { data, error } = await client.rpc('case_knowledge_status');
+      if (!error && typeof data === 'string') {
+        persisted = data === 'ready' || data === 'partial' || data === 'empty' ? data : 'unknown';
       }
     } catch {
-      // RPC 不可用（未迁移/网络）：保持 null，健康状态如实显示未知
+      // RPC 不可用（未迁移/网络）：保持 unknown，健康状态如实显示
     }
   }
   return {
-    localCaseFiles,
+    localFiles: localPresent ? 'present' : 'missing',
     recall: isKnowledgeConfigured() ? 'configured' : 'missing_credentials',
-    persistedFactsVersions,
-    persistedAnswerVersions,
+    persisted,
   };
 }
 

@@ -406,6 +406,25 @@ export function getSnapshotVersion(caseId: string): string | null {
   return snapshotStore.get(sourceId)?.meta?.version ?? null;
 }
 
+
+/** 冷启动版本解析：本地文件与召回缓存均无版本时，从 DB 持久缓存取该病例最新导入版本。
+ *  走新 RPC case_snapshot_latest_version（迁移 20261013150000）：仅返回版本指纹文本，
+ *  不含任何病例内容；authenticated 可执行（学生冷启动绑定版本无需教师身份）。
+ *  失败/无数据返回 null，不阻塞建会话（保持"资料不足"降级）。 */
+export async function getDatabaseSnapshotVersion(caseId: string, accessToken: string | null): Promise<string | null> {
+  const sourceId = getTeacherSourceId(caseId);
+  if (!accessToken || !isDatabaseConfigured()) return null;
+  try {
+    const db = getSupabaseUserClient(accessToken);
+    const { data, error } = await db.rpc('case_snapshot_latest_version', { p_case_id: sourceId });
+    if (error) throw error;
+    return typeof data === 'string' && data ? data : null;
+  } catch (error) {
+    if (process.env.LOG_LEVEL === 'debug') console.warn('[case-snapshot] db version resolve failed', sourceId, (error as Error).message);
+    return null;
+  }
+}
+
 /** 读取当前进程内已缓存的快照（不触发召回），供同步路径 readTeacherCaseData 使用。
  *  version 提供时（会话已绑定版本）：仅命中该版本的缓存键（sourceId@version，或裸键版本一致时），
  *  版本不一致返回 null（资料不足），绝不回退到其他版本的漂移数据。 */

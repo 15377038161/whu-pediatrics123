@@ -2,7 +2,7 @@ import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, S
 import { createInitialSession, refreshSourceSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
 import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client';
-import { ensureCaseSnapshot, getSnapshotVersion, restoreCaseSnapshotFacts } from '@/lib/case-snapshot';
+import { ensureCaseSnapshot, getSnapshotVersion, restoreCaseSnapshotFacts, getDatabaseSnapshotVersion } from '@/lib/case-snapshot';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface TeacherStudentSummary {
@@ -109,10 +109,68 @@ export class AgentRepository {
   async createSession(mode: SessionMode, caseId?: string, practiceFocus?: PracticeFocus): Promise<SessionState> {
     // 本地 teaching-cases 缺失时，先预热知识库召回快照（失败降级，不阻塞建会话）。
     // 教师触发时同时持久化 answers（诊断/原文/媒体，仅教师可读），学生仅持久化教学事实。
-    if (caseId?.startsWith('teacher-')) await ensureCaseSnapshot(caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
+    let coldStartVersion: string | null = null;
+    if (caseId?.startsWith('teacher-')) {
+      await ensureCaseSnapshot(caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
+      // 首次加载即绑定快照版本：之后（含重启后）按此版本恢复病例事实，防召回漂移换患者。
+      // 冷启动兜底（本地文件缺失且召回无缓存）：从 DB 持久缓存解析教师导入版本
+      // （case_snapshot_latest_version RPC，仅版本文本无内容）并绑定。
+      let version = getSnapshotVersion(caseId);
+      if (!version && !this.isPreview() && this.actor.accessToken) {
+        version = await getDatabaseSnapshotVersion(caseId, this.actor.accessToken);
+        if (version) {
+          coldStartVersion = version;
+          if (this.actor.role === 'teacher') {
+            // 教师直读恢复（RLS app_is_teacher 放行）：恢复写入进程缓存 sourceId@version，
+            // 随后 createInitialSession 按 DB 导入版本一次成型完整教学事实。
+            await restoreCaseSnapshotFacts(caseId, version, this.actor.accessToken, 'teacher');
+          }
+        }
+      }
+      const session = createInitialSession(this.actor.id, mode, caseId, practiceFocus, version);
+      if (version) session.sourceSnapshotVersion = version;
+      if (this.isPreview()) {
+        const store = memoryStore();
+        store.users.set(this.actor.id, this.actor);
+        store.sessions.set(session.id, clone(session));
+        return session;
+      }
+      const db = this.db();
+      const { error } = await db.from('training_sessions').insert({
+        id: session.id,
+        user_id: this.actor.id,
+        cohort_id: DEFAULT_COHORT_ID,
+        case_id: session.caseId,
+        case_version: session.caseVersion,
+        mode: session.mode,
+        stage: session.stage,
+        status: session.status,
+        state: session,
+        started_at: session.startedAt,
+        updated_at: session.updatedAt,
+        expires_at: session.expiresAt,
+      });
+      if (error) throw error;
+      // 学生冷启动：会话行已落库（版本绑定生效，RPC 校验：会话归属本人+版本绑定+病例匹配），
+      // 经受控 RPC 恢复教学事实写入进程缓存后，以 DB 导入版本重建展示字段
+      // （caseOptions/vitals/messages；新会话无学生内容，整体重建安全）并回写 DB。
+      // RPC 校验失败/无数据保持"资料不足"，不回退漂移数据换患者。
+      if (coldStartVersion && this.actor.role !== 'teacher') {
+        const facts = await restoreCaseSnapshotFacts(caseId, coldStartVersion, this.actor.accessToken, this.actor.role, session.id);
+        if (facts) {
+          const fresh = createInitialSession(this.actor.id, mode, caseId, practiceFocus, coldStartVersion);
+          session.caseVersion = fresh.caseVersion;
+          session.caseOptions = fresh.caseOptions;
+          session.vitals = fresh.vitals;
+          session.messages = fresh.messages;
+          session.updatedAt = new Date().toISOString();
+          const { error: updateError } = await db.from('training_sessions').update({ state: session, updated_at: session.updatedAt }).eq('id', session.id).eq('user_id', this.actor.id);
+          if (updateError) throw updateError;
+        }
+      }
+      return session;
+    }
     const session = createInitialSession(this.actor.id, mode, caseId, practiceFocus);
-    // 首次加载即绑定快照版本：之后（含重启后）按此版本恢复病例事实，防召回漂移换患者。
-    if (caseId?.startsWith('teacher-')) session.sourceSnapshotVersion = getSnapshotVersion(caseId);
     if (this.isPreview()) {
       const store = memoryStore();
       store.users.set(this.actor.id, this.actor);
