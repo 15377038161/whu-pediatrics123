@@ -8,6 +8,9 @@
  * - 输出仅脱敏计数（case key / 状态码 / 布尔），不打印患者正文与 token。
  * 运行：pnpm tsx scripts/verify-case53-real-api.ts [baseUrl]
  */
+// 模块标记：tsconfig include **/*.ts 使本文件参与 next build 类型检查，
+// 无 import/export 的脚本处于全局作用域，与其他脚本的同名顶层常量冲突。
+export {};
 
 const baseUrl = process.argv[2] ?? 'http://127.0.0.1:5173';
 const SUPA_URL = process.env.CODER_SUPABASE_URL as string;

@@ -5,7 +5,7 @@
   "scripts": {
     "preinstall": "only-allow pnpm",
     "dev": "next dev -H 127.0.0.1 -p 8765",
-    "build": "next build && tsup src/server.ts --format cjs --platform node --out-dir dist --external next",
+    "build": "pnpm install --frozen-lockfile && next build && tsup src/server.ts --format cjs --platform node --out-dir dist --external next",
     "start": "node dist/server.js",
     "lint": "eslint . --quiet",
     "typecheck": "tsc -p tsconfig.json --noEmit",

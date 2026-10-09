@@ -12,6 +12,9 @@
  *   pnpm tsx scripts/verify-restart-persistence.ts
  *   pnpm tsx scripts/verify-restart-persistence.ts --restore <token> <sessionId> <fingerprintJson>
  */
+// 模块标记：tsconfig include **/*.ts 使本文件参与 next build 类型检查，
+// 无 import/export 的脚本处于全局作用域，与其他脚本的同名顶层常量冲突。
+export {};
 const baseUrl = process.env.RESTORE_BASE_URL ?? 'http://127.0.0.1:5173';
 const SUPA_URL = process.env.CODER_SUPABASE_URL as string;
 const SUPA_ANON_KEY = process.env.CODER_SUPABASE_ANON_KEY as string;
