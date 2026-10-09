@@ -345,9 +345,20 @@ export async function restoreCaseSnapshotFacts(caseId: string, version: string, 
       if (data) facts = data.facts as ReturnType<typeof buildFactsPayload>;
     }
     if (!facts) return null;
+    // 学生受控 RPC 的阶段化事实投影（迁移 20261010120000）：未执行查体/开检查前
+    // sections.exam/tests 被安全剥离（键缺失），完成会话补 diagnosis/plan 空串。
+    // 恢复态必须规范化缺键为空串，否则 readTeacherCaseData 的 recordSchema 校验
+    // （五键全 string）失败 → 冷启动会话整体降级"资料不足"（真实缺陷，实测定位）。
+    const norm = (key: string): string => (typeof (facts!.sections as Record<string, unknown>)[key] === 'string' ? (facts!.sections as Record<string, unknown>)[key] as string : '');
     const restored: SnapshotCaseData = {
       ...facts,
-      sections: { ...facts.sections, diagnosis: '', plan: '' },
+      sections: {
+        history: norm('history'),
+        exam: norm('exam'),
+        tests: norm('tests'),
+        diagnosis: norm('diagnosis'),
+        plan: norm('plan'),
+      },
       documents: [],
     };
     // 版本键缓存：恢复结果写入 sourceId@version，供该版本会话后续命中；

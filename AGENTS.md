@@ -105,6 +105,7 @@ tests/                      # 测试
 - **凭据输入通道**仅两种：0600 权限临时 JSON 文件（`--cred-file`）或受控环境变量（如 `RLS_PROBE_*`/`PERSIST_PROBE_*`，缺省 fail-closed 退出，无默认回退）。参考 `scripts/probe-credentials.ts` 与 `scripts/verify-restart-persistence.ts`。
 - **跨进程只传非秘密定位符**：凭据文件路径、sessionId、脱敏指纹。token 临时落盘必须 `0o600`，用后即删（业务证据保留，凭据不保留）。
 - **测试账号治理**：清理/验证类脚本复用既有探针账号（不再默认 signup 扩散测试用户）；一次性诊断脚本跑完即删，不入 git。
+- **冷启动恢复验证（2026-10-10）**：`scripts/verify-coldstart-restore.ts`（合成 PostgREST 上游 + 子进程 spawn 独立进程，31 断言）与 `scripts/verify-coldstart-real-platform.ts`（真实平台学生演示身份，11 断言，凭据经 /tmp 受控文件）。子进程环境必须剔除 CODER_*/COZE_* 真实注入再指向本地上游；真实平台脚本结束执行 signOut(global)。
 - **会话收尾**：真实 Auth 测试结束对测试账号执行 `signOut(scope=global)` 撤销全部 refresh 会话；不删账号/业务数据、不修改 JWT 策略、不动教师白名单。
 - **access JWT 边界（如实表述）**：平台无单令牌 access 撤销机制（无状态 JWT，TTL 3600s），signOut 仅撤销 refresh；文档禁止声称"退出立即撤销所有 access token"。
 - **泄露事件处理**：先官方通道撤销（signOut global + 验证 refresh 被拒），再修脚本凭据通道，秘密扫描仅输出路径+计数/类型（禁止显示匹配内容）；已进入聊天日志的历史泄露不可通过删本地文件消除，必须如实记录。
