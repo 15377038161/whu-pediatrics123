@@ -4,6 +4,18 @@
 
 ---
 
+## 构建退出码 137（SIGKILL，静态收集阶段）
+
+**症状**: 部署日志显示 `Compiled successfully` 后，在 `Collecting page data using 63 workers` 阶段进程被杀，总时长约 171 秒，退出码 137。
+
+**根因**: 137 仅证明 SIGKILL。本例中 63 workers 来自 Next 16.1.1 默认 `os.cpus().length - 1`（64 线程宿主 - 1），而沙箱 cgroup 限制为 6GiB 内存（无 swap）+ 2 核 CPU quota，静态收集阶段并发拉起 63 个 worker 与 memcg 上限冲突（同 cgroup 有 `CONSTRAINT_MEMCG` oom-kill 历史佐证）。
+
+**修复（已实施）**: `next.config.ts` 设 `experimental.cpus: 2`，静态收集 worker 数与实际 CPU quota 匹配。构建期配置，运行时无影响。
+
+**验证**: `pnpm run build` 本地生产同构复现，日志应出现 `Collecting page data using 2 workers` 且退出码 0。平台侧确认需重新触发部署。
+
+---
+
 ## 问题诊断
 
 运行诊断脚本：
