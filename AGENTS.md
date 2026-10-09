@@ -26,8 +26,8 @@ src/
 │   ├── layout.tsx          # 根布局
 │   ├── page.tsx            # 首页
 │   └── globals.css         # 全局样式
-├── components/             # 共享组件
-├── domain/                 # 业务领域（病例目录、病例事实、规则）
+├── components/             # 共享组件（case-library 病例库卡片/搜索/分页在此）
+├── domain/                 # 业务领域（病例目录、病例事实、规则、case-classification 多维分类）
 ├── lib/                    # 工具库（智能体引擎等）
 └── server.ts               # 生产环境自定义服务器（node:http + next）
 supabase/migrations/        # 数据表、索引、RLS

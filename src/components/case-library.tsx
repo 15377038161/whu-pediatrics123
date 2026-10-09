@@ -1,30 +1,250 @@
 'use client';
 
-import { ArrowRight, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { CASE_CATALOG } from '@/domain/case-catalog';
-import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
-import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
+import { AlertCircle, ArrowRight, FileWarning, Loader2, RotateCcw, Search, Star, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { PublicCaseProfile } from '@/domain/case-catalog';
+import {
+  listSubjects,
+  PAGE_SIZE,
+  readRecentSelection,
+  searchCases,
+  writeRecentSelection,
+  type CaseReadiness,
+} from '@/domain/case-classification';
+import { authedFetch } from '@/lib/authed-api';
+import { useGateUser } from '@/components/auth-gate';
+
+/**
+ * 学生病例库（2026-10-16 七项重构）：
+ * - 数据源 /api/cases（服务端发布过滤：教师已下架项不下发，学生不感知）；
+ * - 多维分类（学科归一 + 资料完备度）+ 关键词搜索组合筛选，筛选变化重置页码；
+ * - 分页 12/页（不预载全部病例事实或媒体——卡片仅目录元数据，正文/媒体进入训练才加载）；
+ * - 预览卡只含非答案信息；资料不足项（3 项）OSCE 禁用（服务端另有守卫）；
+ * - 最近选择按当前用户 localStorage 键隔离，切换账号不泄露他人记录。
+ */
+
+const READINESS_OPTIONS: Array<{ value: CaseReadiness | 'all'; label: string }> = [
+  { value: 'all', label: '全部来源' },
+  { value: 'independent', label: '独立来源' },
+  { value: 'linked', label: '关联来源' },
+  { value: 'insufficient', label: '资料不足' },
+];
 
 export function CaseLibrary() {
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('all');
-  const categories = [...new Set(CASE_CATALOG.map((item) => item.category))];
-  const visible = useMemo(() => CASE_CATALOG.filter((item) => (category === 'all' || item.category === category) && `${item.title} ${item.category} ${item.presentingSymptoms.join(' ')}`.includes(query.trim())), [category, query]);
-  return <>
-    <div className="case-library-filter"><label><Search size={17} /><input aria-label="搜索病例" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索病种、症状或系统" /></label><select aria-label="筛选疾病系统" value={category} onChange={(event) => setCategory(event.target.value)}><option value="all">全部系统</option>{categories.map((value) => <option key={value} value={value}>{value}</option>)}</select><span>目录可见 · {visible.length} / {CASE_CATALOG.length} 项（正文与媒体以教师审核放行为准）</span></div>
-    <div className="case-library">{visible.map((item) => {
-      const link = TEACHER_CASE_LINKS[item.id];
-      const source = TEACHER_CASE_CATALOG.find((entry) => entry.id === (link?.sourceId ?? item.id));
-      return <article className="case-card" key={item.id}><div className="case-card-copy">
-        <p className="case-number">{item.category}</p><h3>{item.title}</h3>
-        <div className="case-meta"><span>{item.difficulty}</span>{item.expectedMinutes > 0 && <span>{item.expectedMinutes} 分钟</span>}{source?.folder && <span>{source.documentCount} 份文档 · {source.mediaCount} 项媒体</span>}</div>
-        {link && <p className="case-source-note">学习资料：{source?.name}（{link.relation === 'subtype' ? '具体亚型' : '名称对应'}）</p>}
-        {source && !source.folder && !link && <p className="case-source-note">可记录诊疗思路；此病种尚无独立病例正文。</p>}
-        <div className="symptom-list" aria-label="就诊症状">{item.presentingSymptoms.map((symptom) => <span key={symptom}>{symptom}</span>)}</div>
-        <div className="case-card-actions"><a className="btn btn-secondary" href={`/student/training?mode=guided&case=${encodeURIComponent(item.id)}`}>进入病例 <ArrowRight size={15} /></a><a className="text-link" href={`/student/training?mode=immersive&case=${encodeURIComponent(item.id)}`}>沉浸式教学</a><a className="text-link" href={`/student/training?mode=osce&case=${encodeURIComponent(item.id)}`}>OSCE 练习</a></div>
-      </div></article>;
-    })}</div>
-    {visible.length === 0 && <p className="empty-state">没有找到病例，试试病种名称或切换疾病系统。</p>}
-  </>;
+  const user = useGateUser();
+  const [catalog, setCatalog] = useState<PublicCaseProfile[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [keyword, setKeyword] = useState('');
+  const [subject, setSubject] = useState('all');
+  const [readiness, setReadiness] = useState<CaseReadiness | 'all'>('all');
+  const [page, setPage] = useState(1);
+  const [recent, setRecent] = useState<string[]>([]);
+  const [recentUser, setRecentUser] = useState<string | null>(null);
+  if (recentUser !== user.id) {
+    // 用户切换时渲染期重置最近选择（React 官方模式）：仅本人键读取，切换账号即换键，互不泄露。
+    // 组件处于客户端门控内，此分支仅在挂载后/账号变化时执行，localStorage 访问安全。
+    setRecentUser(user.id);
+    setRecent(readRecentSelection(localStorage, user.id));
+  }
+
+  const fetchCatalog = useCallback((): Promise<PublicCaseProfile[]> => authedFetch<PublicCaseProfile[]>('/api/cases'), []);
+  const applyCatalog = (outcome: Promise<PublicCaseProfile[]>) => {
+    outcome
+      .then((data) => {
+        setCatalog(data);
+        setLoadError(false);
+      })
+      .catch(() => {
+        setCatalog(null);
+        setLoadError(true);
+      });
+  };
+
+  useEffect(() => {
+    applyCatalog(fetchCatalog());
+  }, [fetchCatalog]);
+
+  const subjects = useMemo(() => (catalog ? listSubjects(catalog) : []), [catalog]);
+  const result = useMemo(
+    () => (catalog ? searchCases(catalog, { keyword, subject, readiness, page }) : null),
+    [catalog, keyword, subject, readiness, page],
+  );
+
+  const resetPage = (updater: () => void) => {
+    updater();
+    setPage(1);
+  };
+
+  const enterCase = (caseId: string) => {
+    setRecent(writeRecentSelection(localStorage, user.id, caseId));
+  };
+
+  if (loadError) {
+    return (
+      <div className="empty-state" role="alert">
+        <AlertCircle size={28} aria-hidden />
+        <p>病例目录加载失败，请重试。</p>
+        <button type="button" className="btn btn-primary" onClick={() => applyCatalog(fetchCatalog())}>
+          <RotateCcw size={15} /> 重新加载
+        </button>
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className="case-library-loading" role="status" aria-live="polite">
+        <Loader2 size={22} className="spin" aria-hidden />
+        正在加载病例目录…
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="case-library-filter">
+        <label className="case-search">
+          <Search size={17} aria-hidden />
+          <input
+            aria-label="搜索病例"
+            value={keyword}
+            onChange={(event) => resetPage(() => setKeyword(event.target.value))}
+            placeholder="搜索病种、症状或系统"
+          />
+          {keyword && (
+            <button type="button" aria-label="清空搜索" onClick={() => resetPage(() => setKeyword(''))}>
+              <X size={14} aria-hidden />
+            </button>
+          )}
+        </label>
+        <select
+          aria-label="按学科筛选"
+          value={subject}
+          onChange={(event) => resetPage(() => setSubject(event.target.value))}
+        >
+          <option value="all">全部学科</option>
+          {subjects.map((value) => (
+            <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+        <select
+          aria-label="按资料来源筛选"
+          value={readiness}
+          onChange={(event) => resetPage(() => setReadiness(event.target.value as CaseReadiness | 'all'))}
+        >
+          {READINESS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+        <span>目录可见 · {result.total} 项（卡片仅展示就诊线索，正文与媒体进入训练后加载）</span>
+      </div>
+
+      {recent.length > 0 && (
+        <div className="case-recent" aria-label="最近选择">
+          <span className="case-recent-label">最近选择：</span>
+          {recent.map((caseId) => {
+            const profile = catalog?.find((item) => item.id === caseId);
+            if (!profile) return null;
+            return (
+              <a
+                href={`/student/training?mode=guided&case=${encodeURIComponent(caseId)}`}
+                key={caseId}
+                onClick={() => enterCase(caseId)}
+              >
+                {profile.title}
+              </a>
+            );
+          })}
+          <span className="case-note-hint">仅本账号可见</span>
+        </div>
+      )}
+
+      <p className="case-note-hint case-hidden-note">
+        目录与卡片不含诊断答案与检查结果；OSCE 测评的隐藏信息以进入考站后的规则说明为准。
+      </p>
+
+      <div className="case-library">
+        {result.items.map((item) => {
+          const insufficient = item.classification.readiness.readiness === 'insufficient';
+          return (
+            <article className="case-card" key={item.id}>
+              <div className="case-card-copy">
+                <p className="case-number">{item.classification.subject}</p>
+                <h3>{item.title}</h3>
+                <div className="case-meta">
+                  <span className="case-stars" aria-label={`教学难度 ${item.classification.stars} 星（${item.classification.starReason}）`} title={item.classification.starReason}>
+                    {[1, 2].map((star) => (
+                      <Star key={star} size={13} aria-hidden className={star <= item.classification.stars ? 'star-filled' : 'star-empty'} />
+                    ))}
+                  </span>
+                  <span className={`readiness-badge readiness-${item.classification.readiness.readiness}`}>{item.classification.readiness.label}</span>
+                  {item.expectedMinutes > 0 && <span>{item.expectedMinutes} 分钟</span>}
+                  <span>{item.age !== '待核验' ? `${item.age} · ${item.sex}` : '年龄待核验'}</span>
+                </div>
+                {insufficient && (
+                  <p className="case-source-note case-insufficient-note"><FileWarning size={13} aria-hidden /> 资料不足：本病种无独立病例正文，仅可记录诊疗思路，不进入可评分测试。</p>
+                )}
+                {!insufficient && item.classification.readiness.readiness === 'linked' && (
+                  <p className="case-source-note">{item.classification.readiness.note}（不另造新患者）</p>
+                )}
+                {!insufficient && item.classification.readiness.readiness === 'independent' && item.classification.readiness.note !== '演示病例' && (
+                  <p className="case-source-note">{item.classification.readiness.note}</p>
+                )}
+                <div className="symptom-list" aria-label="就诊症状">
+                  {item.presentingSymptoms.length
+                    ? item.presentingSymptoms.map((symptom) => <span key={symptom}>{symptom}</span>)
+                    : <span className="symptom-pending">症状线索进入训练后采集</span>}
+                </div>
+                <div className="case-card-actions">
+                  <a className="btn btn-secondary" href={`/student/training?mode=guided&case=${encodeURIComponent(item.id)}`} onClick={() => enterCase(item.id)}>
+                    进入病例 <ArrowRight size={15} />
+                  </a>
+                  <a className="text-link" href={`/student/training?mode=immersive&case=${encodeURIComponent(item.id)}`} onClick={() => enterCase(item.id)}>
+                    沉浸式教学
+                  </a>
+                  {insufficient ? (
+                    <span className="text-link disabled" aria-disabled="true" title="资料不足，不进入可评分测试">
+                      OSCE 练习（不可用）
+                    </span>
+                  ) : (
+                    <a className="text-link" href={`/student/training?mode=osce&case=${encodeURIComponent(item.id)}`} onClick={() => enterCase(item.id)}>
+                      OSCE 练习
+                    </a>
+                  )}
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {result.total === 0 && (
+        <p className="empty-state">没有找到病例，试试病种名称或调整学科与来源筛选。</p>
+      )}
+
+      {result.pageCount > 1 && (
+        <nav className="case-pagination" aria-label="病例分页">
+          <button type="button" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)} aria-label="上一页">
+            上一页
+          </button>
+          {Array.from({ length: result.pageCount }, (_, index) => index + 1).map((number) => (
+            <button
+              type="button"
+              key={number}
+              aria-label={`第 ${number} 页`}
+              aria-current={number === result.page ? 'page' : undefined}
+              className={number === result.page ? 'page-active' : ''}
+              onClick={() => setPage(number)}
+            >
+              {number}
+            </button>
+          ))}
+          <button type="button" disabled={result.page >= result.pageCount} onClick={() => setPage(result.page + 1)} aria-label="下一页">
+            下一页
+          </button>
+          <span>每页 {PAGE_SIZE} 项 · 第 {result.page} / {result.pageCount} 页</span>
+        </nav>
+      )}
+    </>
+  );
 }

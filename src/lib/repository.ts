@@ -5,6 +5,8 @@ import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client'
 import { ensureCaseSnapshot, getSnapshotVersion, restoreCaseSnapshotFacts } from '@/lib/case-snapshot';
 import { resolveTeacherCaseVersion } from '@/lib/case-version-select';
 import { assertCasePublishedForNewSession } from '@/lib/case-publication';
+import { isScorableCase } from '@/domain/case-classification';
+import { getPublicCase } from '@/domain/case-catalog';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface TeacherStudentSummary {
@@ -117,6 +119,12 @@ export class AgentRepository {
       // 学生新建会话守卫：教师已下架（case_publication published=false）的病例拒绝新建训练；
       // 教师豁免（可继续预览复核）；既有会话恢复不受影响（getSession 不校验发布状态）。
       await assertCasePublishedForNewSession(caseId, this.actor.role, this.actor.accessToken);
+      // 资料不足守卫（可评分双通道之服务端）：无独立来源（无 folder 且无 alias/subtype 链接）的
+      // 3 个病种项不得进入可评分测试（osce/immersive）——空事实会话不应被评分。
+      // 引导学习（guided）与教师预览复核不受限，仍可记录诊疗思路。
+      if (mode === 'osce' && !isScorableCase(getPublicCase(caseId)) && this.actor.role !== 'teacher') {
+        throw new Error('CASE_INSUFFICIENT');
+      }
       // 本地 teaching-cases 缺失时，先预热知识库召回快照（失败降级，不阻塞建会话）。
       // 教师触发时同时持久化 answers（诊断/原文/媒体，仅教师可读），学生仅持久化教学事实。
       await ensureCaseSnapshot(caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
