@@ -22,6 +22,8 @@
 - 评委预览身份默认关闭；按部署需要显式配置 `ENABLE_UI_PREVIEW=true` 后可在任意环境开放，生产启用时必须同时配置高强度 `PREVIEW_SIGNING_SECRET`。当前沙箱保持 `ENABLE_UI_PREVIEW=false`，服务端直接拒绝预览身份（`/api/preview/login` 404）。
 - 参考答案收紧（2026-10-10）：`case_snapshot_get_reference` RPC 学生路径一律返回 `null`，诊断/处置对照仅教师可读（RLS 直读保留）。学生 finish 报告无标准答案回填，评分仅为过程证据反馈；正式评分（含诊断对照评分）为阻断项，待平台可信服务端写通道方案选型。已知边界：`state.unlockedEvidence`/`orderedTests` 仍在学生可写范围内，伪造证据码可读到查体/检查类教学事实（不含诊断答案），彻底闭合与正式评分选型同源待定。
 - 使用统计（2026-10-11 最小实现）：学生学习事件埋点（`POST /api/engagement`，服务端真实身份+时间+幂等）与有效活跃区间（仅页面可见且活跃，隐藏页/多标签/挂机不计入，服务端派生）；教师统计页 `/teacher/usage-stats`（明细/汇总/日活趋势/病例模式分布，日期/学生/病例筛选，脱敏 CSV 导出，练习分带"非正式成绩"标识）。口径与验收见 `docs/使用统计口径与验收.md`。
+- 53 受控来源接入教学运行（2026-10-12）：用户确认 53 份受控交接 TXT 为老师提供的已审核教学材料（凭据 `user-confirmed-teacher-reviewed` 记录于每份运行时文件）。`pnpm build:cases` 从 `knowledge/受控交接/` 程序化生成 `recordSchema` 兼容的运行时教学事实（含原件 sha256、章节行号证据定位、缺字段保持 unknown 不推断；肝豆状核变性 sex 原文未记录）；`pnpm verify:53cases` 逐例验收建会话→问诊→查体→检查→处置→结束→报告全流程，53/53 通过。14 别名映射 canonical、3 无独立来源维持资料不足、2 演示 fixture 分离。部署环境重新装载：受控 TXT 放入 `knowledge/受控交接/` 后执行上述两条命令即可，无需 DB 迁移或权限变更（详见 `docs/病例交接与草稿矩阵报告.md` 第六节）。
+- 构建状态更正（2026-10-12）：`next` 始终在 `dependencies` 中（此前"从 devDependencies 移入"的说法无证据支持，已更正）。本地构建通过；部署日志中的 `next: not found`（退出码 127）在真实部署环境是否复现待真实环境证据确认。
 - 沙箱代理跳转说明：重定向 Location 必须是对外 `https` 绝对 URL（`getRealOrigin` 优先读平台注入的 `CODER_PROJECTS_DOMAIN`），自定义 server 会在出口统一补全相对 Location。禁止回退到网关→容器内部链路的 `x-forwarded-proto`（http），否则浏览器从 https 跟随 http 跳转会触发网关代理前缀双层拼接导致 404。
 
 ## 本地运行

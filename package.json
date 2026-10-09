@@ -15,7 +15,9 @@
     "prepare:cases": "python scripts/extract-case-drafts.py && python scripts/prepare-teacher-cases.py && node scripts/prepare-case-media.mjs",
     "verify:cases": "tsx scripts/verify-case-library.ts",
     "predeploy": "pnpm run validate && pnpm run verify:chaoxing",
-    "bundle": "pwsh -NoProfile -File scripts/package-coze.ps1"
+    "bundle": "pwsh -NoProfile -File scripts/package-coze.ps1",
+    "verify:53cases": "tsx scripts/verify-53-cases-e2e.ts",
+    "build:cases": "python scripts/build-runtime-cases-from-handover.py"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
