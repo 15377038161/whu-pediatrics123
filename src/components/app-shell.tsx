@@ -55,7 +55,17 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
     }
   }
   async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    if (user.provider === 'preview') {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } else {
+      // 真实会话在 localStorage（SDK 管理）：SDK 全局吊销 + 本地清除；网关域下 cookie 不可达
+      try {
+        const { signOutBrowserSession } = await import('@/lib/supabase-browser');
+        await signOutBrowserSession();
+      } catch {
+        // 吊销失败仍强制清本地会话跳登录
+      }
+    }
     router.replace('/');
     router.refresh();
   }

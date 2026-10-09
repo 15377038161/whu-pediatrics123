@@ -1,7 +1,5 @@
-import { AppShell } from '@/components/app-shell';
-import { requirePageUser } from '@/lib/page-auth';
+import { GatedAppShell } from '@/components/auth-gate';
 
-export default async function StudentLayout({ children }: { children: React.ReactNode }) {
-  const user = await requirePageUser('student');
-  return <AppShell user={user}>{children}</AppShell>;
+export default function StudentLayout({ children }: { children: React.ReactNode }) {
+  return <GatedAppShell role="student">{children}</GatedAppShell>;
 }

@@ -66,6 +66,34 @@ export async function getCurrentUser(cookies: CookieReader): Promise<UserContext
   }
 }
 
+/**
+ * 校验 Authorization（经网关重命名为 x-sandbox-authorization）头携带的真实用户 token。
+ * 官方契约（supabase-auth 技能 verify-session.md）：载荷为用户真实 Supabase access_token，
+ * 必须 getUser(token) 网络校验（禁止仅解码信任/自签）。无效/过期返回 null。
+ */
+export async function verifyHeaderToken(accessToken: string): Promise<AuthContext | null> {
+  try {
+    const { getSupabaseCredentialsClient } = await import('@/lib/supabase-client');
+    const { data, error } = await getSupabaseCredentialsClient().auth.getUser(accessToken);
+    if (error || !data.user) return null;
+    return { user: normalizeSupabaseUser(data.user), accessToken };
+  } catch {
+    return null;
+  }
+}
+
+/** 从请求头解析 Bearer token（x-sandbox-authorization 优先；authorization 备用容错）。 */
+export function readBearerToken(request: Request): string | null {
+  for (const name of ['x-sandbox-authorization', 'authorization']) {
+    const value = request.headers.get(name);
+    if (value) {
+      const token = value.replace(/^Bearer\s+/i, '').trim();
+      if (token) return token;
+    }
+  }
+  return null;
+}
+
 export interface AuthContext {
   user: UserContext;
   /** 当前会话的 Supabase access token（JWT）。预览身份无 token，为 null。 */

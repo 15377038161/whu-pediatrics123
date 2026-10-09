@@ -1,17 +1,21 @@
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowRight, HeartPulse, MessageCircleHeart, Sparkles, Stethoscope } from 'lucide-react';
 import { PlatformChaoxingLogin } from '@/components/platform-chaoxing-login';
-import { getCurrentUser } from '@/lib/supabase-auth';
+import { LoginSelfHeal } from '@/components/login-self-heal';
 import { isPreviewEnabled } from '@/lib/preview-auth';
 
+/**
+ * 登录页：
+ * - SSR 不再做会话重定向（网关剥离 Cookie，服务端永远读不到正式会话）；
+ * - 已登录用户由客户端 LoginSelfHeal 检测 SDK 会话（localStorage）后按角色自动跳转；
+ * - 预览入口仅本地直连开放（isPreviewEnabled 读 cookie/env，网关域名下不可达）。
+ */
 export default async function LoginPage() {
-  const user = await getCurrentUser(await cookies());
-  if (user) redirect(user.role === 'teacher' ? '/teacher' : '/student');
-  const preview = isPreviewEnabled();
+  const preview = isPreviewEnabled() || Boolean((await cookies()).get('luojia_preview_role')?.value);
   return (
     <main className="landing" id="main-content">
+      <LoginSelfHeal />
       <div className="landing-scene" aria-hidden="true">
         <span className="scene-orb scene-orb-one" />
         <span className="scene-orb scene-orb-two" />

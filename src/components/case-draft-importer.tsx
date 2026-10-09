@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { formatDateTime } from '@/lib/format-date';
+import { authedFetch } from '@/lib/authed-api';
 
 interface PrecheckResult {
   caseId: string;
@@ -71,10 +72,8 @@ export function CaseDraftImporter() {
     setBusy('list');
     setError('');
     try {
-      const resp = await fetch('/api/teacher/case-drafts');
-      const body = await resp.json();
-      if (!resp.ok) throw new Error(body?.error?.message ?? `HTTP ${resp.status}`);
-      setDrafts((body.data ?? []) as DraftRecord[]);
+      const data = await authedFetch<DraftRecord[]>('/api/teacher/case-drafts');
+      setDrafts(data ?? []);
     } catch (e) {
       setError(`草稿列表读取失败：${(e as Error).message}`);
     } finally {
@@ -100,19 +99,23 @@ export function CaseDraftImporter() {
       return;
     }
     try {
-      const resp = await fetch('/api/teacher/case-drafts', {
+      const data = await authedFetch<{
+        action: string;
+        draftVersion: string;
+        precheck?: PrecheckResult;
+        result?: string;
+        draftVersionConflict?: string;
+        record?: DraftRecord;
+      }>('/api/teacher/case-drafts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, draftVersion, desensitized, mediaReviewed, payload }),
       });
-      const body = await resp.json();
-      if (!resp.ok) throw new Error(body?.error?.message ?? `HTTP ${resp.status}`);
       if (action === 'precheck') {
-        setPrecheck(body.data.precheck as PrecheckResult);
-      } else if (body.data.result === 'duplicate') {
-        setSaveResult(`重复导入被拒：草稿 ${body.data.draftVersion} 已存在（不会覆盖旧版本）。如需修订请更换 draft_version（如 v2）。`);
+        setPrecheck(data.precheck as PrecheckResult);
+      } else if (data.result === 'duplicate') {
+        setSaveResult(`重复导入被拒：草稿 ${data.draftVersionConflict || draftVersion} 已存在（不会覆盖旧版本）。如需修订请更换 draft_version（如 v2）。`);
       } else {
-        setSaveResult(`草稿已保存（仅教师可见，未发布给学生）：${body.data.record.caseName} @ ${body.data.record.draftVersion}`);
+        setSaveResult(`草稿已保存（仅教师可见，未发布给学生）：${data.record?.caseName ?? ''} @ ${data.record?.draftVersion ?? draftVersion}`);
         await loadDrafts();
       }
     } catch (e) {

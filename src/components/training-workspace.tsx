@@ -7,7 +7,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AgentEvent, AgentMessage, AgentTurnResult, ApiResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
+import type { AgentEvent, AgentMessage, AgentTurnResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
 import { getPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 import { CaseResourcePanel } from '@/components/case-resource-panel';
 
@@ -51,10 +51,9 @@ const stageHints: Record<Stage, string[]> = {
 };
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, { ...init, headers: { 'content-type': 'application/json', ...init?.headers } });
-  const result = await response.json() as ApiResult<T>;
-  if (!result.ok) throw new Error(result.error.message);
-  return result.data;
+  // 统一鉴权请求层：携带 Authorization（网关重命名 x-sandbox-authorization），401 自动回登录页
+  const { authedFetch } = await import('@/lib/authed-api');
+  return authedFetch<T>(url, init);
 }
 
 function actorLabel(actor: string): string {

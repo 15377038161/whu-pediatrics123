@@ -1,19 +1,59 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { ArrowRight, Bone, ClipboardCheck, Clock3, HeartPulse, MessagesSquare, Sparkles, Stethoscope } from 'lucide-react';
 import Link from 'next/link';
 import { CASE_CATALOG, getPublicCase, isTrainableCase } from '@/domain/case-catalog';
-import { AgentRepository } from '@/lib/repository';
-import { requirePageUser } from '@/lib/page-auth';
+import type { SessionState, TrainingReport } from '@/domain/agent';
+import { authedFetch } from '@/lib/authed-api';
+import { useGateUser } from '@/components/auth-gate';
 import { CaseLibrary } from '@/components/case-library';
 
-export default async function StudentHome() {
-  const user = await requirePageUser('student');
-  const repository = new AgentRepository(user);
-  const [reports, sessions] = await Promise.all([repository.listOwnReports(), repository.listOwnSessions()]);
-  const latestReport = reports[0];
-  const active = sessions.find((session) => session.status === 'active' && isTrainableCase(session.caseId));
+/**
+ * 学生首页（客户端化）：
+ * 会话经 localStorage SDK → 数据必须经 authedFetch（Authorization → 网关 x-sandbox-authorization），
+ * 页面 HTML 不含任何用户数据（客户端门控下防未鉴权抓取）。
+ */
+export default function StudentHome() {
+  const user = useGateUser();
+  const [reports, setReports] = useState<TrainingReport[] | null>(null);
+  const [sessions, setSessions] = useState<SessionState[] | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      authedFetch<TrainingReport[]>('/api/reports'),
+      authedFetch<SessionState[]>('/api/sessions'),
+    ])
+      .then(([reportList, sessionList]) => {
+        if (cancelled) return;
+        setReports(reportList);
+        setSessions(sessionList);
+      })
+      .catch((reason: unknown) => {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : '数据加载失败');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const latestReport = reports?.[0];
+  const active = sessions?.find((session) => session.status === 'active' && isTrainableCase(session.caseId));
   const activeProfile = active ? getPublicCase(active.caseId) : CASE_CATALOG[0];
   const activeCase = active?.caseOptions ? { ...activeProfile, age: active.caseOptions.age } : activeProfile;
   const abilities = latestReport?.abilities;
+
+  if (error) {
+    return (
+      <div className="empty-state" role="alert">
+        <p>{error}</p>
+        <a className="btn btn-primary" href="/student">重试</a>
+      </div>
+    );
+  }
+
   return (
     <>
       <p className="eyebrow">珞珈儿科 · 今日训练</p>

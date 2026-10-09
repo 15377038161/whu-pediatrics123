@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { BookOpenCheck, CircleCheck, CircleX, ListChecks, RefreshCw } from 'lucide-react';
+import { authedFetch } from '@/lib/authed-api';
 
 interface QuizQuestion {
   id: string;
@@ -45,38 +46,26 @@ export default function QuizPage() {
   const loadQuestions = useCallback(async () => {
     // 注：同步 setState 移至异步段（fetch 返回后），避免 effect 内同步置位触发级联渲染。
     try {
-      const resp = await fetch('/api/quiz/questions?count=5');
-      const body = await resp.json();
-      if (!resp.ok || !body.ok) {
-        setErrorMessage(body?.error?.message ?? '取题失败，请稍后重试。');
-        setPhase('error');
-        return;
-      }
+      const data = await authedFetch<{ questions: QuizQuestion[]; poolExhausted: boolean }>('/api/quiz/questions?count=5');
       setResult(null);
       setSelected(null);
-      setQuestions(body.data.questions ?? []);
-      setPoolExhausted(Boolean(body.data.poolExhausted));
+      setQuestions(data.questions ?? []);
+      setPoolExhausted(Boolean(data.poolExhausted));
       setCurrent(0);
       setPhase('answering');
-    } catch {
-      setErrorMessage('网络异常，请稍后重试。');
+    } catch (e) {
+      setErrorMessage((e as Error).message || '取题失败，请稍后重试。');
       setPhase('error');
     }
   }, []);
 
   const loadReview = useCallback(async () => {
     try {
-      const resp = await fetch('/api/quiz/review');
-      const body = await resp.json();
-      if (!resp.ok || !body.ok) {
-        setErrorMessage(body?.error?.message ?? '复盘记录读取失败。');
-        setPhase('error');
-        return;
-      }
-      setReview(body.data.records ?? []);
+      const data = await authedFetch<{ records: ReviewItem[] }>('/api/quiz/review');
+      setReview(data.records ?? []);
       setPhase('reviewing');
-    } catch {
-      setErrorMessage('网络异常，请稍后重试。');
+    } catch (e) {
+      setErrorMessage((e as Error).message || '复盘记录读取失败。');
       setPhase('error');
     }
   }, []);
@@ -90,19 +79,13 @@ export default function QuizPage() {
     if (!selected || submitting) return;
     setSubmitting(true);
     try {
-      const resp = await fetch('/api/quiz/answer', {
+      const data = await authedFetch<AnswerResult>('/api/quiz/answer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questionId: questions[current].id, answer: selected }),
       });
-      const body = await resp.json();
-      if (!resp.ok || !body.ok) {
-        setErrorMessage(body?.error?.message ?? '提交失败，请稍后重试。');
-        return;
-      }
-      setResult(body.data as AnswerResult);
-    } catch {
-      setErrorMessage('网络异常，请稍后重试。');
+      setResult(data);
+    } catch (e) {
+      setErrorMessage((e as Error).message || '提交失败，请稍后重试。');
     } finally {
       setSubmitting(false);
     }

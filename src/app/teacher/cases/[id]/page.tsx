@@ -1,12 +1,15 @@
 import { notFound } from 'next/navigation';
 import { CaseResourcePanel } from '@/components/case-resource-panel';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
-import { requirePageUser } from '@/lib/page-auth';
 import { readTeacherCaseData } from '@/lib/teacher-case-data';
 import { getTeacherCaseResourceRoot } from '@/lib/teacher-case-resources';
 
+/**
+ * 教师病例详情页：身份与角色由布局门控（GatedAppShell）负责；
+ * 本页只读目录元数据（病种/来源存在性），原始媒体与正文经
+ * /api/cases/[id]/resources（requireUser 鉴权 + 教师媒体规则）下发。
+ */
 export default async function TeacherCasePage({ params }: { params: Promise<{ id: string }> }) {
-  await requirePageUser('teacher');
   const { id } = await params;
   let caseId: string;
   try {

@@ -61,6 +61,11 @@ tests/                      # 测试
 
 ## 数据库与认证集成状态
 
+- **鉴权链路（网关域名下，2026-10 改造）**：平台网关在边界将 `Authorization` 重命名为 `x-sandbox-authorization` 并**剥离全部 Cookie**，SSR Cookie 会话在网关域名下不可达（`/api/diag/auth-headers` 实证）。现行链路：
+  - **浏览器端**：会话由官方 Supabase SDK 管理在 localStorage（`src/lib/supabase-browser.ts`，`persistSession` + `autoRefreshToken`）；OAuth exchange 后直接 `setSession` 落地；所有需登录态的请求经 `src/lib/authed-api.ts` 的 `authedFetch`（自动附 `Authorization: Bearer <token>`，401 清会话跳登录页）；`authedFetchRaw` 供二进制资源（媒体元素无法带 header，需 blob + objectURL 渲染）
+  - **服务端**：`src/lib/request-auth.ts` 统一从 `x-sandbox-authorization`/`authorization` 头读 token 并 `getUser()` 网络校验（禁止仅解码信任）；校验失败一律 401 不回退 cookie；header 与非预览 cookie 身份不同 → 403 `IDENTITY_CONFLICT`；无头时回退 cookie（本地直连 SSR/预览路径）
+  - **页面守卫**：student/teacher 布局改为客户端门控（`src/components/auth-gate.tsx` 的 `GatedAppShell`，挂载后经 `/api/auth/me` 校验）；含用户数据的页面（student 首页/报告、teacher 首页/会话详情）已客户端化，SSR HTML 不含任何用户数据（防未鉴权抓取）；静态说明页去 SSR 守卫；登录页由 `LoginSelfHeal` 检测 SDK 会话后按角色自动跳转
+  - **媒体资源**：`case-resource-panel.tsx` 经 `authedFetchRaw` 取 blob 后渲染，不再依赖 cookie
 - **Supabase 已实例化**：数据库变量由平台注入（`COZE_SUPABASE_URL`/`COZE_SUPABASE_ANON_KEY`/`COZE_SUPABASE_SERVICE_ROLE_KEY`），本地开发通过 `coze_workload_identity` 的 `get_project_env_vars()` 获取
 - **迁移已执行**：`supabase/migrations/202608230001_pediatrics_agent.sql`（16 张业务表 + RLS）与 `supabase/migrations/202609010001_case_categories_symptom_terms.sql`（病例分类/症状字典/病例-症状关联 + 索引 + RLS + 种子，共 21 张表）均已在平台数据库按顺序执行。变更表结构必须新增带时间戳前缀的迁移文件，禁止改动已执行的历史迁移；新环境部署必须按时间戳顺序执行全部迁移
 - **数据库弹性封装**：`src/lib/supabase-client.ts` 提供 `withDatabaseRetry`（默认 3 次、300ms 指数退避，仅重试网络类/5xx 错误），`src/lib/repository.ts` 所有读路径已接入，写路径保持单次执行；`/api/health/integrations` 的 `database` 字段为真实连通性探测（`connected`/`configured_unreachable`/`waiting_for_coze_database`）

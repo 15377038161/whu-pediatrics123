@@ -1,16 +1,52 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { ArrowLeft, Clock3, MessageSquareText, Stethoscope } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { ReportView } from '@/components/report-view';
-import { AgentRepository } from '@/lib/repository';
-import { requirePageUser } from '@/lib/page-auth';
+import type { SessionState, TrainingReport } from '@/domain/agent';
+import type { TeacherStudentSummary } from '@/lib/repository';
 import { formatTime } from '@/lib/format-date';
+import { authedFetch, AuthedApiError } from '@/lib/authed-api';
 
-export default async function TeacherSessionPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requirePageUser('teacher');
-  let detail;
-  try {
-    detail = await new AgentRepository(user).getTeacherSession((await params).id);
-  } catch { notFound(); }
+interface TeacherSessionDetail {
+  student: TeacherStudentSummary;
+  session: SessionState;
+  report: TrainingReport | null;
+}
+
+/**
+ * 教师查看学生训练全过程（客户端化）：数据经 /api/teacher/sessions/[id]（教师鉴权），
+ * 页面 HTML 不含学生数据；404 时 notFound()。
+ */
+export default function TeacherSessionPage({ params }: { params: Promise<{ id: string }> }) {
+  const [state, setState] = useState<{ detail?: TeacherSessionDetail; error?: string }>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    params
+      .then(({ id }) => authedFetch<TeacherSessionDetail>(`/api/teacher/sessions/${encodeURIComponent(id)}`))
+      .then((detail) => {
+        if (!cancelled) setState({ detail });
+      })
+      .catch((reason: unknown) => {
+        if (cancelled) return;
+        if (reason instanceof AuthedApiError && reason.code === 'SESSION_NOT_FOUND') notFound();
+        setState({ error: reason instanceof Error ? reason.message : '训练记录读取失败' });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [params]);
+
+  if (state.error) {
+    return <div className="empty-state" role="alert"><p>{state.error}</p></div>;
+  }
+  if (!state.detail) {
+    return <div className="empty-state" role="status"><p>正在读取训练记录…</p></div>;
+  }
+
+  const detail = state.detail;
   const questions = detail.session.messages.filter((message) => message.actor === 'student' || message.actor === 'child' || message.actor === 'parent');
   return <>
       <a className="text-link" href="/teacher"><ArrowLeft size={14} /> 返回学生列表</a>

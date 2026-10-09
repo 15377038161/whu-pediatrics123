@@ -4,9 +4,10 @@
  * 超星 OAuth2.0 一键登录（平台官方契约）。
  * 端点：authorize-url / checklogin / exchange 全走平台代理（/v1/api/coder/proxy/），
  * 凭证只在服务端，前端只拿跳转地址与 session JSON。
- * session 落地：浏览器不持有 anonKey（平台不暴露真实节点地址），
- * exchange 结果 POST 本应用 /api/auth/callback/platform-session，由服务端 setSession 写 httpOnly cookie。
- * 契约来源：supabase-auth 技能 references/chaoxing-oauth.md。
+ * session 落地：浏览器官方 SDK setSession（localStorage，SDK 自动刷新，多标签共享）；
+ * 业务鉴权经 Authorization → x-sandbox-authorization 头通道（supabase-auth 技能 verify-session.md 契约），
+ * 网关剥离 Cookie，服务端 httpOnly cookie 会话在网关域名下不可达（diag 实证）。
+ * 契约来源：supabase-auth 技能 references/chaoxing-oauth.md / verify-session.md。
  */
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_CODER_PROJECTS_ID;
@@ -135,13 +136,15 @@ async function doExchange(code: string, userinfo?: string): Promise<LoginResult>
     return { success: false, error: body.message || '登录链接已失效，请重新登录' };
   }
   const session = (await res.json()) as { access_token: string; refresh_token: string };
-  // session 落地走本应用服务端路由（写 httpOnly cookie），浏览器不持有 anonKey。
-  const persist = await fetch('/api/auth/callback/platform-session', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(session),
+  // session 落地：浏览器官方 SDK setSession（localStorage 持久化，SDK 自动刷新）。
+  // 网关剥离 Cookie，服务端 httpOnly cookie 会话在网关域名下不可达；鉴权改走
+  // Authorization → x-sandbox-authorization 头通道（authedFetch），此处不再 POST platform-session。
+  const { getBrowserSupabase } = await import('@/lib/supabase-browser');
+  const { error } = await getBrowserSupabase().auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
   });
-  if (!persist.ok) {
+  if (error) {
     cleanOAuthParamsFromUrl();
     return { success: false, error: '会话建立失败，请重新登录' };
   }

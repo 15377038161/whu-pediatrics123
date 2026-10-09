@@ -1,12 +1,41 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { ArrowRight, FileText, Sparkles, TrendingUp } from 'lucide-react';
 import { findPublicCase } from '@/domain/case-catalog';
 import { formatDateTime } from '@/lib/format-date';
-import { AgentRepository } from '@/lib/repository';
-import { requirePageUser } from '@/lib/page-auth';
+import type { TrainingReport } from '@/domain/agent';
+import { authedFetch } from '@/lib/authed-api';
 
-export default async function ReportsPage() {
-  const user = await requirePageUser('student');
-  const reports = await new AgentRepository(user).listOwnReports();
+/**
+ * 学情报告列表（客户端化）：数据经 authedFetch，页面 HTML 不含用户数据。
+ */
+export default function ReportsPage() {
+  const [reports, setReports] = useState<TrainingReport[] | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    authedFetch<TrainingReport[]>('/api/reports')
+      .then((list) => {
+        if (!cancelled) setReports(list);
+      })
+      .catch((reason: unknown) => {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : '报告读取失败');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (error) {
+    return <div className="empty-state" role="alert"><p>{error}</p><Link className="btn btn-primary" href="/student/reports">重试</Link></div>;
+  }
+  if (!reports) {
+    return <div className="empty-state" role="status"><p>正在读取学情档案…</p></div>;
+  }
+
   const average = reports.length ? Math.round(reports.reduce((sum, report) => sum + report.totalScore, 0) / reports.length) : null;
   const best = reports.length ? Math.max(...reports.map((report) => report.totalScore)) : null;
   const change = reports.length > 1 ? reports[0].totalScore - reports[1].totalScore : null;

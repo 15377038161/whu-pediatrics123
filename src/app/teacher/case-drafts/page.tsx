@@ -1,11 +1,11 @@
 import { CaseDraftImporter } from '@/components/case-draft-importer';
-import { requirePageUser } from '@/lib/page-auth';
-import { isTeacherByWhitelist } from '@/lib/case-draft-import';
-import { redirect } from 'next/navigation';
 
-export default async function TeacherCaseDraftsPage() {
-  const user = await requirePageUser('teacher');
-  if (!user.accessToken || !(await isTeacherByWhitelist(user.accessToken))) redirect('/teacher');
+/**
+ * 教师病例草稿导入页：身份/角色由布局门控负责；
+ * 白名单（app_is_teacher）校验在 API 层强制执行（requireAuth 'teacher' AND 数据库白名单），
+ * 非白名单教师的任何读写都会被 /api/teacher/case-drafts 以 403 拒绝。
+ */
+export default function TeacherCaseDraftsPage() {
   return <main className="teacher-case-drafts">
     <a className="text-link" href="/teacher">返回教师工作台</a>
     <p className="eyebrow">病例草稿导入 · 教师受限</p>
