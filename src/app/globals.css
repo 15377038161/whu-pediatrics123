@@ -96,6 +96,32 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .login-actions { display: grid; gap: 10px; }
 .login-panel .login-actions { margin-top: 22px; }
 
+/* ── 双端登录入口（登录入口升级） ── */
+.login-entries { display: grid; gap: 14px; }
+.login-entries-lead { margin: 0; color: var(--muted); font-size: 13px; }
+.login-entry-grid { display: grid; gap: 12px; }
+.login-entry-card { position: relative; overflow: hidden; min-height: 116px; display: grid; align-content: start; gap: 6px; padding: 18px 48px 18px 18px; text-align: left; border: 1px solid rgba(25,117,104,.18); border-radius: 20px 20px 30px 20px; background: var(--white); box-shadow: 0 12px 30px rgba(23,60,60,.07); cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.login-entry-card:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(23,60,60,.1); }
+.login-entry-card:focus-visible { outline: 3px solid rgba(25,117,104,.4); outline-offset: 2px; }
+.login-entry-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--pine); }
+.login-entry-card-student::before { background: var(--brick); }
+.login-entry-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px 14px 20px 14px; color: var(--pine-dark); background: var(--mint); }
+.login-entry-card-student .login-entry-icon { color: var(--brick); background: #fff2ed; }
+.login-entry-title { font-family: var(--font-display); font-size: 19px; font-weight: 800; letter-spacing: .03em; color: var(--ink); }
+.login-entry-desc { color: var(--muted); font-size: 12px; }
+.login-entry-arrow { position: absolute; right: 16px; top: 18px; color: var(--pine); }
+.login-entry-card-student .login-entry-arrow { color: var(--brick); }
+
+.login-entry-panel { display: grid; gap: 12px; }
+.login-entry-back { width: fit-content; min-height: 36px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border: 1px solid rgba(23,60,60,.18); border-radius: 999px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; }
+.login-entry-back:hover { border-color: var(--pine); color: var(--pine-dark); background: var(--mint); }
+.login-entry-hint { margin: 0; color: var(--muted); font-size: 12.5px; }
+.login-divider { display: flex; align-items: center; gap: 10px; margin: 8px 0 2px; color: #78908b; font-size: 12px; }
+.login-divider::before, .login-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.login-form { display: grid; gap: 12px; }
+.login-field input { width: 100%; min-height: var(--tap); border: 1px solid var(--line); border-radius: 12px; background: var(--white); color: var(--ink); padding: 9px 12px; font: inherit; }
+.login-field input:focus-visible { outline: 2px solid rgba(25,117,104,.45); outline-offset: 1px; border-color: var(--pine); }
+
 .btn { min-height: var(--tap); border: 1px solid transparent; border-radius: 13px; padding: 10px 16px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; font-weight: 800; transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
 .btn:hover { transform: translateY(-1px); }
 .btn:disabled { cursor: not-allowed; opacity: .55; transform: none; }
@@ -107,15 +133,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .btn-block { width: 100%; }
 .icon-btn { width: var(--tap); height: var(--tap); border-radius: 50%; border: 1px solid var(--line); color: var(--ink); background: var(--white); display: inline-grid; place-items: center; }
 
-.role-switch-float { position: fixed; top: 12px; right: 12px; z-index: 50; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; background: var(--pine); color: #fff; font-size: 12px; font-weight: 700; box-shadow: 0 6px 18px rgba(25,117,104,.28); cursor: pointer; }
-
 .app-frame { min-height: 100svh; padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 .topbar { position: sticky; top: 0; z-index: 40; height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: rgba(255,255,255,.9); border-bottom: 1px solid var(--line); backdrop-filter: blur(18px); }
 .topbar-brand { min-height: var(--tap); display: flex; gap: 10px; align-items: center; font-weight: 800; }
 .mini-seal { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--pine); border-radius: 11px 11px 15px 11px; color: var(--pine-dark); background: var(--mint); font-family: var(--font-display); font-size: 12px; transform: rotate(-2deg); }
 .topbar-user { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-.role-switch { min-height: 36px; padding: 6px 10px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #cde4db; border-radius: 999px; color: var(--pine-dark); background: #eff9f5; font-size: 12px; font-weight: 900; }
-.role-switch:hover { border-color: #9bcfbd; background: #e2f4ed; }
 .avatar { width: 36px; height: 36px; overflow: hidden; border: 2px solid white; border-radius: 50%; display: grid; place-items: center; color: var(--pine); background: var(--sky); box-shadow: 0 0 0 1px var(--line); font-size: 13px; font-weight: 800; }
 .avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .main-content { width: min(100% - 32px, 1240px); margin: 0 auto; padding: 22px 0 32px; }
@@ -558,8 +580,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 @media (max-width: 699px) {
   .topbar-user { gap: 7px; }
-  .role-switch { padding: 6px 8px; }
-  .role-switch[disabled] { opacity: .6; cursor: wait; }
   .hint-popover { right: auto; left: 0; width: min(220px, calc(100vw - 156px)); border-radius: 14px 14px 14px 4px; }
   .hint-popover::after { right: auto; left: 15px; }
   .landing-hero-row { min-height: 260px; display: flex; padding-right: 0; }

@@ -1,21 +1,18 @@
-import { cookies } from 'next/headers';
 import Image from 'next/image';
-import { ArrowRight, HeartPulse, MessageCircleHeart, Sparkles, Stethoscope } from 'lucide-react';
-import { PlatformChaoxingLogin } from '@/components/platform-chaoxing-login';
-import { LoginSelfHeal } from '@/components/login-self-heal';
-import { isPreviewEnabled } from '@/lib/preview-auth';
+import { HeartPulse, MessageCircleHeart, Sparkles, Stethoscope } from 'lucide-react';
+import { LoginEntries } from '@/components/login-entries';
 
 /**
- * 登录页：
- * - SSR 不再做会话重定向（网关剥离 Cookie，服务端永远读不到正式会话）；
- * - 已登录用户由客户端 LoginSelfHeal 检测 SDK 会话（localStorage）后按角色自动跳转；
- * - 预览入口仅本地直连开放（isPreviewEnabled 读 cookie/env，网关域名下不可达）。
+ * 登录起始页（登录入口升级）：
+ * - 独立显眼的双端入口：教师端入口 / 学生端入口（组件内选择后进入登录面板）；
+ * - 登录面板自主选择：一键超星登录 或 邮箱密码登录（Auth 配置 external_email_enabled=true）；
+ * - 入口选择不预授权角色：角色由服务端 /api/auth/me 按真实身份（超星白名单/app_metadata）判定；
+ * - 旧平行入口（评委预览直链）与旧单按钮登录面板已按需求移除；
+ * - SSR 不做会话重定向（网关剥离 Cookie），已登录检测由 LoginEntries 挂载自愈完成。
  */
-export default async function LoginPage() {
-  const preview = isPreviewEnabled() || Boolean((await cookies()).get('luojia_preview_role')?.value);
+export default function LoginPage() {
   return (
     <main className="landing" id="main-content">
-      <LoginSelfHeal />
       <div className="landing-scene" aria-hidden="true">
         <span className="scene-orb scene-orb-one" />
         <span className="scene-orb scene-orb-two" />
@@ -47,17 +44,8 @@ export default async function LoginPage() {
         </section>
         <section className="login-panel" aria-labelledby="login-title">
           <span className="login-panel-icon"><Stethoscope size={21} /></span>
-          <h2 className="section-title" id="login-title">进入儿科临床学习空间</h2>
-          <div className="login-actions">
-            <PlatformChaoxingLogin />
-            {preview && (
-              <>
-                <a className="btn btn-secondary btn-block" href="/api/preview/login?role=student">评委预览 · 学生端</a>
-                <a className="btn btn-quiet btn-block" href="/api/preview/login?role=teacher">评委预览 · 教师只读端</a>
-              </>
-            )}
-          </div>
-          <p className="login-footnote">教学模拟 · 非真实医疗建议 <ArrowRight size={12} /></p>
+          <LoginEntries />
+          <p className="login-footnote">教学模拟 · 非真实医疗建议</p>
         </section>
       </div>
     </main>

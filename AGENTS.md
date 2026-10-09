@@ -18,7 +18,7 @@
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── api/                # API Routes（agent/auth/cases/health/internal/preview/quiz/reports/sessions/teacher/tts）
+│   ├── api/                # API Routes（agent/auth/cases/diag/engagement/health/internal/quiz/reports/sessions/teacher）
 │   ├── about/              # 关于页
 │   ├── auth/               # 认证页
 │   ├── student/            # 学生端页面
@@ -97,7 +97,7 @@ tests/                      # 测试
 - 移动端优先设计，桌面端响应式重排
 - 所有密钥仅配置在环境变量中，不得进入 Git/截图/日志
 - 本地预览使用进程内存保存会话，正式环境必须启用 Coze 数据库
-- 游客（评委预览）登录入口由 `ENABLE_UI_PREVIEW=true` 显式开启，任何环境（含生产）均可用；默认关闭。部署环境需在平台环境变量中配置该开关（`.env`/`.env.local` 均被 gitignore，不会进入部署）
+- 旧游客（评委预览）登录入口已随登录入口升级删除（2026-10-15）：起始页改为双端入口卡（教师端/学生端）+ 邮箱密码/超星登录，入口意图不预授权角色，角色由服务端 `/api/auth/me` 判定；`src/lib/preview-auth.ts` 仅保留 HMAC Cookie 读路径（logout/health 检查引用），`ENABLE_UI_PREVIEW` 不再控制登录入口
 
 ## 安全测试约定（2026-10-12 凭据泄露处置后固化）
 

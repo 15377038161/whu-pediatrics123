@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "preinstall": "only-allow pnpm",
-    "dev": "next dev -H 127.0.0.1 -p 8765",
+    "dev": "next dev -H 0.0.0.0 -p ${DEPLOY_RUN_PORT:-5173}",
     "build": "pnpm install --frozen-lockfile && next build && tsup src/server.ts --format cjs --platform node --out-dir dist --external next",
     "start": "node dist/server.js",
     "lint": "eslint . --quiet",
