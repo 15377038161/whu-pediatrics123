@@ -98,6 +98,16 @@ tests/                      # 测试
 - 本地预览使用进程内存保存会话，正式环境必须启用 Coze 数据库
 - 游客（评委预览）登录入口由 `ENABLE_UI_PREVIEW=true` 显式开启，任何环境（含生产）均可用；默认关闭。部署环境需在平台环境变量中配置该开关（`.env`/`.env.local` 均被 gitignore，不会进入部署）
 
+## 安全测试约定（2026-10-12 凭据泄露处置后固化）
+
+- **凭据不得出现在 CLI 参数/命令文本/console 输出/截图中**（含 access_token/refresh_token/密码）。验收脚本输出仅限脱敏计数、状态码、布尔与 sessionId 等非秘密定位符。
+- **凭据输入通道**仅两种：0600 权限临时 JSON 文件（`--cred-file`）或受控环境变量（如 `RLS_PROBE_*`/`PERSIST_PROBE_*`，缺省 fail-closed 退出，无默认回退）。参考 `scripts/probe-credentials.ts` 与 `scripts/verify-restart-persistence.ts`。
+- **跨进程只传非秘密定位符**：凭据文件路径、sessionId、脱敏指纹。token 临时落盘必须 `0o600`，用后即删（业务证据保留，凭据不保留）。
+- **测试账号治理**：清理/验证类脚本复用既有探针账号（不再默认 signup 扩散测试用户）；一次性诊断脚本跑完即删，不入 git。
+- **会话收尾**：真实 Auth 测试结束对测试账号执行 `signOut(scope=global)` 撤销全部 refresh 会话；不删账号/业务数据、不修改 JWT 策略、不动教师白名单。
+- **access JWT 边界（如实表述）**：平台无单令牌 access 撤销机制（无状态 JWT，TTL 3600s），signOut 仅撤销 refresh；文档禁止声称"退出立即撤销所有 access token"。
+- **泄露事件处理**：先官方通道撤销（signOut global + 验证 refresh 被拒），再修脚本凭据通道，秘密扫描仅输出路径+计数/类型（禁止显示匹配内容）；已进入聊天日志的历史泄露不可通过删本地文件消除，必须如实记录。
+
 ## 常见问题和预防
 
 - `server.ts` 中默认绑定 `127.0.0.1`，预览时需通过 `--hostname 0.0.0.0` 覆盖

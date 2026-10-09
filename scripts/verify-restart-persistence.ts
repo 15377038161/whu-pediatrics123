@@ -1,20 +1,28 @@
 /* eslint-disable no-console */
 /**
  * 重启持久化验证（两阶段、两独立进程，等价于服务重启后的 DB 恢复路径）：
- * 背景：当前 dev 服务为 next dev（常驻进程），平台禁止手动重启；服务端本就无内存会话状态
- * （AgentRepository 全部读写走真实 DB），因此"重启后可恢复"等价于"全新进程不带任何内存
- * 状态，仅凭学生 JWT + DB 即可完整恢复会话"。验证方式：
- * - 阶段 1（默认，经 dev server HTTP）：真实学生 signup -> 建会话 -> 若干回合（问诊+查体，
- *   使 state 非初始形态）-> 记录会话指纹（caseId/stage/status/stateVersion/facts数/来源版本）；
- * - 阶段 2（--restore，独立 tsx 进程直连 DB，不经 dev server）：同一学生 JWT 从
- *   training_sessions 读回 state，逐字段比对指纹，证明跨进程可恢复。
+ * - 阶段 1（默认，经 dev server HTTP）：真实学生登录（凭据见下）-> 建会话 -> 若干回合
+ *   （问诊+查体，使 state 非初始形态）-> 记录会话指纹 -> 将 access/refresh token 写入
+ *   0600 临时凭据文件，跨进程仅传【非秘密定位符】（凭据文件路径 + sessionId + 指纹）；
+ * - 阶段 2（--restore <authFile> <sessionId> <fingerprintJson>，独立 tsx 进程直连 DB，
+ *   不经 dev server）：从凭据文件读 token 恢复会话逐字段比对，结束后 signOut(global)
+ *   撤销本次 refresh 会话并删除凭据文件。
+ *
+ * 凭据安全约定（本轮泄露处置后固化）：
+ * - 凭据不得出现在 CLI 参数 / 命令文本 / console 输出 / 截图中；
+ * - 输入通道仅两种：--cred-file <0600 JSON 文件 {email,password}>（推荐）或
+ *   PERSIST_PROBE_EMAIL / PERSIST_PROBE_PWD 环境变量；两者皆缺则 fail-closed 退出；
+ * - 不再默认 signup 新账号（复用既有测试账号，避免清理类验证扩散测试用户）；
+ * - 阶段间传递的只有：凭据文件路径（受 0600 保护、阶段 2 删除）、sessionId、脱敏指纹。
  * 运行：
- *   pnpm tsx scripts/verify-restart-persistence.ts
- *   pnpm tsx scripts/verify-restart-persistence.ts --restore <token> <sessionId> <fingerprintJson>
+ *   pnpm tsx scripts/verify-restart-persistence.ts --cred-file /path/to/creds.json
+ *   pnpm tsx scripts/verify-restart-persistence.ts --restore <authFile> <sessionId> <fingerprintJson>
  */
-// 模块标记：tsconfig include **/*.ts 使本文件参与 next build 类型检查，
-// 无 import/export 的脚本处于全局作用域，与其他脚本的同名顶层常量冲突。
 export {};
+
+import { readFileSync, writeFileSync, unlinkSync, chmodSync, existsSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+
 const baseUrl = process.env.RESTORE_BASE_URL ?? 'http://127.0.0.1:5173';
 const SUPA_URL = process.env.CODER_SUPABASE_URL as string;
 const SUPA_ANON_KEY = process.env.CODER_SUPABASE_ANON_KEY as string;
@@ -77,19 +85,64 @@ function fingerprintFromDb(row: { id: string; case_id: string; stage: string; st
 }
 
 function turnBody(sessionId: string, type: string, data: unknown): string {
-  return JSON.stringify({ sessionId, clientEventId: crypto.randomUUID(), event: { type, data } });
+  return JSON.stringify({ sessionId, clientEventId: randomUUID(), event: { type, data } });
+}
+
+// 受控读取登录凭据：仅 --cred-file（0600 JSON）或环境变量，fail-closed，绝不来自命令行明文
+function loadCredentials(argv: string[]): { email: string; password: string } {
+  const credFileIdx = argv.indexOf('--cred-file');
+  if (credFileIdx >= 0 && argv[credFileIdx + 1]) {
+    const raw = JSON.parse(readFileSync(argv[credFileIdx + 1], 'utf8')) as { email?: string; password?: string };
+    if (!raw.email || !raw.password) throw new Error('凭据文件缺少 email/password');
+    return { email: raw.email, password: raw.password };
+  }
+  if (process.env.PERSIST_PROBE_EMAIL && process.env.PERSIST_PROBE_PWD) {
+    return { email: process.env.PERSIST_PROBE_EMAIL, password: process.env.PERSIST_PROBE_PWD };
+  }
+  throw new Error('缺少凭据：请用 --cred-file <0600 JSON {email,password}> 或 PERSIST_PROBE_EMAIL/PERSIST_PROBE_PWD 环境变量（凭据不得出现在命令文本中）');
+}
+
+interface AuthTokens { access_token: string; refresh_token: string }
+
+async function login(email: string, password: string): Promise<AuthTokens> {
+  const resp = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { apikey: SUPA_ANON_KEY, 'X-Instance-ID': SUPA_TENANT_ID, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const body = (await resp.json()) as AuthTokens & { error_code?: string; msg?: string };
+  if (!resp.ok || !body.access_token || !body.refresh_token) throw new Error(`login 失败: ${body.error_code ?? resp.status}`);
+  return { access_token: body.access_token, refresh_token: body.refresh_token };
+}
+
+async function signOutGlobal(tokens: AuthTokens): Promise<boolean> {
+  const resp = await fetch(`${SUPA_URL}/auth/v1/logout?scope=global`, {
+    method: 'POST',
+    headers: { apikey: SUPA_ANON_KEY, 'X-Instance-ID': SUPA_TENANT_ID, 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access_token}` },
+  });
+  return resp.ok;
+}
+
+// 0600 凭据文件写入（token 仅落受保护临时文件，不进命令行/console）
+function writeAuthFile(tokens: AuthTokens): string {
+  const authFile = `/tmp/.persist-probe-auth-${randomUUID()}.json`;
+  writeFileSync(authFile, JSON.stringify(tokens), { mode: 0o600 });
+  chmodSync(authFile, 0o600);
+  return authFile;
 }
 
 async function main(): Promise<void> {
   // ===== 阶段 2：独立进程直连 DB 恢复（模拟重启后无内存状态的新进程） =====
   if (process.argv[2] === '--restore') {
-    const token = process.argv[3];
+    const authFile = process.argv[3];
     const sessionId = process.argv[4];
-    const expected = JSON.parse(process.argv[5]) as Fingerprint;
-    if (!token || !sessionId || !expected) throw new Error('--restore 需要 <token> <sessionId> <fingerprintJson>');
+    const expected = process.argv[5] ? (JSON.parse(process.argv[5]) as Fingerprint) : undefined;
+    if (!authFile || !sessionId || !expected) throw new Error('--restore 需要 <authFile> <sessionId> <fingerprintJson>（均为非秘密定位符）');
+    if (!existsSync(authFile)) throw new Error('凭据文件不存在');
+    const tokens = JSON.parse(readFileSync(authFile, 'utf8')) as AuthTokens;
     const { createClient } = await import('@supabase/supabase-js');
     const db = createClient(SUPA_URL, SUPA_ANON_KEY, {
-      global: { headers: { 'X-Instance-ID': SUPA_TENANT_ID, Authorization: `Bearer ${token}` } },
+      global: { headers: { 'X-Instance-ID': SUPA_TENANT_ID, Authorization: `Bearer ${tokens.access_token}` } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data, error } = await db.from('training_sessions').select('id,case_id,stage,status,state').eq('id', sessionId).maybeSingle();
@@ -106,21 +159,19 @@ async function main(): Promise<void> {
       && restored.sourceSnapshotVersion === expected.sourceSnapshotVersion
       && restored.factsCount === expected.factsCount
       && restored.messagesCount === expected.messagesCount;
-    console.log(JSON.stringify({ phase: 'restore(独立进程·无内存状态)', restored, expected, verdict: same ? 'PERSISTENCE_PASS' : 'PERSISTENCE_FAIL' }, null, 1));
+    // 收尾：撤销本次 refresh 会话 + 删除凭据文件（业务证据已在上方输出，不随凭据销毁）
+    const revoked = await signOutGlobal(tokens);
+    let cleaned = false;
+    try { unlinkSync(authFile); cleaned = true; } catch { /* 尽力清理 */ }
+    console.log(JSON.stringify({ phase: 'restore(独立进程·无内存状态)', restored, expected, verdict: same ? 'PERSISTENCE_PASS' : 'PERSISTENCE_FAIL', signOutGlobal: revoked, authFileCleaned: cleaned }, null, 1));
     if (!same) process.exitCode = 1;
     return;
   }
 
-  // ===== 阶段 1：经 dev server HTTP 训练并记录指纹 =====
-  const stamp = Date.now();
-  const signupResp = await fetch(`${SUPA_URL}/auth/v1/signup`, {
-    method: 'POST',
-    headers: { apikey: SUPA_ANON_KEY, 'X-Instance-ID': SUPA_TENANT_ID, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: `persist-probe-${stamp}@luojia.dev`, password: `Persist-${stamp}-Aa1!` }),
-  });
-  const auth = (await signupResp.json()) as { access_token: string };
-  if (!auth.access_token) throw new Error('signup 失败');
-  const token = auth.access_token;
+  // ===== 阶段 1：经 dev server HTTP 训练并记录指纹（凭据经受控通道，输出零凭据） =====
+  const creds = loadCredentials(process.argv);
+  const tokens = await login(creds.email, creds.password);
+  const token = tokens.access_token;
 
   const created = await api<Record<string, unknown>>('/api/sessions', {
     method: 'POST', token, body: JSON.stringify({ mode: 'guided', caseId: 'teacher-川崎病' }),
@@ -136,10 +187,13 @@ async function main(): Promise<void> {
   if (latest.status !== 200 || !latest.body.data) throw new Error(`读回会话失败: ${latest.status} ${latest.body.error?.code ?? ''}`);
   const fp = fingerprintFromApi(latest.body.data);
   if (fp.messagesCount === 0) throw new Error('回合未生效，指纹无区分度');
+
+  // token 写入 0600 临时文件；阶段 2 命令只含非秘密定位符（文件路径/sessionId/脱敏指纹）
+  const authFile = writeAuthFile(tokens);
   console.log(`phase1(经HTTP) 训练完成: ${JSON.stringify(fp)}`);
-  // 输出阶段 2 命令（在新的 shell/进程执行 = 模拟服务重启后另一进程从 DB 恢复）
-  const safe = (v: string) => `'${v.replace(/'/g, "'\\''")}'`;
-  console.log(`next: pnpm tsx scripts/verify-restart-persistence.ts --restore ${safe(token)} ${safe(sessionId)} ${safe(JSON.stringify(fp))}`);
+  console.log(`authFile(0600): ${authFile}`);
+  console.log(`next: pnpm tsx scripts/verify-restart-persistence.ts --restore ${authFile} ${sessionId} '${JSON.stringify(fp).replace(/'/g, "'\\''")}'`);
+  console.log('注：阶段 2 结束将自动 signOut(global) 撤销本次 refresh 会话并删除凭据文件');
 }
 
 void main().catch((e: unknown) => { console.error((e as Error).message); process.exitCode = 1; });
