@@ -2,7 +2,8 @@ import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, S
 import { createInitialSession, refreshSourceSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
 import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client';
-import { ensureCaseSnapshot, getSnapshotVersion, restoreCaseSnapshotFacts, getDatabaseSnapshotVersion } from '@/lib/case-snapshot';
+import { ensureCaseSnapshot, getSnapshotVersion, restoreCaseSnapshotFacts } from '@/lib/case-snapshot';
+import { resolveTeacherCaseVersion } from '@/lib/case-version-select';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface TeacherStudentSummary {
@@ -107,26 +108,21 @@ export class AgentRepository {
   }
 
   async createSession(mode: SessionMode, caseId?: string, practiceFocus?: PracticeFocus): Promise<SessionState> {
-    // 本地 teaching-cases 缺失时，先预热知识库召回快照（失败降级，不阻塞建会话）。
-    // 教师触发时同时持久化 answers（诊断/原文/媒体，仅教师可读），学生仅持久化教学事实。
+    // 版本选择（权威稳定序，详见 case-version-select.ts）：本地完整审核哈希 > DB 导入版本 > 召回快照。
+    // 防止完整本地材料被绑定零散召回指纹；召回已有不完整版本不能挡住 DB 完整导入版本。
+    // 旧会话不受影响：getSession 按会话已绑定版本恢复，保持不漂移。
     let coldStartVersion: string | null = null;
     if (caseId?.startsWith('teacher-')) {
+      // 本地 teaching-cases 缺失时，先预热知识库召回快照（失败降级，不阻塞建会话）。
+      // 教师触发时同时持久化 answers（诊断/原文/媒体，仅教师可读），学生仅持久化教学事实。
       await ensureCaseSnapshot(caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
-      // 首次加载即绑定快照版本：之后（含重启后）按此版本恢复病例事实，防召回漂移换患者。
-      // 冷启动兜底（本地文件缺失且召回无缓存）：从 DB 持久缓存解析教师导入版本
-      // （case_snapshot_latest_version RPC，仅版本文本无内容）并绑定。
-      let version = getSnapshotVersion(caseId);
-      if (!version && !this.isPreview() && this.actor.accessToken) {
-        version = await getDatabaseSnapshotVersion(caseId, this.actor.accessToken);
-        if (version) {
-          coldStartVersion = version;
-          if (this.actor.role === 'teacher') {
-            // 教师直读恢复（RLS app_is_teacher 放行）：恢复写入进程缓存 sourceId@version，
-            // 随后 createInitialSession 按 DB 导入版本一次成型完整教学事实。
-            await restoreCaseSnapshotFacts(caseId, version, this.actor.accessToken, 'teacher');
-          }
-        }
-      }
+      const resolution = await resolveTeacherCaseVersion(caseId, {
+        accessToken: this.actor.accessToken,
+        role: this.actor.role,
+        isPreview: this.isPreview(),
+      });
+      const version = resolution.version;
+      if (resolution.coldStart) coldStartVersion = version;
       const session = createInitialSession(this.actor.id, mode, caseId, practiceFocus, version);
       if (version) session.sourceSnapshotVersion = version;
       if (this.isPreview()) {

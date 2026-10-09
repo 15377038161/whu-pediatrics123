@@ -57,6 +57,22 @@ export function computeImportVersion(record: TeacherCaseData): string {
   return sha256(shas.join('\n')).slice(0, 16);
 }
 
+/** 本地完整审核版本：读本地受控产物 JSON 并计算内容哈希（完整审核来源的权威稳定版本）。
+ *  文件缺失/schema 无效返回 null（调用方按版本选择规则降级）。
+ *  与导入写入 DB 的版本同算法：本地存在即与 DB 导入版本一致，新会话直接绑定权威版本。 */
+export function getLocalImportVersion(caseId: string): string | null {
+  const sourceId = decodeURIComponent(caseId);
+  if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId)) return null;
+  try {
+    const file = path.join(getKnowledgeRoot(), 'teaching-cases', `${sourceId}.json`);
+    const record = recordSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
+    if (record.caseId !== sourceId) return null;
+    return computeImportVersion(record);
+  } catch {
+    return null;
+  }
+}
+
 /** 教学事实载荷（不含诊断/诊疗经过/原文/媒体）：学生经受控 RPC 可读形态。 */
 function buildFactsPayload(record: TeacherCaseData) {
   return {
@@ -74,6 +90,76 @@ function buildFactsPayload(record: TeacherCaseData) {
 interface ImportOptions {
   /** 限定病例列表（缺省=目录内全部 JSON）。 */
   only?: string[];
+}
+
+export interface CaseImportDiagnostic {
+  caseId: string;
+  localVersion: string | null;
+  dbVersion: string | null;
+  /** imported=本地与DB同版本已装载；pending=本地有DB无；missing_local=本地缺失（冷启动场景）；no_source=两者皆无（资料不足）。 */
+  status: 'loaded' | 'pending' | 'missing_local' | 'no_source';
+}
+
+export interface ImportDiagnostic {
+  total: number;
+  loaded: number;
+  pending: number;
+  missingLocal: number;
+  noSource: number;
+  /** 教师侧健康计数（case_knowledge_health_counts RPC，仅教师可执行）。 */
+  counts: { persistedFactsVersions: number | null; persistedAnswerVersions: number | null; boundTeacherSessions: number | null };
+  cases: CaseImportDiagnostic[];
+}
+
+/** 仅教师诊断：本地完整审核版本与 DB 导入版本覆盖对照（不含任何患者原文/密钥，仅版本指纹与状态枚举）。 */
+export async function diagnoseTeacherCaseImport(accessToken: string): Promise<ImportDiagnostic> {
+  if (!isDatabaseConfigured()) throw new Error('DATABASE_NOT_CONFIGURED');
+  const db = getSupabaseUserClient(accessToken);
+  // DB 侧全部已装载版本指纹（教师 RLS 直读，仅 case_id/version 两列）
+  const { data: dbRows, error } = await db.from('case_snapshot_facts').select('case_id,version');
+  if (error) throw error;
+  const dbLatest = new Map<string, string>();
+  for (const row of (dbRows ?? []) as Array<{ case_id: string; version: string }>) {
+    const current = dbLatest.get(row.case_id);
+    if (!current || row.version > current) dbLatest.set(row.case_id, row.version);
+  }
+  // 教师健康计数（收紧后 RPC：app_is_teacher 守卫，非教师返回 null）
+  let counts: ImportDiagnostic['counts'] = { persistedFactsVersions: null, persistedAnswerVersions: null, boundTeacherSessions: null };
+  try {
+    const { data: rpcData } = await db.rpc('case_knowledge_health_counts');
+    if (rpcData && typeof rpcData === 'object') {
+      const raw = rpcData as { persisted_facts_versions?: number; persisted_answer_versions?: number; bound_teacher_sessions?: number };
+      counts = {
+        persistedFactsVersions: Number(raw.persisted_facts_versions ?? 0),
+        persistedAnswerVersions: Number(raw.persisted_answer_versions ?? 0),
+        boundTeacherSessions: Number(raw.bound_teacher_sessions ?? 0),
+      };
+    }
+  } catch {
+    // RPC 异常保持 null，如实显示未知
+  }
+  // 本地侧：catalog 53 例逐例解析本地版本指纹
+  const cases: CaseImportDiagnostic[] = TEACHER_CASE_CATALOG
+    .filter((item) => item.folder)
+    .map((item) => {
+      const localVersion = getLocalImportVersion(item.id);
+      const dbVersion = dbLatest.get(item.id) ?? null;
+      const status: CaseImportDiagnostic['status'] =
+        localVersion && dbVersion === localVersion ? 'loaded'
+        : localVersion && !dbVersion ? 'pending'
+        : !localVersion && dbVersion ? 'missing_local'
+        : 'no_source';
+      return { caseId: item.id, localVersion, dbVersion, status };
+    });
+  return {
+    total: cases.length,
+    loaded: cases.filter((c) => c.status === 'loaded').length,
+    pending: cases.filter((c) => c.status === 'pending').length,
+    missingLocal: cases.filter((c) => c.status === 'missing_local').length,
+    noSource: cases.filter((c) => c.status === 'no_source').length,
+    counts,
+    cases,
+  };
 }
 
 /** 教师导入主流程：读本地 JSON → schema 校验 → 版本指纹 → 教师身份双写持久缓存。 */
