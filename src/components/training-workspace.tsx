@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentEvent, AgentMessage, AgentTurnResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
 import { getPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 import { CaseResourcePanel } from '@/components/case-resource-panel';
+import { reportSessionEvent } from '@/lib/engagement-tracker';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
   { id: 'triage', label: '接诊与分诊', short: '接诊' }, { id: 'history', label: '问诊与沟通', short: '交流' },
@@ -189,6 +190,17 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       .catch((cause) => setError(cause instanceof Error ? cause.message : '训练加载失败。'))
       .finally(() => setBusy(false));
   }, [initialCaseId, initialSessionId, mode, practiceFocus, router]);
+
+  useEffect(() => {
+    if (!session) return;
+    // 使用统计：训练会话开始事件（服务端真实身份+时间+幂等落库）
+    reportSessionEvent('session_start', session.id);
+    return () => {
+      // 离开训练页（含跳转报告页）上报会话结束；结束事件不驱动有效时长区间
+      reportSessionEvent('session_end', session.id);
+    };
+  }, [session?.id]);
+
 
   useEffect(() => {
     if (!session) return;

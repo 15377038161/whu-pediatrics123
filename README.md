@@ -21,6 +21,7 @@
 - 待外部联调：Coze 项目数据库、超星 APPID/APPKEY/FID、超星表单写入接口。未取得凭据前，界面和文档均保持“等待授权联调”状态。
 - 评委预览身份默认关闭；按部署需要显式配置 `ENABLE_UI_PREVIEW=true` 后可在任意环境开放，生产启用时必须同时配置高强度 `PREVIEW_SIGNING_SECRET`。当前沙箱保持 `ENABLE_UI_PREVIEW=false`，服务端直接拒绝预览身份（`/api/preview/login` 404）。
 - 参考答案收紧（2026-10-10）：`case_snapshot_get_reference` RPC 学生路径一律返回 `null`，诊断/处置对照仅教师可读（RLS 直读保留）。学生 finish 报告无标准答案回填，评分仅为过程证据反馈；正式评分（含诊断对照评分）为阻断项，待平台可信服务端写通道方案选型。已知边界：`state.unlockedEvidence`/`orderedTests` 仍在学生可写范围内，伪造证据码可读到查体/检查类教学事实（不含诊断答案），彻底闭合与正式评分选型同源待定。
+- 使用统计（2026-10-11 最小实现）：学生学习事件埋点（`POST /api/engagement`，服务端真实身份+时间+幂等）与有效活跃区间（仅页面可见且活跃，隐藏页/多标签/挂机不计入，服务端派生）；教师统计页 `/teacher/usage-stats`（明细/汇总/日活趋势/病例模式分布，日期/学生/病例筛选，脱敏 CSV 导出，练习分带"非正式成绩"标识）。口径与验收见 `docs/使用统计口径与验收.md`。
 - 沙箱代理跳转说明：重定向 Location 必须是对外 `https` 绝对 URL（`getRealOrigin` 优先读平台注入的 `CODER_PROJECTS_DOMAIN`），自定义 server 会在出口统一补全相对 Location。禁止回退到网关→容器内部链路的 `x-forwarded-proto`（http），否则浏览器从 https 跟随 http 跳转会触发网关代理前缀双层拼接导致 404。
 
 ## 本地运行

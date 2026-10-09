@@ -44,6 +44,7 @@ tests/                      # 测试
 - `src/lib/agent-engine.ts`：统一智能体状态机与确定性临床规则
 - `src/lib/coze-ai.ts`：Coze 原生 AI 统一接入层（配置、错误分类、超时/重试弹性调用）
 - `src/lib/quiz-pool.ts`：43 题安全题库（取题/判分/复盘全走 SECURITY DEFINER RPC，答案仅判分后可见）
+- 使用统计（2026-10-11 最小实现）：`supabase/migrations/20261011100000_session_engagement_events.sql`（事件表/活跃区间表 + RLS + 4 个教师统计 RPC）；`POST /api/engagement`（学生事件上报：服务端身份+时间+client_event_id 幂等）；`GET /api/teacher/usage-stats`（教师统计：明细/汇总/趋势/分布，`?format=csv` 脱敏导出）；埋点 `src/lib/engagement-tracker.ts` + `src/components/student-engagement.tsx`（学生布局）+ 训练页 session_start/end；教师页 `/teacher/usage-stats`。有效时长口径：仅页面可见且活跃（idle/多标签其他标签/挂机不计入），区间由 `engagement_record_event` RPC 服务端派生，学生无直插权限；统计 join profiles 仅 student 角色（探针/联调账号天然排除）；练习成绩输出带"非正式成绩"标识。专项验收脚本 `scripts/verify-usage-stats.ts`（14 项负测/幂等/越权）；口径与未验收项见 `docs/使用统计口径与验收.md`
 - `src/app/api/quiz/`：题库三路由（`questions` 取题、`answer` 幂等判分、`review` 本人错题复盘）
 - `src/lib/preview-auth.ts`：预览身份 HMAC Cookie（生产 fail-closed：无 `PREVIEW_SIGNING_SECRET` 则禁用）
 - `src/lib/format-date.ts`：确定性日期格式化（固定 `Asia/Shanghai` + 完整 Intl 选项），**组件内禁止裸用 `toLocaleString/toLocaleDateString/toLocaleTimeString`**（SSR/CSR 时区差异会触发 React 水合错误 #418/#423），一律改用 `formatDateTime/formatDate/formatTime`
