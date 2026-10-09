@@ -73,8 +73,9 @@ export function getLocalImportVersion(caseId: string): string | null {
   }
 }
 
-/** 教学事实载荷（不含诊断/诊疗经过/原文/媒体）：学生经受控 RPC 可读形态。 */
-function buildFactsPayload(record: TeacherCaseData) {
+/** 教学事实载荷（不含诊断/诊疗经过/原文/媒体）：学生经受控 RPC 可读形态。
+ *  导出供受控初始化生成器复用（同一 payload 形态，保证 DB 行与教师导入通道完全一致）。 */
+export function buildFactsPayloadForInit(record: TeacherCaseData) {
   return {
     caseId: record.caseId,
     sourceName: record.sourceName,
@@ -211,7 +212,7 @@ export async function importTeacherCases(accessToken: string, options?: ImportOp
       const { error: factsError } = await db
         .from('case_snapshot_facts')
         .upsert(
-          { case_id: caseId, version, source_name: record.sourceName, facts: buildFactsPayload(record) },
+          { case_id: caseId, version, source_name: record.sourceName, facts: buildFactsPayloadForInit(record) },
           { onConflict: 'case_id,version', ignoreDuplicates: true },
         );
       if (factsError) throw factsError;

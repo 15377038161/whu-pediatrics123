@@ -82,6 +82,14 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 
 技术边界：草稿表 `case_draft_imports` 仅教师可读/插入（RLS `app_is_teacher()`），无 UPDATE/DELETE 权限防篡改；API 与页面授权为严格交集（`requireAuth('teacher')` AND 白名单 RPC），fail-closed。3 个无独立来源病种（新生儿脑梗死、支气管肺炎、格林巴利综合征）保持待补状态。验收脚本：`pnpm tsx scripts/verify-case-drafts.ts`（12 项断言：非双重授权探针 403/307 拒绝、学生匿名越权拒绝、RLS 直插直读拒绝、真实服务重启后 fail-closed 不漂移）。**如实声明**：双重授权教师的 HTTP 保存/列表/重启复读在沙箱无样本，标注「未验」；Data API 层（RLS）已单独实测。
 
+## 教师单例上下架（发布状态）
+
+教师在「病例草稿」页底部的「病例发布状态」面板可对 53 份 teacher 病例逐例上架/下架（`/api/teacher/case-publication`，双重授权同上）：
+
+- 语义：无行 = 已发布（缺省开放，兼容现状 53 入口）；下架写入 `case_publication.published=false`，是**可恢复停用**——不删除病例原文（`case_snapshot_*`）与历史训练记录/成绩；重新上架置 true 并保留行作审计痕迹（含操作时间与理由）。
+- 生效范围：学生不能基于已下架病例新建训练（`CASE_UNPUBLISHED` 403），且该病例从学生目录（`/api/cases`）隐藏；教师不受限（可继续预览复核）；学生既有会话的恢复不受影响。病例资料的幂等初始化/导入不写本表，不会重置教师的下架决定。
+- 验收脚本：`pnpm tsx scripts/verify-case53-init-publication.ts --teacher-cred-file ... --student-cred-file ...`（内容保真 53/53 + 上下架守卫闭环 10 项断言）。
+
 资料准备依赖 Python（`scripts/requirements-cases.txt`）、LibreOffice（旧版 Word 转换）、FFmpeg（视频转码）。安装后执行 `pnpm prepare:cases`；流程仅生成教学衍生文件，不修改原件。先前生成的旧版 Word 与 MP4 会被复用。
 
 `pnpm verify:cases` 对本地 `127.0.0.1:8876` 的独立学生预览逐例执行完整流程，并检查素材访问。验证服务应显式设置 `ENABLE_UI_PREVIEW=true`、`ENABLE_AI_FIXTURE=true` 和随机 `PREVIEW_SIGNING_SECRET`；脚本禁止连接远程地址，避免写入正式学情库。详情见覆盖核对文档。

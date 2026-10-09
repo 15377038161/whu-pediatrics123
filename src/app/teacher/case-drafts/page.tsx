@@ -1,5 +1,6 @@
 import { CaseDraftImporter } from '@/components/case-draft-importer';
 import { TeacherCaseImportPanel } from '@/components/teacher-case-import-panel';
+import { CasePublicationPanel } from '@/components/case-publication-panel';
 
 /**
  * 教师病例草稿导入页：身份/角色由布局门控负责；
@@ -15,5 +16,7 @@ export default function TeacherCaseDraftsPage() {
     <CaseDraftImporter />
     <hr />
     <TeacherCaseImportPanel />
+    <hr />
+    <CasePublicationPanel />
   </main>;
 }

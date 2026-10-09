@@ -21,6 +21,7 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('REPORT_NOT_FOUND')) return { code: 'REPORT_NOT_FOUND', message: '未找到报告记录。', retryable: false };
   if (message.includes('CASE_SOURCE_INVALID')) return { code: 'CASE_SOURCE_INVALID', message: '病例资料格式异常，请重新生成教学病例数据。', retryable: false };
   if (message.includes('CASE_NOT_FOUND')) return { code: 'CASE_NOT_FOUND', message: '未找到该病例。', retryable: false };
+  if (message.includes('CASE_UNPUBLISHED')) return { code: 'CASE_UNPUBLISHED', message: '该病例已被教师下架，暂时无法开始新的训练。', retryable: false };
   if (message.includes('SESSION_COMPLETED')) return { code: 'SESSION_COMPLETED', message: '本次训练已经结束。', retryable: false };
   if (message.includes('OSCE_EVENT_STAGE_FORBIDDEN')) return { code: 'OSCE_EVENT_STAGE_FORBIDDEN', message: 'OSCE 模式需按问诊、查体、检查、诊断、处置、沟通的顺序完成当前阶段。', retryable: false };
   if (message.includes('SESSION_EXPIRED')) return { code: 'SESSION_EXPIRED', message: '考站时间已到，系统将提交现有记录。', retryable: false };

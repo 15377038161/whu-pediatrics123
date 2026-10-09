@@ -4,6 +4,7 @@ import { buildReport } from '@/lib/scoring';
 import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client';
 import { ensureCaseSnapshot, getSnapshotVersion, restoreCaseSnapshotFacts } from '@/lib/case-snapshot';
 import { resolveTeacherCaseVersion } from '@/lib/case-version-select';
+import { assertCasePublishedForNewSession } from '@/lib/case-publication';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface TeacherStudentSummary {
@@ -113,6 +114,9 @@ export class AgentRepository {
     // 旧会话不受影响：getSession 按会话已绑定版本恢复，保持不漂移。
     let coldStartVersion: string | null = null;
     if (caseId?.startsWith('teacher-')) {
+      // 学生新建会话守卫：教师已下架（case_publication published=false）的病例拒绝新建训练；
+      // 教师豁免（可继续预览复核）；既有会话恢复不受影响（getSession 不校验发布状态）。
+      await assertCasePublishedForNewSession(caseId, this.actor.role, this.actor.accessToken);
       // 本地 teaching-cases 缺失时，先预热知识库召回快照（失败降级，不阻塞建会话）。
       // 教师触发时同时持久化 answers（诊断/原文/媒体，仅教师可读），学生仅持久化教学事实。
       await ensureCaseSnapshot(caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
