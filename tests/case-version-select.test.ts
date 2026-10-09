@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 import { resolveTeacherCaseVersion, type CaseVersionDeps, type VersionResolution } from '@/lib/case-version-select';
 import { getCase } from '@/domain/case';
+import { getTeacherSourceId } from '@/lib/teacher-case-data';
+import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
+import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 
 /**
  * 教师病例会话版本选择注入式单测（resolveTeacherCaseVersion 依赖注入，不触真实 DB/召回）：
@@ -10,7 +16,22 @@ import { getCase } from '@/domain/case';
  * - 无本地冷启动：绑定 DB 导入版本（coldStart=true）；
  * - 旧会话固定版本：getCase 按绑定版本取事实，版本缺失/不一致返回"资料不足"形态（不漂移）；
  * - 恢复失败不回退：全部来源不可用时 version=null，不绑定漂移数据。
+ *
+ * 夹具环境（修复 2026-10-15）：此前用例 32 隐性依赖被 .gitignore 排除且沙箱缺失的
+ * knowledge/ 目录，且传入从注入式测试复制的假指纹 'localfull0000000001'——永远不等于
+ * 本地文件真实 sha256 指纹，导致 sourceFacts 恒为 null 而失败（夹具错误，非业务版本漂移）。
+ * 现指向 tests/fixtures/knowledge（纯合成教学数据，无患者内容），并用与
+ * computeLocalVersion 相同算法计算夹具真实指纹作为绑定版本。
  */
+process.env.PEDIATRICS_KNOWLEDGE_ROOT = path.resolve(process.cwd(), 'tests', 'fixtures', 'knowledge');
+const FIXTURE_FILE = path.join(process.env.PEDIATRICS_KNOWLEDGE_ROOT, 'teaching-cases', 'teacher-肾病综合征.json');
+
+/** 与 src/lib/teacher-case-data.ts computeLocalVersion 同算法：documents sha256 聚合哈希截 16 位。 */
+function computeFixtureVersion(): string {
+  const record = JSON.parse(readFileSync(FIXTURE_FILE, 'utf8')) as { documents: Array<{ sha256: string }> };
+  const shas = record.documents.map((doc) => doc.sha256).sort();
+  return createHash('sha256').update(shas.join('\n')).digest('hex').slice(0, 16);
+}
 
 interface DepState {
   localVersion: string | null;
@@ -112,15 +133,20 @@ test('预览身份不查询 DB 版本（预览走进程内存，不触碰数据�
 });
 
 test('旧会话固定版本：getCase 按绑定版本取事实，版本不一致返回资料不足形态', () => {
-  // 绑定版本存在（本地权威版本场景）：sourceFacts 完整
-  const withVersion = getCase(CASE_ID, 'localfull0000000001' as string | null);
-  assert.ok(withVersion.sourceFacts, '本地版本可用时 sourceFacts 完整');
-  // 版本不一致（未知指纹）：不回退漂移数据，保持资料不足（sourceFacts 中的事实来自本地文件，
-  // 但冷启动场景下会话绑定版本与本地缺失文件不匹配时 getCachedSnapshot 返回 null）
-  // 此处以无 token 场景验证：getCase 不因传入未知版本而抛错，返回结构完整
+  // 夹具真实指纹（与 computeLocalVersion 同算法计算）作为"本地权威版本一致"的绑定版本
+  const FIXTURE_VERSION = computeFixtureVersion();
+  const withVersion = getCase(CASE_ID, FIXTURE_VERSION);
+  assert.ok(withVersion.sourceFacts, '绑定版本与本地权威版本一致时 sourceFacts 完整');
+  assert.equal(withVersion.sourceFacts?.caseId, 'teacher-肾病综合征', 'sourceFacts 来自绑定的本地事实');
+  // 版本不一致（本地内容已修订/未知指纹）：不回退新版本地数据换患者事实——
+  // readTeacherCaseData 查 getCachedSnapshot 无该版本缓存返回 null，sourceFacts 保持资料不足
   const unknownVersion = getCase(CASE_ID, 'zzzz000000000009');
+  assert.equal(unknownVersion.sourceFacts, null, '版本不一致时 sourceFacts 必须为 null（资料不足，不漂移）');
   assert.equal(unknownVersion.version, 2);
-  assert.ok(unknownVersion);
+  assert.ok(unknownVersion, 'getCase 不因传入未知版本而抛错，返回结构完整');
+  // 无绑定版本（新会话首次加载）：直接使用本地当前权威版本
+  const unbound = getCase(CASE_ID, null);
+  assert.ok(unbound.sourceFacts, '无绑定版本时使用本地当前权威版本（新会话选当前有效版本）');
 });
 
 test('旧会话版本漂移防护：绑定的召回指纹缓存缺失时不回退其他版本', () => {
@@ -129,4 +155,19 @@ test('旧会话版本漂移防护：绑定的召回指纹缓存缺失时不回�
   const unknown = getCase(CASE_ID, 'unknown0000000009');
   assert.equal(typeof unknown.triage, 'string');
   assert.ok(unknown.exams.length >= 1);
+});
+
+test('别名映射一致性：caseId 经 TEACHER_CASE_LINKS 解析到唯一 sourceId（版本缓存键不串）', () => {
+  // 每个映射的 sourceId 都存在于 catalog（folder 有效），别名/子类型经 getTeacherSourceId 归一到同一源；
+  // 未映射的 caseId 解析为自身（decodeURIComponent）。同源别名共用同一 sourceId@version 缓存键，
+  // 不同病例（不同 sourceId）缓存键天然隔离——版本缓存不串。
+  // 多对一映射（多个别名指向同一 sourceId）是有意设计，不视为歧义。
+  for (const [aliasCaseId, link] of Object.entries(TEACHER_CASE_LINKS)) {
+    assert.ok(TEACHER_CASE_CATALOG.some((item) => item.id === link.sourceId && item.folder), `映射目标必须存在于 catalog：${link.sourceId}`);
+    assert.equal(getTeacherSourceId(aliasCaseId), link.sourceId, `别名解析必须稳定：${aliasCaseId}`);
+    // 映射目标不得再是另一条映射的键（解析链无二级跳转，保证一次解析即最终 sourceId）
+    assert.ok(!(link.sourceId in TEACHER_CASE_LINKS), `映射目标不得再被映射（无映射链）：${link.sourceId}`);
+    assert.notEqual(link.sourceId, aliasCaseId, `映射必须改变 caseId（无自环）：${aliasCaseId}`);
+  }
+  assert.equal(getTeacherSourceId(CASE_ID), 'teacher-肾病综合征', '未映射 caseId 解析为自身（decodeURIComponent）');
 });

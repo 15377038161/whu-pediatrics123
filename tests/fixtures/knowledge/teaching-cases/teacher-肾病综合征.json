@@ -1,0 +1,28 @@
+{
+  "caseId": "teacher-肾病综合征",
+  "sourceName": "肾病综合征（测试合成夹具）",
+  "sourceDocument": "tests/fixtures 合成教学数据（非真实病例）",
+  "age": "6岁",
+  "sex": "男",
+  "complaint": "双眼睑及双下肢水肿5天",
+  "sections": {
+    "history": "患儿6岁，双眼睑及双下肢水肿5天，尿中泡沫增多，尿量稍减少，无肉眼血尿，无发热。既往体健。",
+    "exam": "查体：体温36.5℃，脉搏96次/分，呼吸22次/分，血压95/60mmHg。神清，双眼睑水肿，双下肢轻度凹陷性水肿，心肺腹未见异常。",
+    "tests": "辅助检查：尿蛋白3+，24小时尿蛋白定量2.8g，血浆白蛋白22g/L，总胆固醇8.2mmol/L，肾功能正常。",
+    "diagnosis": "诊断：原发性肾病综合征（单纯型）。",
+    "plan": "诊疗经过：予规范糖皮质激素治疗，限盐，适当休息，监测尿量与体重。"
+  },
+  "vitals": { "temperature": 36.5, "heartRate": 96, "respiratoryRate": 22, "spo2": null },
+  "documents": [
+    {
+      "source": "fixture://synthetic-nephrotic-1",
+      "text": "患儿6岁，双眼睑及双下肢水肿5天，尿中泡沫增多。（合成教学夹具，非真实病例）",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0001"
+    },
+    {
+      "source": "fixture://synthetic-nephrotic-2",
+      "text": "查体：双眼睑水肿，双下肢轻度凹陷性水肿。（合成教学夹具，非真实病例）",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0002"
+    }
+  ]
+}

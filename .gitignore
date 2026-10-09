@@ -20,6 +20,9 @@ __pycache__/
 .codegraph/
 assets/
 knowledge/
+# 测试夹具例外：版本契约测试的合成教学数据（无患者内容），防止 knowledge/ 目录规则误伤
+!tests/fixtures/knowledge/
+!tests/fixtures/knowledge/**
 docs/实施方案/病例知识库资源索引.json
 .workbuddy/
 *.pdf
