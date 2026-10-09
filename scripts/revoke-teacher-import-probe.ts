@@ -1,10 +1,13 @@
 export {};
 
-/** 一次性授权撤销验证脚本（探针自身凭据，非角色提升）：
- * 1. 白名单条目已删除后，验证 app_is_teacher=false（教师权限已撤销）；
- * 2. signOut(global) 注销该探针全部会话（refresh token 全部失效）；
- * 3. 验证教师 API（/api/teacher/case-publication）对其不再可达（403）；
- * 4. 0600 凭据文件用后删除（凭据即失效：密码未外泄，token 全撤销）。
+/** 一次性授权撤销验证脚本（探针自身凭据，非角色提升）。
+ * 实际执行情况（2026-10-14，如实记录）：
+ * - 白名单条目删除（db_execute 平台管理通道）：已完成，app_is_teacher 谓词对该账号恒为 false；
+ * - 本脚本其余步骤（signOut global 会话注销、API 403 复验、凭据文件删除）：**未执行**——
+ *   /tmp 凭据文件已被系统清理，密码为进程内随机生成从未落盘，探针自身凭据不可再获得。
+ *   因此只能声称"教师白名单已撤销"；账号会话/refresh token 未确认注销（存活 JWT 理论上
+ *   在 TTL 内仍可用其学生权限，教师特权已被 RLS 谓词切断，不受影响）。
+ * 保留脚本原步骤作为撤销完成时的标准流程模板（供未来具备凭据时执行）。
  * 不删除账号、不动业务数据（case_snapshot_facts/answers 与 case_publication 审计行保留）。
  * 运行：pnpm tsx scripts/revoke-teacher-import-probe.ts */
 import { readFileSync, unlinkSync } from 'node:fs';

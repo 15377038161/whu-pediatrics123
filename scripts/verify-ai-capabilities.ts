@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 /**
- * AI 能力实测：文本 LLM + TTS 合成（经 getAIConfig 的 CODER_CODING_* 凭据，不输出密钥）。
+ * AI 能力实测：文本 LLM + ASR 能力核验（经 getAIConfig 的 CODER_CODING_* 凭据，不输出密钥）。
+ * TTS 已由用户取消（2026-10-15），相关实测移除。
  * export {} 显式声明本文件为 ES 模块，避免与其它无 import 的脚本共享全局作用域导致
  * "Duplicate function implementation"（main 重名）构建失败。
  */
@@ -27,31 +28,16 @@ async function main() {
     console.log(`LLM实测: 失败 ${error instanceof Error ? error.message : String(error)}`.slice(0, 200));
   }
 
-  // 2. TTS 实测
-  try {
-    const { TTSClient } = await import('coze-coding-dev-sdk');
-    const tts = new TTSClient(config);
-    const resp = await tts.synthesize({
-      uid: `probe-${Date.now()}`,
-      text: '你好，这是语音合成测试。',
-      speaker: 'zh_female_xiaohe_uranus_bigtts',
-      audioFormat: 'mp3',
-      sampleRate: 24000,
-    });
-    const audioResp = await fetch(resp.audioUri);
-    const buf = Buffer.from(await audioResp.arrayBuffer());
-    console.log(`TTS实测: 成功 audioUri状态=${audioResp.status} 音频字节数=${buf.length}`);
-  } catch (error) {
-    console.log(`TTS实测: 失败 ${error instanceof Error ? error.message : String(error)}`.slice(0, 300));
-  }
-
-  // 3. ASR 能力核验（仅类型，不做长音频调用）
+  // 2. ASR 状态核验（仅记录契约与实测定性，不做语音调用）
+  //    口径（2026-10-15）：ASR 已取消交付。旧 coze-coding-dev-sdk 的 ASRClient 用 CODER_CODING_* 凭据
+  //    实测调用返回 404——该 404 仅说明当前接入方式不可用，不推断平台全部语音能力。
+  //    官方 coder-coding-dev-sdk 无语音模块；平台插件/任务流清单为空。
   try {
     const sdk = await import('coze-coding-dev-sdk');
-    console.log(`ASR能力: ASRClient=${typeof sdk.ASRClient}（SDK含recognize方法）`);
+    console.log(`ASR状态: 旧SDK含ASRClient=${typeof sdk.ASRClient}（类型存在）；此前实测调用 404（当前接入不可用）`);
+    console.log('ASR状态: 官方 coder-coding-dev-sdk 无语音模块；ASR/TTS 均已取消交付（用户指令 2026-10-15）');
   } catch (error) {
-    console.log(`ASR能力: 检查失败 ${String(error)}`.slice(0, 150));
+    console.log(`ASR状态: 检查失败 ${String(error)}`.slice(0, 150));
   }
 }
-
 main().catch((e) => { console.error('脚本失败:', e); process.exit(1); });
