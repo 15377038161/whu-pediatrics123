@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     return ok(result);
   } catch (error) {
     const detail = errorFromUnknown(error);
+    console.error(`[turn] ${request.method} /api/agent/turn failed code=${detail.code}:`, error);
     const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : detail.code === 'SESSION_NOT_FOUND' ? 404 : 409;
     return fail(detail, undefined, status);
   }

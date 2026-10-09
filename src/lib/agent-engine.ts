@@ -100,7 +100,18 @@ function feedbackFor(session: SessionState, text: string): string | null {
 }
 
 export function refreshSourceSession(session: SessionState): SessionState {
-  if (!session.caseId.startsWith('teacher-') || (session.caseVersion >= 2 && session.caseOptions)) return session;
+  if (!session.caseId.startsWith('teacher-')) return session;
+  if (session.caseVersion >= 2 && session.caseOptions) {
+    // 非破坏性 caseOptions 刷新：查体/检查证据解锁后投影扩展（迁移 20261010120000），
+    // UI 的可选查体/检查列表须跟随本人会话当前投影，否则列表停留在建会话时的剥离态、
+    // 查体在 UI 层永远为空。仅刷新目录字段（toolId/bodyPartId/label/indication，不含结果文本）；
+    // 不重建 messages/events/vitals——避免破坏进行中会话，也避免未经查体动作泄露体征数值
+    // （vitals 由查体事实提取，仅在真实执行查体动作后经 handleExam 路径生效）。
+    const fresh = createInitialSession(session.userId, session.mode, session.caseId, session.practiceFocus ?? undefined, session.sourceSnapshotVersion, session.id);
+    if (fresh.caseOptions) session.caseOptions = fresh.caseOptions;
+    return session;
+  }
+  // 旧会话（caseVersion<2 或无 caseOptions）整体重建（遗留迁移路径，重建后进入上方非破坏性分支）
   // 刷新时按会话绑定的快照版本取教学事实（version 未绑定时取裸键最新版），防并发/漂移换患者；
   // 学生会话同步传 sessionId，命中会话作用域投影事实（不读共享键完整事实）
   const fresh = createInitialSession(session.userId, session.mode, session.caseId, session.practiceFocus ?? undefined, session.sourceSnapshotVersion, session.id);
@@ -434,7 +445,10 @@ function handleCommunication(session: SessionState, text: string, clientEventId:
   const parentMessage = message('parent', parentReply, { emotion: good ? 'calm' : 'anxious' });
   session.messages.push(studentMessage, parentMessage);
   session.events.push(clinicalEvent(clientEventId, 'SEND_COMMUNICATION', 'communication', '完成家长沟通', good, ['COMMUNICATION']));
-  session.stage = session.mode === 'osce' ? 'communication' : 'history';
+  // stage 不回退：guided 模式此前设回 'history'，若已推进至查体/检查/诊断/处置阶段，
+  // 会被 DB 防跳级触发器以 SESSION_STAGE_REGRESSION 拒绝（真实平台回归实测定位）。
+  // guided 保持当前 stage（沟通在任意阶段合法）；osce 维持推进至 communication 阶段。
+  if (session.mode === 'osce') session.stage = 'communication';
   session.updatedAt = now();
   return {
     session,
