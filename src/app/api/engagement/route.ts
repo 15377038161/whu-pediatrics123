@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return fail({ code: 'INVALID_REQUEST', message: '事件数据无效。', retryable: false }, undefined, 422);
     }
+    // ⑤detail 白名单已在 zod 严格模式（仅 path 键）+ RPC INVALID_DETAIL 双层校验，非法内容在此即被拒绝
+
     if (user.provider === 'preview') {
       // 预览演示身份：不污染真实统计（内存演示与生产数据分离）
       return ok({ accepted: true, persisted: false });

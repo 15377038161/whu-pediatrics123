@@ -453,6 +453,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .workspace-error > p:not(.eyebrow) { color: var(--muted); }
 .teacher-banner h1 { margin: 4px 0 8px; font: 800 32px var(--font-display); }
 .teacher-banner p { margin: 0; color: #607976; }
+.stats-basis-note { margin-top: 10px !important; display: flex; gap: 6px; align-items: center; padding: 8px 12px; border-radius: 12px; background: #fdf6e7; color: #8a6d1f; font-size: 12px; }
+.stats-basis-note svg { flex: none; }
+.account-kind-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #fdf0e4; color: #9a5b2d; font-size: 11px; vertical-align: 1px; }
+.student-table tr[data-selected] { background: #f3fbf7; }
+.student-table .filter-chip { padding: 4px 12px; font-size: 12px; }
 .readonly-badge { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border-radius: 999px; background: var(--mint); color: var(--pine-dark); font-size: 12px; }
 .teacher-metrics { margin-top: 14px; display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
 .teacher-metrics > div { position: relative; min-height: 128px; padding: 15px; border: 1px solid var(--line); border-radius: 18px; background: var(--white); box-shadow: var(--shadow-soft); }
