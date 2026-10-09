@@ -17,7 +17,7 @@ import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
  * - 旧会话固定版本：getCase 按绑定版本取事实，版本缺失/不一致返回"资料不足"形态（不漂移）；
  * - 恢复失败不回退：全部来源不可用时 version=null，不绑定漂移数据。
  *
- * 夹具环境（修复 2026-10-15）：此前用例 32 隐性依赖被 .gitignore 排除且沙箱缺失的
+ * 夹具环境（修复 2026-10-10）：此前用例 32 隐性依赖被 .gitignore 排除且沙箱缺失的
  * knowledge/ 目录，且传入从注入式测试复制的假指纹 'localfull0000000001'——永远不等于
  * 本地文件真实 sha256 指纹，导致 sourceFacts 恒为 null 而失败（夹具错误，非业务版本漂移）。
  * 现指向 tests/fixtures/knowledge（纯合成教学数据，无患者内容），并用与
