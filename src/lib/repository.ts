@@ -166,7 +166,8 @@ export class AgentRepository {
       if (coldStartVersion && this.actor.role !== 'teacher') {
         const facts = await restoreCaseSnapshotFacts(caseId, coldStartVersion, this.actor.accessToken, this.actor.role, session.id);
         if (facts) {
-          const fresh = createInitialSession(this.actor.id, mode, caseId, practiceFocus, coldStartVersion);
+          // 传 session.id：命中刚写入的会话作用域投影事实（不读共享键完整事实）
+          const fresh = createInitialSession(this.actor.id, mode, caseId, practiceFocus, coldStartVersion, session.id);
           session.caseVersion = fresh.caseVersion;
           session.caseOptions = fresh.caseOptions;
           session.vitals = fresh.vitals;

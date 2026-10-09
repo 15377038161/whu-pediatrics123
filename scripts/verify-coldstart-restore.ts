@@ -36,6 +36,7 @@ const SYNTH_TOKEN = 'synthetic-token';
 const SESSION_V1 = '11111111-1111-1111-1111-111111111111'; // 旧会话：绑定 V1
 const SESSION_V2 = '33333333-3333-3333-3333-333333333333'; // 新会话：绑定 V2（missinglocal 场景）
 const SESSION_PROJ = '44444444-4444-4444-4444-444444444444'; // 阶段化投影场景：RPC 剥离 exam/tests（模拟未解锁查体/检查）
+const SESSION_A_FULL = '55555555-5555-5555-5555-555555555555'; // 双会话交叉污染：已解锁会话 A（RPC 返回完整投影）
 const FOREIGN_SESSION = '22222222-2222-2222-2222-222222222222'; // 不存在/非本人会话：必须拒绝
 
 /** 与 teacher-case-import computeImportVersion 同算法：documents sha256 聚合哈希截 16 位。 */
@@ -107,6 +108,7 @@ const sessionOwners = new Map<string, { userId: string; caseId: string; version:
   [SESSION_V1, { userId: SYNTH_USER_ID, caseId: CASE_ID, version: V1 }],
   [SESSION_V2, { userId: SYNTH_USER_ID, caseId: CASE_ID, version: V2 }],
   [SESSION_PROJ, { userId: SYNTH_USER_ID, caseId: CASE_ID, version: V1 }],
+  [SESSION_A_FULL, { userId: SYNTH_USER_ID, caseId: CASE_ID, version: V1 }],
 ]);
 
 const requestLog: Array<{ method: string; path: string; authed: boolean }> = [];
@@ -199,6 +201,9 @@ function runChild(cmd: string, fixtureRoot: string, sessionId: string): Promise<
     env.V2 = V2;
     env.SESSION_ID = sessionId;
     env.V1_DIAG_SHA = V1_DIAG_SHA;
+    env.V1_AGE = v1.age;
+    env.V1_EXAM_MARK = v1.sections.exam.slice(0, 10);
+    env.V1_TESTS_MARK = v1.sections.tests.slice(0, 10);
     env.COZE_SUPABASE_URL = `http://127.0.0.1:${port}`;
     env.COZE_SUPABASE_ANON_KEY = 'synthetic-anon-key';
     env.COZE_SUPABASE_TENANT_ID = 'synthetic-tenant';
@@ -294,6 +299,35 @@ async function main(): Promise<void> {
   check('投影剥离：规范化缺键后 readTeacherCaseData 可读（normalizedReadable）', projected.normalizedReadable === true);
   check('投影剥离：exam/tests 规范化为空串（examEmpty/testsEmpty）', projected.examEmpty === true && projected.testsEmpty === true);
   check('投影剥离：未剥离字段保留（historyKept/ageKept）', projected.historyKept === true && projected.ageKept === true);
+
+  // 场景 10：双会话交叉污染（顺序 AB：A已解锁先恢复，B未解锁后恢复）
+  const crossAB = await runChild('crosssessionAB', v2Root, SESSION_V1);
+  console.log(`[crosssessionAB] ${JSON.stringify(crossAB)}`);
+  check('双会话AB：A完整投影未因B恢复丢失（aNotLost/aExamKept/aTestsKept）', crossAB.aNotLost === true && crossAB.aExamKept === true && crossAB.aTestsKept === true);
+  check('双会话AB：B剥离态未因A恢复泄露（bNotLeaked）', crossAB.bNotLeaked === true);
+  check('双会话AB：共享版本键未被学生投影态污染（sharedClean）', crossAB.sharedClean === true);
+
+  // 场景 11：双会话交叉污染（顺序 BA：B未解锁先恢复，A已解锁后恢复）
+  const crossBA = await runChild('crosssessionBA', v2Root, SESSION_V1);
+  console.log(`[crosssessionBA] ${JSON.stringify(crossBA)}`);
+  check('双会话BA：A完整投影未因B恢复丢失（aNotLost/aExamKept/aTestsKept）', crossBA.aNotLost === true && crossBA.aExamKept === true && crossBA.aTestsKept === true);
+  check('双会话BA：B剥离态未因A恢复泄露（bNotLeaked）', crossBA.bNotLeaked === true);
+  check('双会话BA：共享版本键未被学生投影态污染（sharedClean）', crossBA.sharedClean === true);
+
+  // 场景 12：旧会话绑定 V1 的评分链路（本地已是 V2）：事实与对照均来自 V1，非生成式过程分口径
+  const score = await runChild('score', v2Root, SESSION_A_FULL);
+  console.log(`[score] ${JSON.stringify(score)}`);
+  check('V1评分：RPC 恢复 V1 事实（factsRestored）', score.factsRestored === true);
+  check('V1评分：评分对照为 V1 版本行（referenceV1Match）', score.referenceRestored === true && score.referenceV1Match === true);
+  check('V1评分：评分事实为 V1 年龄而非本地 V2（factsIsV1）', score.factsIsV1 === true);
+  check('V1评分：teacher 病例走过程分口径（scoreBasis=process）', score.scoreBasis === 'process');
+
+  // 场景 13：无有效事实会话（版本解析失败，本地缺失）→ 非生成式过程分兜底，不补造对照
+  const scoremissing = await runChild('scoremissing', emptyRoot, SESSION_V1);
+  console.log(`[scoremissing] ${JSON.stringify(scoremissing)}`);
+  check('无事实评分：非生成式过程分口径（scoreBasis=process）', scoremissing.scoreBasis === 'process');
+  check('无事实评分：六维全 0 不生成事实评分（allZero）', scoremissing.allZero === true);
+  check('无事实评分：无诊断/处置对照回填（noReference）', scoremissing.noReference === true);
 
   // 场景 7：别名（URL 编码）解析一致
   const alias = await runChild('alias', v2Root, SESSION_V1);

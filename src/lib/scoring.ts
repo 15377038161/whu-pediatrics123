@@ -18,7 +18,9 @@ export interface ReportReference {
 }
 
 export function buildReport(session: SessionState, reportId = crypto.randomUUID(), reference?: ReportReference): TrainingReport {
-  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion);
+  // 评分全程按会话绑定版本+会话作用域读取教学事实：teacher 病例命中本人会话投影态，
+  // 不读共享键的完整事实（防跨会话泄露）；无有效事实时走 buildSourceReport 过程分口径（非生成式兜底）。
+  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   if (pediatricCase.sourceFacts !== undefined) return buildSourceReport(session, reportId, reference);
   const asked = new Set(session.askedIntents);
   const evidence = new Set(session.unlockedEvidence);
@@ -136,7 +138,7 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
 function buildSourceReport(session: SessionState, reportId: string, reference?: ReportReference): TrainingReport {
   // 对照来源优先级：会话绑定版本的安全读取（RPC/教师直读）> 进程内缓存快照（本地 knowledge 场景）。
   // 学生会话无绑定版本对照时保持"资料不足"，不用漂移数据补造。
-  const source = getCase(session.caseId, session.sourceSnapshotVersion).sourceFacts;
+  const source = getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts;
   const diagnosisReference = reference?.diagnosis ?? source?.sections.diagnosis ?? '';
   const planReference = reference?.plan ?? source?.sections.plan ?? '';
   const checks: Array<{ key: keyof AbilityScores; label: string; max: number; codes: string[]; complete: boolean; detail: string }> = [

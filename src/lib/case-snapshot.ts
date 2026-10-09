@@ -361,16 +361,25 @@ export async function restoreCaseSnapshotFacts(caseId: string, version: string, 
       },
       documents: [],
     };
-    // 版本键缓存：恢复结果写入 sourceId@version，供该版本会话后续命中；
-    // 不覆盖裸键（裸键是"最新版本"指针，只由 ensureCaseSnapshot 召回刷新），
-    // 保证并发会话各取绑定版本，互不换患者。
+    // 缓存写入分作用域：
+    // - 学生 RPC 恢复的是【按会话证据投影】的 facts（阶段化投影，迁移 20261010120000），
+    //   仅对本人会话有效——写入会话作用域键 sourceId@version#sessionId，禁止跨会话共享：
+    //   否则会话 B（未解锁，剥离态）的恢复覆盖共享键后，会话 A（已解锁）在回合 await 间隙
+    //   再读即丢失已解锁内容；反向，A 的完整投影写入后 B 直接读取即绕过解锁（泄露）。
+    // - 教师直读不受会话投影约束（RLS 放行全量 facts）：sessionId 提供时同时写会话作用域键
+    //   （引擎/评分链路统一按会话作用域读取，教师会话命不中共享键）与共享版本键
+    //   sourceId@version（供无会话上下文的读取路径，如建会话/预热）；教师内容为全量 facts，
+    //   会话作用域键仅本人会话可命中，学生不可能读到教师会话的键。
+    // 两者均不覆盖裸键（裸键是"最新版本"指针，只由 ensureCaseSnapshot 召回刷新）。
     const previous = snapshotStore.get(sourceId);
-    snapshotStore.set(`${sourceId}@${version}`, {
+    const entry: SnapshotEntry = {
       data: restored,
       media: previous?.media ?? [],
       meta: { caseId: sourceId, sourceName: facts.sourceName, sourceKb: KB_DOC_ID, builtAt: new Date().toISOString(), chunkCount: 0, mediaCount: previous?.media.length ?? 0, version },
       expiresAt: Date.now() + SNAPSHOT_TTL_MS,
-    });
+    };
+    if (sessionId) snapshotStore.set(`${sourceId}@${version}#${sessionId}`, entry);
+    if (role !== 'student') snapshotStore.set(`${sourceId}@${version}`, entry);
     return restored;
   } catch (error) {
     if (process.env.LOG_LEVEL === 'debug') console.warn('[case-snapshot] restore failed', sourceId, (error as Error).message);
@@ -437,11 +446,22 @@ export async function getDatabaseSnapshotVersion(caseId: string, accessToken: st
 }
 
 /** 读取当前进程内已缓存的快照（不触发召回），供同步路径 readTeacherCaseData 使用。
- *  version 提供时（会话已绑定版本）：仅命中该版本的缓存键（sourceId@version，或裸键版本一致时），
- *  版本不一致返回 null（资料不足），绝不回退到其他版本的漂移数据。 */
-export function getCachedSnapshot(caseId: string, version?: string | null): SnapshotCaseData | null {
+ *  version 提供时（会话已绑定版本）：仅命中该版本的缓存键，版本不一致返回 null（资料不足），
+ *  绝不回退到其他版本的漂移数据。
+ *  sessionId 提供时（学生会话）：会话作用域键 sourceId@version#sessionId 优先——学生恢复态
+ *  是按本人会话证据投影的 facts，跨会话共享即泄露（他人完整投影）或丢失（被剥离态覆盖）。
+ *  会话作用域键未命中时仅允许：裸键版本一致（ensureCaseSnapshot 召回快照，非会话投影产物）。
+ *  共享版本键 sourceId@version 仅教师直读恢复写入（全量 facts，非投影），学生不读。 */
+export function getCachedSnapshot(caseId: string, version?: string | null, sessionId?: string | null): SnapshotCaseData | null {
   const sourceId = getTeacherSourceId(caseId);
   if (version) {
+    if (sessionId) {
+      const scoped = snapshotStore.get(`${sourceId}@${version}#${sessionId}`);
+      if (scoped && scoped.expiresAt > Date.now()) return scoped.data;
+      const latest = snapshotStore.get(sourceId);
+      if (latest && latest.expiresAt > Date.now() && latest.meta?.version === version) return latest.data;
+      return null;
+    }
     const pinned = snapshotStore.get(`${sourceId}@${version}`);
     if (pinned && pinned.expiresAt > Date.now()) return pinned.data;
     const latest = snapshotStore.get(sourceId);

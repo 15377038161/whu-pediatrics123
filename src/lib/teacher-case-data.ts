@@ -31,7 +31,7 @@ function computeLocalVersion(record: TeacherCaseData): string {
   return createHash('sha256').update(shas.join('\n')).digest('hex').slice(0, 16);
 }
 
-export function readTeacherCaseData(caseId: string, version?: string | null): TeacherCaseData | null {
+export function readTeacherCaseData(caseId: string, version?: string | null, sessionId?: string | null): TeacherCaseData | null {
   const sourceId = getTeacherSourceId(caseId);
   if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId && item.folder)) return null;
   try {
@@ -43,7 +43,7 @@ export function readTeacherCaseData(caseId: string, version?: string | null): Te
     // 缓存无该版本（重启后过期/未预热）则返回 null（资料不足），
     // 绝不返回新版本地数据换患者事实——与 ENOENT 分支同一防漂移语义。
     if (!version || computeLocalVersion(record) === version) return record;
-    const pinned = getCachedSnapshot(sourceId, version);
+    const pinned = getCachedSnapshot(sourceId, version, sessionId);
     if (!pinned) return null;
     const parsed = recordSchema.safeParse(pinned);
     return parsed.success ? parsed.data : null;
@@ -51,9 +51,9 @@ export function readTeacherCaseData(caseId: string, version?: string | null): Te
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       // 本地 teaching-cases 快照缺失（部署环境 knowledge/ 不入库）：
       // 回退到进程内知识库召回快照（由 ensureCaseSnapshot 预热），保证真实来源、不补造事实。
-      // 会话已绑定版本时仅命中该版本（sourceId@version / 裸键版本一致），
-      // 版本不一致返回 null（资料不足），不回退漂移数据换患者。
-      const snapshot = getCachedSnapshot(sourceId, version);
+      // 会话已绑定版本时仅命中该版本（含会话作用域键），版本不一致返回 null（资料不足），
+      // 不回退漂移数据换患者。
+      const snapshot = getCachedSnapshot(sourceId, version, sessionId);
       if (!snapshot) return null;
       const parsed = recordSchema.safeParse(snapshot);
       return parsed.success ? parsed.data : null;

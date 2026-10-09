@@ -189,19 +189,21 @@ export const FEMALE_WHEEZE_CASE: FlagshipCase = {
 export const PEDIATRIC_CASES: FlagshipCase[] = [FLAGSHIP_CASE, FEMALE_WHEEZE_CASE];
 
 /** version 提供时（会话已绑定快照版本）：teacher 病例仅使用该版本的教学事实，
- *  版本缺失/不一致时返回"资料不足"形态（sourceFacts 为 null），不回退漂移数据。 */
-export function getCase(caseId: string, version?: string | null): FlagshipCase {
+ *  版本缺失/不一致时返回"资料不足"形态（sourceFacts 为 null），不回退漂移数据。
+ *  sessionId 提供时（学生会话）：教学事实读取按会话作用域缓存键（sourceId@version#sessionId）
+ *  优先命中本人会话的投影事实，避免读到其他会话/教师直读的完整事实（跨会话泄露）。 */
+export function getCase(caseId: string, version?: string | null, sessionId?: string | null): FlagshipCase {
   const pediatricCase = PEDIATRIC_CASES.find((item) => item.id === caseId);
   if (pediatricCase) return pediatricCase;
   if (caseId.startsWith('teacher-')) {
-    return createSourceCase(caseId, version);
+    return createSourceCase(caseId, version, sessionId);
   }
   throw new Error('CASE_NOT_FOUND');
 }
 
-function createSourceCase(caseId: string, version?: string | null): FlagshipCase {
+function createSourceCase(caseId: string, version?: string | null, sessionId?: string | null): FlagshipCase {
   const profile = getPublicCase(caseId);
-  const source = readTeacherCaseData(caseId, version);
+  const source = readTeacherCaseData(caseId, version, sessionId);
   const unknown = { temperature: null, heartRate: null, respiratoryRate: null, spo2: null };
   const examText = source?.sections.exam ?? '';
   const snippets = (pattern: RegExp) => examText.split(/[，,；;。\n]/).filter((part) => pattern.test(part)).join('，');
@@ -232,19 +234,19 @@ function createSourceCase(caseId: string, version?: string | null): FlagshipCase
   };
 }
 
-export function identifyHistoryIntent(caseId: string, question: string): HistoryIntent | null {
-  return identifyHistoryIntents(caseId, question)[0] ?? null;
+export function identifyHistoryIntent(caseId: string, question: string, version?: string | null, sessionId?: string | null): HistoryIntent | null {
+  return identifyHistoryIntents(caseId, question, version, sessionId)[0] ?? null;
 }
 
-export function identifyHistoryIntents(caseId: string, question: string): HistoryIntent[] {
+export function identifyHistoryIntents(caseId: string, question: string, version?: string | null, sessionId?: string | null): HistoryIntent[] {
   const normalized = question.replace(/\s+/g, '');
-  return getCase(caseId).history.filter((item) => item.keywords.some((keyword) => normalized.includes(keyword)));
+  return getCase(caseId, version, sessionId).history.filter((item) => item.keywords.some((keyword) => normalized.includes(keyword)));
 }
 
-export function findExamRule(caseId: string, toolId: string, bodyPartId: string): ExamRule | null {
-  return getCase(caseId).exams.find((item) => item.toolId === toolId && item.bodyPartId === bodyPartId) ?? null;
+export function findExamRule(caseId: string, toolId: string, bodyPartId: string, version?: string | null, sessionId?: string | null): ExamRule | null {
+  return getCase(caseId, version, sessionId).exams.find((item) => item.toolId === toolId && item.bodyPartId === bodyPartId) ?? null;
 }
 
-export function findTest(caseId: string, testId: string): AuxiliaryTest | null {
-  return getCase(caseId).tests.find((item) => item.id === testId) ?? null;
+export function findTest(caseId: string, testId: string, version?: string | null, sessionId?: string | null): AuxiliaryTest | null {
+  return getCase(caseId, version, sessionId).tests.find((item) => item.id === testId) ?? null;
 }
