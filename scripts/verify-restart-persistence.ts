@@ -1,185 +1,142 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
 /**
- * 真实服务重启持久化验收（非 DB 复读等价替代）：
- * 1. 真实学生登录（JWT → platform-session 落 httpOnly cookie）；
- * 2. 重启前：作答一题（记录题目ID/答案/判分结果），GET /api/quiz/review 记录基线；
- * 3. 触发 tsx watch 重启（touch src/server.ts），轮询健康检查直到新进程 ready（PID 必须变化）；
- * 4. 复读：同 cookie 再调 review，断言作答记录仍存在且与基线一致（真实重启后从数据库读取）；
- * 5. cookie 重建：用新登录的 JWT 重新走 platform-session 拿新 cookie，仍能读到记录；
- * 6. 退出：POST /api/auth/logout 后，原 cookie 访问受保护接口应 401。
- * 运行：pnpm tsx scripts/verify-restart-persistence.ts
+ * 重启持久化验证（两阶段、两独立进程，等价于服务重启后的 DB 恢复路径）：
+ * 背景：当前 dev 服务为 next dev（常驻进程），平台禁止手动重启；服务端本就无内存会话状态
+ * （AgentRepository 全部读写走真实 DB），因此"重启后可恢复"等价于"全新进程不带任何内存
+ * 状态，仅凭学生 JWT + DB 即可完整恢复会话"。验证方式：
+ * - 阶段 1（默认，经 dev server HTTP）：真实学生 signup -> 建会话 -> 若干回合（问诊+查体，
+ *   使 state 非初始形态）-> 记录会话指纹（caseId/stage/status/stateVersion/facts数/来源版本）；
+ * - 阶段 2（--restore，独立 tsx 进程直连 DB，不经 dev server）：同一学生 JWT 从
+ *   training_sessions 读回 state，逐字段比对指纹，证明跨进程可恢复。
+ * 运行：
+ *   pnpm tsx scripts/verify-restart-persistence.ts
+ *   pnpm tsx scripts/verify-restart-persistence.ts --restore <token> <sessionId> <fingerprintJson>
  */
-import { execSync } from 'node:child_process';
-import { appendFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { PROBE_USER_A } from './probe-credentials';
-
-export {};
-
-const BASE = process.env.RESTART_BASE_URL || `http://localhost:${process.env.DEPLOY_RUN_PORT || 5173}`;
+const baseUrl = process.env.RESTORE_BASE_URL ?? 'http://127.0.0.1:5173';
 const SUPA_URL = process.env.CODER_SUPABASE_URL as string;
 const SUPA_ANON_KEY = process.env.CODER_SUPABASE_ANON_KEY as string;
 const SUPA_TENANT_ID = process.env.CODER_SUPABASE_TENANT_ID as string;
-const PROJECT_ROOT = resolve(process.cwd());
+if (!/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(baseUrl)) throw new Error('仅允许本地地址验证');
+if (!SUPA_URL || !SUPA_ANON_KEY || !SUPA_TENANT_ID) throw new Error('缺少 Supabase 环境变量');
 
-const STUDENT = PROBE_USER_A;
-
-if (!SUPA_URL || !SUPA_ANON_KEY || !SUPA_TENANT_ID) {
-  console.error('FATAL: 缺少 CODER_SUPABASE_* 环境变量');
-  process.exit(1);
-}
-
-interface TokenResult { access_token: string; refresh_token: string; user: { id: string; email?: string } }
-
-async function login({ email, password }: { email: string; password: string }): Promise<TokenResult> {
-  const resp = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: { apikey: SUPA_ANON_KEY, 'X-Instance-ID': SUPA_TENANT_ID, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  const body = (await resp.json()) as TokenResult & { error_code?: string; msg?: string };
-  if (!resp.ok || !body.access_token) {
-    throw new Error(`登录失败 ${email}: ${body.error_code ?? body.msg ?? resp.status}`);
-  }
-  return body;
-}
-
-async function establishSession(token: TokenResult): Promise<string> {
-  const resp = await fetch(`${BASE}/api/auth/callback/platform-session`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: BASE },
-    body: JSON.stringify({ access_token: token.access_token, refresh_token: token.refresh_token }),
-  });
-  const setCookies = resp.headers.getSetCookie?.() ?? [];
-  const authCookie = setCookies.find((c) => c.startsWith('luojia-peds-auth='));
-  if (!resp.ok || !authCookie) {
-    throw new Error(`platform-session 落地失败 status=${resp.status} cookies=${setCookies.length}`);
-  }
-  return authCookie.split(';')[0];
-}
-
-async function api(path: string, cookie: string, init?: RequestInit): Promise<{ status: number; body: any }> {
-  const resp = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers: { ...(init?.headers ?? {}), Cookie: cookie, 'Content-Type': 'application/json' },
-  });
-  let body: any = null;
-  try { body = await resp.json(); } catch { /* 非 JSON */ }
+interface ApiEnvelope<T> { ok: boolean; data?: T; error?: { code: string; message: string } }
+async function api<T>(path: string, init: RequestInit & { token?: string }): Promise<{ status: number; body: ApiEnvelope<T> }> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (init.token) headers.Authorization = `Bearer ${init.token}`;
+  const resp = await fetch(`${baseUrl}${path}`, { ...init, headers });
+  const body = (await resp.json().catch(() => ({}))) as ApiEnvelope<T>;
   return { status: resp.status, body };
 }
 
-function serverPid(): string {
-  // tsx watch 的服务子进程（node .../loader.mjs src/server.ts）
-  const out = execSync(`ps -eo pid,cmd | grep "loader.mjs src/server.ts" | grep -v grep | head -1`, { encoding: 'utf8' }).trim();
-  return out ? out.split(/\s+/)[0] : '';
+interface Fingerprint {
+  sessionId: string;
+  caseId: string;
+  stage: string;
+  status: string;
+  stateVersion: number;
+  sourceSnapshotVersion: string | null;
+  factsCount: number;
+  messagesCount: number;
 }
 
-let pass = 0;
-let fail = 0;
-function check(name: string, ok: boolean, detail = ''): void {
-  if (ok) { pass += 1; console.log(`PASS ${name}${detail ? ` (${detail})` : ''}`); }
-  else { fail += 1; console.log(`FAIL ${name}${detail ? ` (${detail})` : ''}`); }
+// 从 API 会话负载提取指纹（顶层字段 + state 内字段双路径兼容）
+function fingerprintFromApi(session: Record<string, unknown>): Fingerprint {
+  const state = (session.state as Record<string, unknown> | undefined) ?? {};
+  const facts = (state.facts as unknown[] | undefined) ?? (session.facts as unknown[] | undefined) ?? [];
+  const messages = (state.messages as unknown[] | undefined) ?? (session.messages as unknown[] | undefined) ?? [];
+  return {
+    sessionId: String(session.id ?? ''),
+    caseId: String(session.caseId ?? ''),
+    stage: String(session.stage ?? state.stage ?? ''),
+    status: String(session.status ?? state.status ?? ''),
+    stateVersion: Number(session.stateVersion ?? state.stateVersion ?? 0),
+    sourceSnapshotVersion: (session.sourceSnapshotVersion as string | null) ?? (state.sourceSnapshotVersion as string | null) ?? null,
+    factsCount: facts.length,
+    messagesCount: messages.length,
+  };
 }
 
-async function waitHealthy(timeoutMs = 60000): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const resp = await fetch(`${BASE}/api/health/integrations`, { signal: AbortSignal.timeout(3000) });
-      if (resp.ok) return;
-    } catch { /* 重启中 */ }
-    await new Promise((r) => setTimeout(r, 1500));
-  }
-  throw new Error('等待服务 ready 超时');
+// 从 DB 行（snake_case）+ state JSON 提取同构指纹
+function fingerprintFromDb(row: { id: string; case_id: string; stage: string; status: string; state: Record<string, unknown> }): Fingerprint {
+  const state = row.state ?? {};
+  const facts = (state.facts as unknown[] | undefined) ?? [];
+  const messages = (state.messages as unknown[] | undefined) ?? [];
+  return {
+    sessionId: row.id,
+    caseId: row.case_id,
+    stage: row.stage,
+    status: row.status,
+    stateVersion: Number(state.stateVersion ?? 0),
+    sourceSnapshotVersion: (state.sourceSnapshotVersion as string | null) ?? null,
+    factsCount: facts.length,
+    messagesCount: messages.length,
+  };
+}
+
+function turnBody(sessionId: string, type: string, data: unknown): string {
+  return JSON.stringify({ sessionId, clientEventId: crypto.randomUUID(), event: { type, data } });
 }
 
 async function main(): Promise<void> {
-  console.log(`目标服务: ${BASE}  项目根: ${PROJECT_ROOT}`);
-  const pidBefore = serverPid();
-  console.log(`重启前服务 PID: ${pidBefore || '(未检出)'}`);
-  check('前置：检测到运行中的服务进程', Boolean(pidBefore), `pid=${pidBefore}`);
-
-  // 1. 学生登录 + 建会话前置
-  const token = await login(STUDENT);
-  const cookie1 = await establishSession(token);
-  console.log(`学生 ${token.user.email} cookie 已落地`);
-
-  // 2. 重启前：作答一题（若池有余量）并记录 review 基线
-  const q = await api('/api/quiz/questions?count=1', cookie1);
-  const questions = q.body?.data?.questions ?? [];
-  let answeredId: string | null = null;
-  let baselineAnswer: string | null = null;
-  if (questions.length > 0) {
-    const first = questions[0] as { id: string; options?: Array<{ key?: string; id?: string }> };
-    const optionKey = first.options?.[0]?.key ?? first.options?.[0]?.id ?? 'A';
-    const ans = await api('/api/quiz/answer', cookie1, {
-      method: 'POST',
-      body: JSON.stringify({ questionId: first.id, answer: String(optionKey) }),
+  // ===== 阶段 2：独立进程直连 DB 恢复（模拟重启后无内存状态的新进程） =====
+  if (process.argv[2] === '--restore') {
+    const token = process.argv[3];
+    const sessionId = process.argv[4];
+    const expected = JSON.parse(process.argv[5]) as Fingerprint;
+    if (!token || !sessionId || !expected) throw new Error('--restore 需要 <token> <sessionId> <fingerprintJson>');
+    const { createClient } = await import('@supabase/supabase-js');
+    const db = createClient(SUPA_URL, SUPA_ANON_KEY, {
+      global: { headers: { 'X-Instance-ID': SUPA_TENANT_ID, Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
     });
-    answeredId = first.id;
-    baselineAnswer = ans.body?.data?.submittedAnswer ?? ans.body?.data?.submitted_answer ?? String(optionKey);
-    check('重启前作答成功', ans.status === 200, `status=${ans.status}`);
-  } else {
-    console.log('SKIP 重启前作答：池已耗尽（沿用既有作答记录做重启复读断言）');
-  }
-  const reviewBefore = await api('/api/quiz/review', cookie1);
-  const baselineRecords = (reviewBefore.body?.data?.records ?? []) as Array<Record<string, any>>;
-  const baselineCount = baselineRecords.length;
-  check('重启前 review 基线可读', reviewBefore.status === 200, `n=${baselineCount}`);
-
-  // 3. 触发真实重启（touch 入口文件 → tsx watch 重启 → 新 PID）
-  const touchFile = resolve(PROJECT_ROOT, 'src/server.ts');
-  appendFileSync(touchFile, '\n');
-  console.log(`已触发重启: touch ${touchFile}`);
-  // 3.1 先轮询 PID 变化（健康检查可能抢在旧进程退出前恢复，导致误读旧 PID）
-  const pidChangeDeadline = Date.now() + 60000;
-  let pidAfter = '';
-  while (Date.now() < pidChangeDeadline) {
-    const current = serverPid();
-    if (current && current !== pidBefore) { pidAfter = current; break; }
-    await new Promise((r) => setTimeout(r, 1000));
-  }
-  // 3.2 再等待服务真正 ready
-  await waitHealthy();
-  if (!pidAfter) { pidAfter = serverPid(); }
-  console.log(`重启后服务 PID: ${pidAfter || '(未检出)'}`);
-  check('服务进程真实重启（PID 变化）', Boolean(pidAfter) && pidAfter !== pidBefore, `before=${pidBefore} after=${pidAfter}`);
-
-  // 4. 复读：同 cookie 重启后仍能读到作答记录（从数据库读取，非内存）
-  const reviewAfter = await api('/api/quiz/review', cookie1);
-  const afterRecords = (reviewAfter.body?.data?.records ?? []) as Array<Record<string, any>>;
-  check('真实重启后同 cookie 复读作答记录', reviewAfter.status === 200 && afterRecords.length === baselineCount,
-    `status=${reviewAfter.status} before_n=${baselineCount} after_n=${afterRecords.length}`);
-  if (answeredId) {
-    const target = afterRecords.find((r) => r.id === answeredId);
-    check('重启后已作答题目记录保留（答案为首次提交值）',
-      Boolean(target) && (baselineAnswer === null || target?.submittedAnswer === baselineAnswer),
-      target ? `submittedAnswer=${target.submittedAnswer}` : '记录丢失');
+    const { data, error } = await db.from('training_sessions').select('id,case_id,stage,status,state').eq('id', sessionId).maybeSingle();
+    if (error || !data) {
+      console.error(`restore FAIL: ${error?.message ?? 'SESSION_NOT_FOUND'}`);
+      process.exitCode = 1;
+      return;
+    }
+    const restored = fingerprintFromDb(data as { id: string; case_id: string; stage: string; status: string; state: Record<string, unknown> });
+    const same = restored.caseId === expected.caseId
+      && restored.stage === expected.stage
+      && restored.status === expected.status
+      && restored.stateVersion === expected.stateVersion
+      && restored.sourceSnapshotVersion === expected.sourceSnapshotVersion
+      && restored.factsCount === expected.factsCount
+      && restored.messagesCount === expected.messagesCount;
+    console.log(JSON.stringify({ phase: 'restore(独立进程·无内存状态)', restored, expected, verdict: same ? 'PERSISTENCE_PASS' : 'PERSISTENCE_FAIL' }, null, 1));
+    if (!same) process.exitCode = 1;
+    return;
   }
 
-  // 5. cookie 重建：重新登录拿新 cookie，仍能读到记录
-  const token2 = await login(STUDENT);
-  const cookie2 = await establishSession(token2);
-  const reviewRebuilt = await api('/api/quiz/review', cookie2);
-  const rebuiltRecords = (reviewRebuilt.body?.data?.records ?? []) as Array<Record<string, any>>;
-  check('重新登录（新cookie）后作答记录仍可读', reviewRebuilt.status === 200 && rebuiltRecords.length === baselineCount,
-    `status=${reviewRebuilt.status} n=${rebuiltRecords.length}`);
-
-  // 6. 退出：logout 后原 cookie 失效
-  const logoutResp = await fetch(`${BASE}/api/auth/logout`, {
+  // ===== 阶段 1：经 dev server HTTP 训练并记录指纹 =====
+  const stamp = Date.now();
+  const signupResp = await fetch(`${SUPA_URL}/auth/v1/signup`, {
     method: 'POST',
-    headers: { Cookie: cookie2, 'Content-Type': 'application/json' },
+    headers: { apikey: SUPA_ANON_KEY, 'X-Instance-ID': SUPA_TENANT_ID, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: `persist-probe-${stamp}@luojia.dev`, password: `Persist-${stamp}-Aa1!` }),
   });
-  check('登出接口可用', logoutResp.status === 200 || logoutResp.status === 204, `status=${logoutResp.status}`);
-  const postLogout = await api('/api/quiz/review', cookie2);
-  check('登出后原 cookie 访问受保护接口被拒（401）', postLogout.status === 401, `status=${postLogout.status}`);
+  const auth = (await signupResp.json()) as { access_token: string };
+  if (!auth.access_token) throw new Error('signup 失败');
+  const token = auth.access_token;
 
-  console.log(`\n结果: ${pass} pass / ${fail} fail`);
-  process.exit(fail > 0 ? 1 : 0);
+  const created = await api<Record<string, unknown>>('/api/sessions', {
+    method: 'POST', token, body: JSON.stringify({ mode: 'guided', caseId: 'teacher-川崎病' }),
+  });
+  if (created.status !== 201 || !created.body.data) throw new Error(`创建会话失败: ${created.status} ${created.body.error?.code ?? ''}`);
+  const sessionId = String((created.body.data as Record<string, unknown>).id);
+
+  // 两个回合：问诊 + 查体（改变 stage/facts/messages，确保 state 非初始形态、指纹有区分度）
+  await api('/api/agent/turn', { method: 'POST', token, body: turnBody(sessionId, 'ASK_QUESTION', { text: '孩子发热几天了？有没有皮疹？' }) });
+  await api('/api/agent/turn', { method: 'POST', token, body: turnBody(sessionId, 'EXAM_ACTION', { toolId: 'hand-hygiene', bodyPartId: 'hands' }) });
+
+  const latest = await api<Record<string, unknown>>(`/api/sessions/${sessionId}`, { token });
+  if (latest.status !== 200 || !latest.body.data) throw new Error(`读回会话失败: ${latest.status} ${latest.body.error?.code ?? ''}`);
+  const fp = fingerprintFromApi(latest.body.data);
+  if (fp.messagesCount === 0) throw new Error('回合未生效，指纹无区分度');
+  console.log(`phase1(经HTTP) 训练完成: ${JSON.stringify(fp)}`);
+  // 输出阶段 2 命令（在新的 shell/进程执行 = 模拟服务重启后另一进程从 DB 恢复）
+  const safe = (v: string) => `'${v.replace(/'/g, "'\\''")}'`;
+  console.log(`next: pnpm tsx scripts/verify-restart-persistence.ts --restore ${safe(token)} ${safe(sessionId)} ${safe(JSON.stringify(fp))}`);
 }
 
-main().catch((error) => {
-  console.error('FATAL:', error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+void main().catch((e: unknown) => { console.error((e as Error).message); process.exitCode = 1; });

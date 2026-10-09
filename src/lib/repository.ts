@@ -257,23 +257,18 @@ export class AgentRepository {
     });
     if (rpcError) throw rpcError;
     if (saved !== true) throw new Error('REPORT_SAVE_REJECTED');
-    const { error: abilityError } = await db.from('ability_profiles').upsert({
-      user_id: report.userId,
-      dimensions: report.abilities,
-      recommendation: { text: report.recommendation, improvements: report.improvements },
-      source_report_id: report.id,
-      updated_at: report.createdAt,
-    }, { onConflict: 'user_id' });
-    if (abilityError) throw abilityError;
-    const { error: syncError } = await db.from('sync_outbox').upsert({
-      event_id: event.eventId,
-      aggregate_type: event.recordType,
-      aggregate_id: report.id,
-      payload: event,
-      status: 'pending',
-      next_attempt_at: new Date().toISOString(),
-    }, { onConflict: 'event_id', ignoreDuplicates: true });
-    if (syncError) throw syncError;
+    // 副作用（能力画像 + 同步事件 outbox）走受控 RPC：
+    // ability_profiles/sync_outbox 无学生直写策略（RLS 拒绝 42501），RPC 校验
+    // 会话归属+完成态+报告已合法写入，数据全部来自服务端 buildReport 产物。
+    const { data: sideEffects, error: sideEffectsError } = await db.rpc('report_side_effects_save', {
+      p_session_id: report.sessionId,
+      p_display_name: this.actor.displayName,
+      p_ability: { dimensions: report.abilities, recommendation: { text: report.recommendation, improvements: report.improvements } },
+      p_event_id: event.eventId,
+      p_event_payload: event,
+    });
+    if (sideEffectsError) throw sideEffectsError;
+    if (sideEffects !== true) throw new Error('REPORT_SIDE_EFFECTS_REJECTED');
   }
 
   async getReport(id: string): Promise<TrainingReport> {
