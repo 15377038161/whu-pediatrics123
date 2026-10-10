@@ -444,6 +444,65 @@ export async function refreshProjectedFacts(caseId: string, version: string, ses
   await restoreCaseSnapshotFacts(caseId, version, accessToken, 'student', sessionId);
 }
 
+/** 会话作用域检查目录缓存（无答案，仅 id/label）：
+ *  恢复态投影剥离 sections.tests（未开单）时，目录经 case_snapshot_list_tests 注入，
+ *  保证学生可见可下单目录（目录/结果分离死锁修复）。目录不含结果文本，缓存无泄露面。 */
+interface SessionTestsCatalogEntry {
+  version: string;
+  items: Array<{ id: string; label: string }>;
+  expiresAt: number;
+}
+const testsCatalogStore = new Map<string, SessionTestsCatalogEntry>();
+const TESTS_CATALOG_TTL_MS = 30 * 60_000;
+
+export function setSessionTestsCatalog(sessionId: string, version: string, items: Array<{ id: string; label: string }>): void {
+  testsCatalogStore.set(sessionId, { version, items, expiresAt: Date.now() + TESTS_CATALOG_TTL_MS });
+}
+
+export function getSessionTestsCatalog(caseId: string, version: string | null | undefined, sessionId: string | null | undefined): Array<{ id: string; label: string }> | null {
+  if (!sessionId) return null;
+  const entry = testsCatalogStore.get(sessionId);
+  if (!entry || entry.expiresAt <= Date.now()) return null;
+  if (entry.version !== (version ?? null)) return null;
+  return entry.items;
+}
+
+/** 读取本人会话的无答案检查目录（case_snapshot_list_tests，门控：归属+版本+病例）。
+ *  失败返回 null（fail-closed，不编造目录）。 */
+export async function listCaseTests(caseId: string, version: string, sessionId: string, accessToken: string | null): Promise<Array<{ id: string; label: string }> | null> {
+  const sourceId = getTeacherSourceId(caseId);
+  if (!accessToken || !isDatabaseConfigured()) return null;
+  try {
+    const db = getSupabaseUserClient(accessToken);
+    const { data, error } = await db.rpc('case_snapshot_list_tests', { p_case_id: sourceId, p_version: version, p_session_id: sessionId });
+    if (error) throw error;
+    if (!Array.isArray(data)) return null;
+    return data.filter((item): item is { id: string; label: string } => Boolean(item && typeof (item as { id?: unknown }).id === 'string' && typeof (item as { label?: unknown }).label === 'string'));
+  } catch (error) {
+    if (process.env.LOG_LEVEL === 'debug') console.warn('[case-snapshot] list tests failed', sourceId, (error as Error).message);
+    return null;
+  }
+}
+
+/** 按 testId 行级读取本人会话病例的单行检查结果（case_snapshot_get_test，门控：归属+版本+病例）。
+ *  一次下单仅返回该项目结果，不以一次下单暴露全部 tests 全文。失败返回 null（fail-closed）。 */
+export async function getCaseTestResult(caseId: string, version: string, sessionId: string, accessToken: string | null, testId: string): Promise<{ id: string; label: string; result: string } | null> {
+  const sourceId = getTeacherSourceId(caseId);
+  if (!accessToken || !isDatabaseConfigured()) return null;
+  try {
+    const db = getSupabaseUserClient(accessToken);
+    const { data, error } = await db.rpc('case_snapshot_get_test', { p_case_id: sourceId, p_version: version, p_session_id: sessionId, p_test_id: testId });
+    if (error) throw error;
+    if (!data || typeof data !== 'object') return null;
+    const item = data as { id?: unknown; label?: unknown; result?: unknown };
+    if (typeof item.result !== 'string' || !item.result) return null;
+    return { id: typeof item.id === 'string' ? item.id : testId, label: typeof item.label === 'string' ? item.label : '', result: item.result };
+  } catch (error) {
+    if (process.env.LOG_LEVEL === 'debug') console.warn('[case-snapshot] get test failed', sourceId, testId, (error as Error).message);
+    return null;
+  }
+}
+
 /** 按会话绑定版本读取评分对照（原病例诊断/诊疗经过，不含原文分片与媒体）。
  *  学生走受控 RPC case_snapshot_get_reference（会话归属+版本绑定+病例匹配校验）；
  *  教师直读 case_snapshot_answers（RLS app_is_teacher 放行）。失败返回 null（评分对照留空，不回退漂移数据）。 */

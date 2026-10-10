@@ -11,7 +11,7 @@ import type {
 } from '@/domain/agent';
 import { FLAGSHIP_CASE, findExamRule, findTest, getCase, identifyHistoryIntents } from '@/domain/case';
 import { retrieveKnowledge } from '@/domain/knowledge';
-import { refreshProjectedFacts } from '@/lib/case-snapshot';
+import { getCaseTestResult, refreshProjectedFacts } from '@/lib/case-snapshot';
 import { renderRoleReply } from '@/lib/role-agent';
 
 function now(): string {
@@ -386,9 +386,34 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   };
 }
 
-function handleTest(session: SessionState, testId: string, clientEventId: string): AgentTurnResult {
+async function handleTest(session: SessionState, testId: string, clientEventId: string, accessToken?: string | null): Promise<AgentTurnResult> {
   const test = findTest(session.caseId, testId, session.sourceSnapshotVersion, session.id);
   if (!test) throw new Error('TEST_NOT_FOUND');
+  // 目录项（恢复态投影剥离，result 为空）：按 testId 走行级结果 RPC 读取本人病例单行结果，
+  // 一次下单仅返回该项目结果，不以一次下单暴露全部 tests 全文（目录/结果分离）。
+  if (!test.result && accessToken && session.sourceSnapshotVersion) {
+    const fetched = await getCaseTestResult(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, testId);
+    if (fetched?.result) {
+      test.result = fetched.result;
+      if (fetched.label) test.label = fetched.label;
+    }
+  }
+  // fail-closed：下单记录保留，行级结果不可得时明确「资料未提供」，不编造检查结果
+  if (!test.result) {
+    session.orderedTests = uniq([...session.orderedTests, test.id]);
+    session.unlockedEvidence = uniq([...session.unlockedEvidence, test.evidenceCode]);
+    session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：检查已开出，本病例资料未提供该项结果`, null, [test.evidenceCode]));
+    session.stage = 'tests';
+    session.updatedAt = now();
+    const pendingMessage = message('system', `${test.label}已开出，本病例资料未提供该项结果。`, { kind: 'navigation' });
+    session.messages.push(pendingMessage);
+    return {
+      session,
+      newMessages: [pendingMessage],
+      feedback: feedbackFor(session, '检查已开出，本病例资料未提供该项结果，可继续其他检查或进入诊断。'),
+      trace: [trace('病例状态', '记录检查选择；资料未提供的结果不编造')],
+    };
+  }
   session.orderedTests = uniq([...session.orderedTests, test.id]);
   session.unlockedEvidence = uniq([...session.unlockedEvidence, test.evidenceCode]);
   session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：${test.result}`, test.appropriate, [test.evidenceCode]));
@@ -502,7 +527,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
     case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders);
     case 'DOCTOR_INTERVENTION': return handleIntervention(session, event.data.action, clientEventId);
     case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId);
-    case 'ORDER_TEST': return handleTest(session, event.data.testId, clientEventId);
+    case 'ORDER_TEST': return handleTest(session, event.data.testId, clientEventId, options?.accessToken);
     case 'SUBMIT_DECISION': return handleDecision(session, event.data, clientEventId);
     case 'SUBMIT_PLAN': return handlePlan(session, event.data, clientEventId);
     case 'SEND_COMMUNICATION': return handleCommunication(session, event.data.text, clientEventId);

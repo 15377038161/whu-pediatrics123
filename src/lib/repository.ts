@@ -2,7 +2,7 @@ import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, S
 import { createInitialSession, refreshSourceSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
 import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client';
-import { ensureCaseSnapshot, getSnapshotVersion, restoreCaseSnapshotFacts } from '@/lib/case-snapshot';
+import { ensureCaseSnapshot, getSnapshotVersion, listCaseTests, restoreCaseSnapshotFacts, setSessionTestsCatalog } from '@/lib/case-snapshot';
 import { resolveTeacherCaseVersion } from '@/lib/case-version-select';
 import { assertCasePublishedForNewSession } from '@/lib/case-publication';
 import { isScorableCase } from '@/domain/case-classification';
@@ -165,6 +165,11 @@ export class AgentRepository {
       // RPC 校验失败/无数据保持"资料不足"，不回退漂移数据换患者。
       if (coldStartVersion && this.actor.role !== 'teacher') {
         const facts = await restoreCaseSnapshotFacts(caseId, coldStartVersion, this.actor.accessToken, this.actor.role, session.id);
+        // 目录/结果分离：未开单时投影剥离 tests，无答案目录经独立 RPC 注入（死锁修复）
+        if (facts && !facts.sections.tests) {
+          const catalog = await listCaseTests(caseId, coldStartVersion, session.id, this.actor.accessToken);
+          if (catalog) setSessionTestsCatalog(session.id, coldStartVersion, catalog);
+        }
         if (facts) {
           // 传 session.id：命中刚写入的会话作用域投影事实（不读共享键完整事实）
           const fresh = createInitialSession(this.actor.id, mode, caseId, practiceFocus, coldStartVersion, session.id);
@@ -233,6 +238,12 @@ export class AgentRepository {
         const facts = await restoreCaseSnapshotFacts(restored.caseId, restored.sourceSnapshotVersion, this.actor.accessToken, this.actor.role, restored.id);
         if (!facts && this.actor.role === 'teacher') {
           await ensureCaseSnapshot(restored.caseId, { accessToken: this.actor.accessToken, teacher: true });
+        }
+        // 目录/结果分离：学生未开单时投影剥离 tests，无答案目录经独立 RPC 注入（死锁修复）；
+        // 目录仅 id/label（无答案），已下单会话（tests 已扩展）不注入。
+        if (this.actor.role !== 'teacher' && facts && !facts.sections.tests) {
+          const catalog = await listCaseTests(restored.caseId, restored.sourceSnapshotVersion, restored.id, this.actor.accessToken);
+          if (catalog) setSessionTestsCatalog(restored.id, restored.sourceSnapshotVersion, catalog);
         }
       } else {
         await ensureCaseSnapshot(restored.caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });

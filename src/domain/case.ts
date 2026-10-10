@@ -1,5 +1,6 @@
 import type { Emotion, Stage, VitalSigns } from '@/domain/agent';
 import { getPublicCase } from '@/domain/case-catalog';
+import { getSessionTestsCatalog } from '@/lib/case-snapshot';
 import { readTeacherCaseData, type TeacherCaseData } from '@/lib/teacher-case-data';
 
 export interface HistoryIntent {
@@ -224,7 +225,24 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   });
   if (examText && exams.length === 1) exams.push({ id: 'source-exam', toolId: 'inspection', bodyPartId: 'skin', label: '查看原始查体记录', result: examText, evidenceCode: 'SOURCE_EX_ALL', requires: ['EX_PREP'], risk: 'normal' });
   const testLines = source?.sections.tests.split('\n').filter((line) => line.trim() && !/^(?:辅助检查|辅检|入院后辅检)[：:]?$/.test(line.trim())) ?? [];
-  const tests = testLines.map((line, index): AuxiliaryTest => ({ id: `source-test-${index}`, label: line.split(/[:：]/)[0].slice(0, 60) || `检查记录 ${index + 1}`, indication: '选择后查看本病例提供的检查结果', result: line, evidenceCode: `SOURCE_TEST_${index}`, appropriate: null }));
+  // 目录/结果分离：label 只取冒号前的检查名（≤60 字符）；无冒号行整行为结果文本，
+  // label 用「检查记录 N」——目录不透出检查数值（不以目录泄露答案）。
+  const tests = testLines.map((line, index): AuxiliaryTest => {
+    const head = line.split(/[：:]/)[0];
+    const label = head === line ? `检查记录 ${index + 1}` : (head.trim().slice(0, 60) || `检查记录 ${index + 1}`);
+    return { id: `source-test-${index}`, label, indication: '选择后查看本病例提供的检查结果', result: line, evidenceCode: `SOURCE_TEST_${index}`, appropriate: null };
+  });
+  // 恢复态投影剥离（未开单 sections.tests 为空串）时，目录来自会话作用域目录缓存
+  // （case_snapshot_list_tests 注入，无答案仅 id/label）：保证学生可见可下单目录（死锁修复）。
+  // 目录项与全文行 id 同规则（source-test-N）；全文恢复后（首单触发投影刷新）自然替换，
+  // 仅在缓存 tests 为空（剥离态）时合并，避免解析错位产生重复项。
+  const catalog = getSessionTestsCatalog(caseId, version, sessionId);
+  if (catalog && tests.length === 0) {
+    for (const item of catalog) {
+      const index = Number(item.id.replace(/^source-test-/, ''));
+      tests.push({ id: item.id, label: item.label, indication: '选择后查看本病例提供的检查结果', result: '', evidenceCode: Number.isFinite(index) ? `SOURCE_TEST_${index}` : `SOURCE_TEST_${item.id}`, appropriate: null });
+    }
+  }
   return {
     ...profile, version: 2, age: source?.age ?? '年龄未记录', sex: source?.sex ?? '性别未记录', patientName: '小朋友',
     triage: source ? `${source.age}患儿就诊。${source.complaint}。` : '请先采集主诉、现病史和一般状态。本病种尚未加载独立病例正文，可记录自己的问诊与诊疗思路。',
