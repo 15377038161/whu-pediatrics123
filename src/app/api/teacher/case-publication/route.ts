@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     return ok({ caseId: row.caseId, published: row.published, updatedAt: row.updatedAt });
   } catch (error) {
     const detail = errorFromUnknown(error);
-    const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'CASE_NOT_FOUND' ? 404 : 500;
+    const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : detail.code === 'CASE_NOT_FOUND' ? 404 : 500;
     return fail(detail, undefined, status);
   }
 }
