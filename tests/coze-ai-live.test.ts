@@ -10,7 +10,7 @@ process.env.COZE_PROJECT_ENV = process.env.COZE_PROJECT_ENV || 'PROD';
 const LIVE = process.env.AI_LIVE_TEST === '1';
 const skipReason = LIVE ? false : 'set AI_LIVE_TEST=1 to run live Coze AI integration tests';
 
-const MODEL_NAME = 'doubao-seed-2-0-lite-260215';
+const MODEL_NAME = 'doubao-seed-1-8-251228';
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;

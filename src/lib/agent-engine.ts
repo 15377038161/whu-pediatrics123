@@ -114,6 +114,15 @@ function feedbackFor(session: SessionState, text: string): string | null {
   return session.mode === 'osce' ? null : text;
 }
 
+/** 问诊/干预推进：stage 仅前进不回退。guided 模式下诊断/处置提交后继续问诊（单聊天框
+ *  语义推导仍返回 history）不得把 stage 拉回 'history'——DB 防回退触发器会以
+ *  SESSION_STAGE_REGRESSION 拒绝（真实平台回归实测定位，与 handleCommunication 的修复同规则：
+ *  问诊/沟通在任意阶段合法，保持当前 stage）。 */
+function advanceToHistoryStage(session: SessionState): void {
+  const order = getCase(session.caseId, session.sourceSnapshotVersion, session.id).stages.map((stage) => stage.id);
+  if (order.indexOf(session.stage) <= order.indexOf('history')) session.stage = 'history';
+}
+
 export function refreshSourceSession(session: SessionState): SessionState {
   if (!session.caseId.startsWith('teacher-')) return session;
   if (session.caseVersion >= 2 && session.caseOptions) {
@@ -242,7 +251,7 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
     session.behavior.childResponseStyle = 'off_topic';
     session.events.push(clinicalEvent(clientEventId, 'ASK_QUESTION', 'history', '问题过于宽泛，未获得新的病例事实', false, []));
     session.messages.push(...newMessages);
-    session.stage = 'history';
+    advanceToHistoryStage(session);
     session.updatedAt = now();
     return { session, newMessages, feedback: feedbackFor(session, '问题较宽泛，可围绕起病时间、危险症状或一般状态进一步追问。'), trace: traces };
   }
@@ -292,7 +301,7 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   if (spokenIntervention) evidenceCodes.push('COMM_INTERVENTION');
   session.events.push(clinicalEvent(clientEventId, 'ASK_QUESTION', 'history', `完成${labels}问诊${spokenIntervention ? '并完成沟通干预' : ''}`, true, evidenceCodes));
   session.messages.push(...newMessages);
-  session.stage = 'history';
+  advanceToHistoryStage(session);
   session.updatedAt = now();
   const sources = retrieveKnowledge(`${labels} 呼吸 肺炎`).map((source) => source.id);
   traces.push(trace('病例状态', `仅解锁“${labels}”对应的预置病史事实`));
@@ -343,7 +352,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
   session.unlockedEvidence = uniq([...session.unlockedEvidence, ...codes]);
   session.messages.push(...newMessages);
   session.events.push(clinicalEvent(clientEventId, 'ASK_QUESTION', 'history', codes.length ? `依据病例正文回答：${text}` : `问诊记录：${text}；该信息尚未获得`, null, codes));
-  session.stage = 'history'; session.updatedAt = now();
+  advanceToHistoryStage(session); session.updatedAt = now();
   return { session, newMessages, feedback: feedbackFor(session, codes.length ? '回答依据该病例的原始病史，已记录来源证据。' : '请记录需要补充核实的信息，继续采集其他病史。'),
     trace: [trace('知识检索', '按本病例病史检索已提供事实', source ? [source.caseId] : []), trace('病例状态', '保留未知信息，不补写病史')], runtime: roleResult?.runtime };
 }
@@ -368,7 +377,7 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
   const newMessages = [studentMessage, response];
   session.messages.push(...newMessages);
   session.events.push(clinicalEvent(clientEventId, 'DOCTOR_INTERVENTION', 'history', action === 'comfort_child' ? '完成患儿情绪安抚' : '调整患儿与家长应答秩序', true, ['COMM_INTERVENTION']));
-  session.stage = 'history';
+  advanceToHistoryStage(session);
   session.updatedAt = now();
   return {
     session,

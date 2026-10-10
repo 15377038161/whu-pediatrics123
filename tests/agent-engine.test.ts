@@ -227,3 +227,21 @@ test('OSCE 问诊阶段直发查体/检查/诊断事件被服务端拒绝，沉�
   const immersiveExam = await runAgentTurn(immersive, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'immersive-early-exam');
   assert.ok(immersiveExam.session.events.some((event) => event.type === 'EXAM_ACTION'));
 });
+
+test('plan 后继续问诊：stage 不回退（history 不因 plan 误切沟通）', async () => {
+  const session = createInitialSession('student-1', 'guided');
+  await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'plan' } }, 'event-nav-plan');
+  await runAgentTurn(session, { type: 'SUBMIT_PLAN', data: { priority: '吸氧并监测血氧', detail: '低流量吸氧，监测血氧与呼吸。' } }, 'event-plan-submit');
+  assert.equal(session.stage, 'plan');
+  // 计划提交后继续问诊（单聊天框语义推导返回 history）：不得把 stage 拉回 history
+  // （DB 防回退触发器会以 SESSION_STAGE_REGRESSION 拒绝，真实平台回归实测定位）
+  const asked = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '什么时候开始发热咳嗽的？' } }, 'event-post-plan-ask');
+  assert.equal(asked.session.stage, 'plan', '问诊不得把 stage 拉回 history');
+  assert.ok(asked.newMessages.some((item) => item.actor === 'child' || item.actor === 'parent'), '问诊链路仍返回角色回复');
+  // 干预同理：plan 后干预不回退 stage
+  const comforted = await runAgentTurn(session, { type: 'DOCTOR_INTERVENTION', data: { action: 'comfort_child' } }, 'event-post-plan-comfort');
+  assert.equal(comforted.session.stage, 'plan', '干预不得把 stage 拉回 history');
+  // 宽泛问题分支同理不回退
+  const vague = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '嗯那个怎么说呢' } }, 'event-post-plan-vague');
+  assert.equal(vague.session.stage, 'plan', '宽泛问题分支不得把 stage 拉回 history');
+});
