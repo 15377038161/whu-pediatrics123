@@ -91,7 +91,7 @@ async function main(): Promise<void> {
   // 4) 媒体脱敏门控默认关闭（环境未开启 PEDIATRICS_MEDIA_STUDENT_ACCESS 时学生拿不到清单/原图）
   const mediaGateOn = process.env.PEDIATRICS_MEDIA_STUDENT_ACCESS === 'true';
   const resResp = await fetch(`${BASE}/api/cases/teacher-${encodeURIComponent('肾病综合征')}/resources`, { headers: auth });
-  let resDetail = `status=${resResp.status}`;
+  const resDetail = `status=${resResp.status}`;
   if (resResp.status === 200) {
     const resBody = (await resResp.json().catch(() => null)) as { data?: unknown[] } | null;
     const empty = Array.isArray(resBody?.data) && resBody!.data!.length === 0;

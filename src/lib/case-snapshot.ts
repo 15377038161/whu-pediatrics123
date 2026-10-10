@@ -8,6 +8,10 @@ import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
  * 结构化病例快照（来源：平台知识库召回）
  * - 仅当本地 knowledge/teaching-cases/{id}.json 缺失时，用知识库召回构建快照。
  * - 快照内容全部来自真实召回分片，不做任何模型补造；解析仅做分段与脱敏。
+ * - 来源校验（失败关闭）：召回候选按可信来源标题精确匹配（已审核源名派生，
+ *   正文 {源名}.txt / 影像册 {源名}_完整影像资料册.pdf）；标题缺失或异源候选一律拒绝，
+ *   不以 clean()/schema 合格或关键词相近替代来源校验；无独立来源（folder 空）不召回，
+ *   保持「资料不足」不编造（此前 NRDS 曾混入先天性肌力分片，2026-10-10 修复）。
  * - 版本绑定：快照全文 sha256 指纹作为版本号；会话首次加载时绑定该版本，
  *   之后读取（含服务重启后）优先按绑定版本从数据库持久缓存恢复，不因 TTL/重启换患者事实。
  * - 数据库持久缓存：case_snapshot_facts（登录可读的教学事实，不含诊断答案）+
@@ -18,6 +22,24 @@ import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 function getTeacherSourceId(caseId: string): string {
   const decoded = decodeURIComponent(caseId);
   return TEACHER_CASE_LINKS[decoded]?.sourceId ?? decoded;
+}
+
+/** 可信来源标题（权威映射派生）：正文 txt 与同源影像资料册 pdf，均由已审核目录源名精确派生。
+ *  仅用于精确匹配，不做关键词/正文包含判断（同源影像册属同一已审核来源文件夹材料）。 */
+export function trustedSourceTitles(sourceName: string): string[] {
+  return [`${sourceName}.txt`, `${sourceName}_完整影像资料册.pdf`];
+}
+
+/** 来源校验（失败关闭）：候选标题必须与可信标题 trim 后完全一致；
+ *  标题缺失/为空（来源不可证）或异源（跨病例混召）一律拒绝。 */
+export function isTrustedSourceTitle(title: string | null | undefined, trusted: readonly string[]): boolean {
+  const t = (title ?? '').trim();
+  return t.length > 0 && trusted.includes(t);
+}
+
+/** 召回候选来源过滤（纯函数，供单测注入异源/同源/空标题夹具）：仅保留可信标题精确匹配的候选。 */
+export function filterTrustedRecallCandidates<T extends { title: string | null }>(items: readonly T[], trusted: readonly string[]): T[] {
+  return items.filter((item) => isTrustedSourceTitle(item.title, trusted));
 }
 
 export const KB_DOC_ID = '3821591';
@@ -166,18 +188,26 @@ function extractImageUrls(content: string): CaseSnapshotMedia[] {
   return results;
 }
 
-async function recallCaseChunks(client: KnowledgeClient, caseName: string): Promise<Array<{ text: string; sha: string }>> {
-  // “来源图片”变体用于召回影像资料册分片（媒体 URL 主要存在于该类分片中）。
+async function recallCaseChunks(client: KnowledgeClient, caseName: string, trustedTitles: readonly string[]): Promise<Array<{ text: string; sha: string }>> {
+  // “来源图片”变体用于召回影像资料册分片（媒体 URL 主要存在于该类分片中的可信来源材料内）。
   const variants = [caseName, `${caseName} 现病史 主诉 查体`, `${caseName} 诊断 诊疗经过`, `${caseName} 来源图片`];
-  const seen = new Map<string, string>();
+  const raw: Array<{ title: string | null; content: string | null }> = [];
   for (const query of variants) {
     const result = await client.recall({ query, knowledgeBaseIds: [KB_DOC_ID], topK: 10, recallThreshold: 0.2 });
-    for (const item of result.results) {
-      const text = (item.content || '').trim();
-      if (!text) continue;
-      const sha = sha256(text);
-      if (!seen.has(sha)) seen.set(sha, text);
-    }
+    raw.push(...result.results.map((item) => ({ title: item.title, content: item.content })));
+  }
+  // 来源校验（失败关闭）：异源候选（跨病例混召）与空标题候选（来源不可证）一律拒绝，
+  // 不拼入其他患者事实，不以 clean()/schema 合格或关键词相近替代来源校验。
+  const trusted = filterTrustedRecallCandidates(raw, trustedTitles);
+  if (process.env.LOG_LEVEL === 'debug' && raw.length > trusted.length) {
+    console.debug(`[case-snapshot] source filter: kept=${trusted.length} rejected=${raw.length - trusted.length} case=${caseName}`);
+  }
+  const seen = new Map<string, string>();
+  for (const item of trusted) {
+    const text = (item.content || '').trim();
+    if (!text) continue;
+    const sha = sha256(text);
+    if (!seen.has(sha)) seen.set(sha, text);
   }
   return [...seen.entries()].map(([sha, text]) => ({ text, sha }));
 }
@@ -244,13 +274,16 @@ export async function ensureCaseSnapshot(caseId: string, options?: { accessToken
   const sourceId = getTeacherSourceId(caseId);
   const item = TEACHER_CASE_CATALOG.find((entry) => entry.id === sourceId);
   if (!item || !isKnowledgeConfigured()) return null;
+  // 来源守卫（失败关闭）：别名解析后仍无已审核来源文件夹（D 类 3 项缺独立来源）不召回，
+  // 保持「资料不足」，不因关键词召回拼入其他患者事实。
+  if (!item.folder) return null;
   const entry = snapshotStore.get(sourceId);
   if (entry && entry.expiresAt > Date.now()) return { data: entry.data, media: entry.media, meta: entry.meta };
   if (entry?.inflight) return entry.inflight;
   const task = (async (): Promise<SnapshotResult | null> => {
     try {
       const client = getKnowledgeClient();
-      const chunks = await recallCaseChunks(client, item.name);
+      const chunks = await recallCaseChunks(client, item.name, trustedSourceTitles(item.name));
       if (chunks.length === 0) return null;
       const media: CaseSnapshotMedia[] = [];
       for (const chunk of chunks) media.push(...extractImageUrls(chunk.text));
