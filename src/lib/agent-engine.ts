@@ -14,6 +14,20 @@ import { retrieveKnowledge } from '@/domain/knowledge';
 import { getCaseTestResult, recordCaseTestOrder, refreshProjectedFacts } from '@/lib/case-snapshot';
 import { renderRoleReply } from '@/lib/role-agent';
 
+/** 开单 RPC 注入缝：生产默认指向 case-snapshot 封装；仅测试注入 503/守卫拒绝失败路径，
+ *  不改变业务判定与守卫逻辑（不绕过归属/版本/已下单校验）。 */
+const testOrderRpc = {
+  record: recordCaseTestOrder,
+  getResult: getCaseTestResult,
+};
+export function __setTestOrderRpcForTests(overrides: Partial<typeof testOrderRpc> | null): void {
+  if (overrides) Object.assign(testOrderRpc, overrides);
+  else {
+    testOrderRpc.record = recordCaseTestOrder;
+    testOrderRpc.getResult = getCaseTestResult;
+  }
+}
+
 function now(): string {
   return new Date().toISOString();
 }
@@ -414,14 +428,19 @@ async function handleTest(session: SessionState, testId: string, clientEventId: 
   // orderedTests），再按 testId 行级读取本人病例单行结果（get_test 验证已下单）——先记单后取
   // 结果，既保证已下单验证不产生死锁，也不以一次下单暴露全部 tests 全文（目录/结果分离）。
   if (!test.result && accessToken && session.sourceSnapshotVersion) {
-    const recorded = await recordCaseTestOrder(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, testId);
+    const recorded = await testOrderRpc.record(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, testId);
     // 守卫拒绝（完成态竞态/项目越界等）：回合失败，不伪记下单与证据
     if (recorded === null) throw new Error('TEST_ORDER_REJECTED');
     // 网络/权限失败在此抛出（TEST_ORDER_RPC_FAILED / TEST_RESULT_RPC_FAILED），不伪记成功下单或资料未提供
-    const fetched = await getCaseTestResult(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, testId);
+    const fetched = await testOrderRpc.getResult(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, testId);
     if (fetched?.result) {
       test.result = fetched.result;
       if (fetched.label) test.label = fetched.label;
+    } else {
+      // record 已成功但行级读取返回 null：守卫竞态/数据异常（record 已验证项目在目录内且已下单，
+      // get_test 同规则解析不应无行）——不落入「资料未提供」：不记资料缺失、不解锁证据；
+      // 回合失败可重试（record 幂等，重试不重复下单）
+      throw new Error('TEST_RESULT_UNAVAILABLE');
     }
   }
   // fail-closed：下单记录保留，行级结果不可得时明确「资料未提供」，不编造检查结果
