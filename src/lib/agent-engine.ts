@@ -11,6 +11,7 @@ import type {
 } from '@/domain/agent';
 import { FLAGSHIP_CASE, findExamRule, findTest, getCase, identifyHistoryIntents } from '@/domain/case';
 import { retrieveKnowledge } from '@/domain/knowledge';
+import { refreshProjectedFacts } from '@/lib/case-snapshot';
 import { renderRoleReply } from '@/lib/role-agent';
 
 function now(): string {
@@ -346,10 +347,21 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   const rule = findExamRule(session.caseId, toolId, bodyPartId, session.sourceSnapshotVersion, session.id);
   const traceItems = [trace('查体规则', '校验准备动作、器材、部位与检查顺序')];
   if (!rule) {
-    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `器材${toolId}与部位${bodyPartId}不匹配`, false, []));
+    // 来源病例：无来源体征明确「资料未提供」，不补正常结果、不虚构患者事实、不关闭整个查体
+    // （学生可换用其他器材/部位组合继续）；未完成手卫生时优先引导准备动作。
+    // 演示病例保持原有「器材与部位不匹配」口径。
+    const isSourceCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts !== undefined;
+    const prepared = session.unlockedEvidence.includes('EX_PREP');
+    const summary = isSourceCase
+      ? (prepared ? `${toolId}×${bodyPartId}：本病例资料未提供该检查的体征记录` : `${toolId}×${bodyPartId}：尚未完成手卫生与检查说明`)
+      : `器材${toolId}与部位${bodyPartId}不匹配`;
+    const feedbackText = isSourceCase
+      ? (prepared ? '本病例资料未提供该部位与器材组合的体征记录，请换用其他检查组合或记录需补充的检查。' : '尚未完成必要准备。请先进行手卫生并向患儿说明检查。')
+      : '器材与部位不匹配，未解锁任何深层体征。';
+    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', summary, false, []));
     session.stage = 'exam';
     session.updatedAt = now();
-    return { session, newMessages: [], feedback: feedbackFor(session, '器材与部位不匹配，未解锁任何深层体征。'), trace: traceItems };
+    return { session, newMessages: [], feedback: feedbackFor(session, feedbackText), trace: traceItems };
   }
   const missing = rule.requires.filter((code) => !session.unlockedEvidence.includes(code));
   if (missing.length > 0) {
@@ -460,9 +472,20 @@ function handleCommunication(session: SessionState, text: string, clientEventId:
 
 export interface AgentTurnOptions {
   forwardHeaders?: Record<string, string>;
+  /** 学生会话 JWT：证据驱动的恢复态投影刷新（refreshProjectedFacts）需要以本人身份走受控 RPC。 */
+  accessToken?: string | null;
 }
 
 export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string, options?: AgentTurnOptions): Promise<AgentTurnResult> {
+  // 证据驱动的投影刷新（教师病例恢复态缓存）：学生真实执行查体/开单后 RPC 门控已按证据放行，
+  // 会话作用域缓存仍为剥离态时重新恢复——避免引擎规则匹配读到剥离态造成假阴性
+  // （病例实际有记录却判「资料未提供/检查不存在」）。失败不阻断回合（保持原有剥离态语义）。
+  if (session.caseId.startsWith('teacher-') && session.sourceSnapshotVersion && options?.accessToken) {
+    await refreshProjectedFacts(session.caseId, session.sourceSnapshotVersion, session.id, options.accessToken, {
+      hasExam: session.unlockedEvidence.some((code) => code.startsWith('EX_') || code.startsWith('SOURCE_EX_')),
+      hasTests: session.orderedTests.length > 0,
+    });
+  }
   refreshSourceSession(session);
   getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   if (session.status !== 'active') throw new Error('SESSION_COMPLETED');

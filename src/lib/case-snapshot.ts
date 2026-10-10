@@ -420,6 +420,30 @@ export async function restoreCaseSnapshotFacts(caseId: string, version: string, 
   }
 }
 
+/** 会话作用域缓存是否为「已解锁证据但仍剥离」的过期投影（假阴性检测）。
+ *  evidence.hasExam/hasTests 依据会话内 unlockedEvidence（EX_/SOURCE_EX_ 前缀）与 orderedTests 判定，
+ *  与受控 RPC case_snapshot_get_facts 的投影门控口径一致（迁移 20261010120000）。 */
+export function isProjectionStale(cached: SnapshotCaseData | null | undefined, evidence: { hasExam: boolean; hasTests: boolean }): boolean {
+  if (!cached) return false;
+  const staleExam = evidence.hasExam && !cached.sections.exam;
+  const staleTests = evidence.hasTests && !cached.sections.tests;
+  return staleExam || staleTests;
+}
+
+/** 会话内证据驱动的投影刷新：学生真实执行查体/开单后，受控 RPC 门控已按本人证据放行扩展投影，
+ *  但会话作用域缓存仅在会话载入（loadSession 恢复路径）时写入一次剥离态——后续回合引擎规则匹配
+ *  仍读剥离态，造成假阴性（病例实际有记录却判定无规则/资料未提供）。
+ *  本函数按当前会话证据检测剥离态并重新走受控 RPC 恢复（RPC 以本人会话证据放行），
+ *  仅刷新会话作用域缓存（restoreCaseSnapshotFacts 学生分支不写共享键/裸键）；
+ *  无恢复态缓存（正常路径：本地文件/共享键）不动作，避免多余 RPC。 */
+export async function refreshProjectedFacts(caseId: string, version: string, sessionId: string, accessToken: string | null, evidence: { hasExam: boolean; hasTests: boolean }): Promise<void> {
+  const sourceId = getTeacherSourceId(caseId);
+  const cached = snapshotStore.get(`${sourceId}@${version}#${sessionId}`);
+  if (!cached || cached.expiresAt <= Date.now()) return;
+  if (!isProjectionStale(cached.data, evidence)) return;
+  await restoreCaseSnapshotFacts(caseId, version, accessToken, 'student', sessionId);
+}
+
 /** 按会话绑定版本读取评分对照（原病例诊断/诊疗经过，不含原文分片与媒体）。
  *  学生走受控 RPC case_snapshot_get_reference（会话归属+版本绑定+病例匹配校验）；
  *  教师直读 case_snapshot_answers（RLS app_is_teacher 放行）。失败返回 null（评分对照留空，不回退漂移数据）。 */

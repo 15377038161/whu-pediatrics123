@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const repository = new AgentRepository(user);
     const session = await repository.getSession(parsed.data.sessionId);
     const forwardHeaders = HeaderUtils.extractForwardHeaders(request.headers);
-    const result = await runAgentTurn(session, parsed.data.event as AgentEvent, parsed.data.clientEventId, { forwardHeaders });
+    const result = await runAgentTurn(session, parsed.data.event as AgentEvent, parsed.data.clientEventId, { forwardHeaders, accessToken: user.accessToken });
     await repository.saveSession(result.session);
     await repository.saveAgentCall(result.session.id, parsed.data.clientEventId, result.trace, result.runtime);
     return ok(result);
