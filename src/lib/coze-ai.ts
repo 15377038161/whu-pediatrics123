@@ -75,6 +75,14 @@ export function describeAIConfig(): AIConfigSummary {
   return { provider: 'coze_native', sdkVersion: VERSION, apiKeySource, baseUrl: config.baseUrl || config.modelBaseUrl, timeoutMs, maxAttempts, retryBaseMs };
 }
 
+/** 统一凭据检测：是否存在可用 API key。
+ *  与 getAIConfig/describeAIConfig 完全同一优先级链（显式覆盖 COZE_AI_* > 平台注入
+ *  CODER_CODING_* > 旧 COZE_WORKLOAD_*），调用方（如 role-agent 的 shouldUseModel）
+ *  凭此判断是否走模型路径，不得另建重复判断链。 */
+export function hasAICredentials(): boolean {
+  return describeAIConfig().apiKeySource !== 'missing';
+}
+
 export type AIErrorKind =
   | 'rate_limited'
   | 'timeout'

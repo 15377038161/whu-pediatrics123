@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { AgentRuntimeSummary } from '@/domain/agent';
-import { AIGatewayError, classifyAIError, invokeCozeAI } from '@/lib/coze-ai';
+import { AIGatewayError, classifyAIError, hasAICredentials, invokeCozeAI } from '@/lib/coze-ai';
 
 const MODEL_NAME = process.env.COZE_AI_ROLE_MODEL || 'doubao-seed-2-0-pro-260215';
 
@@ -27,8 +27,14 @@ export interface RoleReplyInput {
   disclosedFacts?: string[];
 }
 
+/** 是否走模型路径：fixture 关闭（确定性测试）优先；凭据检测复用 coze-ai 统一配置
+ *  （显式 COZE_AI_* 覆盖 > 平台注入 CODER_CODING_* > 旧 COZE_WORKLOAD_*），不另建重复判断链。
+ *  旧实现检查 COZE_PROJECT_ENV/COZE_AI_API_KEY/COZE_WORKLOAD_IDENTITY_API_KEY，漏检平台
+ *  注入的 CODER_CODING_*（沙箱实测注入），导致有凭据时仍恒走 deterministic——本修复对齐。
+ *  凭据缺失时不调模型（避免必败请求）；模型调用失败/解析失败仍由 renderRoleReply 的
+ *  model_fallback 安全降级兜底。 */
 function shouldUseModel(): boolean {
-  return process.env.ENABLE_AI_FIXTURE !== 'true' && Boolean(process.env.COZE_PROJECT_ENV || process.env.COZE_AI_API_KEY || process.env.COZE_WORKLOAD_IDENTITY_API_KEY);
+  return process.env.ENABLE_AI_FIXTURE !== 'true' && hasAICredentials();
 }
 
 function extractJsonCandidate(text: string): string | null {
