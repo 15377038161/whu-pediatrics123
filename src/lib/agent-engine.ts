@@ -184,6 +184,27 @@ function applyInterventionState(session: SessionState, action: Extract<AgentEven
   }
 }
 
+/** 来源病例问诊的确定性兜底口语化（模型不可用/解析失败时）：
+ *  仅做同义口语转换与自然语气包裹，不新增、不修改任何事实（数值、部位、时间、阴性/阳性表述保持原文）；
+ *  未匹配术语保留原文（宁可不顺口也不虚构）。开头按消息数轮换，避免每轮同一句式。 */
+function casualParentReply(fact: string, turnIndex: number): string {
+  const openers = ['嗯，是这样的，', '是这样的医生，', '唉，', ''];
+  const opener = openers[turnIndex % openers.length];
+  const spoken = fact
+    .replaceAll('患儿', '孩子')
+    .replace(/精神反应可/g, '精神还行')
+    .replace(/神志清楚/g, '人是清醒的')
+    .replace(/发热/g, '发烧')
+    .replace(/纳差|食欲不振/g, '吃得少')
+    .replace(/腹泻/g, '拉肚子')
+    .replace(/呕吐/g, '吐')
+    .replace(/气促/g, '呼吸有点快')
+    .replace(/咳嗽剧烈/g, '咳得厉害')
+    .replace(/无抽搐/g, '没有抽过')
+    .replace(/四肢冰凉/g, '手脚冰凉');
+  return `${opener}${spoken}。`;
+}
+
 async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>): Promise<AgentTurnResult> {
   const spokenIntervention = detectSpokenIntervention(text);
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
@@ -301,7 +322,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
     question: text, childFact: '', parentFact: fact, preferredActor: 'parent', parentPaused: session.parentInterruption === 'paused',
     childComforted: session.childEmotion === 'calm', recentMessages: session.messages.slice(-6),
   }, forwardHeaders) : null;
-  const reply = fact ? roleResult?.reply?.parent ?? `当时的情况是这样：${fact.replaceAll('患儿', '孩子')}` : '这部分我说不清楚，需要再核实一下。';
+  const reply = fact ? roleResult?.reply?.parent ?? casualParentReply(fact, session.messages.length) : '这部分我说不清楚，需要再核实一下。';
   const newMessages = [message('student', text), message(session.parentInterruption === 'paused' ? 'child' : 'parent', session.parentInterruption === 'paused' ? '这个我说不清楚，可以请家长补充吗？' : reply, { emotion: session.childEmotion })];
   const codes = session.parentInterruption === 'paused' ? [] : matches.map((item) => `SOURCE_HX_${item.index}`);
   session.askedIntents = uniq([...session.askedIntents, ...codes]);
