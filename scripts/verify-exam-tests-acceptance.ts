@@ -1,10 +1,11 @@
 /* 真实验收A（第二阶段查体+辅助检查修复）：
  * Phase 1（默认）：正常流——登录→建会话→手卫生→器材×部位→体征解锁→无规则组合「资料未提供」
- *   →list_tests/get_test RPC 直验（目录无答案+行级结果门控）→匿名401→跨学生403→学生访问教师路由403。
+ *   →list_tests 目录（无答案）+ 未下单 get_test 拒绝（2026-10-11 安全口径修正：先记单后取结果）
+ *   →匿名401→跨学生403→学生访问教师路由403。
  *   不下单（orderedTests=0 保持剥离态，供 Phase 2 恢复流验收死锁修复）。
  * Phase 2（--resume <sessionId>，dev server 重启后执行）：
  *   GET 会话（恢复路径→目录注入）→断言 caseOptions.tests 目录可见（无答案）→
- *   首单（PENDING→get_test 行级结果）→诊断提交→处置提交→finish→报告评分。
+ *   首单（record_test_order 持久化→get_test 行级结果）→诊断提交→处置提交→finish→报告评分。
  * 仅使用既有账号（演示学生+残留探针学生），不新建账号；只读+本人会话合法操作。
  */
 import { createHash } from 'node:crypto';
@@ -146,17 +147,19 @@ async function main(): Promise<void> {
     check('无来源体征：明确「资料未提供」口径', noRule.status === 200 && noRuleFeedback.includes('资料未提供'));
     observe('无规则组合反馈', noRuleFeedback.slice(0, 80));
 
-    // 4) RPC 直验：list_tests 目录（无答案）+ get_test 行级结果（本人会话门控）
+    // 4) RPC 直验：list_tests 目录（无答案，本人会话门控）；未下单 get_test 必须拒绝
+    //    （安全口径修正 2026-10-11：原断言「未下单返回行级结果」属缺陷误判——探针
+    //     scripts/verify-tests-rpc-security.ts 实证 3 defect，迁移 20261011160000 修复为
+    //     先 record_test_order 持久化下单、get_test 验证已下单，未下单一律拒绝）
     const catalog = await rpcListTests(token, CASE_ID, version, sessionId);
     check('case_snapshot_list_tests：返回本人会话检查目录', Array.isArray(catalog) && catalog.length > 0);
-    observe('目录条目数与首项', { count: catalog?.length ?? 0, first: catalog?.[0] ?? null });
+    observe('目录条目数', { count: catalog?.length ?? 0 });
     const catalogLabels = catalog ?? [];
     const labelHasColonResult = catalogLabels.some((item) => /[:：]/.test(item.label) && item.label.length > 60);
     check('目录 label 无结果文本（无超长/含冒号后内容）', !labelHasColonResult);
     if (catalogLabels.length > 0) {
       const line = await rpcGetTest(token, CASE_ID, version, sessionId, catalogLabels[0].id);
-      check('case_snapshot_get_test：返回行级结果（id+result）', Boolean(line?.result));
-      observe('行级结果摘要', { id: line?.id, resultHead: (line?.result ?? '').slice(0, 60) });
+      check('未下单 get_test 被拒（返回 null，不泄露结果）', line === null);
     }
 
     // 5) 拒绝面：匿名 401 / 跨学生 403 / 学生访问教师路由 403
@@ -164,7 +167,7 @@ async function main(): Promise<void> {
     check('匿名访问 agent/turn 被拒（401）', anonTurn.status === 401);
     const anonRpc = await fetch(`${SUPA_URL}/rest/v1/rpc/case_snapshot_list_tests`, {
       method: 'POST', headers: { apikey: SUPA_ANON_KEY, 'X-Instance-ID': SUPA_TENANT_ID, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_case_id: CASE_ID.replace(/^teacher-/, ''), p_version: version, p_session_id: sessionId }),
+      body: JSON.stringify({ p_case_id: CASE_ID, p_version: version, p_session_id: sessionId }),
     });
     check('匿名调用 list_tests RPC 被拒（非 200）', anonRpc.status !== 200);
 
@@ -207,7 +210,7 @@ async function main(): Promise<void> {
     check('首单成功（恢复态目录下单，orderedTests 记录）', firstOrder.status === 200 && (firstData?.session.orderedTests ?? []).includes(firstTest.id));
     const firstMessage = firstData?.newMessages.at(-1)?.content ?? '';
     check('首单返回行级结果（结果文本非空且非「资料未提供」）', firstMessage.length > 0 && !firstMessage.includes('资料未提供'));
-    observe('首单结果摘要', { id: firstTest.id, resultHead: firstMessage.slice(0, 80) });
+    observe('首单结果摘要', { id: firstTest.id, resultLen: firstMessage.length });
 
     // 3) 二单（另一项）→ 行级结果
     if (tests.length > 1) {
@@ -215,7 +218,7 @@ async function main(): Promise<void> {
       const secondOrder = await turn(token, resumeId, { type: 'ORDER_TEST', data: { testId: secondTest.id } });
       const secondMessage = secondOrder.body.data?.newMessages.at(-1)?.content ?? '';
       check('二单返回行级结果', secondOrder.status === 200 && secondMessage.length > 0);
-      observe('二单结果摘要', { id: secondTest.id, resultHead: secondMessage.slice(0, 80) });
+      observe('二单结果摘要', { id: secondTest.id, resultLen: secondMessage.length });
     }
 
     // 4) 诊断提交（逐格推进 tests→assessment 后提交，防跳级合法通过）

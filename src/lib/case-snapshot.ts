@@ -484,8 +484,29 @@ export async function listCaseTests(caseId: string, version: string, sessionId: 
   }
 }
 
-/** 按 testId 行级读取本人会话病例的单行检查结果（case_snapshot_get_test，门控：归属+版本+病例）。
- *  一次下单仅返回该项目结果，不以一次下单暴露全部 tests 全文。失败返回 null（fail-closed）。 */
+/** 持久化下单（case_snapshot_record_test_order，幂等原子追加 orderedTests）：
+ *  先落库下单、再行级取结果——get_test 的已下单验证依赖 DB 状态，先记单后取结果不产生死锁。
+ *  返回 orderedTests 数组；守卫拒绝（归属/版本/病例/完成态/项目越界）返回 null；
+ *  网络/权限错误抛出（调用方不得伪记成功下单或资料未提供）。
+ *  无 token / 未配置 DB 时返回 null（预览内存模式由引擎状态 + saveSession 持久化，不经此 RPC）。 */
+export async function recordCaseTestOrder(caseId: string, version: string, sessionId: string, accessToken: string | null, testId: string): Promise<string[] | null> {
+  const sourceId = getTeacherSourceId(caseId);
+  if (!accessToken || !isDatabaseConfigured()) return null;
+  try {
+    const db = getSupabaseUserClient(accessToken);
+    const { data, error } = await db.rpc('case_snapshot_record_test_order', { p_case_id: sourceId, p_version: version, p_session_id: sessionId, p_test_id: testId });
+    if (error) throw error;
+    if (!Array.isArray(data)) return null;
+    return data.filter((item): item is string => typeof item === 'string');
+  } catch (error) {
+    if (process.env.LOG_LEVEL === 'debug') console.warn('[case-snapshot] record test order failed', sourceId, testId, (error as Error).message);
+    throw new Error('TEST_ORDER_RPC_FAILED');
+  }
+}
+
+/** 按 testId 行级读取本人会话病例的单行检查结果（case_snapshot_get_test，门控：归属+版本+病例+已下单持久化）。
+ *  一次下单仅返回该项目结果，不以一次下单暴露全部 tests 全文。
+ *  未下单/守卫拒绝返回 null；网络/权限错误抛出（调用方不得把读取失败伪记为「资料未提供」）。 */
 export async function getCaseTestResult(caseId: string, version: string, sessionId: string, accessToken: string | null, testId: string): Promise<{ id: string; label: string; result: string } | null> {
   const sourceId = getTeacherSourceId(caseId);
   if (!accessToken || !isDatabaseConfigured()) return null;
@@ -499,7 +520,7 @@ export async function getCaseTestResult(caseId: string, version: string, session
     return { id: typeof item.id === 'string' ? item.id : testId, label: typeof item.label === 'string' ? item.label : '', result: item.result };
   } catch (error) {
     if (process.env.LOG_LEVEL === 'debug') console.warn('[case-snapshot] get test failed', sourceId, testId, (error as Error).message);
-    return null;
+    throw new Error('TEST_RESULT_RPC_FAILED');
   }
 }
 

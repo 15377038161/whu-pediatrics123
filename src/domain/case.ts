@@ -202,6 +202,33 @@ export function getCase(caseId: string, version?: string | null, sessionId?: str
   throw new Error('CASE_NOT_FOUND');
 }
 
+/** 可信检查项目名白名单（通用医学检查名，非患者数据）。
+ *  与迁移 20261011160000（case_snapshot_list_tests / case_snapshot_get_test）中的 SQL 白名单
+ *  保持完全同步——冒号前缀不保证无答案（「降钙素原 0.58 ng/mL：明显升高」会把数值带入目录），
+ *  目录/结果 label 一律白名单最长前缀匹配，未匹配行用「检查记录 N」。 */
+export const TRUSTED_TEST_NAMES: readonly string[] = [
+  '血常规', '血常规五分类', 'C反应蛋白', '超敏C反应蛋白', 'CRP', '降钙素原', 'PCT', '血沉', '红细胞沉降率',
+  '血生化', '肝功能', '肾功能', '电解质', '血糖', '血气分析', '血气', '心肌酶', '心肌酶谱', '肌钙蛋白', '脑钠肽', 'BNP',
+  '铁蛋白', '维生素D', '微量元素', '甲状腺功能', '甲功', '皮质醇', '生长激素', '胰岛素样生长因子', '胰岛素',
+  '免疫球蛋白', 'IgE', 'IgG', 'IgA', 'IgM', '补体', '淋巴细胞亚群', 'T细胞亚群', '自身抗体', '抗核抗体', '类风湿因子',
+  '抗链球菌溶血素O', '结核菌素试验', 'PPD试验', 'T-SPOT', '痰培养', '血培养', '咽拭子培养', '尿常规', '便常规',
+  '大便常规', '大便隐血', '脑脊液', '骨髓', '骨髓细胞学', '胸片', '胸部正位片', '胸部X线', 'X线片', '胸部CT', '头颅CT',
+  'CT', '核磁共振', 'MRI', '头颅MRI', 'B超', '超声', '腹部超声', '泌尿系超声', '心脏彩超', '超声心动图', '心电图',
+  'ECG', '脑电图', 'EEG', '动态心电图', '肺功能', '支气管镜', '胃镜', '肠镜', '过敏原', '食物过敏原', '吸入过敏原',
+  '遗传代谢筛查', '基因检测', '染色体', '血氨', '乳酸', '血乳酸', '凝血功能', '凝血四项', 'D二聚体', '同型半胱氨酸',
+];
+
+/** 检查目录 label：剥离行首序号后取白名单内最长前缀；未匹配返回「检查记录 N」。
+ *  规则与迁移 20261011160000 的 SQL 实现完全一致（数值/阳性结论前缀不进入目录）。 */
+export function trustedTestLabel(line: string, index: number): string {
+  const normalized = line.trim().replace(/^[一二三四五六七八九十\d]+[、.．]\s*/, '');
+  let matched = '';
+  for (const name of TRUSTED_TEST_NAMES) {
+    if (normalized.startsWith(name) && name.length > matched.length) matched = name;
+  }
+  return matched || `检查记录 ${index + 1}`;
+}
+
 function createSourceCase(caseId: string, version?: string | null, sessionId?: string | null): FlagshipCase {
   const profile = getPublicCase(caseId);
   const source = readTeacherCaseData(caseId, version, sessionId);
@@ -225,11 +252,11 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   });
   if (examText && exams.length === 1) exams.push({ id: 'source-exam', toolId: 'inspection', bodyPartId: 'skin', label: '查看原始查体记录', result: examText, evidenceCode: 'SOURCE_EX_ALL', requires: ['EX_PREP'], risk: 'normal' });
   const testLines = source?.sections.tests.split('\n').filter((line) => line.trim() && !/^(?:辅助检查|辅检|入院后辅检)[：:]?$/.test(line.trim())) ?? [];
-  // 目录/结果分离：label 只取冒号前的检查名（≤60 字符）；无冒号行整行为结果文本，
-  // label 用「检查记录 N」——目录不透出检查数值（不以目录泄露答案）。
+  // 目录/结果分离：label 走白名单最长前缀匹配（trustedTestLabel，与 SQL 迁移 20261011160000 同规则）——
+  // 冒号前缀不保证无答案（「降钙素原 0.58 ng/mL：明显升高」会把数值带入目录），
+  // 未匹配行用「检查记录 N」，目录不透出检查数值与阳性结论（不以目录泄露答案）。
   const tests = testLines.map((line, index): AuxiliaryTest => {
-    const head = line.split(/[：:]/)[0];
-    const label = head === line ? `检查记录 ${index + 1}` : (head.trim().slice(0, 60) || `检查记录 ${index + 1}`);
+    const label = trustedTestLabel(line, index);
     return { id: `source-test-${index}`, label, indication: '选择后查看本病例提供的检查结果', result: line, evidenceCode: `SOURCE_TEST_${index}`, appropriate: null };
   });
   // 恢复态投影剥离（未开单 sections.tests 为空串）时，目录来自会话作用域目录缓存

@@ -34,6 +34,8 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('INVALID_DATE_RANGE')) return { code: 'INVALID_DATE_RANGE', message: '开始日期不能晚于结束日期。', retryable: false };
   if (message.includes('INVALID_DETAIL')) return { code: 'INVALID_REQUEST', message: '事件数据无效。', retryable: false };
   if (message.includes('DATABASE_NOT_CONFIGURED')) return { code: 'DATABASE_NOT_CONFIGURED', message: 'Coze项目数据库尚未配置。', retryable: false };
+  if (message.includes('TEST_ORDER_REJECTED')) return { code: 'TEST_ORDER_REJECTED', message: '当前会话状态不允许开单（可能已完成或项目不存在）。', retryable: false };
+  if (message.includes('TEST_ORDER_RPC_FAILED') || message.includes('TEST_RESULT_RPC_FAILED')) return { code: 'RPC_UNAVAILABLE', message: '检查记录服务暂时不可用，本次开单未记录，请稍后重试。', retryable: true };
   if (/timeout|超时/i.test(message)) return { code: 'AI_TIMEOUT', message: '智能体响应超时，当前操作已经保留，请稍后重试。', retryable: true };
   return { code: 'INTERNAL_ERROR', message: '系统暂时无法完成该操作，请稍后重试。', retryable: true };
 }

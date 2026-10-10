@@ -11,7 +11,7 @@ import type {
 } from '@/domain/agent';
 import { FLAGSHIP_CASE, findExamRule, findTest, getCase, identifyHistoryIntents } from '@/domain/case';
 import { retrieveKnowledge } from '@/domain/knowledge';
-import { getCaseTestResult, refreshProjectedFacts } from '@/lib/case-snapshot';
+import { getCaseTestResult, recordCaseTestOrder, refreshProjectedFacts } from '@/lib/case-snapshot';
 import { renderRoleReply } from '@/lib/role-agent';
 
 function now(): string {
@@ -410,9 +410,14 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
 async function handleTest(session: SessionState, testId: string, clientEventId: string, accessToken?: string | null): Promise<AgentTurnResult> {
   const test = findTest(session.caseId, testId, session.sourceSnapshotVersion, session.id);
   if (!test) throw new Error('TEST_NOT_FOUND');
-  // 目录项（恢复态投影剥离，result 为空）：按 testId 走行级结果 RPC 读取本人病例单行结果，
-  // 一次下单仅返回该项目结果，不以一次下单暴露全部 tests 全文（目录/结果分离）。
+  // 目录项（恢复态投影剥离，result 为空）：先经 record_test_order 幂等持久化下单（DB 先落
+  // orderedTests），再按 testId 行级读取本人病例单行结果（get_test 验证已下单）——先记单后取
+  // 结果，既保证已下单验证不产生死锁，也不以一次下单暴露全部 tests 全文（目录/结果分离）。
   if (!test.result && accessToken && session.sourceSnapshotVersion) {
+    const recorded = await recordCaseTestOrder(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, testId);
+    // 守卫拒绝（完成态竞态/项目越界等）：回合失败，不伪记下单与证据
+    if (recorded === null) throw new Error('TEST_ORDER_REJECTED');
+    // 网络/权限失败在此抛出（TEST_ORDER_RPC_FAILED / TEST_RESULT_RPC_FAILED），不伪记成功下单或资料未提供
     const fetched = await getCaseTestResult(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, testId);
     if (fetched?.result) {
       test.result = fetched.result;
