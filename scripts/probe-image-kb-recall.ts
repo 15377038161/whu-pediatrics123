@@ -29,7 +29,8 @@ async function probe(query: string): Promise<void> {
         const host = new URL(u).host;
         domains.set(host, (domains.get(host) ?? 0) + 1);
         const m = u.match(/\.(png|jpe?g|webp|gif|pdf|mp4)(?:[?#]|$)/i);
-        exts.set(m ? m[1].toLowerCase() : '无扩展名', (exts.get(m ?? '无扩展名') ?? 0) + 1);
+        const extKey = m?.[1]?.toLowerCase() ?? '无扩展名';
+        exts.set(extKey, (exts.get(extKey) ?? 0) + 1);
       } catch { /* 忽略非法 URL */ }
     }
   }
