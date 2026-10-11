@@ -9,8 +9,10 @@
  *  1. 落地页渲染（标题/双端入口卡）+ 390px 无横向溢出
  *  2. 会话注入后挂载自愈跳转学生端
  *  3. 学生首页 → 训练工作台加载 → triage 开场 → 单聊天框真实 LLM 回复（仅 390px，控制成本；
- *     断言=新增 data-actor∈{child,parent,tutor} 的 assistant 消息 + 服务端 agent_call_records
- *     本轮新记录 execution=model，不以消息数量/长度作为通过依据）
+ *     断言=同轮证据链：①本轮 /api/agent/turn 请求捕获 sessionId+clientEventId；②响应 200 且响应体
+ *     newMessages 含本轮 child/parent 回复；③DOM 新增 assistant 消息；④按该会话该事件精确匹配
+ *     agent_call_records 且 execution=model。不以消息数量/长度为通过依据，不以学生全局最新
+ *     agent_call_records 代替本轮证据）
  *  4. 手卫生 → 听诊器 → 胸部热点查体（data-status）
  *  5. 双视口 console/page 错误收集
  *
@@ -72,12 +74,14 @@ async function fetchSession(cred) {
   return session;
 }
 
-/** 查询当前学生可见的最新 agent_call_records（RLS 限定本人会话；失败返回 null，不抛出） */
-async function latestAgentCall(session) {
+/** 按本轮 turn 的 sessionId+clientEventId 精确匹配 agent_call_records（同轮证据，非全局最新）。
+ *  旧实现取学生全局最新记录并比较 client_event_id 变化——不能排除旧记录/其他会话/并发轮次，
+ *  已废弃。精确匹配失败返回 null，不抛出。 */
+async function agentCallByEvent(authSession, sessionId, clientEventId) {
   const url = process.env.CODER_SUPABASE_URL, key = process.env.CODER_SUPABASE_ANON_KEY, tid = process.env.CODER_SUPABASE_TENANT_ID;
   try {
-    const resp = await fetch(`${url}/rest/v1/agent_call_records?select=client_event_id,execution,model_name,created_at&order=created_at.desc&limit=1`, {
-      headers: { apikey: key, Authorization: `Bearer ${session.access_token}`, 'X-Instance-ID': tid },
+    const resp = await fetch(`${url}/rest/v1/agent_call_records?select=client_event_id,execution,model_name,created_at&session_id=eq.${sessionId}&client_event_id=eq.${encodeURIComponent(clientEventId)}`, {
+      headers: { apikey: key, Authorization: `Bearer ${authSession.access_token}`, 'X-Instance-ID': tid },
     });
     if (!resp.ok) return null;
     const rows = await resp.json();
@@ -155,12 +159,33 @@ async function runViewport(browser, w, h, label, session, doChat) {
         report(`${label} 聊天前置条件`, false, 'textarea#question 未出现');
       } else {
       const beforeCount = await page.evaluate(() => document.querySelectorAll('.message-list.history-chat > .message').length);
-      const recordBefore = await latestAgentCall(session);
       // 问题文本选择口径：不得命中 detectSpokenIntervention 的干预模式（如「小朋友…告诉我」会走
       // handleIntervention，无 runtime 落库 deterministic——旧脚本即因此误报），且需命中病例意图
       // 关键词（fever/onset）确保走 renderRoleReply 的 LLM 路径。「孩子发烧几天了？」双条件均满足。
       await page.fill('textarea#question', '孩子发烧几天了？');
+      // 同轮证据口径（用户要求）：从浏览器本次 /api/agent/turn 请求体捕获 sessionId+clientEventId，
+      // 精确匹配该会话该事件的落库记录；不以学生全局最新 agent_call_records 代替本轮证据
+      // （旧记录/其他会话/并发轮次不可排除，全局最新法已废弃）。
+      const turnRespPromise = page.waitForResponse(
+        (resp) => resp.url().includes('/api/agent/turn') && resp.request().method() === 'POST',
+        { timeout: 90000 },
+      );
       await page.click('button.btn-primary:not([disabled])');
+      const turnResp = await turnRespPromise;
+      let turnReq = {};
+      try { turnReq = JSON.parse(turnResp.request().postData() ?? '{}'); } catch { /* 缺失由下方断言体现 */ }
+      const turnSessionId = turnReq.sessionId ?? null;
+      const turnEventId = turnReq.clientEventId ?? null;
+      report(`${label} 本轮turn请求捕获`, Boolean(turnSessionId && turnEventId), `sessionId=${turnSessionId ? turnSessionId.slice(0, 8) : '缺失'} clientEventId=${turnEventId ? turnEventId.slice(0, 8) : '缺失'}`);
+      report(`${label} 本轮turn响应状态`, turnResp.status() === 200, `status=${turnResp.status()}`);
+      // 响应体核对：本轮实际新增患者/家长回复（结构校验 actor∈{child,parent} 且内容非空，不打印正文）
+      let respReply = null;
+      try {
+        const respBody = await turnResp.json();
+        const newMessages = Array.isArray(respBody?.data?.newMessages) ? respBody.data.newMessages : [];
+        respReply = newMessages.find((m) => (m.actor === 'child' || m.actor === 'parent') && ((m.content ?? '')).trim().length > 0) ?? null;
+      } catch { /* 解析失败由 respReply=null 体现 */ }
+      report(`${label} 响应体含本轮患者/家长回复`, Boolean(respReply), respReply ? `actor=${respReply.actor}` : '响应体未含child/parent回复');
       await page.waitForFunction((n) => {
         const msgs = document.querySelectorAll('.message-list.history-chat > .message');
         for (let i = n; i < msgs.length; i++) {
@@ -180,13 +205,16 @@ async function runViewport(browser, w, h, label, session, doChat) {
         return null;
       }, beforeCount);
       report(`${label} 聊天新增assistant消息`, Boolean(reply), reply ? `data-actor=${reply.actor} 回复长度=${reply.len}字` : '未捕获新增assistant消息');
+      // 精确匹配落库：该会话该事件的 agent_call_records 必须存在且 execution=model
+      // （deterministic=非 LLM 路径；model_fallback=模型调用失败降级；两者均不算模型成功）
       let rec = null;
-      for (let i = 0; i < 10 && !rec; i++) {
-        const latest = await latestAgentCall(session);
-        if (latest && (!recordBefore || latest.client_event_id !== recordBefore.client_event_id)) rec = latest;
-        else await page.waitForTimeout(1500);
+      if (turnSessionId && turnEventId) {
+        for (let i = 0; i < 10 && !rec; i++) {
+          rec = await agentCallByEvent(session, turnSessionId, turnEventId);
+          if (!rec) await page.waitForTimeout(1500);
+        }
       }
-      report(`${label} 服务端execution=model`, rec?.execution === 'model', rec ? `execution=${rec.execution} model=${rec.model_name ?? ''}` : '未捕获新agent_call_records记录');
+      report(`${label} 同轮记录execution=model`, rec?.execution === 'model', rec ? `execution=${rec.execution} model=${rec.model_name ?? ''}` : '该会话该事件记录未找到');
       await page.screenshot({ path: `${OUT}/chat-reply-${label}.png`, fullPage: false });
       }
     }
