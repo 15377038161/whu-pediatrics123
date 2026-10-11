@@ -94,7 +94,7 @@ async function main(): Promise<void> {
 
   // ===== P1. 库绑定核对（一次，全部病例共享） =====
   const kbList = await client.list();
-  const bound = kbList.find((kb) => String(kb.knowledge_id ?? kb.id ?? '') === KB_DOC_ID);
+  const bound = kbList.find((kb) => String(kb.id ?? '') === KB_DOC_ID);
   check('P1 库绑定核对：3821591 在 KnowledgeClient.list() 绑定清单', Boolean(bound), `绑定库数=${kbList.length}`);
 
   // 学生凭据 → DB 版本指纹 RPC（缓存状态核验）
@@ -144,7 +144,7 @@ async function main(): Promise<void> {
 
     // P3: 别名归一化核对——别名经源名路径是否可达（别名→源名映射存在性 + 源名即本病例）
     const aliasesToThis = aliasLinks.filter((link) => link.sourceId === item.id);
-    let aliasPathNote = `别名映射到本源=${aliasesToThis.length}（${aliasesToThis.map((l) => l.aliasId.replace('teacher-', '') + ':' + l.relation).join('/') || '无'}）`;
+    const aliasPathNote = `别名映射到本源=${aliasesToThis.length}（${aliasesToThis.map((l) => l.aliasId.replace('teacher-', '') + ':' + l.relation).join('/') || '无'}）`;
     let aliasRealtimeHit = false;
     for (const link of aliasesToThis) {
       // 应用实际路径：getTeacherSourceId 解析别名→源名后按源名查询（与本脚本主查询同口径）；
