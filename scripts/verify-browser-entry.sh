@@ -54,8 +54,14 @@ check)
 
   echo "-- viewport meta（390px 真实渲染前提，SSR 输出必须包含） --"
   for p in / /student; do
-    n=$(curl -s --max-time 8 "$LOCAL_BASE$p" | grep -c '<meta name="viewport" content="width=device-width, initial-scale=1"' || true)
-    check "viewport meta present in $p" 1 "$n"
+    # 退出码口径：显式保存 curl 退出码，不依赖管道末端 grep 的状态（grep -c ... || true 会掩盖 curl 失败）
+    body=$(curl -s --max-time 8 "$LOCAL_BASE$p"); curl_rc=$?
+    if [ "$curl_rc" -ne 0 ]; then
+      check "viewport meta present in $p" "curl-ok" "curl_rc=$curl_rc"
+    else
+      n=$(printf '%s' "$body" | grep -c '<meta name="viewport" content="width=device-width, initial-scale=1"' || true)
+      check "viewport meta present in $p" 1 "$n"
+    fi
   done
   echo
 

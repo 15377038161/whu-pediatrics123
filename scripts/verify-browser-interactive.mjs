@@ -8,7 +8,9 @@
  * 验收项（双视口 390×844 / 1440×900）：
  *  1. 落地页渲染（标题/双端入口卡）+ 390px 无横向溢出
  *  2. 会话注入后挂载自愈跳转学生端
- *  3. 学生首页 → 训练工作台加载 → triage 开场 → 单聊天框真实 LLM 回复（仅 390px，控制成本）
+ *  3. 学生首页 → 训练工作台加载 → triage 开场 → 单聊天框真实 LLM 回复（仅 390px，控制成本；
+ *     断言=新增 data-actor∈{child,parent,tutor} 的 assistant 消息 + 服务端 agent_call_records
+ *     本轮新记录 execution=model，不以消息数量/长度作为通过依据）
  *  4. 手卫生 → 听诊器 → 胸部热点查体（data-status）
  *  5. 双视口 console/page 错误收集
  *
@@ -70,6 +72,21 @@ async function fetchSession(cred) {
   return session;
 }
 
+/** 查询当前学生可见的最新 agent_call_records（RLS 限定本人会话；失败返回 null，不抛出） */
+async function latestAgentCall(session) {
+  const url = process.env.CODER_SUPABASE_URL, key = process.env.CODER_SUPABASE_ANON_KEY, tid = process.env.CODER_SUPABASE_TENANT_ID;
+  try {
+    const resp = await fetch(`${url}/rest/v1/agent_call_records?select=client_event_id,execution,model_name,created_at&order=created_at.desc&limit=1`, {
+      headers: { apikey: key, Authorization: `Bearer ${session.access_token}`, 'X-Instance-ID': tid },
+    });
+    if (!resp.ok) return null;
+    const rows = await resp.json();
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  } catch {
+    return null;
+  }
+}
+
 const results = [];
 function report(name, ok, detail) {
   results.push({ name, ok });
@@ -105,7 +122,17 @@ async function runViewport(browser, w, h, label, session, doChat) {
     // 3. 学生首页 → 训练工作台
     await page.waitForSelector('a.btn-primary', { timeout: 20000 });
     await page.screenshot({ path: `${OUT}/student-home-${label}.png`, fullPage: false });
-    await page.click('a.btn-primary');
+    if (doChat) {
+      // 聊天断言口径：不点击「继续训练」恢复任意状态的遗留活跃会话（可能已在查体阶段，textarea
+      // 不存在导致聊天步骤被静默跳过）。改为显式创建新会话直达训练页，保证从分诊阶段进入问诊聊天。
+      const resp = await fetch(`${BASE}/api/sessions`, { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}`, 'content-type': 'application/json' }, body: JSON.stringify({ mode: 'guided' }) });
+      const body = await resp.json().catch(() => null);
+      const newId = body?.data?.session?.id ?? body?.data?.id;
+      if (!newId) throw new Error(`新会话创建失败 status=${resp.status}`);
+      await page.goto(`${BASE}/student/training?session=${newId}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    } else {
+      await page.click('a.btn-primary');
+    }
     await page.waitForSelector('.training-toolbar', { timeout: 60000 });
     report(`${label} 训练工作台加载`, true);
     const introBtn = page.locator('.training-primary button.btn-primary', { hasText: '进入问诊与沟通' });
@@ -118,18 +145,50 @@ async function runViewport(browser, w, h, label, session, doChat) {
     await page.waitForTimeout(1000);
     await page.screenshot({ path: `${OUT}/training-${label}.png`, fullPage: false });
 
-    // 4. 单聊天框真实 LLM 回复（仅单视口执行，控制成本；仅输出长度不输出内容）
-    if (doChat && (await page.$('textarea#question'))) {
-      const before = await page.evaluate(() => document.querySelectorAll('.message-list.history-chat > *').length);
-      await page.fill('textarea#question', '小朋友，可以告诉我你现在哪里不舒服吗？');
+    // 4. 单聊天框真实 LLM 回复（仅单视口执行，控制成本；断言口径收紧，不输出回复正文）
+    // 断言口径：不再以「消息数量增加/末条长度>10」作为通过依据，而是：
+    //  ① DOM 新增 data-actor∈{child,parent,tutor} 的 assistant 消息（排除 student/system）；
+    //  ② 服务端 agent_call_records 出现本轮新记录且 execution=model（真实 LLM 链路证据，非 UI 现象推断）。
+    if (doChat) {
+      if (!(await page.$('textarea#question'))) {
+        // 前置条件缺失显式 FAIL：不允许聊天断言被静默跳过后仍计为通过
+        report(`${label} 聊天前置条件`, false, 'textarea#question 未出现');
+      } else {
+      const beforeCount = await page.evaluate(() => document.querySelectorAll('.message-list.history-chat > .message').length);
+      const recordBefore = await latestAgentCall(session);
+      // 问题文本选择口径：不得命中 detectSpokenIntervention 的干预模式（如「小朋友…告诉我」会走
+      // handleIntervention，无 runtime 落库 deterministic——旧脚本即因此误报），且需命中病例意图
+      // 关键词（fever/onset）确保走 renderRoleReply 的 LLM 路径。「孩子发烧几天了？」双条件均满足。
+      await page.fill('textarea#question', '孩子发烧几天了？');
       await page.click('button.btn-primary:not([disabled])');
-      await page.waitForFunction((n) => document.querySelectorAll('.message-list.history-chat > *').length > n, before, { timeout: 90000 });
-      const lastText = await page.evaluate(() => {
-        const list = document.querySelectorAll('.message-list.history-chat > *');
-        return list.length ? (list[list.length - 1].textContent ?? '').trim() : '';
-      });
-      report(`${label} 聊天框真实回复`, lastText.length > 10, `回复长度=${lastText.length}字`);
+      await page.waitForFunction((n) => {
+        const msgs = document.querySelectorAll('.message-list.history-chat > .message');
+        for (let i = n; i < msgs.length; i++) {
+          const actor = msgs[i].getAttribute('data-actor');
+          if (actor && actor !== 'student' && actor !== 'system' && ((msgs[i].querySelector('.message-bubble')?.textContent ?? '').trim().length > 0)) return true;
+        }
+        return false;
+      }, beforeCount, { timeout: 90000 });
+      const reply = await page.evaluate((n) => {
+        const msgs = document.querySelectorAll('.message-list.history-chat > .message');
+        for (let i = n; i < msgs.length; i++) {
+          const actor = msgs[i].getAttribute('data-actor');
+          if (actor && actor !== 'student' && actor !== 'system') {
+            return { actor, len: (msgs[i].querySelector('.message-bubble')?.textContent ?? '').trim().length };
+          }
+        }
+        return null;
+      }, beforeCount);
+      report(`${label} 聊天新增assistant消息`, Boolean(reply), reply ? `data-actor=${reply.actor} 回复长度=${reply.len}字` : '未捕获新增assistant消息');
+      let rec = null;
+      for (let i = 0; i < 10 && !rec; i++) {
+        const latest = await latestAgentCall(session);
+        if (latest && (!recordBefore || latest.client_event_id !== recordBefore.client_event_id)) rec = latest;
+        else await page.waitForTimeout(1500);
+      }
+      report(`${label} 服务端execution=model`, rec?.execution === 'model', rec ? `execution=${rec.execution} model=${rec.model_name ?? ''}` : '未捕获新agent_call_records记录');
       await page.screenshot({ path: `${OUT}/chat-reply-${label}.png`, fullPage: false });
+      }
     }
 
     // 5. 查体：切阶段 →（移动端先切器材抽屉）→ 手卫生 → 听诊器 → 胸部热点

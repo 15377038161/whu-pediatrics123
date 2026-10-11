@@ -68,8 +68,11 @@ async function api(path: string, cookie: string | null, init?: RequestInit): Pro
 }
 
 function serverPid(): string {
-  const out = execSync(`ps -eo pid,cmd | grep "loader.mjs src/server.ts" | grep -v grep | head -1`, { encoding: 'utf8' }).trim();
-  return out ? out.split(/\s+/)[0] : '';
+  // 退出码口径：不再使用 `ps | grep | head -1` 管道（head 恒返 0，会掩盖 grep 未命中与 ps 自身失败）。
+  // 直接执行 ps 并在 JS 内过滤，ps 失败时 execSync 抛出原始非零退出码，不被管道末端命令掩盖。
+  const ps = execSync('ps -eo pid,cmd', { encoding: 'utf8' });
+  const line = ps.split('\n').find((l) => l.includes('loader.mjs src/server.ts') && !l.includes('grep'));
+  return line ? line.trim().split(/\s+/)[0] : '';
 }
 
 async function waitHealthy(timeoutMs = 60000): Promise<void> {
