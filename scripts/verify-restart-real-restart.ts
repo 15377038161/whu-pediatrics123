@@ -279,8 +279,10 @@ async function phaseB(): Promise<number> {
   check('B 读取 A 报告被拒（403/404）', bReport.status === 403 || bReport.status === 404, `status=${bReport.status}`);
   const bTurn = await turn(b.access_token, expected.session.sessionId, { type: 'ASK_QUESTION', data: { text: 'test' } });
   check('B 向 A 会话发回合被拒（403/404）', bTurn.status === 403 || bTurn.status === 404, `status=${bTurn.status}`);
-  const bList = await api<{ items?: Array<{ sessionId?: string; id?: string }>; data?: Array<{ sessionId?: string; id?: string }> }>('/api/reports', { token: b.access_token });
-  const bItems = (bList.body.data ?? bList.body.data?.items ?? []) as Array<{ sessionId?: string; id?: string }>;
+  const bList = await api<unknown>('/api/reports', { token: b.access_token });
+  // 报告列表 data 兼容数组与 {items: []} 两种形态（运行时以实际响应为准，类型安全窄化）
+  const rawData = bList.body.data;
+  const bItems = (Array.isArray(rawData) ? rawData : Array.isArray((rawData as { items?: unknown } | null | undefined)?.items) ? (rawData as { items: unknown[] }).items : []) as Array<{ sessionId?: string; id?: string }>;
   const leaked = bItems.some((item) => item.sessionId === expected.session.sessionId || item.id === expected.report.reportId);
   check('B 报告列表不含 A 的会话/报告', bList.status === 200 && !leaked, `列表数=${bItems.length}`);
   const aTeacherStudents = await api('/api/teacher/students', { token: a.access_token });
