@@ -208,15 +208,34 @@ async function runViewport(browser, w, h, label, mobile, authSession) {
       const resetBtn = await p.locator('button[aria-label="重置"]').count();
       report(`${label} F1 解剖实验室渲染`, partCount === 8 && sliderCount === 1 && zoomIn === 1 && zoomOut === 1 && resetBtn === 1, `部件=${partCount}`);
       // 点选「颅骨」→ 侧栏与部件联动
-      // 移动端布局下部件按钮可能不满足 playwright 可点击性前置（stable/可见区域），
-      // 常规点击失败时退化为 force 点击（仍走真实 React onClick 事件，仅跳过可点击性等待）。
+      // 口径（用户收紧要求）：不使用 force:true/dispatchEvent/DOM 点击兜底——390px 与桌面都必须
+      // 真实可见、正常可点击。若常规点击失败，取 computed layout 与命中元素证据定位根因后小修，
+      // 不强制点击掩盖。失败时输出取证（元素矩形、命中元素标签、裁剪状态）供定位，断言如实 FAIL。
       const skullBtn = p.locator('button.anatomy-part[aria-label="颅骨"]');
-      let forced = false;
+      let clickOk = true;
+      let layoutEvidence = '';
       try {
-        await skullBtn.click({ timeout: 8000 });
-      } catch {
-        await skullBtn.click({ timeout: 8000, force: true });
-        forced = true;
+        await skullBtn.click({ timeout: 10000 });
+      } catch (e) {
+        clickOk = false;
+        // 取证：元素 computed layout + 点击点命中元素 + 各祖先裁剪状态（不打印页面文本内容）
+        layoutEvidence = await p.evaluate(() => {
+          const el = document.querySelector('button.anatomy-part[aria-label="颅骨"]');
+          if (!el) return '元素不存在';
+          const r = el.getBoundingClientRect();
+          const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+          const hit = document.elementFromPoint(cx, cy);
+          const chain = [];
+          let node = el;
+          while (node && node instanceof Element) {
+            const cs = getComputedStyle(node);
+            const nr = node.getBoundingClientRect();
+            chain.push(`${node.tagName.toLowerCase()}.${(node.className || '').toString().split(' ')[0]} clip=${cs.overflow}/${cs.overflowX} rect=[${Math.round(nr.left)},${Math.round(nr.top)},${Math.round(nr.right)},${Math.round(nr.bottom)}]`);
+            node = node.parentElement;
+          }
+          return `元素rect=[${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.right)},${Math.round(r.bottom)}] 命中=${hit ? hit.tagName.toLowerCase() + '.' + (hit.className || '').toString().split(' ')[0] : 'null'} 祖先链=${chain.join(' <- ')}`;
+        }).catch(() => '取证失败');
+        throw new Error(`真实点击失败（不使用force兜底）：${e instanceof Error ? e.message.split('\n')[0] : e} | 取证: ${layoutEvidence.slice(0, 300)}`);
       }
       await p.waitForTimeout(300);
       const infoTitle = (await p.locator('.anatomy-info h2').textContent() ?? '').trim();
@@ -274,8 +293,11 @@ async function runViewport(browser, w, h, label, mobile, authSession) {
         report(`${label} G0 取题收敛`, false, `15s 未收敛 retried=${retried} 状态文本长度=${stateText.length}`);
       }
       if (quizState === 'exhausted') {
-        // 分支一：题池取完 → 空态明确展示
-        report(`${label} G1 题池取完空态展示`, true, '空态文案可见');
+        // 分支一：题池取完 → 空态明确展示。
+        // 口径（用户收紧要求）：空态展示与作答/判分完整闭环是不同验收项，分列计数——
+        // 本分支只证明「题池取完的空态 UI 明确展示」，不证明作答/判分闭环（后者见 G1 作答分支，
+        // 需账号有可答题）。不改既有账号作答记录、不重置题池制造可答题。
+        report(`${label} G1-空态 题池取完空态展示（非作答闭环）`, true, '空态文案可见；作答/判分闭环未在本分支覆盖');
       } else if (quizState === 'answering') {
         // 分支二：正常作答闭环
         await p.locator('.quiz-panel .choice-list .choice').first().click({ timeout: 10000 });
@@ -293,14 +315,21 @@ async function runViewport(browser, w, h, label, mobile, authSession) {
         const answering = await p.locator('.quiz-panel .choice-list .choice').count();
         report(`${label} G2 下一题/再来一批`, answering > 0, `选项数=${answering}`);
       }
-      // 错题复盘 → 继续答题
+      // 错题复盘 → 继续答题（复盘渲染两分支同口径；继续答题后的返回态按分支分列：作答分支返回作答面板，空态分支返回空态）
+      const answeringBranch = quizState === 'answering';
       await p.locator('.quiz-toolbar button', { hasText: '错题复盘' }).click({ timeout: 10000 });
       await p.waitForSelector('.quiz-review-list, .quiz-panel .empty-state', { timeout: 30000 });
       const reviewShown = await p.locator('.quiz-review-list').count() + await p.locator('.quiz-panel .empty-state', { hasText: '暂无作答记录' }).count();
-      report(`${label} G3 错题复盘渲染`, reviewShown > 0);
+      report(`${label} ${answeringBranch ? 'G3 错题复盘渲染' : 'G3-空态 错题复盘渲染'}`, reviewShown > 0);
       await p.locator('.quiz-panel button.btn-primary', { hasText: '继续答题' }).click({ timeout: 10000 });
-      await p.waitForSelector('.quiz-panel .quiz-stem, .empty-state', { timeout: 30000 });
-      report(`${label} G4 继续答题返回作答态`, true);
+      // 竞态修复（断言时机缺陷）：复盘面板标题本身是 .quiz-stem（「错题复盘（共…）」），点击
+      // 「继续答题」后 fetch 在途时复盘面板仍渲染，waitForSelector 会立即命中残留复盘标题——
+      // 必须先等「复盘标题从 DOM 消失」（真正离开复盘态），再判定终态（作答题干或题池取完空态）。
+      await p.waitForFunction(() => ![...document.querySelectorAll('.quiz-panel .quiz-stem')].some((s) => (s.textContent ?? '').includes('错题复盘')), null, { timeout: 30000 });
+      await p.waitForTimeout(300);
+      const backStem = await p.locator('.quiz-panel .quiz-stem').count();
+      const backEmpty = await p.locator('.empty-state', { hasText: '题池已取完' }).count();
+      report(`${label} ${answeringBranch ? 'G4 继续答题返回作答态' : 'G4-空态 继续答题（题池取完返回空态）'}`, answeringBranch ? backStem > 0 : backEmpty > 0, `作答面板=${backStem} 空态=${backEmpty}`);
       await p.screenshot({ path: `${OUT}/entries-quiz-${label}.png`, fullPage: false });
       return p;
     });
