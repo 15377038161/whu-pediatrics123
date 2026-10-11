@@ -81,9 +81,12 @@ async function main(): Promise<void> {
 
   // ===== A. 3821591 全量映射审计：53 独立来源，与应用同口径（4 变体聚合，recallCaseChunks） =====
   // 取证背景（2026-10-17）：实时召回候选标题间歇性为空（平台召回服务状态波动），应用
-  // 失败关闭正确拒绝空标题候选；DB 持久缓存 53/53 覆盖（verify-case-source-coverage 已证），
-  // 会话按绑定版本恢复不受波动影响。本审计断言口径：实时命中 ∪ DB 持久快照 = 53/53 功能覆盖，
-  // 同时如实记录实时命中分布与空标题证据（服务波动入档，非应用缺陷）。
+  // 失败关闭正确拒绝空标题候选；会话按绑定版本恢复不受波动影响。
+  // 统计口径（2026-10-17 收紧轮第五阶段收紧）：如实分列三层——
+  // ① 实时原生召回命中数（本轮 KnowledgeClient.recall 真实结果，含波动）；
+  // ② DB 既有持久快照覆盖数（全部 53 例版本指纹 RPC 核验，非仅查实时未命中者）；
+  // ③ 双层缺失（实时未命中且 DB 无快照，应为 0）。
+  // 功能覆盖断言保留（① ∪ ② = 53），但两层计数与名单分别入档，不再合并为单一数字。
   const queryVariants = (name: string): string[] => [name, `${name} 现病史 主诉 查体`, `${name} 诊断 诊疗经过`, `${name} 来源图片`];
   const cred = loadCred();
   const authResp = await fetch(`${process.env.CODER_SUPABASE_URL as string}/auth/v1/token?grant_type=password`, {
@@ -129,18 +132,23 @@ async function main(): Promise<void> {
     if (!hit) realtimeMisses.push(item.name);
   }
   check('3821591 实时召回调用全程无错（无异常中断）', true, `调用=${callCount} 候选总数=${totalCandidates} 可信分片=${trustedChunks}`);
-  console.log(`INFO  实时命中=${53 - realtimeMisses.length}/53（变体补齐命中 ${variantOnlyHits.length} 个）；空标题候选=${emptyTitleCandidates}/${totalCandidates}（平台召回服务标题间歇为空，波动如实入档）`);
-  // 实时未命中病例 → DB 持久快照兜底核验（功能不受波动影响）
-  let dbFallbackOk = 0;
-  const dbFallbackMiss: string[] = [];
-  for (const name of realtimeMisses) {
-    const item = sources.find((s) => s.name === name);
-    if (!item) { dbFallbackMiss.push(name); continue; }
+  console.log(`INFO  ①实时原生召回命中=${53 - realtimeMisses.length}/53（变体补齐命中 ${variantOnlyHits.length} 个）；空标题候选=${emptyTitleCandidates}/${totalCandidates}（平台召回服务标题间歇为空，波动如实入档）`);
+  // ② DB 既有持久快照覆盖核验（收紧口径：全部 53 例逐一核验，非仅查实时未命中者）
+  let dbCovered = 0;
+  const dbUncovered: string[] = [];
+  const dbErrCases: string[] = [];
+  for (const item of sources) {
     const version = await dbVersionOf(item.id);
-    if (typeof version === 'string' && version.length > 0) dbFallbackOk += 1; else dbFallbackMiss.push(name);
+    if (version === 'ERR') { dbErrCases.push(item.name); continue; }
+    if (typeof version === 'string' && version.length > 0) dbCovered += 1; else dbUncovered.push(item.name);
   }
-  check('实时命中 ∪ DB 持久快照 = 53/53 功能覆盖（未命中病例全部有 DB 兜底快照）', realtimeMisses.length === dbFallbackOk, `实时命中=${53 - realtimeMisses.length} DB兜底=${dbFallbackOk} 未覆盖=${dbFallbackMiss.length}`);
+  console.log(`INFO  ②DB 既有持久快照覆盖=${dbCovered}/53${dbUncovered.length ? `（无快照: ${dbUncovered.join('、')}）` : ''}${dbErrCases.length ? `（RPC 异常: ${dbErrCases.join('、')}）` : ''}`);
+  // ③ 双层缺失：实时未命中且 DB 无快照（应为 0；DB 异常病例不计入缺失单，另行入档）
+  const bothMiss = realtimeMisses.filter((name) => dbUncovered.includes(name));
+  const dbFallbackOk = realtimeMisses.filter((name) => !dbUncovered.includes(name) && !dbErrCases.includes(name)).length;
+  check('③双层缺失=0（实时未命中病例全部有 DB 兜底快照，功能覆盖 53/53）', bothMiss.length === 0 && dbErrCases.length === 0, `缺失=${bothMiss.length} RPC异常=${dbErrCases.length} 实时未命中=${realtimeMisses.length} 其中DB兜底=${dbFallbackOk}`);
   if (realtimeMisses.length) console.log(`INFO  本轮实时未命中病例（均有 DB 快照兜底）: ${realtimeMisses.join('、')}`);
+  if (dbErrCases.length) console.log(`INFO  DB 版本指纹 RPC 异常病例（不计缺失，如实入档）: ${dbErrCases.join('、')}`);
 
   // ===== B. 别名映射审计：失败关闭 + 源名路径（应用实际行为：getTeacherSourceId 解析到源名后查询） =====
   const aliasName = '毛细支气管炎';

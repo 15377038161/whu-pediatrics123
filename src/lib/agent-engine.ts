@@ -587,7 +587,22 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
     case 'SEND_COMMUNICATION': return handleCommunication(session, event.data.text, clientEventId);
     case 'NAVIGATE_STAGE': {
       if (!validateStageNavigation(session, event.data.stage)) throw new Error('OSCE_STAGE_BACKTRACK_FORBIDDEN');
+      // 非 OSCE 的「非前进一格」导航（回看已完成阶段/返回会话中心/同格重进）只记录展示阶段
+      // viewStage，不修改业务阶段 stage——stage 列单向不变，DB 防回退触发器语义保持；
+      // 沉浸式/guided「处置后回会话中心继续追问/沟通」链路由此恢复（此前被触发器 409 阻断）。
+      // 前进一格时正常推进业务阶段并清除回看态；OSCE 防作弊约束不变（回退在上方被拒）。
+      const navOrder = getCase(session.caseId, session.sourceSnapshotVersion, session.id).stages.map((item) => item.id);
+      const curIdx = navOrder.indexOf(session.stage);
+      const tgtIdx = navOrder.indexOf(event.data.stage);
+      const isForwardStep = tgtIdx === curIdx + 1;
+      if (session.mode !== 'osce' && !isForwardStep) {
+        session.viewStage = event.data.stage;
+        session.events.push(clinicalEvent(clientEventId, 'NAVIGATE_STAGE', event.data.stage, `回看${event.data.stage}阶段（业务阶段保持${session.stage}）`, null, []));
+        session.updatedAt = now();
+        return { session, newMessages: [], feedback: null, trace: [trace('病例状态', `回看${event.data.stage}阶段（业务阶段不变）`)] };
+      }
       session.stage = event.data.stage;
+      session.viewStage = undefined;
       session.events.push(clinicalEvent(clientEventId, 'NAVIGATE_STAGE', event.data.stage, `进入${event.data.stage}阶段`, null, []));
       session.updatedAt = now();
       return { session, newMessages: [], feedback: null, trace: [trace('病例状态', `切换至${event.data.stage}阶段`)] };

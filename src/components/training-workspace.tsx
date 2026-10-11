@@ -278,7 +278,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   }
 
   const visibleStages = session?.mode === 'osce' || session?.mode === 'immersive' ? stages : stages.filter((stage) => stage.id !== 'communication');
-  const displayStage: Stage | undefined = session?.stage === 'communication' && session.mode !== 'osce' ? 'history' : session?.stage;
+  // 展示阶段优先级：回看态 viewStage（非 OSCE，业务阶段不变）> communication 归一到会话中心 > 业务阶段
+  const displayStage: Stage | undefined = session?.viewStage ?? (session?.stage === 'communication' && session.mode !== 'osce' ? 'history' : session?.stage);
   const currentIndex = visibleStages.findIndex((stage) => stage.id === displayStage);
   const evidenceEvents = useMemo(() => session?.events.filter((event) => event.evidenceCodes.length > 0) ?? [], [session?.events]);
   const examEvidenceCount = evidenceEvents.filter((event) => event.stage === 'exam').length;
@@ -286,7 +287,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   if (!session) return <main className="loading-screen" id="main-content"><div><div className="pulse-mark"><Activity /></div><strong>{error ?? '正在建立统一病例会话…'}</strong>{error && <p><a className="btn btn-secondary" href="/student">返回首页</a></p>}</div></main>;
   const baseProfile = getPublicCase(session.caseId);
   const caseProfile = session.caseOptions ? { ...baseProfile, age: session.caseOptions.age, sex: session.caseOptions.sex } : baseProfile;
-  const spatialExam = session.stage === 'exam';
+  const spatialExam = displayStage === 'exam';
   const examTools = session.caseOptions ? [...tools, ...sourceExamTools] : tools;
   const examHotspots = session.caseOptions ? [...baseExamHotspots, ...sourceExamHotspots] : baseExamHotspots;
   const hygieneCompleted = session.unlockedEvidence.includes('EX_PREP');

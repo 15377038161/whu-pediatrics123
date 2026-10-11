@@ -60,6 +60,9 @@ export interface SessionState {
   mode: SessionMode;
   practiceFocus: PracticeFocus | null;
   stage: Stage;
+  /** 回看展示阶段（非 OSCE 专用）：查看已完成阶段/返回会话中心时记录 UI 展示阶段，
+   *  不修改业务阶段 stage（DB 防回退触发器语义保持）；前进导航时清除。 */
+  viewStage?: Stage;
   status: 'active' | 'completed' | 'report_pending';
   startedAt: string;
   updatedAt: string;
