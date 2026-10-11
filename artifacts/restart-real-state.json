@@ -1,0 +1,50 @@
+{
+  "phase": "A",
+  "session": {
+    "sessionId": "791c382c-cf7c-4226-ae4d-f1b5b64934de",
+    "caseId": "teacher-川崎病",
+    "stage": "report",
+    "status": "completed",
+    "stateVersion": 0,
+    "sourceSnapshotVersion": "8cd8a5ccd5bdf5a2",
+    "factsCount": 0,
+    "messagesCount": 7,
+    "eventsCount": 11,
+    "orderedTests": [
+      "source-test-0"
+    ],
+    "unlockedEvidence": [
+      "EX_PREP",
+      "SOURCE_EX_stethoscope_chest",
+      "SOURCE_HX_13",
+      "SOURCE_HX_14",
+      "SOURCE_HX_8",
+      "SOURCE_TEST_0"
+    ],
+    "chatEvidence": {
+      "lastActor": "system",
+      "messagesWithActorCount": 7
+    }
+  },
+  "report": {
+    "reportId": "791c382c-cf7c-4226-ae4d-f1b5b64934de",
+    "topKeys": [
+      "abilities",
+      "caseId",
+      "createdAt",
+      "evidence",
+      "id",
+      "improvements",
+      "mode",
+      "recommendation",
+      "scoreBasis",
+      "sessionId",
+      "status",
+      "strengths",
+      "totalScore",
+      "userId"
+    ],
+    "hasScores": false,
+    "scoreKeys": []
+  }
+}
