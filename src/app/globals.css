@@ -631,6 +631,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .training-shell { padding-bottom: 24px; }
   .mobile-workspace-nav { display: none; }
   [data-mobile-hidden="true"] { display: block; }
+  /* 桌面端查体抽屉复位：resume 至查体阶段时 mobileView 仍为初始值 'task'，
+     抽屉遮罩（fixed inset:0 z-65）与底部抽屉样式不得在 ≥1024px 生效，
+     否则会拦截全屏点击、要求用户额外点击遮罩才能操作 */
+  .mobile-drawer-backdrop { display: none; }
+  [data-mobile-drawer="true"] { position: static; inset: auto; max-height: none; overflow: visible; border-radius: 0; box-shadow: none; animation: none; }
+  [data-mobile-drawer="true"] > .panel-head, details[data-mobile-drawer="true"] > summary { position: static; background: transparent; backdrop-filter: none; }
   .patient-stage { min-height: 570px; }
   .message-list { max-height: 520px; }
 }
