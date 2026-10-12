@@ -89,13 +89,18 @@ test('相同 clientEventId 按幂等规则忽略', async () => {
   assert.equal(duplicate.newMessages.length, 0);
 });
 
-test('OSCE 模式隐藏提示并允许阶段自由导航', async () => {
+test('OSCE 模式隐藏提示且阶段回退被固定规则拒绝（无环境开关依赖）', async () => {
   const session = createInitialSession('student-1', 'osce');
   const question = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '你哪里不舒服？' } }, 'event-open');
   assert.equal(question.feedback, null);
   await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'exam' } }, 'event-forward');
-  const back = await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'history' } }, 'event-back');
-  assert.equal(back.session.stage, 'history');
+  assert.equal(session.stage, 'exam');
+  // 任务4：OSCE 阶段锁定为代码内固定规则，回退被拒（不再依赖 LOCK_STAGES 环境开关）
+  await assert.rejects(
+    () => runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'history' } }, 'event-back'),
+    /OSCE_STAGE_BACKTRACK_FORBIDDEN/,
+  );
+  assert.equal(session.stage, 'exam', '拒绝后阶段保持');
 });
 
 test('训练模式把家长沟通留在会话中心并允许查体后继续问诊', async () => {
@@ -110,12 +115,16 @@ test('训练模式把家长沟通留在会话中心并允许查体后继续问�
   assert.equal(communicated.newMessages.at(-1)?.actor, 'parent');
 });
 
-test('OSCE 沟通复用会话并允许阶段自由导航', async () => {
+test('OSCE 沟通推进至沟通阶段且回退导航被固定规则拒绝', async () => {
   const session = createInitialSession('student-1', 'osce');
   const communicated = await runAgentTurn(session, { type: 'SEND_COMMUNICATION', data: { text: '我理解您担心，我们先处理呼吸和血氧风险，再说明下一步检查。' } }, 'osce-communication');
   assert.equal(communicated.session.stage, 'communication');
-  const back = await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'history' } }, 'osce-conversation-back');
-  assert.equal(back.session.stage, 'history');
+  // 任务4：OSCE 防回退为代码内固定规则，回看被拒
+  await assert.rejects(
+    () => runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'history' } }, 'osce-conversation-back'),
+    /OSCE_STAGE_BACKTRACK_FORBIDDEN/,
+  );
+  assert.equal(session.stage, 'communication', '拒绝后阶段保持');
 });
 
 test('女童病例使用独立病例版本、应答事实与查体结果', async () => {
@@ -209,7 +218,7 @@ test('OSCE 问诊阶段直发查体/检查/诊断事件被服务端拒绝，沉�
     /OSCE_EVENT_STAGE_FORBIDDEN/,
   );
   await assert.rejects(
-    runAgentTurn(osce, { type: 'SUBMIT_DECISION', data: { diagnosis: '肺炎', summary: '提前提交', differentials: '' } }, 'osce-early-decision'),
+    runAgentTurn(osce, { type: 'SUBMIT_DECISION', data: { diagnosis: '肺炎', summary: '提前提交', diagnosisBasis: '提前提交但缺少真实依据', differentials: '' } }, 'osce-early-decision'),
     /OSCE_EVENT_STAGE_FORBIDDEN/,
   );
   // 拒绝后不产生任何临床事件（无提前解锁副作用）

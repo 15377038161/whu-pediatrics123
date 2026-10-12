@@ -76,6 +76,8 @@ export interface SessionState {
   decision: {
     diagnosis: string;
     summary: string;
+    /** 诊断依据（任务3 必填）：历史会话可能缺失，读取方需可选访问。 */
+    diagnosisBasis?: string;
     differentials: string;
   } | null;
   plan: {
@@ -115,8 +117,8 @@ export type AgentEvent =
   | { type: 'ASK_QUESTION'; data: { text: string } }
   | { type: 'DOCTOR_INTERVENTION'; data: { action: 'child_answer' | 'pause_parent' | 'comfort_child' } }
   | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string } }
-  | { type: 'ORDER_TEST'; data: { testId: string } }
-  | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; differentials: string } }
+  | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
+  | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string } }
   | { type: 'SUBMIT_PLAN'; data: { priority: string; detail: string } }
   | { type: 'SEND_COMMUNICATION'; data: { text: string } }
   | { type: 'NAVIGATE_STAGE'; data: { stage: Stage } }
@@ -174,6 +176,10 @@ export interface TrainingReport {
   sessionId: string;
   userId: string;
   caseId: string;
+  /** 病例显示标题（完成后释放，防透题任务1c）：教师病例为真实病种名（服务端生成时写入），
+   *  演示病例沿用症状标题；进行中训练不返回此字段（公开目录为中性标题）。
+   *  历史报告无此字段时客户端降级用公开目录标题。 */
+  caseTitle?: string;
   mode: SessionMode;
   totalScore: number;
   abilities: AbilityScores;

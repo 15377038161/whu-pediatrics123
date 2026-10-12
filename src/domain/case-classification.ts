@@ -1,16 +1,18 @@
 import type { PublicCaseProfile } from '@/domain/case-catalog';
-import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
-import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 
 /**
- * 病例库多维分类与检索（2026-10-16 七项重构）：
- * - 学科归一：教师目录存在 5 对同义分类（内分泌疾病/内分泌系统、心血管系统疾病/心血管系统、
- *   新生儿与新生儿疾病/新生儿疾病、神经系统/神经系统疾病、造血系统疾病/血液系统疾病），归一后 13 学科。
- * - 资料完备度（可解释、不伪造）：独立来源（folder 项，53）| 关联来源（alias/subtype 复用源病例，14）
- *   | 资料不足（无 folder 无 link，3 项）——资料不足项如实标注且不得进入可评分测试。
- * - 教学难度星级（可解释映射）：演示病例 1★（引导式完整支架）；独立来源 2★（真实材料自主问诊）；
- *   关联来源 2★（依托源病例学习）。星级仅为入口导览提示，不代表评分权重。
- * - 搜索分页：客户端过滤（72 项静态目录），12/页，筛选变化重置页码。
+ * 病例库多维分类与检索（防透题收敛，2026-10-12 第一批任务1）：
+ * - 本模块可被客户端组件引入（case-library），因此**不再引用** teacher-case-catalog /
+ *   teacher-case-links（含病种名/源病种名，会进客户端 bundle）——判定仅依赖
+ *   PublicCaseProfile 的中性字段（sourceRelation / contentStatus / 计数）。
+ * - 学科归一：教师目录存在 5 对同义分类，归一后 13 学科（保留）。
+ * - 资料完备度（可解释、不伪造）：独立来源（contentStatus=teacher-materials-indexed，
+ *   53）| 关联来源（sourceRelation 非 null，14）| 资料不足（教师项无 folder 且无关联，3 项）
+ *   ——资料不足项如实标注且不得进入可评分测试。
+ * - 教学难度星级（可解释映射）：演示病例 1★；真实材料病例 2★。
+ * - 搜索分页：客户端过滤（72 项静态中性目录），12/页，筛选变化重置页码。
+ *   searchableText 不含病种名（教师病例 title 为中性学科+序号）——按病种关键词搜索
+ *   属于透题面，本轮移除；症状关键词搜索仅对演示病例 presentingSymptoms 生效。
  */
 
 export const PAGE_SIZE = 12;
@@ -40,26 +42,28 @@ export interface CaseReadinessInfo {
 
 export interface CaseClassification {
   subject: string;
-  disease: string;
   stars: 1 | 2;
   starReason: string;
   readiness: CaseReadinessInfo;
   searchableText: string;
 }
 
-/** 单病例分类画像（纯函数）。资料不足 = teacher 病例无 folder 且无 alias/subtype 链接（结构判定）。 */
+/** 独立来源判定：教师病例含可索引材料（folder 目录，材料已提取）。 */
+function hasIndexedMaterials(profile: PublicCaseProfile): boolean {
+  return profile.contentStatus === 'teacher-materials-indexed' || profile.contentStatus === 'teacher-folder-only';
+}
+
+/** 单病例分类画像（纯函数，仅依赖中性目录字段）。资料不足 = 教师病例无独立材料且无源关联。 */
 export function classifyCase(profile: PublicCaseProfile): CaseClassification {
-  const teacherItem = profile.id.startsWith('teacher-')
-    ? TEACHER_CASE_CATALOG.find((item) => item.id === profile.id) ?? null
-    : null;
-  const link = TEACHER_CASE_LINKS[profile.id];
-  const hasFolder = Boolean(teacherItem?.folder);
-  const isInsufficient = profile.id.startsWith('teacher-') && !hasFolder && !link;
-  const searchableText = `${profile.title} ${profile.category} ${profile.presentingSymptoms.join(' ')}`.toLowerCase();
-  if (!profile.id.startsWith('teacher-')) {
+  const isTeacher = profile.id.startsWith('teacher-');
+  const linked = isTeacher && profile.sourceRelation !== null;
+  const hasFolder = isTeacher && hasIndexedMaterials(profile);
+  const isInsufficient = isTeacher && !hasFolder && !linked;
+  // searchableText：标题（中性）+ 归一学科 + 症状（演示病例）——不含病种名
+  const searchableText = `${profile.title} ${normalizeCategory(profile.category)} ${profile.presentingSymptoms.join(' ')}`.toLowerCase();
+  if (!isTeacher) {
     return {
       subject: normalizeCategory(profile.category),
-      disease: profile.title,
       stars: 1,
       starReason: '引导式完整支架，含结构与方向性提示',
       readiness: { readiness: 'independent', label: '独立来源', note: '演示病例' },
@@ -69,39 +73,36 @@ export function classifyCase(profile: PublicCaseProfile): CaseClassification {
   if (isInsufficient) {
     return {
       subject: normalizeCategory(profile.category),
-      disease: profile.title,
       stars: 2,
       starReason: '本病种尚无独立病例正文，仅可记录诊疗思路',
       readiness: { readiness: 'insufficient', label: '资料不足', note: '无独立来源，不进入可评分测试' },
       searchableText,
     };
   }
-  const source = TEACHER_CASE_CATALOG.find((item) => item.id === (link?.sourceId ?? ''));
   return {
     subject: normalizeCategory(profile.category),
-    disease: profile.title,
     stars: 2,
     starReason: hasFolder
       ? '真实材料自主问诊与检查'
-      : `依托源病例「${source?.name ?? link?.sourceId}」${link?.relation === 'subtype' ? '（具体亚型）' : '（名称对应）'}学习`,
+      : '依托关联源病例教学材料学习',
     readiness: hasFolder
-      ? { readiness: 'independent', label: '独立来源', note: `${teacherItem?.documentCount ?? 0} 份文档 · ${teacherItem?.mediaCount ?? 0} 项媒体` }
-      : { readiness: 'linked', label: '关联来源', note: `复用源病例「${source?.name ?? link?.sourceId}」教学材料` },
+      ? { readiness: 'independent', label: '独立来源', note: `${profile.documentCount ?? 0} 份文档 · ${profile.mediaCount ?? 0} 项媒体` }
+      : { readiness: 'linked', label: '关联来源', note: '复用关联源病例教学材料' },
     searchableText,
   };
-}
-
-export interface CaseSearchQuery {
-  keyword: string;
-  subject: string;
-  readiness: CaseReadiness | 'all';
-  page: number;
 }
 
 export interface CaseSearchResult {
   items: Array<PublicCaseProfile & { classification: CaseClassification }>;
   total: number;
   pageCount: number;
+  page: number;
+}
+
+export interface CaseSearchQuery {
+  keyword: string;
+  subject: string;
+  readiness: CaseReadiness | 'all';
   page: number;
 }
 

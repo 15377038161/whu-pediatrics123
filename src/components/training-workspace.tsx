@@ -44,13 +44,6 @@ const sourceExamHotspots: Array<[string, string]> = [
   ['skin', '皮肤'], ['abdomen', '腹部'], ['limbs', '四肢'],
 ];
 
-const tests = [
-  { id: 'cbc-crp', label: '血常规与 CRP', indication: '评估感染与炎症程度' },
-  { id: 'chest-image', label: '胸部影像', indication: '低氧且存在局灶肺部体征' },
-  { id: 'pathogen', label: '呼吸道病原学', indication: '结合流行病学和病程选择' },
-  { id: 'brain-mri', label: '头颅 MRI', indication: '当前是否存在神经系统指征？' },
-];
-
 const focusLabels: Record<PracticeFocus, string> = {
   history: '儿科病史采集', exam: '肺部规范查体', safety: '感染与危重识别', communication: '家长焦虑沟通',
 };
@@ -134,9 +127,12 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [examObservation, setExamObservation] = useState<ExamObservation | null>(null);
   const [diagnosis, setDiagnosis] = useState('');
   const [summary, setSummary] = useState('');
+  const [diagnosisBasis, setDiagnosisBasis] = useState('');
   const [differentials, setDifferentials] = useState('');
   const [priority, setPriority] = useState('');
   const [planDetail, setPlanDetail] = useState('');
+  const [requestedTests, setRequestedTests] = useState('');
+  const [testReason, setTestReason] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<'task' | 'patient' | 'record'>('task');
   const [hintIndex, setHintIndex] = useState(0);
@@ -155,6 +151,25 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     return false;
   }, []);
 
+  // 返回修改（任务4）：进入诊断/处置阶段视图时，回填已提交内容作为草稿（进度保留，可继续修改重交）。
+  // 在会话状态更新处调用（初始加载/事件响应的异步续体），不在 effect 中同步 setState（react-hooks/set-state-in-effect）。
+  const lastStageView = useRef<Stage | null>(null);
+  const applyDraftBackfill = useCallback((next: SessionState) => {
+    const view = next.viewStage ?? next.stage;
+    if (lastStageView.current === view) return;
+    lastStageView.current = view;
+    if (view === 'assessment') {
+      setDiagnosis(next.decision?.diagnosis ?? '');
+      setSummary(next.decision?.summary ?? '');
+      setDiagnosisBasis(next.decision?.diagnosisBasis ?? '');
+      setDifferentials(next.decision?.differentials ?? '');
+    }
+    if (view === 'plan') {
+      setPriority(next.plan?.priority ?? '');
+      setPlanDetail(next.plan?.detail ?? '');
+    }
+  }, []);
+
   useEffect(() => {
     if (started.current) return;
     started.current = true;
@@ -162,10 +177,10 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     (initialSessionId
       ? api<SessionState>(`/api/sessions/${initialSessionId}`)
       : api<SessionState>('/api/sessions', { method: 'POST', body: JSON.stringify({ mode, caseId: initialCaseId, focus: practiceFocus }) }))
-      .then((value) => { setSession(value); if (value.stage === 'exam') setMobileView('patient'); if (!initialSessionId) router.replace(`/student/training?session=${value.id}`); })
+      .then((value) => { setSession(value); applyDraftBackfill(value); if (value.stage === 'exam') setMobileView('patient'); if (!initialSessionId) router.replace(`/student/training?session=${value.id}`); })
       .catch((cause) => setError(cause instanceof Error ? cause.message : '训练加载失败。'))
       .finally(() => setBusy(false));
-  }, [initialCaseId, initialSessionId, mode, practiceFocus, router]);
+  }, [applyDraftBackfill, initialCaseId, initialSessionId, mode, practiceFocus, router]);
 
   useEffect(() => {
     if (!session) return;
@@ -220,7 +235,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       const result = await api<AgentTurnResult>('/api/agent/turn', {
         method: 'POST', body: JSON.stringify({ sessionId: session.id, clientEventId: crypto.randomUUID(), event }),
       });
-      setSession(result.session); setFeedback(result.feedback);
+      setSession(result.session); applyDraftBackfill(result.session); setFeedback(result.feedback);
       return result;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '当前操作失败，请重试。');
@@ -300,9 +315,6 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       : '本次操作已自动保存，确定暂时退出训练吗？');
     if (confirmed) router.push('/student');
   }
-  const caseTests = session.caseOptions ? session.caseOptions.tests : session.caseId === 'peds-wheeze-002'
-    ? tests.map((test) => test.id === 'chest-image' ? { ...test, indication: '低氧或首次明显喘息时评估' } : test)
-    : tests;
   const communicationModeActive = session.stage === 'communication' || Boolean(session.plan);
   const stageCompleted = (stage: Stage) => ({
     triage: session.stage !== 'triage',
@@ -346,15 +358,20 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="form-actions"><button className="btn btn-primary exam-open-patient" onClick={() => setMobileView('patient')}><UserRound size={16} /> 打开患儿模型</button><button className="btn btn-secondary" onClick={() => navigate('tests')}>完成查体，选择辅助检查 <ChevronRight size={16} /></button></div>
       </>;
       case 'tests': return <>
-        <div className="stage-intro"><p className="eyebrow">临床适宜性</p><h2>选择辅助检查</h2><p>{session.caseOptions ? '本页列出老师提供的病例检查记录。选择后阅读结果，并说明它对诊断的作用。' : '根据已经获得的病史和体征选择检查。低价值检查会被记录，但不会提供额外有效证据。'}</p></div>
-        <div className="choice-list">{caseTests.map((test) => <button key={test.id} className="choice" data-ordered={session.orderedTests.includes(test.id)} disabled={busy || session.orderedTests.includes(test.id)} onClick={() => sendEvent({ type: 'ORDER_TEST', data: { testId: test.id } })}><strong>{session.orderedTests.includes(test.id) && <Check size={15} />} {test.label}</strong><span>{test.indication}</span></button>)}</div>
-        {session.caseOptions && <div className="source-result-list" aria-live="polite">{caseTests.length === 0 && <p>本病例暂无可读检查记录，可记录需要申请的检查及理由。</p>}{evidenceEvents.filter((event) => event.stage === 'tests').map((event) => <p key={event.id}>{event.summary}</p>)}</div>}
-        <div className="form-actions"><button className="btn btn-secondary" onClick={() => navigate('assessment')}>形成病情摘要与诊断 <ChevronRight size={16} /></button></div>
+        <div className="stage-intro"><p className="eyebrow">临床适宜性</p><h2>申请辅助检查</h2><p>像真实接诊一样自主输入需要申请的检查名称，可一次申请多项（用逗号或换行分隔）。系统只返回本病例资料已有的结果；资料未提供的项目会明确说明，不会编造。</p></div>
+        <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'ORDER_TEST', data: { requestedTests, reason: testReason.trim() || undefined } }); if (result) { setRequestedTests(''); setTestReason(''); } }}>
+          <div className="form-field"><label htmlFor="requested-tests">检查申请</label><textarea id="requested-tests" required minLength={2} rows={3} value={requestedTests} onChange={(e) => setRequestedTests(e.target.value)} placeholder="例如：血常规、C反应蛋白、胸片" /></div>
+          <div className="form-field"><label htmlFor="test-reason">申请理由（可选）</label><input id="test-reason" value={testReason} onChange={(e) => setTestReason(e.target.value)} placeholder="这项检查要回答什么临床问题？" /></div>
+          <button className="btn btn-primary btn-block" disabled={busy || !requestedTests.trim()}>提交检查申请</button>
+        </form>
+        <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'tests').length === 0 && <p>尚无检查记录：提交申请后，结果会在此逐项显示。</p>}{evidenceEvents.filter((event) => event.stage === 'tests').map((event) => <p key={event.id}>{event.summary}</p>)}</div>
+        <div className="form-actions"><button className="btn btn-secondary" type="button" onClick={() => navigate('assessment')}>形成病情摘要与诊断 <ChevronRight size={16} /></button></div>
       </>;
-      case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, differentials } }); if (result) await navigate('plan'); }}>
+      case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, diagnosisBasis, differentials } }); if (result) await navigate('plan'); }}>
         <div className="stage-intro"><p className="eyebrow">证据整合</p><h2>病情摘要与初步诊断</h2><p>只使用你在本次会话中实际获得的信息，体现儿科年龄特点和危险信号判断。</p></div>
         <div className="form-field"><label htmlFor="summary">病情摘要</label><textarea id="summary" required minLength={10} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="年龄、主诉、重要阳性与阴性信息、危险信号…" /></div>
         <div className="form-field"><label htmlFor="diagnosis">初步诊断</label><input id="diagnosis" required value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="输入诊断与病情严重程度" /></div>
+        <div className="form-field"><label htmlFor="diagnosis-basis">诊断依据（必填）</label><textarea id="diagnosis-basis" required minLength={10} value={diagnosisBasis} onChange={(e) => setDiagnosisBasis(e.target.value)} placeholder="支撑该诊断的病史、体征与检查证据：哪些阳性发现支持诊断？关键阴性发现排除了什么？" /></div>
         <div className="form-field"><label htmlFor="differentials">鉴别诊断</label><textarea id="differentials" value={differentials} onChange={(e) => setDifferentials(e.target.value)} placeholder="列出需要鉴别的疾病及理由" /></div>
         <button className="btn btn-primary btn-block" disabled={busy}>提交诊断并继续</button>
       </form>;

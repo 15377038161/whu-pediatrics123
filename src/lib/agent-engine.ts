@@ -9,9 +9,10 @@ import type {
   SessionState,
   Stage,
 } from '@/domain/agent';
-import { FLAGSHIP_CASE, findExamRule, findTest, getCase, identifyHistoryIntents } from '@/domain/case';
+import { FLAGSHIP_CASE, findExamRule, findTest, getCase, identifyHistoryIntents, type AuxiliaryTest } from '@/domain/case';
 import { retrieveKnowledge } from '@/domain/knowledge';
 import { getCaseTestResult, recordCaseTestOrder, refreshProjectedFacts } from '@/lib/case-snapshot';
+import { matchRequestedTest, splitRequestedTests } from '@/lib/test-name-matcher';
 import { renderRoleReply } from '@/lib/role-agent';
 
 /** 开单 RPC 注入缝：生产默认指向 case-snapshot 封装；仅测试注入 503/守卫拒绝失败路径，
@@ -123,6 +124,14 @@ function advanceToHistoryStage(session: SessionState): void {
   if (order.indexOf(session.stage) <= order.indexOf('history')) session.stage = 'history';
 }
 
+/** 处理器推进业务阶段：只前进不回退（任务4 返回修改）——普通训练经 viewStage 回看
+ *  补问/补查/修改时，业务阶段保持已推进位置：直接把 stage 写回更早阶段会被 DB
+ *  防回退触发器以 SESSION_STAGE_REGRESSION 拒绝整回合（与 advanceToHistoryStage 同规则）。 */
+function advanceStageTo(session: SessionState, target: Stage): void {
+  const order = getCase(session.caseId, session.sourceSnapshotVersion, session.id).stages.map((stage) => stage.id);
+  if (order.indexOf(target) > order.indexOf(session.stage)) session.stage = target;
+}
+
 export function refreshSourceSession(session: SessionState): SessionState {
   if (!session.caseId.startsWith('teacher-')) return session;
   if (session.caseVersion >= 2 && session.caseOptions) {
@@ -151,10 +160,10 @@ export function refreshSourceSession(session: SessionState): SessionState {
   return session;
 }
 
-const LOCK_STAGES = process.env.LOCK_STAGES === 'true';
-
+/** OSCE 阶段锁定为代码内固定规则（任务4）：不再依赖 LOCK_STAGES 环境开关——
+ *  考核模式下禁止回退（stage 列单向），普通训练（guided/practice/immersive）不受限，
+ *  回看走 viewStage 展示态（业务阶段不变，见 NAVIGATE_STAGE 分支）。 */
 function validateStageNavigation(session: SessionState, target: Stage): boolean {
-  if (!LOCK_STAGES) return true;
   if (session.mode !== 'osce') return true;
   const order = getCase(session.caseId, session.sourceSnapshotVersion, session.id).stages.map((stage) => stage.id);
   return order.indexOf(target) >= order.indexOf(session.stage);
@@ -403,14 +412,14 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
       ? (prepared ? '本病例资料未提供该部位与器材组合的体征记录，请换用其他检查组合或记录需补充的检查。' : '尚未完成必要准备。请先进行手卫生并向患儿说明检查。')
       : '器材与部位不匹配，未解锁任何深层体征。';
     session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', summary, false, []));
-    session.stage = 'exam';
+    advanceStageTo(session, 'exam');
     session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, feedbackText), trace: traceItems };
   }
   const missing = rule.requires.filter((code) => !session.unlockedEvidence.includes(code));
   if (missing.length > 0) {
     session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}缺少必要准备动作`, false, []));
-    session.stage = 'exam';
+    advanceStageTo(session, 'exam');
     session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, '尚未完成必要准备。请先进行手卫生并向患儿说明检查。'), trace: [...traceItems, trace('安全校验', '阻止未完成准备的深层检查')] };
   }
@@ -418,10 +427,9 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   if (rule.id === 'prep-hygiene') session.preparationActions = uniq([...session.preparationActions, rule.id]);
   if (rule.evidenceCode === 'EX_SPO2' && getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts === undefined) session.vitals.spo2 = 92;
   session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}：${rule.result}`, true, [rule.evidenceCode]));
-  session.stage = 'exam';
+  advanceStageTo(session, 'exam');
   session.updatedAt = now();
-  const resultMessage = message('system', rule.result, { kind: 'navigation' });
-  session.messages.push(resultMessage);
+  const resultMessage = message('system', rule.result, { kind: 'navigation' });  session.messages.push(resultMessage);
   return {
     session,
     newMessages: [resultMessage],
@@ -430,71 +438,112 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   };
 }
 
-async function handleTest(session: SessionState, testId: string, clientEventId: string, accessToken?: string | null): Promise<AgentTurnResult> {
-  const test = findTest(session.caseId, testId, session.sourceSnapshotVersion, session.id);
-  if (!test) throw new Error('TEST_NOT_FOUND');
-  // 目录项（恢复态投影剥离，result 为空）：先经 record_test_order 幂等持久化下单（DB 先落
-  // orderedTests），再按 testId 行级读取本人病例单行结果（get_test 验证已下单）——先记单后取
-  // 结果，既保证已下单验证不产生死锁，也不以一次下单暴露全部 tests 全文（目录/结果分离）。
-  if (!test.result && accessToken && session.sourceSnapshotVersion) {
-    const recorded = await testOrderRpc.record(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, testId);
-    // 守卫拒绝（完成态竞态/项目越界等）：回合失败，不伪记下单与证据
-    if (recorded === null) throw new Error('TEST_ORDER_REJECTED');
-    // 网络/权限失败在此抛出（TEST_ORDER_RPC_FAILED / TEST_RESULT_RPC_FAILED），不伪记成功下单或资料未提供
-    const fetched = await testOrderRpc.getResult(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, testId);
-    if (fetched?.result) {
-      test.result = fetched.result;
-      if (fetched.label) test.label = fetched.label;
-    } else {
-      // record 已成功但行级读取返回 null：守卫竞态/数据异常（record 已验证项目在目录内且已下单，
-      // get_test 同规则解析不应无行）——不落入「资料未提供」：不记资料缺失、不解锁证据；
-      // 回合失败可重试（record 幂等，重试不重复下单）
-      throw new Error('TEST_RESULT_UNAVAILABLE');
+/** ORDER_TEST 事件数据（双契约：旧 testId 点选 / 新 requestedTests 文本申请）。 */
+type OrderTestData = Extract<AgentEvent, { type: 'ORDER_TEST' }>['data'];
+
+async function handleTest(session: SessionState, data: OrderTestData, clientEventId: string, accessToken?: string | null): Promise<AgentTurnResult> {
+  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
+  // 申请解析：旧 testId 点选直取目录项（不存在即 TEST_NOT_FOUND，语义不变）；
+  // 新文本申请按服务端确定性别名匹配解析（同义词组+单向前缀，见 test-name-matcher），
+  // 未匹配项保留学生原文回显并明确「资料未提供」——不猜测扩展、不编造结果、不下发候选列表。
+  const requests: Array<{ requested: string; test: AuxiliaryTest | null }> = [];
+  if ('testId' in data) {
+    const test = findTest(session.caseId, data.testId, session.sourceSnapshotVersion, session.id);
+    if (!test) throw new Error('TEST_NOT_FOUND');
+    requests.push({ requested: test.label, test });
+  } else {
+    for (const part of splitRequestedTests(data.requestedTests)) {
+      requests.push(matchRequestedTest(part, pediatricCase.tests));
     }
   }
-  // fail-closed：下单记录保留，行级结果不可得时明确「资料未提供」，不编造检查结果
-  if (!test.result) {
+  if (requests.length === 0) throw new Error('TEST_REQUEST_EMPTY');
+
+  const reason = 'testId' in data ? null : (data.reason?.trim() || null);
+  const newMessages: AgentMessage[] = [];
+  const feedbackParts: string[] = [];
+  const traceItems: AgentTraceItem[] = [trace('病例状态', 'testId' in data ? '点选检查申请' : '文本申请经服务端确定性别名匹配（未下发候选列表）')];
+  if (reason) traceItems.push(trace('安全校验', `已记录申请理由：${reason}`));
+
+  // 同批重复申请同一项目只处理一次（record 幂等，重复申请不重复反馈）
+  const processedIds = new Set<string>();
+  for (const request of requests) {
+    // 未匹配：记录申请与「资料未提供」，不记下单、不解锁证据（fail-closed，不编造）
+    if (!request.test) {
+      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `「${request.requested}」：本病例资料未提供该项检查`, null, []));
+      const unmatchedMessage = message('system', `「${request.requested}」已记录申请，但本病例资料未提供该项检查结果。`, { kind: 'navigation' });
+      session.messages.push(unmatchedMessage);
+      newMessages.push(unmatchedMessage);
+      feedbackParts.push(`「${request.requested}」不在本病例资料中，未编造结果。`);
+      continue;
+    }
+    const test = request.test;
+    if (processedIds.has(test.id)) continue;
+    processedIds.add(test.id);
+    // 目录项（恢复态投影剥离，result 为空）：先经 record_test_order 幂等持久化下单（DB 先落
+    // orderedTests），再按 testId 行级读取本人病例单行结果（get_test 验证已下单）——先记单后取
+    // 结果，既保证已下单验证不产生死锁，也不以一次下单暴露全部 tests 全文（目录/结果分离）。
+    if (!test.result && accessToken && session.sourceSnapshotVersion) {
+      const recorded = await testOrderRpc.record(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, test.id);
+      // 守卫拒绝（完成态竞态/项目越界等）：回合失败，不伪记下单与证据
+      if (recorded === null) throw new Error('TEST_ORDER_REJECTED');
+      // 网络/权限失败在此抛出（TEST_ORDER_RPC_FAILED / TEST_RESULT_RPC_FAILED），不伪记成功下单或资料未提供
+      const fetched = await testOrderRpc.getResult(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, test.id);
+      if (fetched?.result) {
+        test.result = fetched.result;
+        if (fetched.label) test.label = fetched.label;
+      } else {
+        // record 已成功但行级读取返回 null：守卫竞态/数据异常（record 已验证项目在目录内且已下单，
+        // get_test 同规则解析不应无行）——不落入「资料未提供」：不记资料缺失、不解锁证据；
+        // 回合失败可重试（record 幂等，重试不重复下单）
+        throw new Error('TEST_RESULT_UNAVAILABLE');
+      }
+    }
+    // fail-closed：下单记录保留，行级结果不可得时明确「资料未提供」，不编造检查结果
+    if (!test.result) {
+      session.orderedTests = uniq([...session.orderedTests, test.id]);
+      session.unlockedEvidence = uniq([...session.unlockedEvidence, test.evidenceCode]);
+      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：检查已开出，本病例资料未提供该项结果`, null, [test.evidenceCode]));
+      const pendingMessage = message('system', `${test.label}已开出，本病例资料未提供该项结果。`, { kind: 'navigation' });
+      session.messages.push(pendingMessage);
+      newMessages.push(pendingMessage);
+      feedbackParts.push(`${test.label}检查已开出，本病例资料未提供该项结果。`);
+      traceItems.push(trace('病例状态', '记录检查选择；资料未提供的结果不编造'));
+      continue;
+    }
     session.orderedTests = uniq([...session.orderedTests, test.id]);
     session.unlockedEvidence = uniq([...session.unlockedEvidence, test.evidenceCode]);
-    session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：检查已开出，本病例资料未提供该项结果`, null, [test.evidenceCode]));
-    session.stage = 'tests';
-    session.updatedAt = now();
-    const pendingMessage = message('system', `${test.label}已开出，本病例资料未提供该项结果。`, { kind: 'navigation' });
-    session.messages.push(pendingMessage);
-    return {
-      session,
-      newMessages: [pendingMessage],
-      feedback: feedbackFor(session, '检查已开出，本病例资料未提供该项结果，可继续其他检查或进入诊断。'),
-      trace: [trace('病例状态', '记录检查选择；资料未提供的结果不编造')],
-    };
+    session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：${test.result}`, test.appropriate, [test.evidenceCode]));
+    const resultMessage = message('system', test.result, { kind: 'navigation' });
+    session.messages.push(resultMessage);
+    newMessages.push(resultMessage);
+    feedbackParts.push(test.appropriate === null ? `已打开${test.label}检查记录。` : test.appropriate ? `${test.label}与当前证据相符。` : `当前证据不支持常规选择${test.label}，已记录低价值检查。`);
+    traceItems.push(trace('病例状态', '记录检查选择并解锁预置结果'), trace('安全校验', '判断检查适宜性'));
   }
-  session.orderedTests = uniq([...session.orderedTests, test.id]);
-  session.unlockedEvidence = uniq([...session.unlockedEvidence, test.evidenceCode]);
-  session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：${test.result}`, test.appropriate, [test.evidenceCode]));
-  session.stage = 'tests';
+  advanceStageTo(session, 'tests');
   session.updatedAt = now();
-  const resultMessage = message('system', test.result, { kind: 'navigation' });
-  session.messages.push(resultMessage);
   return {
     session,
-    newMessages: [resultMessage],
-    feedback: feedbackFor(session, test.appropriate === null ? '已打开本病例提供的检查记录，请结合病史判断其价值。' : test.appropriate ? `${test.label}与当前证据相符。` : '当前证据不支持常规选择该检查，已记录低价值检查。'),
-    trace: [trace('病例状态', '记录检查选择并解锁预置结果'), trace('安全校验', '判断检查适宜性')],
+    newMessages,
+    feedback: feedbackFor(session, feedbackParts.join(' ')),
+    trace: traceItems,
   };
 }
 
 function handleDecision(session: SessionState, data: Extract<AgentEvent, { type: 'SUBMIT_DECISION' }>['data'], clientEventId: string): AgentTurnResult {
+  // 任务3：诊断依据必填——引擎级守卫（Zod 之外的第二道防线，直调引擎的调用方同样受约束）；
+  // 学生必须写明诊断依据，防止只猜诊断名词不做证据推理
+  if (!data.diagnosisBasis || data.diagnosisBasis.trim().length < 10) throw new Error('DIAGNOSIS_BASIS_REQUIRED');
   session.decision = data;
   session.events.push(clinicalEvent(clientEventId, 'SUBMIT_DECISION', 'assessment', `提交初步诊断：${data.diagnosis}`, null, ['DECISION']));
-  session.stage = 'assessment';
+  advanceStageTo(session, 'assessment');
   session.updatedAt = now();
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   const sources = pediatricCase.sourceFacts !== undefined ? pediatricCase.sourceFacts ? [pediatricCase.sourceFacts.caseId] : [] : retrieveKnowledge(`${data.diagnosis} 低氧 呼吸`).map((source) => source.id);
   return {
     session,
     newMessages: [],
-    feedback: feedbackFor(session, '诊断已保存。系统将在报告中核对诊断与已获取证据是否一致。'),
-    trace: [trace('病例状态', '保存病情摘要、初步诊断与鉴别诊断'), trace('知识检索', '检索诊断与危险信号依据', sources)],
+    feedback: feedbackFor(session, '诊断与依据已保存。系统将在报告中核对诊断依据与已获取证据是否一致。'),
+    trace: [trace('病例状态', '保存病情摘要、诊断依据与鉴别诊断'), trace('知识检索', '检索诊断与危险信号依据', sources)],
   };
 }
 
@@ -502,7 +551,7 @@ function handlePlan(session: SessionState, data: Extract<AgentEvent, { type: 'SU
   session.plan = data;
   if (getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts !== undefined) {
     session.events.push(clinicalEvent(clientEventId, 'SUBMIT_PLAN', 'plan', `提交处置计划：${data.priority}`, null, ['PLAN']));
-    session.stage = 'plan'; session.updatedAt = now();
+    advanceStageTo(session, 'plan'); session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, '计划已记录。完成后可对照病例诊疗经过复盘。'), trace: [trace('病例状态', '保存处置思路，生命体征保持原始记录')] };
   }
   const safe = /吸氧|氧疗|监测/.test(`${data.priority} ${data.detail}`);
@@ -511,7 +560,7 @@ function handlePlan(session: SessionState, data: Extract<AgentEvent, { type: 'SU
     session.vitals.respiratoryRate = 36;
   }
   session.events.push(clinicalEvent(clientEventId, 'SUBMIT_PLAN', 'plan', `提交处置计划：${data.priority}`, safe, ['PLAN']));
-  session.stage = 'plan';
+  advanceStageTo(session, 'plan');
   session.updatedAt = now();
   return {
     session,
@@ -539,7 +588,7 @@ function handleCommunication(session: SessionState, text: string, clientEventId:
   // stage 不回退：guided 模式此前设回 'history'，若已推进至查体/检查/诊断/处置阶段，
   // 会被 DB 防跳级触发器以 SESSION_STAGE_REGRESSION 拒绝（真实平台回归实测定位）。
   // guided 保持当前 stage（沟通在任意阶段合法）；osce 维持推进至 communication 阶段。
-  if (session.mode === 'osce') session.stage = 'communication';
+  if (session.mode === 'osce') advanceStageTo(session, 'communication');
   session.updatedAt = now();
   return {
     session,
@@ -581,7 +630,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
     case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders);
     case 'DOCTOR_INTERVENTION': return handleIntervention(session, event.data.action, clientEventId);
     case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId);
-    case 'ORDER_TEST': return handleTest(session, event.data.testId, clientEventId, options?.accessToken);
+    case 'ORDER_TEST': return handleTest(session, event.data, clientEventId, options?.accessToken);
     case 'SUBMIT_DECISION': return handleDecision(session, event.data, clientEventId);
     case 'SUBMIT_PLAN': return handlePlan(session, event.data, clientEventId);
     case 'SEND_COMMUNICATION': return handleCommunication(session, event.data.text, clientEventId);

@@ -55,7 +55,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ id: s
       <section className="report-section" style={{ marginTop: 14 }}>
         <h2>学生临床提交原文</h2>
         <div className="clinical-submissions">
-          <div><strong>病情摘要与诊断</strong><p>{detail.session.decision?.summary ?? '未提交'}</p><p>初步诊断：{detail.session.decision?.diagnosis ?? '未提交'}</p><p>鉴别诊断：{detail.session.decision?.differentials || '未提交'}</p></div>
+          <div><strong>病情摘要与诊断</strong><p>{detail.session.decision?.summary ?? '未提交'}</p><p>初步诊断：{detail.session.decision?.diagnosis ?? '未提交'}</p><p>诊断依据：{detail.session.decision?.diagnosisBasis || '未提交（历史会话）'}</p><p>鉴别诊断：{detail.session.decision?.differentials || '未提交'}</p></div>
           <div><strong>治疗及处置计划</strong><p>首要处置：{detail.session.plan?.priority ?? '未提交'}</p><p>{detail.session.plan?.detail ?? '未提交'}</p></div>
           <div><strong>患儿与家长沟通</strong><p>{detail.session.communication ?? '未提交'}</p></div>
         </div>

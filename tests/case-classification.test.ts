@@ -34,9 +34,11 @@ test('资料完备度三档：53 独立来源 + 14 关联来源 + 3 资料不足
   assert.equal(independent, 55); // 53 教师独立 folder 项 + 2 演示病例
   assert.equal(linked, 14);
   assert.equal(insufficient.length, 3);
+  // 防透题收敛：insufficient 判定按 id 断言（病种名不再进入分类模块）
+  // 防透题收敛：insufficient 判定按 id 断言（病种名不再进入分类模块）
   assert.deepEqual(
-    insufficient.map((item) => item.disease).sort(),
-    ['新生儿脑梗死', '支气管肺炎', '格林巴利综合征'].sort(),
+    CASE_CATALOG.filter((item) => classifyCase(item).readiness.readiness === 'insufficient').map((item) => item.id).sort(),
+    ['teacher-新生儿脑梗死', 'teacher-支气管肺炎', 'teacher-格林巴利综合征'].sort(),
   );
 });
 
@@ -55,11 +57,24 @@ test('搜索分页：72 项默认 12/页，页数正确', () => {
 });
 
 test('搜索分页：关键词 + 学科 + 来源组合筛选', () => {
-  const result = searchCases(CASE_CATALOG, { keyword: '肺炎', subject: '呼吸系统疾病', readiness: 'independent', page: 1 });
+  // 防透题收敛：病种关键词（如「肺炎」）不再可搜索；症状关键词仅演示病例命中
+  const byDisease = searchCases(CASE_CATALOG, { keyword: '肺炎', subject: 'all', readiness: 'all', page: 1 });
+  assert.equal(byDisease.total, 0, '病种关键词不再出现在可搜索文本中（防透题）');
+  const result = searchCases(CASE_CATALOG, { keyword: '发热', subject: '呼吸系统', readiness: 'independent', page: 1 });
+  assert.ok(result.total >= 1, '症状关键词命中演示病例');
   for (const item of result.items) {
-    assert.equal(item.classification.subject, '呼吸系统疾病');
+    assert.equal(item.classification.subject, '呼吸系统');
     assert.equal(item.classification.readiness.readiness, 'independent');
-    assert.ok(item.classification.searchableText.includes('肺炎'));
+    assert.ok(item.classification.searchableText.includes('发热'));
+  }
+});
+
+test('防透题：教师病例标题与可搜索文本不含病种名', () => {
+  const teacherCases = CASE_CATALOG.filter((item) => item.id.startsWith('teacher-'));
+  assert.ok(teacherCases.length >= 50);
+  for (const profile of teacherCases) {
+    assert.ok(/真实病例 \d{2}$/.test(profile.title), `${profile.id} 标题应为中性学科+序号：${profile.title}`);
+    assert.equal(profile.presentingSymptoms.length, 0, `${profile.id} 不得预置症状清单`);
   }
 });
 

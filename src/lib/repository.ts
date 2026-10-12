@@ -75,7 +75,7 @@ function previewSeedUsers(store: Store): void {
     session.preparationActions = ['EX_PREP'];
     session.unlockedEvidence = index === 1 ? ['EX_PREP', 'EX_TEMP', 'EX_RESP'] : ['EX_PREP', 'EX_TEMP', 'EX_RESP', 'EX_SPO2', 'EX_MOUTH'];
     session.orderedTests = ['cbc-crp', 'chest-image'];
-    session.decision = { diagnosis: '社区获得性肺炎伴低氧风险', summary: '3岁男童发热咳嗽2天，伴气促、静息血氧下降及右下肺细湿啰音。', differentials: '支原体肺炎、病毒性肺炎、喘息性疾病' };
+    session.decision = { diagnosis: '社区获得性肺炎伴低氧风险', summary: '3岁男童发热咳嗽2天，伴气促、静息血氧下降及右下肺细湿啰音。', diagnosisBasis: '发热咳嗽2天伴气促，静息血氧下降，右下肺细湿啰音，血常规与CRP提示细菌感染，胸部影像见肺部浸润影。', differentials: '支原体肺炎、病毒性肺炎、喘息性疾病' };
     session.plan = { priority: '监测生命体征并给予氧疗', detail: '吸氧后复评血氧和呼吸，完善感染评估，必要时住院观察。' };
     session.communication = '我理解您很担心。孩子现在呼吸和血氧有风险，我们先吸氧监测，再完成必要检查并及时告诉您下一步。';
     session.events = [

@@ -24,7 +24,7 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
   if (pediatricCase.sourceFacts !== undefined) return buildSourceReport(session, reportId, reference);
   const asked = new Set(session.askedIntents);
   const evidence = new Set(session.unlockedEvidence);
-  const decisionText = `${session.decision?.diagnosis ?? ''} ${session.decision?.summary ?? ''} ${session.decision?.differentials ?? ''}`;
+  const decisionText = `${session.decision?.diagnosis ?? ''} ${session.decision?.summary ?? ''} ${session.decision?.diagnosisBasis ?? ''} ${session.decision?.differentials ?? ''}`;
   const planText = `${session.plan?.priority ?? ''} ${session.plan?.detail ?? ''}`;
   const communicationText = session.communication ?? '';
 
@@ -154,8 +154,18 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
   if (diagnosisReference) evidence.push({ code: 'SOURCE_DIAGNOSIS_REFERENCE', label: '原病例诊断对照', achieved: true, score: 0, maxScore: 0, detail: diagnosisReference, eventIds: [] });
   if (planReference) evidence.push({ code: 'SOURCE_PLAN_REFERENCE', label: '原病例诊疗经过对照', achieved: true, score: 0, maxScore: 0, detail: planReference, eventIds: [] });
   return { id: reportId, sessionId: session.id, userId: session.userId, caseId: session.caseId, mode: session.mode,
+    caseTitle: resolveCaseTitleForReport(session),
     totalScore: Object.values(abilities).reduce((sum, score) => sum + score, 0), abilities, evidence,
     strengths: checks.filter((check) => check.complete).map((check) => check.label), improvements: checks.filter((check) => !check.complete).map((check) => check.label),
     recommendation: source ? '对照原病例诊断与诊疗经过，解释自己的证据与判断；请教师复核诊断及处置。' : '本病种暂无独立原始病历，请整理自己的问诊与诊疗思路，待补充资料后再对照复盘。',
     scoreBasis: 'process', status: 'pending_review', createdAt: new Date().toISOString() };
+}
+
+/** 报告病例显示标题（完成后释放病种名）：教师病例用真实病种名，演示病例用症状标题。
+ *  会话绑定版本的教学事实缺失（资料不足）时降级用会话 caseOptions 的中性来源名。 */
+function resolveCaseTitleForReport(session: SessionState): string | undefined {
+  if (!session.caseId.startsWith('teacher-')) return undefined;
+  const facts = getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts;
+  if (facts) return facts.caseId.replace(/^teacher-/, '');
+  return session.caseOptions?.sourceName;
 }

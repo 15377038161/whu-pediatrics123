@@ -4,6 +4,7 @@ import type { AgentEvent } from '@/domain/agent';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { runAgentTurn } from '@/lib/agent-engine';
 import { AgentRepository } from '@/lib/repository';
+import { projectSessionForRole } from '@/lib/session-projection';
 import { requireAuth } from '@/lib/request-auth';
 import { agentTurnSchema } from '@/lib/validation';
 
@@ -18,7 +19,9 @@ export async function POST(request: NextRequest) {
     const result = await runAgentTurn(session, parsed.data.event as AgentEvent, parsed.data.clientEventId, { forwardHeaders, accessToken: user.accessToken });
     await repository.saveSession(result.session);
     await repository.saveAgentCall(result.session.id, parsed.data.clientEventId, result.trace, result.runtime);
-    return ok(result);
+    // 防透题投影：学生响应的 caseOptions 中性化（sourceName 替换中性标题、tests 剥离）；
+    // 持久化（saveSession）保留完整状态，投影只作用于响应边界。
+    return ok({ ...result, session: projectSessionForRole(result.session, user.role) });
   } catch (error) {
     const detail = errorFromUnknown(error);
     console.error(`[turn] ${request.method} /api/agent/turn failed code=${detail.code}:`, error);

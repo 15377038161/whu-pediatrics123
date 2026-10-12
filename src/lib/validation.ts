@@ -15,8 +15,16 @@ export const agentTurnSchema = z.object({
     z.object({ type: z.literal('ASK_QUESTION'), data: z.object({ text: z.string().trim().min(1).max(500) }) }),
     z.object({ type: z.literal('DOCTOR_INTERVENTION'), data: z.object({ action: z.enum(['child_answer', 'pause_parent', 'comfort_child']) }) }),
     z.object({ type: z.literal('EXAM_ACTION'), data: z.object({ toolId: z.string().min(1).max(60), bodyPartId: z.string().min(1).max(60) }) }),
-    z.object({ type: z.literal('ORDER_TEST'), data: z.object({ testId: z.string().min(1).max(60) }) }),
-    z.object({ type: z.literal('SUBMIT_DECISION'), data: z.object({ diagnosis: z.string().trim().min(2).max(200), summary: z.string().trim().min(10).max(1500), differentials: z.string().trim().max(800) }) }),
+    // 任务2 双契约：学生自主文本申请（requestedTests，一次可多项，服务端确定性匹配）；
+    // 旧 testId 点选路径保留兼容（历史会话续答/既有测试），二者互斥、strict 防字段混用。
+    z.object({
+      type: z.literal('ORDER_TEST'),
+      data: z.union([
+        z.object({ testId: z.string().min(1).max(60) }).strict(),
+        z.object({ requestedTests: z.string().trim().min(1).max(400), reason: z.string().trim().max(300).optional() }).strict(),
+      ]),
+    }),
+    z.object({ type: z.literal('SUBMIT_DECISION'), data: z.object({ diagnosis: z.string().trim().min(2).max(200), summary: z.string().trim().min(10).max(1500), diagnosisBasis: z.string().trim().min(10).max(1500), differentials: z.string().trim().max(800) }) }),
     z.object({ type: z.literal('SUBMIT_PLAN'), data: z.object({ priority: z.string().trim().min(2).max(300), detail: z.string().trim().min(5).max(1500) }) }),
     z.object({ type: z.literal('SEND_COMMUNICATION'), data: z.object({ text: z.string().trim().min(2).max(1000) }) }),
     z.object({ type: z.literal('NAVIGATE_STAGE'), data: z.object({ stage }) }),
