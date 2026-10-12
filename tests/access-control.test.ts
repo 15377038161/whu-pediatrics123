@@ -5,10 +5,20 @@ import { canAccessRole, isProviderTeacherFid, isTeacherIdentityAllowed, isTestTe
 const studentRole = [{ roleId: '102', roleName: '学生' }];
 const teacherRole = [{ roleId: '101', roleName: '教师' }];
 
-test('1385 测试机构账号可获得教师权限，即使超星返回学生角色', () => {
-  assert.equal(isTeacherIdentityAllowed({ fid: '1385', uid: 'test-user', role: studentRole }, {}), true);
+test('学生 FID1385 负例：机构 ID 单独不再提权（安全修正后）', () => {
+  assert.equal(isTeacherIdentityAllowed({ fid: '1385', uid: 'test-user', role: studentRole }, {}), false);
+  assert.equal(isTeacherIdentityAllowed({ fid: '1385', uid: 'test-user', role: [] }, { CHAOXING_TEST_TEACHER_UIDS: 'someone-else' }), false);
   assert.equal(isTestTeacherFid('1385', {}), true);
-  assert.equal(isTestTeacherFid('1385', { CHAOXING_TEST_TEACHER_FIDS: '' }), true);
+});
+
+test('1385 教师角色正例：可信服务端角色授予教师', () => {
+  assert.equal(isTeacherIdentityAllowed({ fid: '1385', uid: 'test-user', role: teacherRole }, {}), true);
+});
+
+test('1385 显式测试教师 UID 白名单正例（无教师角色时的唯一提权途径）', () => {
+  const env = { CHAOXING_TEST_TEACHER_UIDS: 'test-user' };
+  assert.equal(isTeacherIdentityAllowed({ fid: '1385', uid: 'test-user', role: studentRole }, env), true);
+  assert.equal(isTeacherIdentityAllowed({ fid: '1385', uid: 'other-user', role: studentRole }, env), false);
 });
 
 test('武汉大学普通学生不会获得教师权限或教师端入口', () => {
