@@ -163,6 +163,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .student-hero::after { display: none; }
 .student-hero-photo { position: absolute; inset: 0; z-index: 0; object-fit: cover; object-position: 70% 38%; }
 .student-hero-veil { position: absolute; inset: 0; z-index: 0; background: linear-gradient(90deg, rgba(255,255,255,.93) 0%, rgba(255,255,255,.68) 42%, rgba(255,255,255,.1) 74%, rgba(255,255,255,0) 100%); }
+/* 学生首页整页大背景（温馨儿科病房实景，用户指定）：
+ * 负 z-index 固定层铺满视口，白绿高透遮罩弱化细节保证前景卡片/文字可读；
+ * 卡片自带白色背景覆盖其上，页面滚动时背景固定形成整页氛围衬底。 */
+.student-home-backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+.student-home-backdrop-photo { object-fit: cover; object-position: 62% center; }
+.student-home-backdrop-veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(247,252,249,.87) 0%, rgba(255,255,255,.85) 46%, rgba(241,250,245,.87) 100%); }
 .student-hero-copy { max-width: 720px; padding: 8px 0; }
 .journey-strip { margin-top: 14px; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
 .journey-strip::-webkit-scrollbar { display: none; }

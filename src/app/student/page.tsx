@@ -57,6 +57,10 @@ export default function StudentHome() {
 
   return (
     <>
+      <div className="student-home-backdrop" aria-hidden="true">
+        <Image className="student-home-backdrop-photo" src="/ward-bg.webp" alt="" fill priority sizes="100vw" />
+        <span className="student-home-backdrop-veil" />
+      </div>
       <p className="eyebrow">珞珈儿科 · 今日训练</p>
       <h1 className="page-title">你好，{user.displayName}</h1>
       <p className="page-lead">今天也从一个真实临床任务开始。放心提问、判断和操作，智能体只给方向，不会替你完成训练。</p>
