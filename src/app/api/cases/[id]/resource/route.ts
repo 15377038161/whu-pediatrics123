@@ -1,3 +1,4 @@
+import { resolveCaseId } from '@/lib/case-identity';
 import { realpath, stat } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
@@ -19,7 +20,8 @@ const MIME_TYPES: Record<string, string> = {
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireUser(request, 'student');
-    const { id } = await context.params;
+    const { id: requestedId } = await context.params;
+    const id = resolveCaseId(requestedId);
     const root = getTeacherCaseResourceRoot(id);
     const relative = request.nextUrl.searchParams.get('path');
     if (!root || !relative) return new Response('Resource not found', { status: 404 });

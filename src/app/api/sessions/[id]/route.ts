@@ -3,7 +3,7 @@ import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { AgentRepository } from '@/lib/repository';
 import { projectSessionForRole } from '@/lib/session-projection';
 import { requireAuth } from '@/lib/request-auth';
-import { isTrainableCase } from '@/domain/case-catalog';
+import { isTrainableCase } from '@/lib/case-identity';
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {

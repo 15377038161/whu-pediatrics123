@@ -1,6 +1,7 @@
+import { verifiedComplaint } from '@/lib/admission-complaint';
 import { sourceExamDefinitions } from '@/domain/exam-methods';
 import type { Emotion, Stage, VitalSigns } from '@/domain/agent';
-import { getPublicCase } from '@/domain/case-catalog';
+import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
 import { getSessionTestsCatalog } from '@/lib/case-snapshot';
 import { readTeacherCaseData, type TeacherCaseData } from '@/lib/teacher-case-data';
 
@@ -195,6 +196,7 @@ export const PEDIATRIC_CASES: FlagshipCase[] = [FLAGSHIP_CASE, FEMALE_WHEEZE_CAS
  *  sessionId 提供时（学生会话）：教学事实读取按会话作用域缓存键（sourceId@version#sessionId）
  *  优先命中本人会话的投影事实，避免读到其他会话/教师直读的完整事实（跨会话泄露）。 */
 export function getCase(caseId: string, version?: string | null, sessionId?: string | null): FlagshipCase {
+  caseId = resolveCaseId(caseId);
   const pediatricCase = PEDIATRIC_CASES.find((item) => item.id === caseId);
   if (pediatricCase) return pediatricCase;
   if (caseId.startsWith('teacher-')) {
@@ -260,9 +262,9 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
     }
   }
   return {
-    ...profile, version: 2, age: source?.age ?? '年龄未记录', sex: source?.sex ?? '性别未记录', patientName: '小朋友',
-    triage: source ? `${source.age}患儿就诊。${source.complaint}。` : '请先采集主诉、现病史和一般状态。本病种尚未加载独立病例正文，可记录自己的问诊与诊疗思路。',
-    openingParent: source ? `医生，孩子这次主要是${source.complaint.replace(/^[：:\s]+/, '')}，请您看看。` : '医生，具体病史还需要补充，请先告诉我您想了解什么。',
+    ...profile, id: caseId, version: 2, age: source?.age ?? '年龄未记录', sex: source?.sex ?? '性别未记录', patientName: '小朋友',
+    triage: source ? `${source.age}患儿就诊。${verifiedComplaint(source) ?? '主诉需进一步核实'}。` : '请先采集主诉、现病史和一般状态。本病种尚未加载独立病例正文，可记录自己的问诊与诊疗思路。',
+    openingParent: source ? `医生，孩子这次主要是${verifiedComplaint(source) ?? '不舒服，具体情况还需核实'}，请您看看。` : '医生，具体病史还需要补充，请先告诉我您想了解什么。',
     initialEmotion: 'nervous', initialVitals: source?.vitals ?? unknown, stages: FLAGSHIP_CASE.stages,
     history: [], exams, tests, sourceFacts: source,
   };

@@ -10,6 +10,8 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
+const identityText = readFileSync('src/lib/case-identity.ts', 'utf8');
+const publicIds = Object.fromEntries([...identityText.matchAll(/"(teacher-[^"]+)": "(case-[^"]+)"/g)].map(match => [match[1], match[2]]));
 const teacherText = readFileSync('src/domain/teacher-case-catalog.ts', 'utf8');
 const catalog = JSON.parse(teacherText.slice(teacherText.indexOf('= [') + 2, teacherText.lastIndexOf(']') + 1));
 const linksText = readFileSync('src/domain/teacher-case-links.ts', 'utf8');
@@ -38,7 +40,7 @@ for (const item of catalog) {
   const title = `${subject} · 真实病例 ${String(no).padStart(2, '0')}`;
   const relation = link?.relation === 'subtype' ? 'subtype' : link?.relation === 'alias' ? 'alias' : null;
   const contentStatus = item.status === 'materials-indexed' ? 'teacher-materials-indexed' : item.status === 'folder-only' ? 'teacher-folder-only' : 'teacher-catalog-only';
-  lines.push(`  { id: ${JSON.stringify(item.id)}, title: ${JSON.stringify(title)}, subtitle: ${JSON.stringify(link ? (relation === 'subtype' ? '关联真实亚型病例' : '教师病例学习') : '教师病例学习')}, category: ${JSON.stringify(item.category)}, sourceRelation: ${relation ? JSON.stringify(relation) : 'null'}, contentStatus: '${contentStatus}', mediaCount: ${item.mediaCount}, documentCount: ${item.documentCount} },`);
+  lines.push(`  { id: ${JSON.stringify(publicIds[item.id] ?? (() => { throw new Error('新增病例需先登记稳定公开UUID'); })())}, title: ${JSON.stringify(title)}, subtitle: ${JSON.stringify(link ? (relation === 'subtype' ? '关联真实亚型病例' : '教师病例学习') : '教师病例学习')}, category: ${JSON.stringify(item.category)}, sourceRelation: ${relation ? JSON.stringify(relation) : 'null'}, contentStatus: '${contentStatus}', mediaCount: ${item.mediaCount}, documentCount: ${item.documentCount} },`);
 }
 
 const block = `// 本段由 scripts/gen-public-case-catalog.mjs 生成（教师目录变更后需重新生成）：

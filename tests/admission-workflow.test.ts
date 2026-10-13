@@ -7,6 +7,9 @@ import { createSessionSchema } from '../src/lib/validation';
 import { buildReport } from '../src/lib/scoring';
 import { createInitialSession } from '../src/lib/agent-engine';
 import type { TeacherCaseData } from '../src/lib/teacher-case-data';
+import { CASE_CATALOG } from '../src/domain/case-catalog';
+import { publicCaseId, resolveCaseId } from '../src/lib/case-identity';
+import { projectSessionForRole } from '../src/lib/session-projection';
 
 test('随机资格选择：零例、一例、当前病例、同源别名、多例', () => {
   assert.throws(() => selectAdmission([]), /NO_ELIGIBLE_CASE/);
@@ -43,4 +46,16 @@ test('报告固定最终学生依据，修订不重写已生成报告', () => {
   const report = buildReport(session);
   session.decision.diagnosisBasis = '后续修订';
   assert.equal(report.studentDecision?.diagnosisBasis, '本次已采集的病史与体征依据');
+});
+
+test('客户端目录和active学生响应不通过病例ID泄漏病种，历史ID仍可解析', () => {
+  assert.equal(CASE_CATALOG.filter(item => item.id.startsWith('case-')).length, 70);
+  const publicId = publicCaseId('teacher-川崎病');
+  assert.equal(resolveCaseId(publicId), 'teacher-川崎病');
+  assert.equal(publicId.includes('川崎'), false);
+  const session = createInitialSession('test', 'guided', publicId);
+  assert.equal(session.caseId, 'teacher-川崎病');
+  const projected = projectSessionForRole(session, 'student');
+  assert.equal(projected.caseId, publicId);
+  assert.ok(!JSON.stringify(projected).includes('teacher-川崎病'));
 });

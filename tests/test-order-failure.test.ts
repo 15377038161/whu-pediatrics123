@@ -130,7 +130,7 @@ test('失败重试后成功记单解锁；同项目重复开单幂等（orderedT
     // 同项目再次开单：orderedTests 去重仍为单条
     const again = await runAgentTurn(session, orderEvent('source-test-0'), 'evt-retry-3', { accessToken: TOKEN });
     assert.deepEqual(again.session.orderedTests, ['source-test-0']);
-    assert.equal(again.session.events.filter((item) => item.type === 'ORDER_TEST').length, 2);
+    assert.equal(again.session.events.filter((item) => item.type === 'ORDER_TEST').length, 1, '已有结果重复申请不新增证据');
   } finally {
     __setTestOrderRpcForTests(null);
   }
@@ -151,6 +151,6 @@ test('预览内存模式（无 accessToken）：不经 RPC，保留既有「资�
   const session = buildSession('sess-503-preview', 'v-503-preview');
   const result = await runAgentTurn(session, orderEvent('source-test-0'), 'evt-preview');
   assert.deepEqual(result.session.orderedTests, ['source-test-0']);
-  assert.ok(result.session.unlockedEvidence.includes('SOURCE_TEST_0'));
+  assert.equal(result.session.unlockedEvidence.includes('SOURCE_TEST_0'), false, '无结果不解锁检查证据');
   assert.ok(result.newMessages.some((item) => item.content.includes('资料未提供')));
 });

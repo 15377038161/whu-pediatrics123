@@ -1,3 +1,4 @@
+import { resolveCaseId } from '@/lib/case-identity';
 import { NextRequest } from 'next/server';
 import { CASE_CATALOG } from '@/domain/case-catalog';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const unpublished = user.role === 'teacher' ? new Set<string>() : await getUnpublishedCaseIds(user.accessToken);
-    return ok(CASE_CATALOG.filter(item => !unpublished.has(item.id)).map(admissionProfile));
+    return ok(CASE_CATALOG.filter(item => !unpublished.has(resolveCaseId(item.id))).map(admissionProfile));
   } catch (error) {
     const detail = errorFromUnknown(error);
     return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : 500);

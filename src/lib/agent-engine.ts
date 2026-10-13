@@ -1,3 +1,4 @@
+import { verifiedComplaint } from '@/lib/admission-complaint';
 import { postureAllows, type ExamPosture } from '@/domain/exam-methods';
 import type {
   AgentEvent,
@@ -348,7 +349,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
     matches = sentences.map((fact, index) => ({ fact: fact.trim().replace(/^[一二三四五六七八九十\d]+[、.．]\s*(?=[\u4e00-\u9fff])/, ''), index,
       relevance: relevantTerms.filter((term) => fact.includes(term)).length * 3 + selected.filter((topic) => topic.source.test(fact)).length }))
       .filter((item) => item.relevance > 0).sort((a, b) => b.relevance - a.relevance).slice(0, 3);
-    if (/哪里不舒服|怎么了|主诉|为什么来/.test(text) && source) matches = [{ fact: source.complaint, index: -2 }];
+    if (/哪里不舒服|怎么了|主诉|为什么来/.test(text) && source) matches = [{ fact: verifiedComplaint(source) ?? '主诉尚需补充核实', index: -2 }];
   }
   const fact = matches.map((item) => item.fact).join('。');
   const roleResult = fact ? await renderRoleReply({ childAge: pediatricCase.age, childSex: pediatricCase.sex,
@@ -475,17 +476,21 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
   for (const request of requests) {
     // 未匹配：记录申请与「资料未提供」，不记下单、不解锁证据（fail-closed，不编造）
     if (!request.test) {
-      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `「${request.requested}」：本病例资料未提供该项检查`, null, []));
       const detail = request.status === 'ambiguous' ? '请说明检查部位或具体项目，当前申请尚未匹配。' : '尚未识别到本病例对应的检查记录；这不代表该申请医学上错误。';
+      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `「${request.requested}」：${detail}`, null, []));
       const unmatchedMessage = message('system', `「${request.requested}」：${detail}`, { kind: 'navigation' });
       session.messages.push(unmatchedMessage);
       newMessages.push(unmatchedMessage);
-      feedbackParts.push(`「${request.requested}」不在本病例资料中，未编造结果。`);
+      feedbackParts.push(`「${request.requested}」：${detail}`);
       continue;
     }
     const test = request.test;
     if (processedIds.has(test.id)) continue;
     processedIds.add(test.id);
+    if (session.orderedTests.includes(test.id) && session.unlockedEvidence.includes(test.evidenceCode)) {
+      feedbackParts.push(`${test.label}已申请，结果保留在本次记录中。`);
+      continue;
+    }
     // 目录项（恢复态投影剥离，result 为空）：先经 record_test_order 幂等持久化下单（DB 先落
     // orderedTests），再按 testId 行级读取本人病例单行结果（get_test 验证已下单）——先记单后取
     // 结果，既保证已下单验证不产生死锁，也不以一次下单暴露全部 tests 全文（目录/结果分离）。
@@ -508,8 +513,7 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     // fail-closed：下单记录保留，行级结果不可得时明确「资料未提供」，不编造检查结果
     if (!test.result) {
       session.orderedTests = uniq([...session.orderedTests, test.id]);
-      session.unlockedEvidence = uniq([...session.unlockedEvidence, test.evidenceCode]);
-      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：检查已开出，本病例资料未提供该项结果`, null, [test.evidenceCode]));
+      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：检查已开出，本病例资料未提供该项结果`, null, []));
       const pendingMessage = message('system', `${test.label}已开出，本病例资料未提供该项结果。`, { kind: 'navigation' });
       session.messages.push(pendingMessage);
       newMessages.push(pendingMessage);

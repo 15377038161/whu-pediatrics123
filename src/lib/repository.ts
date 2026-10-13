@@ -6,7 +6,7 @@ import { ensureCaseSnapshot, getSnapshotVersion, listCaseTests, restoreCaseSnaps
 import { resolveTeacherCaseVersion } from '@/lib/case-version-select';
 import { assertCasePublishedForNewSession } from '@/lib/case-publication';
 import { isScorableCase } from '@/domain/case-classification';
-import { getPublicCase } from '@/domain/case-catalog';
+import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
 import { eligibleAdmissions, selectAdmission } from '@/lib/case-admission';
 import { getUnpublishedCaseIds } from '@/lib/case-publication';
 import { creationSessionId, creationFingerprint, type SessionCreationOptions } from '@/lib/session-creation';
@@ -114,6 +114,7 @@ export class AgentRepository {
   }
 
   async createRequestedSession(options: SessionCreationOptions): Promise<SessionState> {
+    options = { ...options, caseId: options.caseId ? resolveCaseId(options.caseId) : undefined, excludeCaseId: options.excludeCaseId ? resolveCaseId(options.excludeCaseId) : undefined };
     const fingerprint = creationFingerprint(options);
     const id = options.clientRequestId ? creationSessionId(this.actor.id, options.clientRequestId) : undefined;
     if (id) {

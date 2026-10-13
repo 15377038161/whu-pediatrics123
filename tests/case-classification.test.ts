@@ -1,3 +1,4 @@
+import { publicCaseId } from '../src/lib/case-identity';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CASE_CATALOG } from '../src/domain/case-catalog';
@@ -38,7 +39,7 @@ test('资料完备度三档：53 独立来源 + 14 关联来源 + 3 资料不足
   // 防透题收敛：insufficient 判定按 id 断言（病种名不再进入分类模块）
   assert.deepEqual(
     CASE_CATALOG.filter((item) => classifyCase(item).readiness.readiness === 'insufficient').map((item) => item.id).sort(),
-    ['teacher-新生儿脑梗死', 'teacher-支气管肺炎', 'teacher-格林巴利综合征'].sort(),
+    ['teacher-新生儿脑梗死', 'teacher-支气管肺炎', 'teacher-格林巴利综合征'].map(publicCaseId).sort(),
   );
 });
 
@@ -70,7 +71,7 @@ test('搜索分页：关键词 + 学科 + 来源组合筛选', () => {
 });
 
 test('防透题：教师病例标题与可搜索文本不含病种名', () => {
-  const teacherCases = CASE_CATALOG.filter((item) => item.id.startsWith('teacher-'));
+  const teacherCases = CASE_CATALOG.filter((item) => item.id.startsWith('case-'));
   assert.ok(teacherCases.length >= 50);
   for (const profile of teacherCases) {
     assert.ok(/真实病例 \d{2}$/.test(profile.title), `${profile.id} 标题应为中性学科+序号：${profile.title}`);
@@ -97,7 +98,7 @@ test('星级映射：演示 1 星可解释，教师项 2 星', () => {
   const demo = classifyCase(CASE_CATALOG.find((item) => item.id === 'peds-respiratory-001')!);
   assert.equal(demo.stars, 1);
   assert.ok(demo.starReason.length > 0);
-  const teacher = classifyCase(CASE_CATALOG.find((item) => item.id === 'teacher-新生儿败血症')!);
+  const teacher = classifyCase(CASE_CATALOG.find((item) => item.id === publicCaseId('teacher-新生儿败血症'))!);
   assert.equal(teacher.stars, 2);
 });
 

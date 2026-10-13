@@ -33,7 +33,7 @@ async function withSourceCase(): Promise<{ session: ReturnType<typeof createInit
   };
 }
 
-test('文本申请：匹配项返回真实结果，未匹配项明确「资料未提供」不编造', async (t) => {
+test('文本申请：匹配项返回真实结果，未匹配项明确「尚未识别」不编造', async (t) => {
   const { session, restore } = await withSourceCase();
   t.after(() => void restore());
   const orderedId = session.caseOptions!.tests[0].id;
@@ -43,7 +43,7 @@ test('文本申请：匹配项返回真实结果，未匹配项明确「资料�
   // 匹配项：结果消息返回（真实病例资料）
   assert.ok(result.newMessages.some((message) => message.content.includes('尿蛋白+++')), '匹配项应返回病例真实结果');
   // 未匹配项：明确「资料未提供」，不编造结果
-  assert.ok(result.newMessages.some((message) => message.content.includes('基因检测') && message.content.includes('本病例资料未提供')), '未匹配项应明确资料未提供');
+  assert.ok(result.newMessages.some((message) => message.content.includes('基因检测') && message.content.includes('尚未识别')), '未匹配项应明确资料未提供');
   // 只解锁匹配项证据；未匹配项不产生证据（caseOptions.tests 无 evidenceCode，从病例目录取）
   const matchedCatalogTest = getCase(session.caseId).tests.find((item) => item.id === orderedId)!;
   assert.ok(session.unlockedEvidence.includes(matchedCatalogTest.evidenceCode));
@@ -51,7 +51,7 @@ test('文本申请：匹配项返回真实结果，未匹配项明确「资料�
   // 事件：一条匹配结果事件 + 一条未匹配事件
   const orderEvents = session.events.filter((event) => event.type === 'ORDER_TEST');
   assert.equal(orderEvents.length, 2);
-  assert.ok(orderEvents.some((event) => event.summary.includes('资料未提供')));
+  assert.ok(orderEvents.some((event) => event.summary.includes('尚未识别')));
   // trace：确定性匹配说明 + 申请理由
   assert.ok(result.trace.some((item) => item.label.includes('确定性别名匹配')));
   assert.ok(result.trace.some((item) => item.label.includes('明确蛋白尿程度')));

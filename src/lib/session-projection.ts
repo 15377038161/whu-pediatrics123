@@ -1,5 +1,5 @@
 import type { AppRole, SessionState } from '@/domain/agent';
-import { findPublicCase } from '@/domain/case-catalog';
+import { findPublicCase, publicCaseId } from '@/lib/case-identity';
 import { verifiedComplaint } from '@/lib/case-admission';
 import { readTeacherCaseData } from '@/lib/teacher-case-data';
 
@@ -21,12 +21,14 @@ import { readTeacherCaseData } from '@/lib/teacher-case-data';
  * 只过滤响应投影，不修改持久化状态（投影是纯函数，原始 state 落库不变）。
  */
 export function projectSessionForRole(session: SessionState, role: AppRole): SessionState {
-  if (role === 'teacher' || session.status !== 'active') return session;
+  if (role === 'teacher') return session;
+  if (session.status !== 'active') return { ...session, caseId: publicCaseId(session.caseId) };
   if (!session.caseOptions) return session;
   const profile = findPublicCase(session.caseId);
   const complaint = verifiedComplaint(readTeacherCaseData(session.caseId, session.sourceSnapshotVersion, session.id));
   return {
     ...session,
+    caseId: publicCaseId(session.caseId),
     caseOptions: {
       ...session.caseOptions,
       sourceName: complaint ?? profile?.title ?? '真实教学病例',

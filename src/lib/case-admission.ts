@@ -1,19 +1,15 @@
+import { resolveCaseId } from '@/lib/case-identity';
 // 服务端接诊信息：只从受控病例事实取主诉，不把诊断目录导入客户端。
 import { CASE_CATALOG, type PublicCaseProfile } from '@/domain/case-catalog';
 import { getCase } from '@/domain/case';
-import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
-import { getTeacherSourceId, readTeacherCaseData, type TeacherCaseData } from '@/lib/teacher-case-data';
+import { verifiedComplaint } from '@/lib/admission-complaint';
+export { verifiedComplaint } from '@/lib/admission-complaint';
+import { getTeacherSourceId, readTeacherCaseData } from '@/lib/teacher-case-data';
 
-export function verifiedComplaint(source: TeacherCaseData | null): string | null {
-  const complaint = source?.complaint.trim().replace(/^主诉\s*[:：]\s*/, '');
-  if (!complaint || complaint.length < 2 || complaint.length > 100 || /未记录|待核验|资料不足|诊断|病例|姓名|住院号/.test(complaint)) return null;
-  if (TEACHER_CASE_CATALOG.some(item => complaint.includes(item.name))) return null;
-  return complaint;
-}
 
 export function admissionProfile(profile: PublicCaseProfile): PublicCaseProfile {
-  if (!profile.id.startsWith('teacher-')) return profile;
-  const source = readTeacherCaseData(profile.id);
+  if (!resolveCaseId(profile.id).startsWith('teacher-')) return profile;
+  const source = readTeacherCaseData(resolveCaseId(profile.id));
   const complaint = verifiedComplaint(source);
   return { ...profile, title: complaint ?? '待补充接诊信息', presentingSymptoms: complaint ? [complaint] : [],
     age: source?.age || '待核验', sex: source?.sex === '男' || source?.sex === '女' ? source.sex : '待核验' };
@@ -22,11 +18,11 @@ export function admissionProfile(profile: PublicCaseProfile): PublicCaseProfile 
 export interface AdmissionCandidate { caseId: string; sourceId: string }
 export function eligibleAdmissions(unpublished: ReadonlySet<string>): AdmissionCandidate[] {
   return CASE_CATALOG.flatMap(profile => {
-    if (unpublished.has(profile.id) || profile.contentStatus === 'demo-pending-review') return [];
+    if (unpublished.has(resolveCaseId(profile.id)) || profile.contentStatus === 'demo-pending-review') return [];
     const definition = getCase(profile.id);
     const source = definition.sourceFacts;
     if (source !== undefined && (!verifiedComplaint(source) || !source?.sections.history.trim() || !source.sections.exam.trim() || !source.sections.tests.trim())) return [];
-    return [{ caseId: profile.id, sourceId: getTeacherSourceId(profile.id) }];
+    return [{ caseId: resolveCaseId(profile.id), sourceId: getTeacherSourceId(resolveCaseId(profile.id)) }];
   });
 }
 

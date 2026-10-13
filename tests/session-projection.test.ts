@@ -38,7 +38,8 @@ test('已完成/报告待生成会话：不投影（复盘需要原始信息）'
   for (const status of ['completed', 'report_pending'] as const) {
     const session = teacherSession({ status });
     const projected = projectSessionForRole(session, 'student');
-    assert.equal(projected, session, `status=${status} 不投影`);
+    assert.equal(projected.caseOptions, session.caseOptions, '完成后保留复盘字段');
+    assert.match(projected.caseId, /^case-/);
   }
 });
 
@@ -55,7 +56,7 @@ test('列表投影：逐条应用且保持顺序', () => {
   const list = projectSessionsForRole([active, completed], 'student');
   assert.equal(list.length, 2);
   assert.equal(list[0].caseOptions!.sourceName.includes('川崎'), false);
-  assert.equal(list[1], completed, 'completed 原样');
+  assert.equal(list[1].caseOptions, completed.caseOptions, '完成后保留复盘字段');
 });
 
 test('投影不改变持久化语义：返回对象为浅拷贝（原 session 字段不被就地修改）', () => {
