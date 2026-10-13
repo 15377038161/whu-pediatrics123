@@ -53,17 +53,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 .landing { min-height: 100svh; position: relative; overflow: hidden auto; display: grid; align-items: center; background: #f7fcf9; }
-.landing-scene { position: absolute; inset: 0; overflow: hidden; background: radial-gradient(circle at 70% 18%, rgba(255,255,255,.92), transparent 32%), linear-gradient(145deg, #fffdf6 0%, #f1faf5 44%, #e6f4ef 100%); }
-.landing-scene::before { content: ""; position: absolute; inset: 0; opacity: .42; background-image: linear-gradient(rgba(39,108,99,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(39,108,99,.055) 1px, transparent 1px); background-size: 36px 36px; mask-image: linear-gradient(to right, #000 0%, transparent 72%); }
-.scene-orb { position: absolute; border-radius: 50%; filter: blur(2px); animation: sceneFloat 9s ease-in-out infinite; }
-.scene-orb-one { width: min(46vw, 620px); aspect-ratio: 1; left: -12vw; top: -22%; border: 1px solid rgba(39,108,99,.14); box-shadow: inset 0 0 0 70px rgba(117,160,150,.035), inset 0 0 0 140px rgba(117,160,150,.025); }
-.scene-orb-two { width: 260px; height: 260px; right: 5%; bottom: -110px; background: rgba(255,218,119,.18); animation-delay: -4s; }
-.luojia-silhouette { position: absolute; left: 5%; bottom: 0; width: min(720px, 62vw); height: 22vh; opacity: .09; background: linear-gradient(90deg, transparent 0 7%, var(--pine) 7% 10%, transparent 10% 16%, var(--pine) 16% 19%, transparent 19% 27%, var(--pine) 27% 33%, transparent 33% 40%, var(--pine) 40% 47%, transparent 47% 56%, var(--pine) 56% 62%, transparent 62% 68%, var(--pine) 68% 76%, transparent 76%); clip-path: polygon(0 100%,0 78%,8% 78%,8% 46%,13% 46%,16% 20%,19% 46%,27% 46%,27% 61%,40% 61%,40% 35%,45% 16%,50% 35%,56% 35%,56% 67%,68% 67%,68% 42%,73% 42%,77% 25%,81% 42%,87% 42%,87% 76%,100% 76%,100% 100%); }
-.landing-ecg { position: absolute; z-index: 0; left: -3%; right: -3%; top: 54%; height: clamp(160px, 26vw, 260px); opacity: .58; mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 84%, transparent 100%); }
-.landing-ecg svg { width: 100%; height: 100%; overflow: visible; }
-.landing-ecg-ghost, .landing-ecg-line { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.landing-ecg-ghost { stroke: rgba(231,119,97,.08); stroke-width: 15; }
-.landing-ecg-line { stroke: rgba(217,91,73,.28); stroke-width: 2.4; stroke-dasharray: 2100; stroke-dashoffset: 2100; filter: drop-shadow(0 0 8px rgba(226,105,86,.18)); animation: ambientEcgTrace 5.8s linear infinite; }
+.landing-scene { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(145deg, #fffdf6 0%, #f1faf5 44%, #e6f4ef 100%); }
+/* 登录页背景图（温馨儿科诊室实景，主体居中偏右、左侧大片奶白墙留白）：
+ * 照片铺满 cover，视口焦点略偏右保留人物主体；左侧叠加白色渐变遮罩保证介绍文案可读。 */
+.landing-photo { object-fit: cover; object-position: 64% center; }
+.landing-photo-veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,253,246,.9) 0%, rgba(255,253,246,.52) 36%, rgba(255,253,246,.04) 68%, rgba(255,253,246,0) 100%); }
 .landing-content { position: relative; z-index: 2; width: min(100%, 1240px); margin: 0 auto; padding: 32px 20px max(28px, env(safe-area-inset-bottom)); color: var(--ink); }
 .landing-intro { min-width: 0; max-width: 760px; }
 .brand-lockup { display: flex; align-items: center; gap: 14px; }
@@ -562,8 +556,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @keyframes observation-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 @keyframes drawer-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes lung-wave { 50% { transform: scaleY(.35); opacity: .45; } }
-@keyframes ambientEcgTrace { 0% { stroke-dashoffset: 2100; opacity: .16; } 10% { opacity: .9; } 78%,100% { stroke-dashoffset: 0; opacity: .72; } }
-@keyframes sceneFloat { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(0,18px,0); } }
 
 @media (min-width: 700px) {
   .landing { align-items: center; }
@@ -591,7 +583,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .hint-popover { right: auto; left: 0; width: min(220px, calc(100vw - 156px)); border-radius: 14px 14px 14px 4px; }
   .hint-popover::after { right: auto; left: 15px; }
   .landing-hero-row { min-height: 260px; display: flex; padding-right: 0; }
-  .landing-ecg { top: 48%; height: 190px; opacity: .42; }
+  .landing-photo { object-position: 70% 30%; }
+  .landing-photo-veil { background: linear-gradient(180deg, rgba(255,253,246,.86) 0%, rgba(255,253,246,.68) 45%, rgba(255,253,246,.52) 100%); }
   .landing-trust { gap: 8px 13px; }
   .hero-actions .btn { width: 100%; }
   .case-card-copy { grid-template-columns: 1fr; grid-template-areas: "number" "title" "meta" "symptoms" "action"; }

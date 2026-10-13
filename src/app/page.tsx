@@ -14,15 +14,8 @@ export default function LoginPage() {
   return (
     <main className="landing" id="main-content">
       <div className="landing-scene" aria-hidden="true">
-        <span className="scene-orb scene-orb-one" />
-        <span className="scene-orb scene-orb-two" />
-        <span className="luojia-silhouette" />
-        <div className="landing-ecg">
-          <svg viewBox="0 0 1440 220" preserveAspectRatio="none">
-            <path className="landing-ecg-ghost" d="M0 116H188l28-1 18-29 22 76 24-120 28 73h166l25-1 17-25 21 66 25-103 27 63h224l27-1 18-31 23 82 27-128 30 77h282" />
-            <path className="landing-ecg-line" d="M0 116H188l28-1 18-29 22 76 24-120 28 73h166l25-1 17-25 21 66 25-103 27 63h224l27-1 18-31 23 82 27-128 30 77h282" />
-          </svg>
-        </div>
+        <Image className="landing-photo" src="/login-bg.webp" alt="" fill priority sizes="100vw" />
+        <span className="landing-photo-veil" />
       </div>
       <div className="landing-content">
         <section className="landing-intro">
