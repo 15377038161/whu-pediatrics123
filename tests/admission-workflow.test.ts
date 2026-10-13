@@ -54,8 +54,10 @@ test('客户端目录和active学生响应不通过病例ID泄漏病种，历史
   assert.equal(resolveCaseId(publicId), 'teacher-川崎病');
   assert.equal(publicId.includes('川崎'), false);
   const session = createInitialSession('test', 'guided', publicId);
+  session.creationRequest = JSON.stringify(['guided', 'teacher-川崎病']);
   assert.equal(session.caseId, 'teacher-川崎病');
   const projected = projectSessionForRole(session, 'student');
   assert.equal(projected.caseId, publicId);
+  assert.equal(projected.creationRequest, undefined);
   assert.ok(!JSON.stringify(projected).includes('teacher-川崎病'));
 });

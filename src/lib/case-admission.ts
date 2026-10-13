@@ -21,7 +21,9 @@ export function eligibleAdmissions(unpublished: ReadonlySet<string>): AdmissionC
     if (unpublished.has(resolveCaseId(profile.id)) || profile.contentStatus === 'demo-pending-review') return [];
     const definition = getCase(profile.id);
     const source = definition.sourceFacts;
-    if (source !== undefined && (!verifiedComplaint(source) || !source?.sections.history.trim() || !source.sections.exam.trim() || !source.sections.tests.trim())) return [];
+    if (source !== undefined && (!verifiedComplaint(source) || !source?.age.trim() || /待核验|未记录/.test(source.age) ||
+      !source.sections.history.trim() || !source.sections.exam.trim() || !source.sections.tests.trim() ||
+      !source.sections.diagnosis.trim() || !source.sections.plan.trim())) return [];
     return [{ caseId: resolveCaseId(profile.id), sourceId: getTeacherSourceId(resolveCaseId(profile.id)) }];
   });
 }

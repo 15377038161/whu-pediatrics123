@@ -22,12 +22,15 @@ import { readTeacherCaseData } from '@/lib/teacher-case-data';
  */
 export function projectSessionForRole(session: SessionState, role: AppRole): SessionState {
   if (role === 'teacher') return session;
-  if (session.status !== 'active') return { ...session, caseId: publicCaseId(session.caseId) };
-  if (!session.caseOptions) return session;
+  const publicSession = { ...session, caseId: publicCaseId(session.caseId) };
+  // 创建指纹包含服务端原病例ID，仅用于幂等核对，不能作为公开会话字段。
+  delete publicSession.creationRequest;
+  if (session.status !== 'active') return publicSession;
+  if (!session.caseOptions) return session.creationRequest ? publicSession : session;
   const profile = findPublicCase(session.caseId);
   const complaint = verifiedComplaint(readTeacherCaseData(session.caseId, session.sourceSnapshotVersion, session.id));
   return {
-    ...session,
+    ...publicSession,
     caseId: publicCaseId(session.caseId),
     caseOptions: {
       ...session.caseOptions,

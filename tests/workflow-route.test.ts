@@ -30,7 +30,9 @@ test('真实路由合成身份：创建→问查→检查→诊断→返回补�
     const event = async (type: string, data: unknown) => {
       const result = await turn(request('/api/agent/turn', { sessionId: session.id, clientEventId: crypto.randomUUID(), event: { type, data } }));
       assert.equal(result.status, 200);
-      return (await result.json()).data;
+      const payload = (await result.json()).data;
+      assert.ok(payload.trace.every((item: { sourceIds: string[] }) => item.sourceIds.length === 0));
+      return payload;
     };
     await event('ASK_QUESTION', { text: '哪里不舒服？什么时候开始？有没有呼吸困难？' });
     await event('EXAM_ACTION', { toolId: 'hand-hygiene', bodyPartId: 'hands', posture: 'standing' });

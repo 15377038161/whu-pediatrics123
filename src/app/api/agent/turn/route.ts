@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
     await repository.saveAgentCall(result.session.id, parsed.data.clientEventId, result.trace, result.runtime);
     // 防透题投影：学生响应的 caseOptions 中性化（sourceName 替换中性标题、tests 剥离）；
     // 持久化（saveSession）保留完整状态，投影只作用于响应边界。
-    return ok({ ...result, session: projectSessionForRole(result.session, user.role) });
+    return ok({ ...result, session: projectSessionForRole(result.session, user.role),
+      trace: user.role === 'student' ? result.trace.map(item => ({ ...item, sourceIds: [] })) : result.trace });
   } catch (error) {
     const detail = errorFromUnknown(error);
     console.error(`[turn] ${request.method} /api/agent/turn failed code=${detail.code}`);
