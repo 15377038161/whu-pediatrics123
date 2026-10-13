@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ArrowRight, Bone, ClipboardCheck, Clock3, HeartPulse, MessagesSquare, Sparkles, Stethoscope } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { CASE_CATALOG, getPublicCase, isTrainableCase } from '@/domain/case-catalog';
 import type { SessionState, TrainingReport } from '@/domain/agent';
@@ -61,6 +62,8 @@ export default function StudentHome() {
       <p className="page-lead">今天也从一个真实临床任务开始。放心提问、判断和操作，智能体只给方向，不会替你完成训练。</p>
 
       <section className="hero-desk student-hero">
+        <Image className="student-hero-photo" src="/home-bg.webp" alt="" fill priority sizes="100vw" />
+        <span className="student-hero-veil" aria-hidden="true" />
         <div className="student-hero-copy">
           <p className="eyebrow">{active ? '欢迎回来 · 进度已保存' : '本周旗舰病例'}</p>
           <h1>{active ? '接着上次的临床思路继续' : `今天接诊一位${activeCase.age}患儿`}</h1>
