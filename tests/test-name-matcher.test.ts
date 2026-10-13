@@ -77,3 +77,11 @@ test('批量匹配：保持输入顺序，重复输入各自返回相同结果',
   assert.equal(results[0].requested, '胸片');
   assert.equal(results[2].requested, '胸部X线');
 });
+
+test('更具体项目优先精确匹配，增强/CTA/合并方式不降级成基础项', () => {
+  assert.equal(matchRequestedTest('血常规五分类', CATALOG).test?.id, 'cbc-five');
+  assert.equal(matchRequestedTest('胸部CTA', CATALOG).test, null);
+  assert.equal(matchRequestedTest('胸腹部CT', CATALOG).test, null);
+  assert.equal(matchRequestedTest('CT', CATALOG).status, 'ambiguous');
+  assert.equal(matchRequestedTest('胸片', [...CATALOG, catalogItem('chest2', '胸片')]).status, 'ambiguous');
+});

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Bone, ClipboardCheck, Clock3, HeartPulse, MessagesSquare, Sparkles, Stethoscope } from 'lucide-react';
 import Image from 'next/image';
+import { RandomAdmission } from '@/components/random-admission';
 import Link from 'next/link';
 import { CASE_CATALOG, getPublicCase, isTrainableCase } from '@/domain/case-catalog';
 import type { SessionState, TrainingReport } from '@/domain/agent';
@@ -72,7 +73,7 @@ export default function StudentHome() {
             <a className="btn btn-primary" href={active ? `/student/training?session=${active.id}` : `/student/training?mode=guided&case=${activeCase.id}`}>
               {active ? '继续训练' : '开始接诊'} <ArrowRight size={17} />
             </a>
-            <a className="btn btn-secondary" href="/student/practice"><Sparkles size={16} /> 先做专项热身</a>
+            <RandomAdmission excludeCaseId={active?.caseId} /><a className="btn btn-secondary" href="/student/practice"><Sparkles size={16} /> 先做专项热身</a>
           </div>
           <div className="case-note">{activeCase.expectedMinutes > 0 && <span><Clock3 size={14} /> 建议 {activeCase.expectedMinutes} 分钟</span>}<span><HeartPulse size={14} /> 自主问诊与检查</span><span>过程自动保存</span></div>
         </div>

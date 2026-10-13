@@ -45,7 +45,7 @@ const TEST_SYNONYM_GROUPS: string[][] = [
   ['降钙素原', 'pct'],
   ['血沉', 'esr', '红细胞沉降率'],
   ['胸片', '胸部x线', '胸部正位片'],
-  ['胸部CT', '胸腹部ct'],
+  ['胸部CT'],
   ['头颅CT', '颅脑ct'],
   ['MRI', '核磁共振', '核磁', 'mr'],
   ['头颅MRI', '头颅核磁'],
@@ -82,6 +82,7 @@ export interface TestMatchResult {
   requested: string;
   /** 匹配到的病例检查项（null=本病例目录无该项）；匹配仅代表目录中存在该检查。 */
   test: AuxiliaryTest | null;
+  status?: 'matched' | 'ambiguous' | 'unmatched';
 }
 
 /** 匹配单个申请名到病例目录（确定性，无模型）。
@@ -92,18 +93,17 @@ export function matchRequestedTest(requested: string, catalog: readonly Auxiliar
   const inputRaw = normalizeTestName(requested);
   if (inputRaw.length === 0) return { requested, test: null };
 
-  for (const test of catalog) {
-    const labelRaw = normalizeTestName(test.label);
-    if (labelRaw.length === 0) continue;
-    const labelCanonical = canonicalOf(test.label);
-    // 1) 同义词组精确匹配（输入与 label 归一到同一规范名）
-    if (inputCanonical === labelCanonical) return { requested, test };
-    // 2) 单向前缀：输入比 label 更具体（label 是输入前缀且输入更长）
-    if (inputRaw.length > labelRaw.length && inputRaw.startsWith(labelRaw)) return { requested, test };
-    // 3) 规范名前缀：输入以规范名开头并附加说明（如「crp复查」）
-    if (inputCanonical.length > labelCanonical.length && inputCanonical.startsWith(labelCanonical)) return { requested, test };
-  }
-  return { requested, test: null };
+  const exact = catalog.filter(test => inputCanonical === canonicalOf(test.label));
+  if (exact.length === 1) return { requested, test: exact[0], status: 'matched' };
+  if (exact.length > 1) return { requested, test: null, status: 'ambiguous' };
+  // 只允许明确复查后缀，不把CT增强/CTA/五分类/合并检查吞为基础检查。
+  const qualified = catalog.filter(test => {
+    const label = canonicalOf(test.label);
+    return inputCanonical.startsWith(label) && /^(?:复查|检查|[（(]复查[）)])$/.test(inputCanonical.slice(label.length));
+  });
+  if (qualified.length === 1) return { requested, test: qualified[0], status: 'matched' };
+  if (qualified.length > 1 || /^(?:ct|mri|核磁|b超|超声|影像|化验|检查)$/.test(inputRaw)) return { requested, test: null, status: 'ambiguous' };
+  return { requested, test: null, status: 'unmatched' };
 }
 
 /** 批量匹配（保持输入顺序，重复输入各自返回相同结果）。 */

@@ -15,6 +15,9 @@ export function fail(error: ApiError, id = requestId(), status = 400): NextRespo
 
 export function errorFromUnknown(error: unknown): ApiError {
   const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('NO_ELIGIBLE_CASE')) return { code: 'NO_ELIGIBLE_CASE', message: '暂无资料完整且已发布的病例，请稍后再试。', retryable: false };
+  if (message.includes('ONLY_CURRENT_CASE')) return { code: 'ONLY_CURRENT_CASE', message: '目前只有当前病例可用，可以选择重新训练。', retryable: false };
+  if (message.includes('CREATION_REQUEST_CONFLICT')) return { code: 'CREATION_REQUEST_CONFLICT', message: '创建请求已用于其他操作，请重新进入接诊页面。', retryable: false };
   if (message.includes('AUTH_REQUIRED')) return { code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false };
   if (message.includes('FORBIDDEN')) return { code: 'FORBIDDEN', message: '你无权访问这条记录。', retryable: false };
   if (message.includes('SESSION_NOT_FOUND')) return { code: 'SESSION_NOT_FOUND', message: '未找到训练记录。', retryable: false };

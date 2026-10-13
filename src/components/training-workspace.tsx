@@ -301,7 +301,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
 
   if (!session) return <main className="loading-screen" id="main-content"><div><div className="pulse-mark"><Activity /></div><strong>{error ?? '正在建立统一病例会话…'}</strong>{error && <p><a className="btn btn-secondary" href="/student">返回首页</a></p>}</div></main>;
   const baseProfile = getPublicCase(session.caseId);
-  const caseProfile = session.caseOptions ? { ...baseProfile, age: session.caseOptions.age, sex: session.caseOptions.sex } : baseProfile;
+  const caseProfile = session.caseOptions ? { ...baseProfile, title: session.caseOptions.complaint ?? session.caseOptions.sourceName, age: session.caseOptions.age, sex: session.caseOptions.sex } : baseProfile;
   const spatialExam = displayStage === 'exam';
   const examTools = session.caseOptions ? [...tools, ...sourceExamTools] : tools;
   const examHotspots = session.caseOptions ? [...baseExamHotspots, ...sourceExamHotspots] : baseExamHotspots;

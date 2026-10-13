@@ -1,6 +1,7 @@
 import { ArrowRight, BookOpenCheck, CheckCircle2, CircleAlert, RotateCcw } from 'lucide-react';
 import type { TrainingReport } from '@/domain/agent';
 import { findPublicCase } from '@/domain/case-catalog';
+import { RandomAdmission } from '@/components/random-admission';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
   { key: 'history', label: '儿科问诊', max: 25 },
@@ -30,6 +31,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         </div>
       </section>
       <div className="report-grid">
+        <section className="report-section"><h2>你的诊断与依据</h2><p><strong>初步诊断：</strong>{report.studentDecision?.diagnosis || '历史报告未保存此项'}</p><p className="preserve-lines"><strong>诊断依据：</strong>{report.studentDecision?.diagnosisBasis || '历史记录未填写诊断依据'}</p></section>
         <section className="report-section">
           <h2>{processReport ? '六环节完成度' : '六维能力画像'}</h2>
           <div className="dimension-list">
@@ -47,7 +49,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           <p>{report.recommendation}</p>
           {report.strengths.length > 0 && <p><strong>已经掌握：</strong>{report.strengths.join('、')}</p>}
           {report.improvements.length > 0 && <p><strong>重点改进：</strong>{report.improvements.join('、')}</p>}
-          {!readonly && <div className="report-actions"><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={`/student/training?mode=guided&case=${report.caseId}`}>再练一次 <ArrowRight size={14} /></a></div>}
+          {!readonly && <div className="report-actions"><RandomAdmission excludeCaseId={report.caseId} label="接诊下一位患儿" /><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={`/student/training?mode=guided&case=${encodeURIComponent(report.caseId)}`}>再练一次 <ArrowRight size={14} /></a></div>}
         </section>
       </div>
       <section className="report-section" style={{ marginTop: 14 }}>

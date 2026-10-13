@@ -6,6 +6,13 @@ export const createSessionSchema = z.object({
   mode: z.enum(['guided', 'practice', 'osce', 'immersive']),
   caseId: z.string().trim().min(1).max(160).optional(),
   focus: z.enum(['history', 'exam', 'safety', 'communication']).optional(),
+  random: z.boolean().optional(),
+  excludeCaseId: z.string().trim().min(1).max(160).optional(),
+  allowRepeat: z.boolean().optional(),
+  clientRequestId: z.string().uuid().optional(),
+}).strict().superRefine((value, context) => {
+  if (value.random && (value.caseId || !value.clientRequestId || !['guided', 'immersive'].includes(value.mode))) context.addIssue({ code: 'custom', message: '随机接诊需请求标识且不能指定病例或考核模式' });
+  if (!value.random && (value.excludeCaseId || value.allowRepeat)) context.addIssue({ code: 'custom', message: '排除与重练参数仅适用于随机接诊' });
 });
 
 export const agentTurnSchema = z.object({

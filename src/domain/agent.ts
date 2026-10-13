@@ -95,10 +95,13 @@ export interface SessionState {
   };
   vitals: VitalSigns;
   reportId: string | null;
+  /** 会话创建幂等参数指纹；历史会话无此字段。 */
+  creationRequest?: string;
   /** 病例快照版本绑定：首次加载时固定，之后（含重启后）按此版本恢复病例事实，防止召回漂移换患者。 */
   sourceSnapshotVersion?: string | null;
   caseOptions?: {
     sourceName: string;
+    complaint?: string;
     age: string;
     sex: string;
     hasSource: boolean;
@@ -172,6 +175,8 @@ export interface ScoreEvidence {
 }
 
 export interface TrainingReport {
+  /** 生成时固定的学生最终提交，不追溯重写历史报告。 */
+  studentDecision?: SessionState['decision'];
   id: string;
   sessionId: string;
   userId: string;

@@ -1,5 +1,7 @@
 import type { AppRole, SessionState } from '@/domain/agent';
 import { findPublicCase } from '@/domain/case-catalog';
+import { verifiedComplaint } from '@/lib/case-admission';
+import { readTeacherCaseData } from '@/lib/teacher-case-data';
 
 /**
  * 学生会话公开投影（防透题，2026-10-12 第一批任务1）：
@@ -22,11 +24,13 @@ export function projectSessionForRole(session: SessionState, role: AppRole): Ses
   if (role === 'teacher' || session.status !== 'active') return session;
   if (!session.caseOptions) return session;
   const profile = findPublicCase(session.caseId);
+  const complaint = verifiedComplaint(readTeacherCaseData(session.caseId, session.sourceSnapshotVersion, session.id));
   return {
     ...session,
     caseOptions: {
       ...session.caseOptions,
-      sourceName: profile?.title ?? '真实教学病例',
+      sourceName: complaint ?? profile?.title ?? '真实教学病例',
+      complaint: complaint ?? undefined,
       tests: [],
     },
   };

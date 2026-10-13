@@ -446,7 +446,7 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
   // 申请解析：旧 testId 点选直取目录项（不存在即 TEST_NOT_FOUND，语义不变）；
   // 新文本申请按服务端确定性别名匹配解析（同义词组+单向前缀，见 test-name-matcher），
   // 未匹配项保留学生原文回显并明确「资料未提供」——不猜测扩展、不编造结果、不下发候选列表。
-  const requests: Array<{ requested: string; test: AuxiliaryTest | null }> = [];
+  const requests: Array<{ requested: string; test: AuxiliaryTest | null; status?: string }> = [];
   if ('testId' in data) {
     const test = findTest(session.caseId, data.testId, session.sourceSnapshotVersion, session.id);
     if (!test) throw new Error('TEST_NOT_FOUND');
@@ -470,7 +470,8 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     // 未匹配：记录申请与「资料未提供」，不记下单、不解锁证据（fail-closed，不编造）
     if (!request.test) {
       session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `「${request.requested}」：本病例资料未提供该项检查`, null, []));
-      const unmatchedMessage = message('system', `「${request.requested}」已记录申请，但本病例资料未提供该项检查结果。`, { kind: 'navigation' });
+      const detail = request.status === 'ambiguous' ? '请说明检查部位或具体项目，当前申请尚未匹配。' : '尚未识别到本病例对应的检查记录；这不代表该申请医学上错误。';
+      const unmatchedMessage = message('system', `「${request.requested}」：${detail}`, { kind: 'navigation' });
       session.messages.push(unmatchedMessage);
       newMessages.push(unmatchedMessage);
       feedbackParts.push(`「${request.requested}」不在本病例资料中，未编造结果。`);
