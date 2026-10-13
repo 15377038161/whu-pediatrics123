@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-label="仰卧患儿教学示意，非真实病例影像">
+<rect x="45" y="24" width="310" height="552" rx="28" fill="#e9f1ee"/><rect x="60" y="39" width="280" height="518" rx="22" fill="#fffdf8" stroke="#c8dad3" stroke-width="2"/>
+<rect x="109" y="62" width="182" height="108" rx="22" fill="#d5e6e0"/>
+<path d="M165 162H235L252 285 235 365H165L148 285Z" fill="#c3ded7" stroke="#739e91" stroke-width="3"/>
+<path d="M157 185Q123 226 116 301L139 307 171 221M243 185Q277 226 284 301L261 307 229 221" fill="#f3d6b9" stroke="#c6a888" stroke-width="3"/>
+<path d="M165 350L154 491Q162 510 180 498L199 375 220 498Q239 510 246 491L235 350" fill="#edcfaf" stroke="#c6a888" stroke-width="3"/>
+<ellipse cx="125" cy="316" rx="16" ry="22" fill="#f3d6b9"/><ellipse cx="275" cy="316" rx="16" ry="22" fill="#f3d6b9"/>
+<ellipse cx="166" cy="506" rx="23" ry="13" fill="#edcfaf"/><ellipse cx="234" cy="506" rx="23" ry="13" fill="#edcfaf"/>
+<rect x="180" y="143" width="40" height="36" rx="14" fill="#edcfaf"/>
+<ellipse cx="200" cy="118" rx="46" ry="50" fill="#f3d6b9" stroke="#c6a888" stroke-width="2"/>
+<path d="M155 108Q146 65 200 64Q249 64 246 106Q222 83 204 91Q180 77 155 108Z" fill="#5b4d42"/>
+<path d="M176 119h10M214 119h10" stroke="#5b4d42" stroke-width="3" stroke-linecap="round"/>
+<path d="M192 141Q200 146 208 141" fill="none" stroke="#b58870" stroke-width="2"/>
+<path d="M158 270Q200 250 242 270" fill="none" stroke="#739e91" stroke-dasharray="5 5"/>
+<text x="200" y="552" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#51776b">仰卧查体 · 教学示意</text></svg>

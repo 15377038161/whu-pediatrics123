@@ -33,7 +33,8 @@ const tools = [
 const sourceExamTools = [
   { id: 'inspection', label: '视诊' },
   { id: 'palpation', label: '触诊' },
-  { id: 'reflex-hammer', label: '叩诊锤' },
+  { id: 'percussion', label: '叩诊' },
+  { id: 'reflex-hammer', label: '神经反射检查' },
 ];
 
 const baseExamHotspots: Array<[string, string]> = [
@@ -78,21 +79,21 @@ type ExamObservation = {
   sound: 'fine-crackles' | 'wheeze' | null;
 };
 
-function PatientFigure({ patient, hotspots, selectedTool, onExamine, onReplayObservation, observation, busy, interactive }: { patient: Omit<PublicCaseProfile, 'sex'> & { sex: string }; hotspots: Array<[string, string]>; selectedTool: string | null; onExamine: (part: string) => void; onReplayObservation: (observation: ExamObservation) => void; observation: ExamObservation | null; busy: boolean; interactive: boolean }) {
+function PatientFigure({ patient, posture, hotspots, selectedTool, onExamine, onReplayObservation, observation, busy, interactive }: { patient: Omit<PublicCaseProfile, 'sex'> & { sex: string }; posture: 'standing' | 'supine'; hotspots: Array<[string, string]>; selectedTool: string | null; onExamine: (part: string) => void; onReplayObservation: (observation: ExamObservation) => void; observation: ExamObservation | null; busy: boolean; interactive: boolean }) {
   return (
-    <div className="patient-stage">
+    <div className="patient-stage" data-posture={posture}>
       <div className="patient-figure" aria-label="仿真虚拟患儿交互模型">
         <Image
           className="patient-photo"
-          src={patient.patientImage}
-          alt={patient.patientAlt}
+          src={posture === 'supine' ? '/media/clinical/virtual-child-supine.svg' : patient.patientImage}
+          alt={posture === 'supine' ? '仰卧患儿教学示意，非真实病例影像' : patient.patientAlt}
           fill
           priority
           sizes="(max-width: 767px) 92vw, (max-width: 1199px) 38vw, 360px"
         />
         {interactive && hotspots.map(([id,label]) => <button key={id} disabled={busy} type="button" className={`hotspot hotspot-${id === 'upper-arm' ? 'arm' : id}`} data-observed={observation?.bodyPartId === id ? observation.status : undefined} onClick={() => onExamine(id)} aria-label={`使用当前器材检查${label}`}><span aria-hidden="true" />{label}</button>)}
       </div>
-      <div className="patient-caption"><span>{interactive ? <>当前器材：<strong>{tools.find((tool) => tool.id === selectedTool)?.label ?? '未选择'}</strong></> : <strong>观察模式</strong>}</span><span className="emotion-pill">{patient.id.startsWith('teacher-') ? '部位定位 · 请依据查体记录' : '紧张 · 呼吸较快'}</span></div>
+      <div className="patient-caption"><span>{interactive ? <>当前器材：<strong>{[...tools, ...sourceExamTools].find((tool) => tool.id === selectedTool)?.label ?? '未选择'}</strong></> : <strong>观察模式</strong>}</span><span className="emotion-pill">{patient.id.startsWith('teacher-') ? '部位定位 · 请依据查体记录' : '紧张 · 呼吸较快'}</span></div>
       {interactive && observation && <div className="exam-observation" data-status={observation.status} data-tool={observation.toolId} role="status" aria-live="polite">
         <div className="exam-observation-head"><span className="exam-observation-icon" aria-hidden="true">{observation.toolId === 'stethoscope' ? <Stethoscope /> : <Activity />}</span><p><small>{observation.status === 'success' ? '查体结果已获得' : '本次操作未生效'}</small><strong>{observation.title}</strong></p>{observation.status === 'success' && observation.sound && <button type="button" onClick={() => onReplayObservation(observation)} aria-label="播放真实儿科听诊音" title="播放结果声音"><Volume2 /></button>}</div>
         {observation.sound && observation.status === 'success' && <div className="exam-auscultation" data-sound={observation.sound} aria-hidden="true"><Waves /><span /><span /><span /><span /><span /></div>}
@@ -128,6 +129,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [diagnosis, setDiagnosis] = useState('');
   const [summary, setSummary] = useState('');
   const [diagnosisBasis, setDiagnosisBasis] = useState('');
+  const [posture, setPosture] = useState<'standing' | 'supine'>('standing');
   const [differentials, setDifferentials] = useState('');
   const [priority, setPriority] = useState('');
   const [planDetail, setPlanDetail] = useState('');
@@ -162,6 +164,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       setDiagnosis(next.decision?.diagnosis ?? '');
       setSummary(next.decision?.summary ?? '');
       setDiagnosisBasis(next.decision?.diagnosisBasis ?? '');
+      setPosture(next.examPosture ?? 'standing');
       setDifferentials(next.decision?.differentials ?? '');
     }
     if (view === 'plan') {
@@ -260,13 +263,13 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     const partLabel = ({ forehead: '头面', mouth: '口咽', chest: '胸部', 'upper-arm': '上臂', finger: '手指', hands: '双手', skin: '皮肤', abdomen: '腹部', limbs: '四肢' } as Record<string,string>)[part] ?? part;
     const activeTool = toolOverride ?? selectedTool;
     if (!activeTool) {
-      const detail = '请先在左侧选择检查器材，再点击患儿对应部位。';
+      const detail = '请先选择检查方法或器材，再点击患儿对应部位。';
       setError(detail);
       setExamObservation({ bodyPartId: part, title: partLabel, detail, toolId: 'none', status: 'blocked', sound: null });
       return;
     }
-    const toolLabel = tools.find((tool) => tool.id === activeTool)?.label ?? activeTool;
-    const result = await sendEvent({ type: 'EXAM_ACTION', data: { toolId: activeTool, bodyPartId: part } });
+    const toolLabel = [...tools, ...sourceExamTools].find((tool) => tool.id === activeTool)?.label ?? activeTool;
+    const result = await sendEvent({ type: 'EXAM_ACTION', data: { toolId: activeTool, bodyPartId: part, posture } });
     if (!result) return;
     const latestEvent = result.session.events.at(-1);
     const success = latestEvent?.type === 'EXAM_ACTION' && latestEvent.correct === true;
@@ -303,8 +306,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const baseProfile = getPublicCase(session.caseId);
   const caseProfile = session.caseOptions ? { ...baseProfile, title: session.caseOptions.complaint ?? session.caseOptions.sourceName, age: session.caseOptions.age, sex: session.caseOptions.sex } : baseProfile;
   const spatialExam = displayStage === 'exam';
-  const examTools = session.caseOptions ? [...tools, ...sourceExamTools] : tools;
-  const examHotspots = session.caseOptions ? [...baseExamHotspots, ...sourceExamHotspots] : baseExamHotspots;
+  const examTools = [...tools, ...sourceExamTools];
+  const examHotspots = [...baseExamHotspots, ...sourceExamHotspots];
   const hygieneCompleted = session.unlockedEvidence.includes('EX_PREP');
   const currentFocus = session.practiceFocus ?? practiceFocus;
   const hints = session.caseOptions ? ['围绕本病例主诉逐项采集病史，关注年龄特点和危险信号。', '查体与检查结果来自老师提供的原始病例，资料未记录的信息需要补充核实。', '把获得的证据写进摘要，并说明你的判断理由与下一步安排。'] : stageHints[displayStage ?? session.stage];
@@ -347,10 +350,11 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       </>;
       case 'history': return conversationContent;
       case 'exam': return <>
-        <div className="stage-intro exam-stage-intro"><p className="eyebrow">器材逻辑校验</p><h2>选择器材，点击患儿对应部位</h2><p>{session.caseOptions ? '按原病例记录逐项检查：先完成手卫生，再选择器材点击部位；病例未记录的组合会明确提示「资料未提供」，不会编造结果。' : '系统会校验准备动作、器材与部位，并即时反馈真实查体结果。'}</p></div>
+        <div className="stage-intro exam-stage-intro"><p className="eyebrow">器材逻辑校验</p><h2>选择检查方法，点击患儿对应部位</h2><p>{session.caseOptions ? '按原病例记录逐项检查：先完成手卫生，再选择器材点击部位；病例未记录的组合会明确提示「资料未提供」，不会编造结果。' : '系统会校验准备动作、器材与部位，并即时反馈真实查体结果。'}</p></div>
         <div className="exam-safety-strip" data-complete={hygieneCompleted} role="status"><span>{hygieneCompleted ? <Check /> : '1'}</span><p><strong>{hygieneCompleted ? '手卫生已完成' : '先完成手卫生'}</strong><small>{hygieneCompleted ? '可以开始接触患儿' : '点击下方“手卫生”即可自动完成'}</small></p></div>
+        <div className="posture-selector" role="group" aria-label="查体姿势">{([['standing', '站立'], ['supine', '仰卧']] as const).map(([value, label]) => <button key={value} type="button" className="btn btn-secondary" aria-pressed={posture === value} disabled={busy} onClick={() => { setPosture(value); setExamObservation(null); }}>{label}</button>)}<small>腹部检查请切换为仰卧</small></div>
         <div className="exam-tool-selector">
-          <div className="exam-tool-heading"><strong>选择检查器材</strong><span>{selectedTool ? `当前：${examTools.find((tool) => tool.id === selectedTool)?.label}` : '尚未选择'}</span></div>
+          <div className="exam-tool-heading"><strong>选择方法或器材</strong><span>{selectedTool ? `当前：${examTools.find((tool) => tool.id === selectedTool)?.label}` : '尚未选择'}</span></div>
           <ToolRack tools={examTools} selectedTool={selectedTool} onSelect={(toolId) => { void selectExamTool(toolId); }} busy={busy} hygieneCompleted={hygieneCompleted} />
         </div>
         <div className="exam-route" aria-label="后续操作"><span>2</span><p><strong>点击患儿检查部位</strong><small>{examEvidenceCount > 0 ? `实时病例记录已新增 ${examEvidenceCount} 项证据` : '有效结果会自动写入右侧病例记录'}</small></p></div>
@@ -399,7 +403,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       <div className="training-grid">
         <section className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={mobileView !== 'task'} data-mobile-drawer={spatialExam && mobileView === 'task'}><div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>
-        <section className="workspace-panel training-patient" data-mobile-hidden={spatialExam ? false : mobileView !== 'patient'}><div className="panel-head"><h2>{session.caseOptions ? '教学部位示意' : '患儿交互模型'}</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}</span></div><PatientFigure patient={caseProfile} hotspots={examHotspots} selectedTool={selectedTool} onExamine={examine} onReplayObservation={(observation) => { if (!playExamObservationAudio(observation)) setFeedback('当前浏览器不支持结果声音播放，请直接阅读查体结果。'); }} observation={examObservation} busy={busy} interactive={spatialExam} />{session.stage !== 'exam' && <div className="case-band">{session.caseOptions ? '教学示意模型；真实体征请查看本病例查体记录' : '进入查体阶段后解锁器材和体表热区'}</div>}</section>
+        <section className="workspace-panel training-patient" data-mobile-hidden={spatialExam ? false : mobileView !== 'patient'}><div className="panel-head"><h2>{session.caseOptions ? '教学部位示意' : '患儿交互模型'}</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}</span></div><PatientFigure posture={posture} patient={caseProfile} hotspots={examHotspots} selectedTool={selectedTool} onExamine={examine} onReplayObservation={(observation) => { if (!playExamObservationAudio(observation)) setFeedback('当前浏览器不支持结果声音播放，请直接阅读查体结果。'); }} observation={examObservation} busy={busy} interactive={spatialExam} />{session.stage !== 'exam' && <div className="case-band">{session.caseOptions ? '教学示意模型；真实体征请查看本病例查体记录' : '进入查体阶段后解锁器材和体表热区'}</div>}</section>
         <details className="workspace-panel training-record" data-mobile-hidden={mobileView !== 'record'} data-mobile-drawer={spatialExam && mobileView === 'record'} open><summary className="panel-head"><h2>实时病例记录</h2><span>{evidenceEvents.length} 项本轮证据</span></summary><div className="panel-body"><p className="record-kicker">接诊已知</p><div className="vitals"><div className="vital"><strong>{session.vitals.temperature ?? '未记录'}</strong><span>体温 ℃</span></div><div className="vital"><strong>{session.vitals.heartRate ?? '未记录'}</strong><span>心率</span></div><div className="vital"><strong>{session.vitals.respiratoryRate ?? '未记录'}</strong><span>呼吸</span></div><div className="vital"><strong>{session.vitals.spo2 === null ? '未记录' : `${session.vitals.spo2}%`}</strong><span>SpO₂</span></div></div><div className="record-section-head"><h3>本轮新增</h3><span>随有效操作实时更新</span></div>{evidenceEvents.length === 0 ? <div className="empty-note">尚未获得新的问诊或查体证据。</div> : <div className="evidence-log" aria-live="polite">{evidenceEvents.slice(-8).reverse().map((event) => <div className="evidence-item" key={event.id}><strong>{event.summary}</strong><span>{stages.find((stage) => stage.id === event.stage)?.short ?? '训练'}阶段 · 已记录 {event.evidenceCodes.length} 项证据</span></div>)}</div>}</div></details>
       </div>
       {session.caseOptions && session.mode !== 'osce' && <div className="training-resources"><CaseResourcePanel caseId={session.caseId} title="本病例图片、音频与资料" /></div>}

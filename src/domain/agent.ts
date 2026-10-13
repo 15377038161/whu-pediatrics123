@@ -97,6 +97,7 @@ export interface SessionState {
   reportId: string | null;
   /** 会话创建幂等参数指纹；历史会话无此字段。 */
   creationRequest?: string;
+  examPosture?: 'standing' | 'supine';
   /** 病例快照版本绑定：首次加载时固定，之后（含重启后）按此版本恢复病例事实，防止召回漂移换患者。 */
   sourceSnapshotVersion?: string | null;
   caseOptions?: {
@@ -119,7 +120,7 @@ export interface SessionState {
 export type AgentEvent =
   | { type: 'ASK_QUESTION'; data: { text: string } }
   | { type: 'DOCTOR_INTERVENTION'; data: { action: 'child_answer' | 'pause_parent' | 'comfort_child' } }
-  | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string } }
+  | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string; posture?: 'standing' | 'supine' } }
   | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
   | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string } }
   | { type: 'SUBMIT_PLAN'; data: { priority: string; detail: string } }

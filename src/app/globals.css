@@ -331,6 +331,20 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .patient-stage::before { content: ""; position: absolute; inset: 14px; border: 1px solid rgba(23,60,60,.13); border-radius: 24px; pointer-events: none; }
 .patient-figure { position: relative; width: min(100%, 360px); aspect-ratio: 957/1644; overflow: hidden; border-radius: 20px; background: #f2efe9; box-shadow: 0 20px 38px rgba(23,60,60,.18); }
 .patient-photo { object-fit: cover; }
+.patient-stage[data-posture="supine"] .patient-figure { aspect-ratio: 2/3; background: #edf3ef; }
+.patient-stage[data-posture="supine"] .patient-photo { object-fit: contain; }
+.patient-stage[data-posture="supine"] .hotspot-forehead { top: 12%; }
+.patient-stage[data-posture="supine"] .hotspot-mouth { top: 22%; }
+.patient-stage[data-posture="supine"] .hotspot-chest { top: 33%; }
+.patient-stage[data-posture="supine"] .hotspot-arm { top: 38%; }
+.patient-stage[data-posture="supine"] .hotspot-skin { top: 43%; }
+.patient-stage[data-posture="supine"] .hotspot-abdomen { top: 52%; }
+.patient-stage[data-posture="supine"] .hotspot-finger { top: 61%; }
+.patient-stage[data-posture="supine"] .hotspot-hands { top: 60%; }
+.patient-stage[data-posture="supine"] .hotspot-limbs { top: 75%; }
+.posture-selector { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-block: 14px; }
+.posture-selector [aria-pressed="true"] { background: var(--ink); color: var(--paper, #fffdf8); }
+.posture-selector small { color: var(--muted); }
 .patient-breath { transform-origin: center; animation: breathing 1.15s ease-in-out infinite; }
 .hotspot { position: absolute; min-width: 62px; min-height: 44px; border: 1px solid rgba(23,60,60,.25); border-radius: 999px; background: rgba(255,253,248,.94); color: var(--ink); box-shadow: 0 6px 16px rgba(23,60,60,.12); font-size: 12px; font-weight: 800; backdrop-filter: blur(7px); }
 .hotspot span { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--brick); box-shadow: 0 0 0 4px rgba(170,73,58,.14); }

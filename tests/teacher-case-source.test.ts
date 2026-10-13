@@ -22,13 +22,13 @@ test('非呼吸系统病例按自身事实问诊、查体、检查和复盘，�
     const session = createInitialSession('student-1', 'guided', id);
     const question = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '水肿多久了？有没有血尿？' } }, 'source-question');
     assert.ok(question.newMessages.some((message) => message.content.includes('无血尿')));
-    const exam = getCase(id).exams.find((item) => item.bodyPartId === 'abdomen')!;
+    const exam = getCase(id).exams.find((item) => item.bodyPartId === 'abdomen' && item.toolId === 'palpation')!;
     const blocked = await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: exam.toolId, bodyPartId: exam.bodyPartId } }, 'source-exam-blocked');
     assert.equal(blocked.newMessages.length, 0);
     await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'source-prep');
     const examined = await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: exam.toolId, bodyPartId: exam.bodyPartId } }, 'source-exam');
     assert.ok(examined.newMessages[0].content.includes('无压痛'));
-    assert.ok(examined.newMessages[0].content.includes('移动浊音（+）'));
+    assert.ok(!examined.newMessages[0].content.includes('移动浊音（+）'), '触诊不能解锁叩诊结果');
     const checked = await runAgentTurn(session, { type: 'ORDER_TEST', data: { testId: session.caseOptions!.tests[0].id } }, 'source-test');
     assert.ok(checked.newMessages[0].content.includes('尿蛋白+++'));
     assert.equal(session.events.find((event) => event.type === 'ORDER_TEST')?.correct, null);

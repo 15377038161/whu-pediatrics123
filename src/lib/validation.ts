@@ -21,7 +21,7 @@ export const agentTurnSchema = z.object({
   event: z.discriminatedUnion('type', [
     z.object({ type: z.literal('ASK_QUESTION'), data: z.object({ text: z.string().trim().min(1).max(500) }) }),
     z.object({ type: z.literal('DOCTOR_INTERVENTION'), data: z.object({ action: z.enum(['child_answer', 'pause_parent', 'comfort_child']) }) }),
-    z.object({ type: z.literal('EXAM_ACTION'), data: z.object({ toolId: z.string().min(1).max(60), bodyPartId: z.string().min(1).max(60) }) }),
+    z.object({ type: z.literal('EXAM_ACTION'), data: z.object({ toolId: z.string().min(1).max(60), bodyPartId: z.string().min(1).max(60), posture: z.enum(['standing', 'supine']).optional() }) }),
     // 任务2 双契约：学生自主文本申请（requestedTests，一次可多项，服务端确定性匹配）；
     // 旧 testId 点选路径保留兼容（历史会话续答/既有测试），二者互斥、strict 防字段混用。
     z.object({

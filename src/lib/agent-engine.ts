@@ -1,3 +1,4 @@
+import { postureAllows, type ExamPosture } from '@/domain/exam-methods';
 import type {
   AgentEvent,
   AgentMessage,
@@ -396,7 +397,12 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
   };
 }
 
-function handleExam(session: SessionState, toolId: string, bodyPartId: string, clientEventId: string): AgentTurnResult {
+function handleExam(session: SessionState, toolId: string, bodyPartId: string, clientEventId: string, posture?: ExamPosture): AgentTurnResult {
+  if (posture) session.examPosture = posture;
+  if (!postureAllows(bodyPartId, posture)) {
+    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', '腹部检查需要切换为仰卧姿势', false, []));
+    return { session, newMessages: [], feedback: feedbackFor(session, '请先切换为仰卧姿势，再进行腹部检查。'), trace: [trace('查体规则', '检查姿势与部位匹配')] };
+  }
   const rule = findExamRule(session.caseId, toolId, bodyPartId, session.sourceSnapshotVersion, session.id);
   const traceItems = [trace('查体规则', '校验准备动作、器材、部位与检查顺序')];
   if (!rule) {
@@ -630,7 +636,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
   switch (event.type) {
     case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders);
     case 'DOCTOR_INTERVENTION': return handleIntervention(session, event.data.action, clientEventId);
-    case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId);
+    case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId, event.data.posture);
     case 'ORDER_TEST': return handleTest(session, event.data, clientEventId, options?.accessToken);
     case 'SUBMIT_DECISION': return handleDecision(session, event.data, clientEventId);
     case 'SUBMIT_PLAN': return handlePlan(session, event.data, clientEventId);
