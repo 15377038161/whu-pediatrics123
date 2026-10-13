@@ -1,3 +1,4 @@
+import { teachingCopy } from '@/domain/teaching-copy';
 import Image from 'next/image';
 import { HeartPulse, MessageCircleHeart, Sparkles, Stethoscope } from 'lucide-react';
 import { LoginEntries } from '@/components/login-entries';
@@ -29,16 +30,16 @@ export default function LoginPage() {
           <div className="landing-hero-row">
             <div className="landing-copy">
               <span className="welcome-chip"><HeartPulse size={15} /> 未来的小医生，你好</span>
-              <h2>练一次，会接诊</h2>
-              <p>和虚拟患儿、家长对话，完成一场真实感儿科训练。</p>
+              <h2>{teachingCopy.slogan}</h2>
+              <p>{teachingCopy.introduction}</p><p className="textbook-feature">{teachingCopy.pediatricFeature}</p>
             </div>
           </div>
-          <div className="landing-trust"><span><Stethoscope size={15} /> 真实临床动线</span><span><MessageCircleHeart size={15} /> 患儿与家长双角色</span><span><Sparkles size={15} /> 每一步都有证据</span></div>
+          <div className="landing-trust"><span><Stethoscope size={15} /> 真实临床场景</span><span><MessageCircleHeart size={15} /> 临床思维训练</span><span><Sparkles size={15} /> 患儿与家庭关怀</span></div>
         </section>
         <section className="login-panel" aria-labelledby="login-title">
           <span className="login-panel-icon"><Stethoscope size={21} /></span>
           <LoginEntries />
-          <p className="login-footnote">教学模拟 · 非真实医疗建议</p>
+          <p className="login-footnote">教学模拟 · 非真实医疗建议 · 教学表述依据《儿科学》第10版</p>
         </section>
       </div>
     </main>

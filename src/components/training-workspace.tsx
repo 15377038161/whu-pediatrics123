@@ -1,3 +1,4 @@
+import { teachingHints } from '@/domain/teaching-copy';
 'use client';
 
 import {
@@ -46,19 +47,10 @@ const sourceExamHotspots: Array<[string, string]> = [
 ];
 
 const focusLabels: Record<PracticeFocus, string> = {
-  history: '儿科病史采集', exam: '肺部规范查体', safety: '感染与危重识别', communication: '家长焦虑沟通',
+  history: '儿科病史采集', exam: '肺部规范查体', safety: '儿童危重症识别', communication: '家长焦虑沟通',
 };
 
-const stageHints: Record<Stage, string[]> = {
-  triage: ['先判断意识、呼吸和循环是否稳定，再决定问诊顺序。', '注意低龄儿童的呼吸频率与血氧，不能只看体温。'],
-  history: ['先用开放式问题了解主诉，再逐项追问起病、危险信号和一般状态。', '患儿说不清时可请家长补充，但仍要给孩子表达机会。', '问到呼吸问题时，别忘了静息气促、青紫和胸壁起伏。'],
-  exam: ['先完成手卫生和解释，再按“观察—测量—重点查体”推进。', '低氧风险下，血氧监测和肺部听诊是高价值操作。'],
-  tests: ['每项检查都应回答一个临床问题，避免为了“全面”而开单。', '把低氧和局灶肺部体征与影像学指征联系起来。'],
-  assessment: ['摘要建议按“年龄—病程—阳性证据—危险信号—关键阴性”组织。', '诊断要同时表达疾病判断和严重程度。'],
-  plan: ['先稳定生命体征，再完善评估；低氧时优先监测与氧疗。', '处置计划要写清复评节点、升级治疗或转诊条件。'],
-  communication: ['先回应焦虑，再用通俗语言解释风险，最后给出明确下一步。', '同时对患儿说明接下来会做什么，避免只和家长说话。'],
-  report: ['报告会把每个得分项回链到本次问答和操作证据。'],
-};
+const stageHints = teachingHints;
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   // 统一鉴权请求层：携带 Authorization（网关重命名 x-sandbox-authorization），401 自动回登录页
@@ -310,7 +302,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const examHotspots = [...baseExamHotspots, ...sourceExamHotspots];
   const hygieneCompleted = session.unlockedEvidence.includes('EX_PREP');
   const currentFocus = session.practiceFocus ?? practiceFocus;
-  const hints = session.caseOptions ? ['围绕本病例主诉逐项采集病史，关注年龄特点和危险信号。', '查体与检查结果来自老师提供的原始病例，资料未记录的信息需要补充核实。', '把获得的证据写进摘要，并说明你的判断理由与下一步安排。'] : stageHints[displayStage ?? session.stage];
+  const hints = stageHints[displayStage ?? session.stage];
   const exitMode = session.mode;
   function leaveTraining() {
     const confirmed = window.confirm(exitMode === 'osce'
