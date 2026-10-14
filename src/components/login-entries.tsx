@@ -1,17 +1,17 @@
 'use client';
 
 /**
- * 双端登录入口（登录入口升级）：
- * - 起始页两张独立显眼入口卡（教师端 / 学生端）；
- * - 选择入口后进入登录面板：一键超星登录 或 邮箱密码登录（Auth 配置 external_email_enabled=true）；
- * - 入口选择只记录登录落点意图（sessionStorage，见 login-entry.ts），绝不预授权角色；
- *   角色一律由服务端 /api/auth/me 按真实身份（超星白名单 / app_metadata）判定；
- * - 学生身份走教师端入口 → 拒绝进入并提示改走学生端（教师页面另有服务端守卫兜底）；
+ * 登录面板（2026-10-14 按老师批注收敛）：
+ * - 取消「教师/学生双入口卡」两步选择流程：面板直接提供 超星一键登录 + 邮箱密码登录；
+ * - 教师入口收敛为面板右上角小按钮：仅记录落点意图（sessionStorage，见 login-entry.ts），
+ *   绝不预授权角色；角色一律由服务端 /api/auth/me 按真实身份（超星白名单 / app_metadata）判定；
+ * - 学生身份点教师入口登录 → 拒绝进入教师端并提示（同时清除教师意图，重试即按学生登录；
+ *   教师页面另有服务端守卫兜底）；
  * - 挂载自愈（原 LoginSelfHeal 行为）：检测 SDK 会话 → 网络校验 → 按角色+意图路由。
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpenCheck, GraduationCap } from 'lucide-react';
+import { GraduationCap } from 'lucide-react';
 import { PlatformChaoxingLogin } from '@/components/platform-chaoxing-login';
 import {
   clearLoginEntry,
@@ -19,7 +19,6 @@ import {
   routeAfterLogin,
   setLoginEntry,
   translateAuthError,
-  type EntryRole,
 } from '@/lib/login-entry';
 import { getBrowserSession, getBrowserSupabase } from '@/lib/supabase-browser';
 
@@ -29,7 +28,6 @@ interface MeResponse {
 }
 
 export function LoginEntries() {
-  const [entry, setEntry] = useState<EntryRole | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
@@ -40,8 +38,9 @@ export function LoginEntries() {
   const resolveRouting = useCallback((role: string) => {
     const routing = routeAfterLogin(role, readLoginEntry());
     if (routing.denied) {
-      // 学生身份 + 教师端入口：拒绝进入教师端，留在登录页提示
+      // 学生身份 + 教师入口意图：拒绝进入教师端；清除意图使重试按学生身份登录
       setDenied(true);
+      clearLoginEntry();
       setChecking(false);
       return;
     }
@@ -76,18 +75,10 @@ export function LoginEntries() {
     };
   }, [resolveRouting]);
 
-  const chooseEntry = (role: EntryRole) => {
-    setEntry(role);
+  const enterAsTeacher = () => {
     setDenied(false);
     setError('');
-    setLoginEntry(role);
-  };
-
-  const backToSelection = () => {
-    setEntry(null);
-    setDenied(false);
-    setError('');
-    clearLoginEntry();
+    setLoginEntry('teacher');
   };
 
   const submitPassword = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -122,43 +113,19 @@ export function LoginEntries() {
     }
   };
 
-  if (entry === null) {
-    return (
-      <div className="login-entries" aria-busy={checking}>
-        <h2 className="section-title" id="login-title">选择你的身份入口</h2>
-        <p className="login-entries-lead">教师与学生分别进入专属工作台，登录后系统将按真实身份自动校验权限。</p>
-        <div className="login-entry-grid">
-          <button type="button" className="login-entry-card login-entry-card-teacher" onClick={() => chooseEntry('teacher')}>
-            <span className="login-entry-icon"><GraduationCap size={26} aria-hidden="true" /></span>
-            <span className="login-entry-title">教师端入口</span>
-            <span className="login-entry-desc">学情统计 · 病例管理 · 审核导入</span>
-            <span className="login-entry-arrow"><ArrowRight size={16} aria-hidden="true" /></span>
-          </button>
-          <button type="button" className="login-entry-card login-entry-card-student" onClick={() => chooseEntry('student')}>
-            <span className="login-entry-icon"><BookOpenCheck size={26} aria-hidden="true" /></span>
-            <span className="login-entry-title">学生端入口</span>
-            <span className="login-entry-desc">临床训练 · OSCE · 题库 · 报告</span>
-            <span className="login-entry-arrow"><ArrowRight size={16} aria-hidden="true" /></span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const isTeacher = entry === 'teacher';
   return (
-    <div className="login-entry-panel">
-      <button type="button" className="login-entry-back" onClick={backToSelection}>
-        <ArrowLeft size={15} aria-hidden="true" />
-        返回选择入口
-      </button>
-      <h2 className="section-title" id="login-title">{isTeacher ? '教师端登录' : '学生端登录'}</h2>
-      <p className="login-entry-hint">
-        {isTeacher ? '教师权限将按真实身份与白名单校验，非授权账号无法进入。' : '使用超星账号一键进入，或使用邮箱密码登录。'}
-      </p>
+    <div className="login-entry-panel" aria-busy={checking}>
+      <div className="login-panel-head">
+        <h2 className="section-title" id="login-title">登录</h2>
+        <button type="button" className="login-teacher-corner" onClick={enterAsTeacher} title="教师以超星白名单账号或教师邮箱密码登录">
+          <GraduationCap size={14} aria-hidden="true" />
+          教师入口
+        </button>
+      </div>
+      <p className="login-entry-hint">默认按学生身份登录；教师请先点右上角「教师入口」。</p>
       {denied && (
         <p className="login-error" role="alert">
-          当前账号为学生身份，无法从教师端入口进入。请返回并选择学生端入口。
+          当前账号为学生身份，无法从教师入口进入。已切换为学生登录，请直接重试。
         </p>
       )}
       <div className="login-actions">
@@ -198,6 +165,7 @@ export function LoginEntries() {
           </button>
         </form>
       </div>
+      <p className="login-footnote">教学模拟 · 非真实医疗建议 · 教学表述依据《儿科学》第10版</p>
     </div>
   );
 }

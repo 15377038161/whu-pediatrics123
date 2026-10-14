@@ -2,7 +2,7 @@
  * 背景：沙箱 chromium 无系统 CJK 字体，此前截图中文显示为方块占位。
  * 本轮解包 fonts-wqy-microhei（deb.debian.org 官方 deb）装入 /tmp/pw-libs/usr/share/fonts/wqy/
  * 并清理 fontconfig 缓存后，验证中文可正常渲染。
- * 证据页面仅取落地页 /（应用名 + 教师/学生入口卡，零患者内容），
+ * 证据页面仅取落地页 /（应用名 + 登录面板，零患者内容），
  * 截图仅存本地 artifacts/font-evidence/，不上传云盘。
  * 环境要求同 verify-browser-interactive.mjs（PW_CORE_PATH / PLAYWRIGHT_BROWSERS_PATH /
  * LD_LIBRARY_PATH / FONTCONFIG_FILE）。
@@ -34,7 +34,7 @@ for (const [w, h, label] of [[390, 844, '390px'], [1440, 900, 'desktop']]) {
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   try {
     await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('button.login-entry-card-student', { timeout: 15000 });
+    await page.waitForSelector('button.login-teacher-corner', { timeout: 15000 });
     const title = await page.title();
     report(`${label} 落地页渲染`, title.length > 0, `title=${title}`);
     // 字体渲染探针：canvas 度量 CJK 字符宽度，方块占位（tofu）时宽度与缺字回退一致不可区分，
@@ -42,7 +42,7 @@ for (const [w, h, label] of [[390, 844, '390px'], [1440, 900, 'desktop']]) {
     const cjk = await page.evaluate(() => {
       const span = document.createElement('span');
       span.style.cssText = 'position:absolute;visibility:hidden;font-family:sans-serif;font-size:32px;white-space:nowrap';
-      span.textContent = '珞珈儿科智训教师入口学生入口';
+      span.textContent = '珞珈儿科智训教师入口练一次会接诊';
       document.body.appendChild(span);
       const w = span.getBoundingClientRect().width;
       span.remove();

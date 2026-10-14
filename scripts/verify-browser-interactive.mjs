@@ -6,7 +6,7 @@
  * 教师 OAuth 端到端验收，也不以伪装 UA/伪造 Origin/转发代理规避任何网关限制。
  *
  * 验收项（双视口 390×844 / 1440×900）：
- *  1. 落地页渲染（标题/双端入口卡）+ 390px 无横向溢出
+ *  1. 落地页渲染（标题/登录面板教师角落入口）+ 390px 无横向溢出
  *  2. 会话注入后挂载自愈跳转学生端
  *  3. 学生首页 → 训练工作台加载 → triage 开场 → 单聊天框真实 LLM 回复（仅 390px，控制成本；
  *     断言=同轮证据链：①本轮 /api/agent/turn 请求捕获 sessionId+clientEventId；②响应 200 且响应体
@@ -106,7 +106,7 @@ async function runViewport(browser, w, h, label, session, doChat) {
   try {
     // 1. 落地页渲染
     await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('button.login-entry-card-student', { timeout: 15000 });
+    await page.waitForSelector('button.login-teacher-corner', { timeout: 15000 });
     report(`${label} 落地页渲染`, true, `title=${await page.title()}`);
     if (w <= 480) {
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
