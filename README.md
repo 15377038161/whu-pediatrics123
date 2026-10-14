@@ -119,3 +119,6 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 资料准备依赖 Python（`scripts/requirements-cases.txt`）、LibreOffice（旧版 Word 转换）、FFmpeg（视频转码）。安装后执行 `pnpm prepare:cases`；流程仅生成教学衍生文件，不修改原件。先前生成的旧版 Word 与 MP4 会被复用。
 
 `pnpm verify:cases` 对本地 `127.0.0.1:8876` 的独立学生预览逐例执行完整流程，并检查素材访问。验证服务应显式设置 `ENABLE_UI_PREVIEW=true`、`ENABLE_AI_FIXTURE=true` 和随机 `PREVIEW_SIGNING_SECRET`；脚本禁止连接远程地址，避免写入正式学情库。详情见覆盖核对文档。
+# 病例卡片接诊摘要维护
+
+病例卡片按“年龄＋性别＋主诉”显示。`src/domain/admission-summaries.json` 仅包含公开 UUID 和脱敏接诊摘要，不包含诊断答案、姓名或原始病历。部署无需携带私有 `knowledge/` 即可显示摘要；训练事实及随机资格仍按原有服务端资料规则校验，摘要不能替代完整病例。更新受控病例资料后运行 `pnpm exec tsx scripts/gen-admission-summaries.ts`，审阅摘要变更并提交。现有 70 个教师目录条目中 67 个有可核实摘要，3 个无独立接诊资料的条目保留中性目录名称，不编造年龄、性别或主诉。

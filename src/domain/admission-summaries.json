@@ -1,0 +1,337 @@
+{
+  "case-5a51b3c9-ea4a-4c1b-96f8-20a9b59e44b7": {
+    "age": "6岁",
+    "sex": "女",
+    "complaint": "发现体重明显增加1年"
+  },
+  "case-07b7d551-eb5c-47c8-9bb6-c55bb8869862": {
+    "age": "1小时",
+    "sex": "男",
+    "complaint": "胎龄34+1周出生，呻吟、吐沫10分钟"
+  },
+  "case-e750c5ff-d229-43a6-8314-2e633cacdc32": {
+    "age": "1天",
+    "sex": "女",
+    "complaint": "皮肤黄染1天"
+  },
+  "case-3797738a-1df1-4b5f-a982-bc48fa70ab52": {
+    "age": "6天",
+    "sex": "男",
+    "complaint": "皮肤黄染2天，全身散在皮疹"
+  },
+  "case-d90e0254-6e2d-4016-9a0b-837c97005642": {
+    "age": "4天",
+    "sex": "女",
+    "complaint": "发现皮肤黄染2天伴吐奶1天"
+  },
+  "case-87fc430b-dd4e-4aa4-8437-aab1d4b840ab": {
+    "age": "2天",
+    "sex": "女",
+    "complaint": "皮肤黄染1天"
+  },
+  "case-261bbab2-9c2a-4c11-a9e3-988506741501": {
+    "age": "2天",
+    "sex": "男",
+    "complaint": "鼻塞伴吐奶2天"
+  },
+  "case-57ba1841-4e5b-485a-9b2a-8576a819a078": {
+    "age": "1小时",
+    "sex": "男",
+    "complaint": "胎龄41+1周出生，气促1小时"
+  },
+  "case-db73006d-d876-4bea-bcbd-b9e8e1c1f907": {
+    "age": "4天",
+    "sex": "男",
+    "complaint": "间断发热2天"
+  },
+  "case-0ea1580f-cfa1-4df9-893c-689eac1e5542": {
+    "age": "10分钟",
+    "sex": "女",
+    "complaint": "胎龄39+5周出生，窒息复苏后10分钟"
+  },
+  "case-05779155-1092-4607-a3d2-966ffc0fc718": {
+    "age": "22天",
+    "sex": "男",
+    "complaint": "发现全身皮肤颜色暗沉3周"
+  },
+  "case-46edc151-c7ef-4629-bfe0-1b6ecf6cfd57": {
+    "age": "1天",
+    "sex": "女",
+    "complaint": "发现间断抽搐4小时"
+  },
+  "case-e78cc1a1-1ee6-4305-bb42-399526ba139f": {
+    "age": "10岁",
+    "sex": "男",
+    "complaint": "间断关节疼痛10余天，发热9天"
+  },
+  "case-1c69a787-23f6-48f4-957a-1d44603e34d5": {
+    "age": "4岁",
+    "sex": "女",
+    "complaint": "咳嗽1周余，腹痛5天，间断四肢关节疼痛伴皮疹2天"
+  },
+  "case-74392eef-a2ed-4c55-bafb-10ad7a7d474e": {
+    "age": "5岁",
+    "sex": "女",
+    "complaint": "发现皮肤黄染1周，皮疹伴发热2天"
+  },
+  "case-13fd5366-b7be-4dcc-8c2a-e00d28384b8c": {
+    "age": "4岁",
+    "sex": "男",
+    "complaint": "发热1天"
+  },
+  "case-f4d1d221-7d2e-4d18-b932-3e21274f3384": {
+    "age": "2岁4月",
+    "sex": "男",
+    "complaint": "发热3天，抽搐1次，腹泻1天"
+  },
+  "case-4892a278-1087-4947-a7ce-5ee3d27e910a": {
+    "age": "9岁",
+    "sex": "女",
+    "complaint": "腹泻2天"
+  },
+  "case-4d3ae886-e69b-4820-bc66-f5687506e26d": {
+    "age": "2月6天",
+    "sex": "女",
+    "complaint": "皮肤黄染2月余"
+  },
+  "case-ead58f14-f79e-42bd-a52e-8e29bb9ba0da": {
+    "age": "8岁27天",
+    "sex": "女",
+    "complaint": "发热、咳嗽伴声嘶1天"
+  },
+  "case-426e7756-2b7d-4c8e-a8f9-204a78105c2a": {
+    "age": "4岁",
+    "sex": "女",
+    "complaint": "误吸坚果后阵发性呛咳，气促1小时余"
+  },
+  "case-53188ccd-1658-45f1-b0ec-5dd257a11676": {
+    "age": "2岁1月",
+    "sex": "男",
+    "complaint": "咳嗽4天，发热伴喘息3天"
+  },
+  "case-171082d2-069e-46f7-8c4c-4cdaa5dacdf2": {
+    "age": "7月4天",
+    "sex": "女",
+    "complaint": "咳嗽1周，加重伴喘息3天"
+  },
+  "case-dd7c9327-fd9c-44db-bb24-614b4a50b58f": {
+    "age": "9岁",
+    "sex": "男",
+    "complaint": "咳喘2天"
+  },
+  "case-3a061e58-1306-4f33-be6b-c6ffa7917c87": {
+    "age": "6岁",
+    "sex": "男",
+    "complaint": "发热伴咳嗽5天"
+  },
+  "case-ea9a434b-2f3c-41bc-a7b4-52c9ab3a52ea": {
+    "age": "6岁",
+    "sex": "男",
+    "complaint": "发热伴咳嗽5天"
+  },
+  "case-d1d70aa5-eb74-4a74-8fb3-43b86f9804fa": {
+    "age": "6岁",
+    "sex": "女",
+    "complaint": "发热伴乏力半天"
+  },
+  "case-e5d1cf25-c837-477f-b1bc-e42833d5ede5": {
+    "age": "8岁",
+    "sex": "男",
+    "complaint": "胸痛7小时"
+  },
+  "case-7dca12d4-c9e3-425f-9d2a-37d354a45d64": {
+    "age": "11岁",
+    "sex": "男",
+    "complaint": "因“发现眼睑浮肿5天，酱油色尿4天”入院"
+  },
+  "case-d7a6c222-26c2-47e2-90c3-caf409d78145": {
+    "age": "12岁",
+    "sex": "男",
+    "complaint": "发现全身水肿2周"
+  },
+  "case-cdc10410-c8fb-4e54-903d-818c7ec93718": {
+    "age": "2月5天",
+    "sex": "女",
+    "complaint": "发热半天"
+  },
+  "case-6d3b5195-2419-4734-be1e-a09ea948fe61": {
+    "age": "13岁",
+    "sex": "女",
+    "complaint": "发热、咽痛2天，少尿1天，意识丧失10小时"
+  },
+  "case-5708dd67-b1c6-4fe0-a1dd-b79b53a0d521": {
+    "age": "8岁",
+    "sex": "男",
+    "complaint": "发现双下肢皮肤瘀斑1月"
+  },
+  "case-92175c25-7eb2-4d22-a56c-21ef21b1be23": {
+    "age": "10岁",
+    "sex": "男",
+    "complaint": "头痛伴呕吐1天，皮肤黄染1天"
+  },
+  "case-677d408e-a6a6-4e8d-ab06-a1365f15d97b": {
+    "age": "3岁",
+    "sex": "女",
+    "complaint": "间断发热、咳嗽5天，发现血小板减少4天，加重1天"
+  },
+  "case-934c97ab-fe0c-4908-91ba-12ec837e4668": {
+    "age": "4岁",
+    "sex": "女",
+    "complaint": "发现耳后及枕部淋巴结肿大2周余，加重2天，发热半天"
+  },
+  "case-b6cc9ec3-74c5-47e6-bb03-ebd64b3b1bc6": {
+    "age": "12岁",
+    "sex": "男",
+    "complaint": "咳嗽6天，加重伴发热、头痛4天"
+  },
+  "case-42e1a808-2021-4b85-a8e2-edae74a9b299": {
+    "age": "1岁3月",
+    "sex": "女",
+    "complaint": "发热伴咳嗽2天，抽搐1次"
+  },
+  "case-f4869d4e-d88b-475b-8e04-b6d299979062": {
+    "age": "2岁4月",
+    "sex": "男",
+    "complaint": "抽搐1次"
+  },
+  "case-e708a448-8b01-4dfb-ae6b-b447ec2e4af3": {
+    "age": "9岁",
+    "sex": "男",
+    "complaint": "呕吐2天，发热1天，抽搐1次"
+  },
+  "case-50acf9bc-a130-460d-a760-d67d0b5402f7": {
+    "age": "1月13天",
+    "sex": "男",
+    "complaint": "发热6小时"
+  },
+  "case-cc4701b3-87f1-40ba-9c77-0beacf546c48": {
+    "age": "6月3天",
+    "sex": "男",
+    "complaint": "意识障碍2小时"
+  },
+  "case-9c03399f-1652-48f2-8c02-ceaca7a3d8a9": {
+    "age": "4小时",
+    "sex": "女",
+    "complaint": "胎龄37周+3天，窒息复苏后4小时"
+  },
+  "case-12c7efe2-9eb0-4283-b346-e4f96c0a663e": {
+    "age": "9岁",
+    "sex": "女",
+    "complaint": "发现身材矮小8年"
+  },
+  "case-eb0abf40-2029-4490-8241-d4a98b94c6e4": {
+    "age": "12岁",
+    "sex": "女",
+    "complaint": "多饮多尿2月余"
+  },
+  "case-47e5a1f9-cb51-4b8b-bd7b-d9f224acd7b4": {
+    "age": "2岁11月",
+    "sex": "女",
+    "complaint": "发现双侧乳房增大及阴道分泌物3周"
+  },
+  "case-328109f0-8558-4a2b-9182-79ff2b5fe56d": {
+    "age": "8岁3月",
+    "sex": "女",
+    "complaint": "发现乳房发育8月余"
+  },
+  "case-da29f881-d2b2-410b-bd22-65de0fc1bb13": {
+    "age": "6岁",
+    "sex": "女",
+    "complaint": "多饮多尿1周，呕吐伴乏力精神差2天"
+  },
+  "case-8a7f2780-dd26-46cd-a96c-bee9ece1a6db": {
+    "age": "6岁",
+    "sex": "待核验",
+    "complaint": "因“发现肝功能异常1月余”入院"
+  },
+  "case-5197c841-12f4-4c6d-b3a9-f816fb68d91a": {
+    "age": "10月",
+    "sex": "女",
+    "complaint": "发现肌无力10月"
+  },
+  "case-647368e2-9bfa-463c-97c2-db8d867354a8": {
+    "age": "13岁",
+    "sex": "女",
+    "complaint": "发热、咽痛2天，少尿1天，意识丧失10小时"
+  },
+  "case-beb0c090-f6be-4c20-bd79-d21544d88354": {
+    "age": "6岁",
+    "sex": "女",
+    "complaint": "多饮多尿1周，呕吐伴乏力精神差2天"
+  },
+  "case-c3633068-d383-4b2e-a48a-2c53c6679e4a": {
+    "age": "9岁",
+    "sex": "女",
+    "complaint": "发现身材矮小8年"
+  },
+  "case-25e26c63-3f38-4c27-9ea9-eda221c876d9": {
+    "age": "7月4天",
+    "sex": "女",
+    "complaint": "咳嗽1周，加重伴喘息3天"
+  },
+  "case-6ba63d64-1a19-4765-a2ab-4ae687d5dd9a": {
+    "age": "9岁",
+    "sex": "女",
+    "complaint": "发热伴咳嗽6天"
+  },
+  "case-280837cf-54c4-4930-b40d-977ced5c1827": {
+    "age": "6岁",
+    "sex": "男",
+    "complaint": "发热伴咳嗽5天"
+  },
+  "case-47ea44a1-3edd-40a0-8d9b-7ca2dbfcaf5a": {
+    "age": "1岁8月",
+    "sex": "女",
+    "complaint": "咳嗽、喘息3天，加重半天"
+  },
+  "case-e3b0b49e-7b0a-4b97-a5c5-5e72b3604172": {
+    "age": "6岁",
+    "sex": "女",
+    "complaint": "发热伴乏力半天"
+  },
+  "case-d7cb30cb-b1a5-477b-bb41-7833f3438887": {
+    "age": "4岁",
+    "sex": "男",
+    "complaint": "发热1天"
+  },
+  "case-fd688a62-f962-4048-ac59-da64b5be9657": {
+    "age": "1小时",
+    "sex": "男",
+    "complaint": "胎龄41+1周出生，气促1小时"
+  },
+  "case-c47e726a-cd18-49ee-bc20-faa4d6ed566b": {
+    "age": "2月6天",
+    "sex": "女",
+    "complaint": "皮肤黄染2月余"
+  },
+  "case-ef1adfc7-4097-4c41-9b3d-27777fec5c63": {
+    "age": "4岁",
+    "sex": "女",
+    "complaint": "双下肢无力3天，发现排尿困难1天"
+  },
+  "case-5dedff4c-1766-4f40-bd23-ab03662617d6": {
+    "age": "4小时",
+    "sex": "女",
+    "complaint": "胎龄37周+3天，窒息复苏后4小时"
+  },
+  "case-31db42f5-fcf2-4213-8675-8656b3b9e1b0": {
+    "age": "2岁4月",
+    "sex": "男",
+    "complaint": "抽搐1次"
+  },
+  "case-a3a869a1-23ca-40db-a47c-2bf731f0d1e6": {
+    "age": "6岁",
+    "sex": "女",
+    "complaint": "发现体重明显增加1年"
+  },
+  "case-3e0c843f-b420-4646-889f-352eb34d8e93": {
+    "age": "4岁",
+    "sex": "女",
+    "complaint": "发现耳后及枕部淋巴结肿大2周余，加重2天，发热半天"
+  },
+  "case-b115e85f-f023-4de5-ae96-dc4e788ad227": {
+    "age": "10月",
+    "sex": "女",
+    "complaint": "发现肌无力10月"
+  }
+}

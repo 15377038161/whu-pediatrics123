@@ -74,8 +74,14 @@ test('防透题：教师病例标题与可搜索文本不含病种名', () => {
   const teacherCases = CASE_CATALOG.filter((item) => item.id.startsWith('case-'));
   assert.ok(teacherCases.length >= 50);
   for (const profile of teacherCases) {
-    assert.ok(/真实病例 \d{2}$/.test(profile.title), `${profile.id} 标题应为中性学科+序号：${profile.title}`);
-    assert.equal(profile.presentingSymptoms.length, 0, `${profile.id} 不得预置症状清单`);
+    if (profile.presentingSymptoms.length) {
+      assert.equal(profile.presentingSymptoms.length, 1, '仅开放主诉，不预置完整症状清单');
+      assert.ok(profile.title.includes(profile.age));
+      assert.ok(profile.title.includes(profile.presentingSymptoms[0]));
+      assert.ok(!/诊断|住院号|teacher-/.test(profile.title));
+    } else {
+      assert.ok(/真实病例 \d{2}$/.test(profile.title), '缺少主诉时保留中性名称');
+    }
   }
 });
 

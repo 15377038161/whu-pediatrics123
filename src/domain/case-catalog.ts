@@ -1,8 +1,10 @@
+import admissionSummaries from './admission-summaries.json';
+const summaries: Record<string, { age: string; sex: string; complaint: string }> = admissionSummaries;
 // 学生侧公开病例目录（防透题收敛，2026-10-12 第一批任务1）：
 // - 教师病例条目为客户端安全的中性目录（学科+序号），病种名/源病种名不进入本文件；
 //   服务端按 id 解析原始事实（src/lib/teacher-case-data.ts），完成后经报告 caseTitle 释放病种名。
 // - 本文件可被客户端组件引入（当前唯一目录来源：student 首页、病例库、训练台、报告列表），
-//   禁止在此新增任何病种名、诊断、检查结果或患者事实。
+//   仅允许脱敏接诊摘要（年龄、性别、主诉），禁止诊断、检查结果或完整患者事实。
 // - 教师目录变更后运行 node scripts/gen-public-case-catalog.mjs 重新生成教师条目段。
 
 export interface PublicCaseProfile {
@@ -152,12 +154,12 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
   ...TEACHER_PUBLIC_ENTRIES.map((item): PublicCaseProfile => ({
     id: item.id,
     version: 1,
-    title: item.title,
+    title: summaries[item.id] ? `${summaries[item.id].age}${summaries[item.id].sex === '男' ? '男童' : summaries[item.id].sex === '女' ? '女童' : '患儿'}，${summaries[item.id].complaint}` : item.title,
     subtitle: item.subtitle,
     category: item.category,
-    presentingSymptoms: [],
-    age: '待核验',
-    sex: '待核验',
+    presentingSymptoms: summaries[item.id] ? [summaries[item.id].complaint] : [],
+    age: summaries[item.id]?.age ?? '待核验',
+    sex: summaries[item.id]?.sex === '男' ? '男' : summaries[item.id]?.sex === '女' ? '女' : '待核验',
     difficulty: item.contentStatus === 'teacher-catalog-only' && item.sourceRelation === null ? '病种自主研习' : '真实案例学习',
     expectedMinutes: 0,
     patientName: '小朋友',
