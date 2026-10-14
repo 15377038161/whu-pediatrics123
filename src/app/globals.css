@@ -338,18 +338,19 @@ textarea { resize: vertical; }
 .patient-stage { position: relative; min-height: 620px; display: grid; place-items: center; overflow: hidden; padding: 14px 10px 78px; background: #e8ece8; }
 .patient-stage::before { content: ""; position: absolute; inset: 14px; border: 1px solid rgba(23,60,60,.13); border-radius: 24px; pointer-events: none; }
 .patient-figure { position: relative; width: min(100%, 360px); aspect-ratio: 957/1644; overflow: hidden; border-radius: 20px; background: #f2efe9; box-shadow: 0 20px 38px rgba(23,60,60,.18); }
-.patient-photo { object-fit: cover; }
-.patient-stage[data-posture="supine"] .patient-figure { aspect-ratio: 2/3; background: #edf3ef; }
+.patient-photo { object-fit: contain; }
+.patient-unspecified { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 28px; text-align: center; color: var(--muted); }
+.patient-stage[data-posture="supine"] .patient-figure { background: #edf3ef; }
 .patient-stage[data-posture="supine"] .patient-photo { object-fit: contain; }
 .patient-stage[data-posture="supine"] .hotspot-forehead { top: 12%; }
 .patient-stage[data-posture="supine"] .hotspot-mouth { top: 22%; }
-.patient-stage[data-posture="supine"] .hotspot-chest { top: 33%; }
-.patient-stage[data-posture="supine"] .hotspot-arm { top: 38%; }
-.patient-stage[data-posture="supine"] .hotspot-skin { top: 43%; }
-.patient-stage[data-posture="supine"] .hotspot-abdomen { top: 52%; }
-.patient-stage[data-posture="supine"] .hotspot-finger { top: 61%; }
-.patient-stage[data-posture="supine"] .hotspot-hands { top: 60%; }
-.patient-stage[data-posture="supine"] .hotspot-limbs { top: 75%; }
+.patient-stage[data-posture="supine"] .hotspot-chest { top: 36%; }
+.patient-stage[data-posture="supine"] .hotspot-arm { top: 43%; }
+.patient-stage[data-posture="supine"] .hotspot-skin { top: 27%; }
+.patient-stage[data-posture="supine"] .hotspot-abdomen { top: 45%; }
+.patient-stage[data-posture="supine"] .hotspot-finger { top: 55%; }
+.patient-stage[data-posture="supine"] .hotspot-hands { top: 55%; }
+.patient-stage[data-posture="supine"] .hotspot-limbs { top: 70%; }
 .posture-selector { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-block: 14px; }
 .posture-selector [aria-pressed="true"] { background: var(--ink); color: var(--paper, #fffdf8); }
 .posture-selector small { color: var(--muted); }

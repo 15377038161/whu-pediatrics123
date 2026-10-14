@@ -1,6 +1,7 @@
 'use client';
 
 import { teachingHints } from '@/domain/teaching-copy';
+import { patientAppearance } from '@/domain/patient-appearance';
 
 import {
   Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home,
@@ -73,27 +74,28 @@ type ExamObservation = {
 };
 
 function PatientFigure({ patient, posture, hotspots, selectedTool, onExamine, onReplayObservation, observation, busy, interactive }: { patient: Omit<PublicCaseProfile, 'sex'> & { sex: string }; posture: 'standing' | 'supine'; hotspots: Array<[string, string]>; selectedTool: string | null; onExamine: (part: string) => void; onReplayObservation: (observation: ExamObservation) => void; observation: ExamObservation | null; busy: boolean; interactive: boolean }) {
+  const appearance=patientAppearance(patient.sex,posture,patient.id);
   return (
-    <div className="patient-stage" data-posture={posture}>
+    <div className="patient-stage" data-posture={posture} data-avatar={appearance.key}>
       <div className="patient-figure" aria-label="仿真虚拟患儿交互模型">
-        <Image
+        {appearance.src ? <Image
           className="patient-photo"
-          src={posture === 'supine' ? '/media/clinical/virtual-child-supine.svg' : patient.patientImage}
-          alt={posture === 'supine' ? '仰卧患儿教学示意，非真实病例影像' : patient.patientAlt}
+          src={appearance.src}
+          alt={appearance.alt}
           fill
           priority
           sizes="(max-width: 767px) 92vw, (max-width: 1199px) 38vw, 360px"
-        />
+        /> : <div className="patient-unspecified" role="img" aria-label={appearance.alt}><UserRound size={100} /><p>病例未注明性别</p><small>暂不指定男女照片，请依据病例记录完成查体。</small></div>}
         {interactive && hotspots.map(([id,label]) => <button key={id} disabled={busy} type="button" className={`hotspot hotspot-${id === 'upper-arm' ? 'arm' : id}`} data-observed={observation?.bodyPartId === id ? observation.status : undefined} onClick={() => onExamine(id)} aria-label={`使用当前器材检查${label}`}><span aria-hidden="true" />{label}</button>)}
       </div>
-      <div className="patient-caption"><span>{interactive ? <>当前器材：<strong>{[...tools, ...sourceExamTools].find((tool) => tool.id === selectedTool)?.label ?? '未选择'}</strong></> : <strong>观察模式</strong>}</span><span className="emotion-pill">{patient.id.startsWith('case-') ? '部位定位 · 请依据查体记录' : '紧张 · 呼吸较快'}</span></div>
+      <div className="patient-caption"><span>{interactive ? <>当前器材：<strong>{[...tools, ...sourceExamTools].find((tool) => tool.id === selectedTool)?.label ?? '未选择'}</strong></> : <strong>观察模式</strong>}</span><span className="emotion-pill">部位定位 · 请依据查体记录</span></div>
       {interactive && observation && <div className="exam-observation" data-status={observation.status} data-tool={observation.toolId} role="status" aria-live="polite">
         <div className="exam-observation-head"><span className="exam-observation-icon" aria-hidden="true">{observation.toolId === 'stethoscope' ? <Stethoscope /> : <Activity />}</span><p><small>{observation.status === 'success' ? '查体结果已获得' : '本次操作未生效'}</small><strong>{observation.title}</strong></p>{observation.status === 'success' && observation.sound && <button type="button" onClick={() => onReplayObservation(observation)} aria-label="播放真实儿科听诊音" title="播放结果声音"><Volume2 /></button>}</div>
         {observation.sound && observation.status === 'success' && <div className="exam-auscultation" data-sound={observation.sound} aria-hidden="true"><Waves /><span /><span /><span /><span /><span /></div>}
         <p className="exam-observation-detail">{observation.detail}</p>
         <small className="exam-observation-note">{observation.toolId === 'stethoscope' && observation.status === 'success' ? <>真实儿科听诊录音节选 · <a href="https://github.com/SJTU-YONGFU-RESEARCH-GRP/SPRSound" target="_blank" rel="noreferrer">SPRSound / CC BY 4.0</a></> : '标准化患儿教学反馈 · 文字结果来自病例规则'}</small>
       </div>}
-      <p className="patient-disclosure">虚拟标准化患儿 · 非真实病例影像</p>
+      <p className="patient-disclosure" title="通用示教角色，外观不代表病例年龄或实际体征">虚拟标准化患儿 · 非真实病例影像</p>
     </div>
   );
 }

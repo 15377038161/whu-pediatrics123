@@ -3,9 +3,16 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { createInitialSession } from '../src/lib/agent-engine';
 import { buildReport } from '../src/lib/scoring';
 import { CASE_CATALOG } from '../src/domain/case-catalog';
+import { patientAppearance } from '../src/domain/patient-appearance';
 const session = createInitialSession('ui-synthetic-student', 'guided');
 session.decision = { diagnosis: '合成学生判断', summary: '浏览器布局测试的合成摘要', diagnosisBasis: '合成病例的已采集病史和体征', differentials: '' };
 const report = buildReport(session, 'ui-report');
 mkdirSync('outputs/ui', { recursive: true });
-writeFileSync('outputs/ui/fixtures.json', JSON.stringify({ session, report, catalog: CASE_CATALOG.slice(0, 2) }));
+const appearances = [];
+for (const sex of ['男','女']) for (const variant of ['a','b']) {
+  const profile=CASE_CATALOG.find(item => patientAppearance(sex,'standing',item.id).key.endsWith(`-${variant}`))!;
+  appearances.push({ session:{ ...session,caseId:profile.id,stage:'exam',viewStage:'exam',caseOptions:{ sourceName:'合成图片验收',age:'4岁',sex,hasSource:false,exams:[],tests:[] } },standing:patientAppearance(sex,'standing',profile.id),supine:patientAppearance(sex,'supine',profile.id) });
+}
+appearances.push({ session:{ ...session,stage:'exam',viewStage:'exam',caseOptions:{ sourceName:'合成缺性别验收',age:'4岁',sex:'性别未记录',hasSource:false,exams:[],tests:[] } },standing:patientAppearance('','standing',session.caseId),supine:patientAppearance('','supine',session.caseId) });
+writeFileSync('outputs/ui/fixtures.json', JSON.stringify({ session, report, catalog: CASE_CATALOG.slice(0, 2),appearances }));
 console.log('UI合成数据已准备（2个演示目录，无私有患者资料）。');
