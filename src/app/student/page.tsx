@@ -102,7 +102,7 @@ export default function StudentHome() {
           <span className="entry-mark"><ClipboardCheck /></span><h3>OSCE 考站</h3><p>同一病例切换为限时、无提示、不可重试的证据化考核。</p><span className="entry-meta">查看考站说明 <ArrowRight size={14} /></span>
         </a>
         <a className="entry" href="/student/anatomy">
-          <span className="entry-mark"><Bone /></span><h3>解剖示意学习</h3><p>通过二维部件示意认识结构位置，为查体定位提供辅助。</p><span className="entry-meta">查看解剖示意 <ArrowRight size={14} /></span>
+          <span className="entry-mark"><Bone /></span><h3>儿童骨骼探索</h3><p>旋转观察6岁儿童研究模型，点选骨骼、分离结构，认识空间位置。</p><span className="entry-meta">进入儿童骨骼 <ArrowRight size={14} /></span>
         </a>
       </div>
 

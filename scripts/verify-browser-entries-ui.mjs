@@ -18,7 +18,7 @@
  *
  * E. 沉浸式反馈对比：同操作手卫生后 .feedback 渲染（immersive 保留方向性提示）
  *
- * F. 3D 解剖实验室：8 部件渲染 + 爆炸滑杆 + 放大/缩小/重置 + 点选联动（部件/侧栏/列表）
+ * F. 儿童骨骼三维模型：实际GLB加载、区域筛选、部件联动、隔离、分离与重置
  *
  * G. 题库操作闭环：取题 → 选择 → 提交 → 判分与解析 → 下一题 → 错题复盘 → 继续答题；
  *    题池取完时空态明确展示（动态分支，两种路径均闭环）
@@ -198,73 +198,22 @@ async function runViewport(browser, w, h, label, mobile, authSession) {
       await p.screenshot({ path: `${OUT}/entries-osce-${label}.png`, fullPage: false });
       return p;
     }).then(async (p) => {
-      // ---------- F. 3D 解剖实验室 ----------
+      // ---------- F. 儿童骨骼三维模型（旧二维色块已移除） ----------
       await p.goto(`${BASE}/student/anatomy`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await p.waitForSelector('.anatomy-lab', { timeout: 20000 });
-      const partCount = await p.locator('.anatomy-part').count();
-      const sliderCount = await p.locator('.explode-control input[type="range"]').count();
-      const zoomIn = await p.locator('button[aria-label="放大"]').count();
-      const zoomOut = await p.locator('button[aria-label="缩小"]').count();
-      const resetBtn = await p.locator('button[aria-label="重置"]').count();
-      report(`${label} F1 解剖实验室渲染`, partCount === 8 && sliderCount === 1 && zoomIn === 1 && zoomOut === 1 && resetBtn === 1, `部件=${partCount}`);
-      // 点选「颅骨」→ 侧栏与部件联动
-      // 口径（用户收紧要求）：不使用 force:true/dispatchEvent/DOM 点击兜底——390px 与桌面都必须
-      // 真实可见、正常可点击。若常规点击失败，取 computed layout 与命中元素证据定位根因后小修，
-      // 不强制点击掩盖。失败时输出取证（元素矩形、命中元素标签、裁剪状态）供定位，断言如实 FAIL。
-      const skullBtn = p.locator('button.anatomy-part[aria-label="颅骨"]');
-      let clickOk = true;
-      let layoutEvidence = '';
-      try {
-        await skullBtn.click({ timeout: 10000 });
-      } catch (e) {
-        clickOk = false;
-        // 取证：元素 computed layout + 点击点命中元素 + 各祖先裁剪状态（不打印页面文本内容）
-        layoutEvidence = await p.evaluate(() => {
-          const el = document.querySelector('button.anatomy-part[aria-label="颅骨"]');
-          if (!el) return '元素不存在';
-          const r = el.getBoundingClientRect();
-          const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-          const hit = document.elementFromPoint(cx, cy);
-          const chain = [];
-          let node = el;
-          while (node && node instanceof Element) {
-            const cs = getComputedStyle(node);
-            const nr = node.getBoundingClientRect();
-            chain.push(`${node.tagName.toLowerCase()}.${(node.className || '').toString().split(' ')[0]} clip=${cs.overflow}/${cs.overflowX} rect=[${Math.round(nr.left)},${Math.round(nr.top)},${Math.round(nr.right)},${Math.round(nr.bottom)}]`);
-            node = node.parentElement;
-          }
-          return `元素rect=[${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.right)},${Math.round(r.bottom)}] 命中=${hit ? hit.tagName.toLowerCase() + '.' + (hit.className || '').toString().split(' ')[0] : 'null'} 祖先链=${chain.join(' <- ')}`;
-        }).catch(() => '取证失败');
-        throw new Error(`真实点击失败（不使用force兜底）：${e instanceof Error ? e.message.split('\n')[0] : e} | 取证: ${layoutEvidence.slice(0, 300)}`);
-      }
-      await p.waitForTimeout(300);
+      await p.getByText('儿童模型已加载', { exact: false }).waitFor({ timeout: 60000 });
+      const partCount = await p.locator('.anatomy-part-list button').count();
+      report(`${label} F1 儿童模型加载`, partCount > 100 && await p.locator('canvas').count() === 1, `网格部件=${partCount}`);
+      await p.locator('#anatomy-region').selectOption('skull');
+      await p.locator('.anatomy-part-list button').first().click();
       const infoTitle = (await p.locator('.anatomy-info h2').textContent() ?? '').trim();
-      const skullSelected = await p.locator('button.anatomy-part[aria-label="颅骨"]').getAttribute('data-selected');
-      const listSelected = await p.locator('.anatomy-part-list button', { hasText: '颅骨' }).getAttribute('data-selected');
-      report(`${label} F2 点选联动`, infoTitle === '颅骨' && skullSelected === 'true' && listSelected === 'true', `侧栏=${infoTitle}`);
-      // 爆炸滑杆：0.35 → 0.8 → output 变化
-      const outBefore = (await p.locator('.explode-control output').textContent() ?? '').trim();
-      await p.locator('.explode-control input[type="range"]').fill('0.8');
-      await p.waitForTimeout(300);
-      const outAfter = (await p.locator('.explode-control output').textContent() ?? '').trim();
-      report(`${label} F3 爆炸滑杆联动`, outBefore !== outAfter && outAfter === '80%', `${outBefore}→${outAfter}`);
-      // 放大 → transform 变化；重置 → 恢复 35%
-      // 口径注意：缩放分层修复后用户 zoom 的 transform 在内层 .anatomy-canvas-zoom（外层保留
-      // 移动端媒体查询整体缩放），断言对象随实现调整。
-      const scaleBefore = await p.locator('.anatomy-canvas-zoom').getAttribute('style');
-      await p.locator('button[aria-label="放大"]').click({ timeout: 10000 });
-      await p.waitForTimeout(300);
-      const scaleAfter = await p.locator('.anatomy-canvas-zoom').getAttribute('style');
-      await p.locator('button[aria-label="重置"]').click({ timeout: 10000 });
-      await p.waitForTimeout(300);
-      const outReset = (await p.locator('.explode-control output').textContent() ?? '').trim();
-      report(`${label} F4 缩放与重置`, scaleBefore !== scaleAfter && outReset === '35%', `scale变化=${scaleBefore !== scaleAfter} 重置=${outReset}`);
-      if (mobile) {
-        const overflow = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-        report(`${label} F5 解析室390px无横向溢出`, overflow <= 1, `delta=${overflow}px`);
-      } else {
-        report(`${label} F5 桌面渲染完成`, true);
-      }
+      report(`${label} F2 部件信息联动`, infoTitle.includes('颅骨'));
+      await p.getByRole('button', { name: '只看选中部件', exact: true }).click();
+      report(`${label} F3 单部件隔离`, await p.getByRole('button', { name: '恢复区域显示', exact: true }).count() === 1);
+      await p.locator('.explode-control input').fill('0.8');
+      report(`${label} F4 分离滑杆`, await p.locator('.explode-control output').textContent() === '80%');
+      await p.getByRole('button', { name: '重置', exact: true }).click();
+      const overflow = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      report(`${label} F5 重置及无溢出`, await p.locator('.explode-control output').textContent() === '0%' && overflow <= 1);
       await p.screenshot({ path: `${OUT}/entries-anatomy-${label}.png`, fullPage: false });
       return p;
     }).then(async (p) => {
