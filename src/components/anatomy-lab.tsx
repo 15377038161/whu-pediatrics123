@@ -1,27 +1,33 @@
 'use client';
-
-import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
-import { useState } from 'react';
-
-type Part = { id: string; label: string; x: number; y: number; width: number; height: number; color: string };
-const PARTS: Part[] = [
-  { id: 'skull', label: '颅骨', x: 174, y: 24, width: 52, height: 48, color: '#f2e7cf' },
-  { id: 'spine', label: '脊柱', x: 194, y: 80, width: 14, height: 202, color: '#dfc69b' },
-  { id: 'ribs', label: '胸廓', x: 148, y: 90, width: 106, height: 110, color: '#ead8b8' },
-  { id: 'pelvis', label: '骨盆', x: 164, y: 274, width: 76, height: 52, color: '#d6b27d' },
-  { id: 'left-arm', label: '左上肢', x: 108, y: 100, width: 30, height: 132, color: '#e7d5b5' },
-  { id: 'right-arm', label: '右上肢', x: 266, y: 100, width: 30, height: 132, color: '#e7d5b5' },
-  { id: 'left-leg', label: '左下肢', x: 160, y: 326, width: 30, height: 176, color: '#d7bd91' },
-  { id: 'right-leg', label: '右下肢', x: 214, y: 326, width: 30, height: 176, color: '#d7bd91' },
-];
-
+import dynamic from 'next/dynamic';
+import { useState, useCallback } from 'react';
+import manifest from '../../public/models/anatomy/manifest.json';
+const AnatomyScene = dynamic(() => import('./anatomy-scene'), { ssr:false, loading:() => <p className="anatomy-loading">准备儿童骨骼视图…</p> });
+const regions: Record<string,string> = manifest.regions;
 export function AnatomyLab() {
-  const [explode, setExplode] = useState(0.35);
-  const [selected, setSelected] = useState('spine');
-  const [zoom, setZoom] = useState(1);
-  const selectedPart = PARTS.find((part) => part.id === selected) ?? PARTS[1];
+  const [explode,setExplode] = useState(0);
+  const [selected,setSelected] = useState<string|null>(null);
+  const [region,setRegion] = useState('all');
+  const [isolate,setIsolate] = useState(false);
+  const [view,setView] = useState({ direction:'front', version:0 });
+  const [ready,setReady] = useState(false);
+  const onReady = useCallback(() => setReady(true),[]);
+  const part = manifest.parts.find(item => item.id === selected);
+  const parts = manifest.parts.filter(item => region === 'all' || item.region === region);
+  function reset() { setExplode(0);setSelected(null);setIsolate(false);setRegion('all');setView({ direction:'front',version:view.version+1 }); }
   return <div className="anatomy-lab">
-    <div className="anatomy-lab-head"><div><p className="eyebrow">儿科教学工具 · 解剖基础</p><h1 className="page-title">人体结构示意学习</h1><p className="page-lead">拖动爆炸程度，点选骨骼结构，观察二维教学部件的位置关系。它是病例教学的二维示意辅助，非真实3D模型，不替代临床判断。</p></div><a className="btn btn-secondary" href="/student">返回训练中心</a></div>
-    <div className="anatomy-lab-grid"><section className="anatomy-stage" aria-label="人体骨骼交互视图"><div className="anatomy-stage-toolbar"><button className="icon-btn" type="button" onClick={() => setZoom((value) => Math.min(1.3, value + 0.1))} aria-label="放大"><ZoomIn size={17} /></button><button className="icon-btn" type="button" onClick={() => setZoom((value) => Math.max(.75, value - 0.1))} aria-label="缩小"><ZoomOut size={17} /></button><button className="icon-btn" type="button" onClick={() => { setExplode(.35); setZoom(1); setSelected('spine'); }} aria-label="重置"><RotateCcw size={17} /></button></div><div className="anatomy-canvas"><div className="anatomy-canvas-zoom" style={{ transform: `scale(${zoom})` }}><div className="anatomy-glow" />{PARTS.map((part) => { const dx = (part.x - 200) * explode; const dy = (part.y - 250) * explode; return <button key={part.id} type="button" className="anatomy-part" data-selected={selected === part.id} style={{ left: `${part.x}px`, top: `${part.y}px`, width: `${part.width}px`, height: `${part.height}px`, background: part.color, transform: `translate(${dx}px, ${dy}px)`, borderRadius: part.id === 'skull' ? '48% 48% 42% 42%' : part.id === 'ribs' ? '48% 48% 30% 30%' : '18px' }} onClick={() => setSelected(part.id)} aria-label={part.label}><span>{part.label}</span></button>; })}</div></div><label className="explode-control"><span>爆炸程度</span><input type="range" min="0" max="1" step=".01" value={explode} onChange={(event) => setExplode(Number(event.target.value))} /><output>{Math.round(explode * 100)}%</output></label></section><aside className="anatomy-info"><p className="eyebrow">当前选中结构</p><h2>{selectedPart.label}</h2><p>示意部件：第 {PARTS.indexOf(selectedPart) + 1} 个教学部件</p><div className="anatomy-info-block"><strong>学习提示</strong><p>先观察整体位置，再结合病例中的查体部位进行定位。教师后续可以将病例、图片和检查任务关联到具体结构。</p></div><div className="anatomy-part-list">{PARTS.map((part) => <button type="button" key={part.id} data-selected={selected === part.id} onClick={() => setSelected(part.id)}>{part.label}<span>›</span></button>)}</div></aside></div>
+    <div className="anatomy-lab-head"><div><p className="eyebrow">儿科教学工具 · 6 岁儿童骨骼</p><h1 className="page-title">儿童骨骼结构探索</h1><p className="page-lead">旋转观察、点选结构，逐步分离骨骼部件。采用 PIPER 6 岁儿童研究模型，保留原始姿势与比例。</p></div><a className="btn btn-secondary" href="/student">返回训练中心</a></div>
+    <div className="anatomy-lab-grid"><section className="anatomy-stage" aria-label="儿童骨骼三维交互视图">
+      <div className="anatomy-stage-toolbar">{[['front','正面'],['back','背面'],['left','侧面']].map(([id,label]) => <button className="btn btn-secondary" type="button" key={id} onClick={() => setView({ direction:id,version:view.version+1 })}>{label}</button>)}<button className="btn btn-secondary" type="button" onClick={reset}>重置</button></div>
+      <AnatomyScene explode={explode} selected={selected} region={region} isolate={isolate} view={view} onSelect={setSelected} onReady={onReady} />
+      <span className="anatomy-model-status" role="status">{ready ? '儿童模型已加载 · 拖动旋转 / 双指缩放' : '加载儿童骨骼…'}</span>
+      <label className="explode-control"><span>结构分离</span><input aria-label="结构分离" type="range" min="0" max="1" step=".01" value={explode} onChange={event => setExplode(Number(event.target.value))} /><output>{Math.round(explode*100)}%</output></label>
+    </section><aside className="anatomy-info"><p className="eyebrow">结构导航</p><label htmlFor="anatomy-region">显示区域</label><select id="anatomy-region" value={region} onChange={event => { setRegion(event.target.value);setIsolate(false);setSelected(null); }}>{Object.entries({ all:'全部骨骼',...regions }).map(([id,label]) => <option key={id} value={id}>{label}</option>)}</select>
+      <h2>{part?.label ?? '选择一个骨骼部件'}</h2><p>{part ? regions[part.region] : '点击模型或下方列表查看对应结构'}</p>
+      <button className="btn btn-secondary" type="button" disabled={!part} onClick={() => setIsolate(!isolate)}>{isolate ? '恢复区域显示' : '只看选中部件'}</button>
+      <div className="anatomy-part-list">{parts.map(item => <button type="button" key={item.id} data-selected={selected === item.id} onClick={() => setSelected(item.id)}><span>{item.label}</span><small>部件 {item.id}</small></button>)}</div>
+      <div className="anatomy-info-block"><strong>模型说明</strong><p>6 岁儿童有限元研究模型的骨骼表面，共 {manifest.parts.length} 个网格部件。部分结构按研究用途合并，并非逐块完整解剖图谱。分离位移仅帮助观察，不表示生理运动。用于结构探索，不能用于骨龄判读或诊疗判断。</p></div>
+      <p className="anatomy-attribution">PIPER Project · UCBL/Ifsttar、KTH、TU Berlin；足部来源 CEESAR。<a href="https://www.piper-project.org/child" target="_blank" rel="noreferrer">原项目</a> · <a href="/models/anatomy/LICENSE.txt">模型授权</a> · <a href="/models/anatomy/piper-corresponding-source.zip">对应源文件</a></p>
+    </aside></div>
   </div>;
 }

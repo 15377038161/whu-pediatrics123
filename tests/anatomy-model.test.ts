@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import manifest from '../public/models/anatomy/manifest.json';
+test('儿童模型完整性：6岁来源、八区域、头颈表面、GLB与清单一致', () => {
+  const binary=readFileSync('public/models/anatomy/piper-child-6yo.glb');
+  assert.equal(binary.readUInt32LE(0),0x46546c67);
+  assert.equal(binary.readUInt32LE(4),2);
+  assert.equal(binary.readUInt32LE(8),binary.length);
+  assert.equal(createHash('sha256').update(binary).digest('hex'),manifest.meshSha256);
+  const doc=JSON.parse(binary.subarray(20,20+binary.readUInt32LE(12)).toString());
+  assert.equal(manifest.age,6);assert.equal(doc.meshes.length,manifest.parts.length);
+  assert.equal(new Set(manifest.parts.map(part => part.id)).size,manifest.parts.length);
+  assert.equal(new Set(manifest.parts.map(part => part.region)).size,8);
+  assert.ok(manifest.parts.some(part => part.sourcePart === 'HE_BO_ExternalTable'));
+  assert.ok(manifest.parts.some(part => part.sourcePart === 'NK_BO_C1_2D'));
+  assert.ok(manifest.parts.every(part => part.triangles>0));
+  assert.ok(doc.accessors.filter((item:{type:string}) => item.type==='VEC3').every((item:{min:number[];max:number[]}) => [...item.min,...item.max].every(Number.isFinite)));
+  assert.ok(readFileSync('public/models/anatomy/LICENSE.txt','utf8').includes('Any public release of any scientific claims'));
+  assert.ok(readFileSync('public/models/anatomy/piper-corresponding-source.zip').length>1000);
+});

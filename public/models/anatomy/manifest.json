@@ -1,0 +1,927 @@
+{
+  "age": 6,
+  "posture": "原始研究模型姿势",
+  "parts": [
+    {
+      "id": "1100",
+      "label": "颅骨板障",
+      "region": "skull",
+      "sourcePart": "HE_BO_SkullDiploe",
+      "triangles": 9876
+    },
+    {
+      "id": "1110",
+      "label": "颅骨外板",
+      "region": "skull",
+      "sourcePart": "HE_BO_ExternalTable",
+      "triangles": 5332
+    },
+    {
+      "id": "2101",
+      "label": "C1椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C1_3D",
+      "triangles": 2168
+    },
+    {
+      "id": "2102",
+      "label": "C2椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C2_3D",
+      "triangles": 3168
+    },
+    {
+      "id": "2103",
+      "label": "C3椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C3_3D",
+      "triangles": 2200
+    },
+    {
+      "id": "2104",
+      "label": "C4椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C4_3D",
+      "triangles": 2680
+    },
+    {
+      "id": "2105",
+      "label": "C5椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C5_3D",
+      "triangles": 2240
+    },
+    {
+      "id": "2106",
+      "label": "C6椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C6_3D",
+      "triangles": 2016
+    },
+    {
+      "id": "2107",
+      "label": "C7椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C7_3D",
+      "triangles": 2320
+    },
+    {
+      "id": "2108",
+      "label": "T1椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_T1_3D",
+      "triangles": 2440
+    },
+    {
+      "id": "2109",
+      "label": "C1椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C1_2D",
+      "triangles": 2040
+    },
+    {
+      "id": "2110",
+      "label": "C2椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C2_2D",
+      "triangles": 2132
+    },
+    {
+      "id": "2111",
+      "label": "C3椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C3_2D",
+      "triangles": 1928
+    },
+    {
+      "id": "2112",
+      "label": "C4椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C4_2D",
+      "triangles": 2368
+    },
+    {
+      "id": "2113",
+      "label": "C5椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C5_2D",
+      "triangles": 1968
+    },
+    {
+      "id": "2114",
+      "label": "C6椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C6_2D",
+      "triangles": 1752
+    },
+    {
+      "id": "2115",
+      "label": "C7椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_C7_2D",
+      "triangles": 2008
+    },
+    {
+      "id": "2116",
+      "label": "T1椎骨",
+      "region": "spine",
+      "sourcePart": "NK_BO_T1_2D",
+      "triangles": 2440
+    },
+    {
+      "id": "3100",
+      "label": "前臂骨（左）",
+      "region": "left-arm",
+      "sourcePart": "UX_BO_L_Forearm_2D",
+      "triangles": 794
+    },
+    {
+      "id": "3101",
+      "label": "手骨（左）",
+      "region": "left-arm",
+      "sourcePart": "UX_BO_L_Hand_2D",
+      "triangles": 900
+    },
+    {
+      "id": "3102",
+      "label": "肱骨（左）",
+      "region": "left-arm",
+      "sourcePart": "UX_BO_L_Humerus_2D",
+      "triangles": 320
+    },
+    {
+      "id": "3103",
+      "label": "肱骨（左）近端骨骺",
+      "region": "left-arm",
+      "sourcePart": "UX_BO_L_HumerusEpiphysisProximal_2D",
+      "triangles": 156
+    },
+    {
+      "id": "3104",
+      "label": "肱骨（左）近端骨骺",
+      "region": "left-arm",
+      "sourcePart": "UX_BO_L_HumerusEpiphysisProximal_3D",
+      "triangles": 428
+    },
+    {
+      "id": "3105",
+      "label": "肱骨（左）远端骨骺",
+      "region": "left-arm",
+      "sourcePart": "UX_BO_L_HumerusEpiphysisDistal_3D",
+      "triangles": 144
+    },
+    {
+      "id": "4101",
+      "label": "T2椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T2_2D",
+      "triangles": 332
+    },
+    {
+      "id": "4102",
+      "label": "T3椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T3_2D",
+      "triangles": 338
+    },
+    {
+      "id": "4103",
+      "label": "T4椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T4_2D",
+      "triangles": 384
+    },
+    {
+      "id": "4104",
+      "label": "T5椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T5_2D",
+      "triangles": 378
+    },
+    {
+      "id": "4105",
+      "label": "T6椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T6_2D",
+      "triangles": 442
+    },
+    {
+      "id": "4106",
+      "label": "T7椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T7_2D",
+      "triangles": 432
+    },
+    {
+      "id": "4107",
+      "label": "T8椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T8_2D",
+      "triangles": 460
+    },
+    {
+      "id": "4108",
+      "label": "T9椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T9_2D",
+      "triangles": 466
+    },
+    {
+      "id": "4109",
+      "label": "T10椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T10_2D",
+      "triangles": 554
+    },
+    {
+      "id": "4110",
+      "label": "T11椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T11_2D",
+      "triangles": 528
+    },
+    {
+      "id": "4111",
+      "label": "T12椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T12_2D",
+      "triangles": 718
+    },
+    {
+      "id": "4112",
+      "label": "胸骨",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Sternum_2D",
+      "triangles": 608
+    },
+    {
+      "id": "4113",
+      "label": "肋骨",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Ribs_2D",
+      "triangles": 14264
+    },
+    {
+      "id": "4114",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib1_2D_Rigid",
+      "triangles": 52
+    },
+    {
+      "id": "4115",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib1_2D_Rigid",
+      "triangles": 52
+    },
+    {
+      "id": "4116",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib2_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4117",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib2_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4118",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib3_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4119",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib3_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4120",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib4_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4121",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib4_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4122",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib5_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4123",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib5_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4124",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib6_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4125",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib6_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4126",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib7_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4127",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib7_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4128",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib8_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4129",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib8_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4130",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib9_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4131",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib9_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4132",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib10_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4133",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib10_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4134",
+      "label": "胸廓（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Rib11_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4135",
+      "label": "胸廓（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Rib11_2D_Rigid",
+      "triangles": 54
+    },
+    {
+      "id": "4136",
+      "label": "肩胛骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Scapula_2D",
+      "triangles": 748
+    },
+    {
+      "id": "4137",
+      "label": "肩胛骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Scapula_2D",
+      "triangles": 768
+    },
+    {
+      "id": "4138",
+      "label": "锁骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Clavicle_2D",
+      "triangles": 320
+    },
+    {
+      "id": "4139",
+      "label": "锁骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Clavicle_2D",
+      "triangles": 320
+    },
+    {
+      "id": "4140",
+      "label": "胸骨",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Sternum_2D_rigid",
+      "triangles": 36
+    },
+    {
+      "id": "4141",
+      "label": "肩胛骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Scapula_3D",
+      "triangles": 748
+    },
+    {
+      "id": "4142",
+      "label": "肩胛骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Scapula_3D",
+      "triangles": 748
+    },
+    {
+      "id": "4143",
+      "label": "锁骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_L_Clavicle_3D",
+      "triangles": 368
+    },
+    {
+      "id": "4144",
+      "label": "锁骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_R_Clavicle_3D",
+      "triangles": 368
+    },
+    {
+      "id": "4146",
+      "label": "T2椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T2_3D_Rigid",
+      "triangles": 1506
+    },
+    {
+      "id": "4147",
+      "label": "T3椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T3_3D_Rigid",
+      "triangles": 1526
+    },
+    {
+      "id": "4148",
+      "label": "T4椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T4_3D_Rigid",
+      "triangles": 1764
+    },
+    {
+      "id": "4149",
+      "label": "T5椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T5_3D_Rigid",
+      "triangles": 1684
+    },
+    {
+      "id": "4150",
+      "label": "T6椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T6_3D_Rigid",
+      "triangles": 2052
+    },
+    {
+      "id": "4151",
+      "label": "T7椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T7_3D_Rigid",
+      "triangles": 1992
+    },
+    {
+      "id": "4152",
+      "label": "T8椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T8_3D_Rigid",
+      "triangles": 2376
+    },
+    {
+      "id": "4153",
+      "label": "T9椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T9_3D_Rigid",
+      "triangles": 2442
+    },
+    {
+      "id": "4154",
+      "label": "T10椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T10_3D_Rigid",
+      "triangles": 3074
+    },
+    {
+      "id": "4155",
+      "label": "T11椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T11_3D_Rigid",
+      "triangles": 2840
+    },
+    {
+      "id": "4156",
+      "label": "T12椎骨",
+      "region": "spine",
+      "sourcePart": "TX_BO_T12_3D_Rigid",
+      "triangles": 4470
+    },
+    {
+      "id": "4157",
+      "label": "胸骨",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Sternum_3D",
+      "triangles": 3992
+    },
+    {
+      "id": "4158",
+      "label": "肋骨",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Ribs_3D",
+      "triangles": 15448
+    },
+    {
+      "id": "5100",
+      "label": "前臂骨（右）",
+      "region": "right-arm",
+      "sourcePart": "UX_BO_R_Forearm_2D",
+      "triangles": 794
+    },
+    {
+      "id": "5101",
+      "label": "手骨（右）",
+      "region": "right-arm",
+      "sourcePart": "UX_BO_R_Hand_2D",
+      "triangles": 900
+    },
+    {
+      "id": "5102",
+      "label": "肱骨（右）",
+      "region": "right-arm",
+      "sourcePart": "UX_BO_R_Humerus_2D",
+      "triangles": 320
+    },
+    {
+      "id": "5103",
+      "label": "肱骨（右）近端骨骺",
+      "region": "right-arm",
+      "sourcePart": "UX_BO_R_HumerusEpiphysisProximal_2D",
+      "triangles": 156
+    },
+    {
+      "id": "5104",
+      "label": "肱骨（右）远端骨骺",
+      "region": "right-arm",
+      "sourcePart": "UX_BO_R_HumerusEpiphysisDistal_3D",
+      "triangles": 144
+    },
+    {
+      "id": "5105",
+      "label": "肱骨（右）近端骨骺",
+      "region": "right-arm",
+      "sourcePart": "UX_BO_R_HumerusEpiphysisProximal_3D",
+      "triangles": 428
+    },
+    {
+      "id": "6100",
+      "label": "L1椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L1_2D",
+      "triangles": 752
+    },
+    {
+      "id": "6101",
+      "label": "L2椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L2_2D",
+      "triangles": 746
+    },
+    {
+      "id": "6102",
+      "label": "L3椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L3_2D",
+      "triangles": 632
+    },
+    {
+      "id": "6103",
+      "label": "L4椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L4_2D",
+      "triangles": 624
+    },
+    {
+      "id": "6104",
+      "label": "L5椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L5_2D",
+      "triangles": 732
+    },
+    {
+      "id": "6105",
+      "label": "L1椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L1_3D_Rigid",
+      "triangles": 5370
+    },
+    {
+      "id": "6106",
+      "label": "L2椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L2_3D_Rigid",
+      "triangles": 4514
+    },
+    {
+      "id": "6107",
+      "label": "L3椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L3_3D_Rigid",
+      "triangles": 3670
+    },
+    {
+      "id": "6108",
+      "label": "L4椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L4_3D_Rigid",
+      "triangles": 3774
+    },
+    {
+      "id": "6109",
+      "label": "L5椎骨",
+      "region": "thorax",
+      "sourcePart": "AB_BO_L5_3D_Rigid",
+      "triangles": 4692
+    },
+    {
+      "id": "7101",
+      "label": "股骨（左）近端骨骺",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_FemurEpiphysisProximal_3D",
+      "triangles": 912
+    },
+    {
+      "id": "7102",
+      "label": "股骨（左）近端干骺端",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_FemurMetaphysisProximal_2D",
+      "triangles": 32
+    },
+    {
+      "id": "7103",
+      "label": "股骨（左）骨干",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_FemurDiaphysis_2D",
+      "triangles": 272
+    },
+    {
+      "id": "7104",
+      "label": "股骨（左）远端干骺端",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_FemurMetaphysisDistal_2D",
+      "triangles": 436
+    },
+    {
+      "id": "7105",
+      "label": "股骨（左）远端骨骺",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_FemurEpiphysisDistal_2D_Rigid",
+      "triangles": 988
+    },
+    {
+      "id": "7111",
+      "label": "髌骨（左）",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_Patella_3D_Rigid",
+      "triangles": 208
+    },
+    {
+      "id": "7112",
+      "label": "髌骨（左）",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_Patella_2D_Rigid",
+      "triangles": 208
+    },
+    {
+      "id": "7121",
+      "label": "胫骨（左）近端骨骺",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_TibiaEpiphysisProximal_2D_Rigid",
+      "triangles": 454
+    },
+    {
+      "id": "7122",
+      "label": "胫骨（左）近端干骺端",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_TibiaMetaphysisProximal_2D_Rigid",
+      "triangles": 176
+    },
+    {
+      "id": "7123",
+      "label": "胫骨（左）骨干",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_TibiaDiaphysis_2D",
+      "triangles": 352
+    },
+    {
+      "id": "7125",
+      "label": "胫骨（左）远端骨骺",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_TibiaEpiphysisDistal_2D_Rigid",
+      "triangles": 280
+    },
+    {
+      "id": "7131",
+      "label": "腓骨（左）近端骨骺",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_FibulaEpiphysisProximal_2D_Rigid",
+      "triangles": 186
+    },
+    {
+      "id": "7133",
+      "label": "腓骨（左）骨干",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_FibulaDiaphysis_2D",
+      "triangles": 384
+    },
+    {
+      "id": "7135",
+      "label": "腓骨（左）远端骨骺",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_FibulaEpiphisisDistal_2D_Rigid",
+      "triangles": 200
+    },
+    {
+      "id": "7170",
+      "label": "足骨（左）",
+      "region": "left-leg",
+      "sourcePart": "LX_BO_L_Foot_2D_Rigid",
+      "triangles": 10730
+    },
+    {
+      "id": "8101",
+      "label": "骨盆",
+      "region": "pelvis",
+      "sourcePart": "PV_BO_Pelvis_3D",
+      "triangles": 28368
+    },
+    {
+      "id": "8105",
+      "label": "骨盆",
+      "region": "pelvis",
+      "sourcePart": "PV_BO_Pelvis_2D",
+      "triangles": 3388
+    },
+    {
+      "id": "8110",
+      "label": "骶骨",
+      "region": "pelvis",
+      "sourcePart": "PV_BO_Sacrum_2D_Rigid",
+      "triangles": 1346
+    },
+    {
+      "id": "9101",
+      "label": "股骨（右）近端骨骺",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_FemurEpiphysisProximal_3D",
+      "triangles": 912
+    },
+    {
+      "id": "9102",
+      "label": "股骨（右）近端干骺端",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_FemurMetaphysisProximal_2D",
+      "triangles": 32
+    },
+    {
+      "id": "9103",
+      "label": "股骨（右）骨干",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_FemurDiaphysis_2D",
+      "triangles": 272
+    },
+    {
+      "id": "9104",
+      "label": "股骨（右）远端干骺端",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_FemurMetaphysisDistal_2D",
+      "triangles": 436
+    },
+    {
+      "id": "9105",
+      "label": "股骨（右）远端骨骺",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_FemurEpiphysisDistal_2D_Rigid",
+      "triangles": 988
+    },
+    {
+      "id": "9111",
+      "label": "髌骨（右）",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_Patella_3D_Rigid",
+      "triangles": 208
+    },
+    {
+      "id": "9112",
+      "label": "髌骨（右）",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_Patella_2D_Rigid",
+      "triangles": 208
+    },
+    {
+      "id": "9121",
+      "label": "胫骨（右）近端骨骺",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_TibiaEpiphysisProximal_2D",
+      "triangles": 454
+    },
+    {
+      "id": "9122",
+      "label": "胫骨（右）近端干骺端",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_TibiaMetaphysisProximal_2D",
+      "triangles": 176
+    },
+    {
+      "id": "9123",
+      "label": "胫骨（右）骨干",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_TibiaDiaphysis_2D",
+      "triangles": 352
+    },
+    {
+      "id": "9125",
+      "label": "胫骨（右）远端骨骺",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_TibiaEpiphysisDistal_2D_Rigid",
+      "triangles": 280
+    },
+    {
+      "id": "9131",
+      "label": "腓骨（右）近端骨骺",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_FibulaEpiphysisProximal_2D_Rigid",
+      "triangles": 186
+    },
+    {
+      "id": "9133",
+      "label": "腓骨（右）骨干",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_FibulaDiaphysis_2D",
+      "triangles": 384
+    },
+    {
+      "id": "9135",
+      "label": "腓骨（右）远端骨骺",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_FibulaEpiphisisDistal_2D",
+      "triangles": 200
+    },
+    {
+      "id": "9170",
+      "label": "足骨（右）",
+      "region": "right-leg",
+      "sourcePart": "LX_BO_R_Foot_2D_Rigid",
+      "triangles": 10730
+    }
+  ],
+  "regions": {
+    "skull": "颅骨",
+    "spine": "脊柱",
+    "pelvis": "骨盆",
+    "left-arm": "左上肢",
+    "right-arm": "右上肢",
+    "left-leg": "左下肢",
+    "right-leg": "右下肢",
+    "thorax": "胸廓"
+  },
+  "meshSha256": "0198babd0c29f04690ba21eb5283f781ae01d2afc6cfd79e6bf95d830ed32cc5"
+}
