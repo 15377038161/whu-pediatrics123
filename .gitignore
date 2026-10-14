@@ -26,3 +26,4 @@ knowledge/
 docs/实施方案/病例知识库资源索引.json
 .workbuddy/
 *.pdf
+!public/models/anatomy/piper-corresponding-source.zip
