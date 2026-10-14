@@ -1,0 +1,85 @@
+// 服务端公开标识注册表。保持稳定，不重写历史数据库case_id；禁止客户端导入。
+import { CASE_CATALOG } from '@/domain/case-catalog';
+
+export const CASE_PUBLIC_IDS: Record<string, string> = {
+  "teacher-单纯肥胖症": "case-5a51b3c9-ea4a-4c1b-96f8-20a9b59e44b7",
+  "teacher-新生儿呼吸窘迫综合征": "case-07b7d551-eb5c-47c8-9bb6-c55bb8869862",
+  "teacher-新生儿败血症": "case-e750c5ff-d229-43a6-8314-2e633cacdc32",
+  "teacher-新生儿高胆红素血症": "case-3797738a-1df1-4b5f-a982-bc48fa70ab52",
+  "teacher-新生儿abo溶血性黄疸": "case-d90e0254-6e2d-4016-9a0b-837c97005642",
+  "teacher-新生儿rh溶血性黄疸": "case-87fc430b-dd4e-4aa4-8437-aab1d4b840ab",
+  "teacher-新生儿肺炎": "case-261bbab2-9c2a-4c11-a9e3-988506741501",
+  "teacher-新生儿胎粪吸入肺炎": "case-57ba1841-4e5b-485a-9b2a-8576a819a078",
+  "teacher-新生儿化脓性脑膜炎": "case-db73006d-d876-4bea-bcbd-b9e8e1c1f907",
+  "teacher-新生儿重度窒息": "case-0ea1580f-cfa1-4df9-893c-689eac1e5542",
+  "teacher-新生儿脑梗死": "case-3f7233bb-9d2f-4554-b6b0-e6ce25024ea3",
+  "teacher-先天性肾上腺皮质增生症": "case-05779155-1092-4607-a3d2-966ffc0fc718",
+  "teacher-新生儿缺血缺氧性脑病": "case-46edc151-c7ef-4629-bfe0-1b6ecf6cfd57",
+  "teacher-风湿热": "case-e78cc1a1-1ee6-4305-bb42-399526ba139f",
+  "teacher-过敏性紫癜": "case-1c69a787-23f6-48f4-957a-1d44603e34d5",
+  "teacher-川崎病": "case-74392eef-a2ed-4c55-bafb-10ad7a7d474e",
+  "teacher-传染行单核细胞增多症": "case-13fd5366-b7be-4dcc-8c2a-e00d28384b8c",
+  "teacher-轮状病毒性肠炎": "case-f4d1d221-7d2e-4d18-b932-3e21274f3384",
+  "teacher-细菌性肠炎": "case-4892a278-1087-4947-a7ce-5ee3d27e910a",
+  "teacher-婴儿胆汁淤积症-巨细胞病毒": "case-4d3ae886-e69b-4820-bc66-f5687506e26d",
+  "teacher-急性喉炎": "case-ead58f14-f79e-42bd-a52e-8e29bb9ba0da",
+  "teacher-异物吸入性窒息": "case-426e7756-2b7d-4c8e-a8f9-204a78105c2a",
+  "teacher-急性喘息性支气管炎": "case-53188ccd-1658-45f1-b0ec-5dd257a11676",
+  "teacher-毛细支气管炎": "case-171082d2-069e-46f7-8c4c-4cdaa5dacdf2",
+  "teacher-支气管哮喘": "case-dd7c9327-fd9c-44db-bb24-614b4a50b58f",
+  "teacher-支气管肺炎": "case-9651f03b-8e9e-4fe7-9f51-b75ddbd1edd8",
+  "teacher-大叶性肺炎": "case-3a061e58-1306-4f33-be6b-c6ffa7917c87",
+  "teacher-肺炎支原体性肺炎": "case-ea9a434b-2f3c-41bc-a7b4-52c9ab3a52ea",
+  "teacher-心律失常-阵发性室上性心动过速": "case-d1d70aa5-eb74-4a74-8fb3-43b86f9804fa",
+  "teacher-暴发性心肌炎": "case-e5d1cf25-c837-477f-b1bc-e42833d5ede5",
+  "teacher-急性肾小球肾炎": "case-7dca12d4-c9e3-425f-9d2a-37d354a45d64",
+  "teacher-肾病综合征": "case-d7a6c222-26c2-47e2-90c3-caf409d78145",
+  "teacher-泌尿道感染": "case-cdc10410-c8fb-4e54-903d-818c7ec93718",
+  "teacher-急性肾衰竭": "case-6d3b5195-2419-4734-be1e-a09ea948fe61",
+  "teacher-再生障碍性贫血": "case-5708dd67-b1c6-4fe0-a1dd-b79b53a0d521",
+  "teacher-蚕豆病": "case-92175c25-7eb2-4d22-a56c-21ef21b1be23",
+  "teacher-特发性血小板减少性紫癜": "case-677d408e-a6a6-4e8d-ab06-a1365f15d97b",
+  "teacher-急性白血病": "case-934c97ab-fe0c-4908-91ba-12ec837e4668",
+  "teacher-噬血细胞综合征": "case-b6cc9ec3-74c5-47e6-bb03-ebd64b3b1bc6",
+  "teacher-发热性惊厥": "case-42e1a808-2021-4b85-a8e2-edae74a9b299",
+  "teacher-癫痫": "case-f4869d4e-d88b-475b-8e04-b6d299979062",
+  "teacher-病毒性脑炎": "case-e708a448-8b01-4dfb-ae6b-b447ec2e4af3",
+  "teacher-化脓性脑膜炎": "case-50acf9bc-a130-460d-a760-d67d0b5402f7",
+  "teacher-结核性脑炎": "case-cc4701b3-87f1-40ba-9c77-0beacf546c48",
+  "teacher-格林巴利综合征": "case-5dc2a192-cda2-43d1-b547-c07908384ff9",
+  "teacher-先天性肌无力综合征": "case-9c03399f-1652-48f2-8c02-ceaca7a3d8a9",
+  "teacher-生长激素缺乏症-矮小症": "case-12c7efe2-9eb0-4283-b346-e4f96c0a663e",
+  "teacher-中枢性尿崩症": "case-eb0abf40-2029-4490-8241-d4a98b94c6e4",
+  "teacher-外周性性早熟": "case-47e5a1f9-cb51-4b8b-bd7b-d9f224acd7b4",
+  "teacher-中枢性性早熟": "case-328109f0-8558-4a2b-9182-79ff2b5fe56d",
+  "teacher-i型糖尿病伴有酮症酸中毒": "case-da29f881-d2b2-410b-bd22-65de0fc1bb13",
+  "teacher-肝豆状核变性": "case-8a7f2780-dd26-46cd-a96c-bee9ece1a6db",
+  "teacher-糖原贮积病": "case-5197c841-12f4-4c6d-b3a9-f816fb68d91a",
+  "teacher-急性百草枯中毒": "case-647368e2-9bfa-463c-97c2-db8d867354a8",
+  "teacher-1型糖尿病伴有酮症酸中毒": "case-beb0c090-f6be-4c20-bd79-d21544d88354",
+  "teacher-矮小症": "case-c3633068-d383-4b2e-a48a-2c53c6679e4a",
+  "teacher-急性毛细支气管炎": "case-25e26c63-3f38-4c27-9ea9-eda221c876d9",
+  "teacher-肺不张": "case-6ba63d64-1a19-4765-a2ab-4ae687d5dd9a",
+  "teacher-肺炎支原体肺炎": "case-280837cf-54c4-4930-b40d-977ced5c1827",
+  "teacher-重症肺炎": "case-47ea44a1-3edd-40a0-8d9b-7ca2dbfcaf5a",
+  "teacher-心律失常-室上性心动过速": "case-e3b0b49e-7b0a-4b97-a5c5-5e72b3604172",
+  "teacher-传染性单核细胞增多症": "case-d7cb30cb-b1a5-477b-bb41-7833f3438887",
+  "teacher-新生儿胎粪吸入性肺炎": "case-fd688a62-f962-4048-ac59-da64b5be9657",
+  "teacher-婴儿胆汁淤积症-巨细胞病毒感染": "case-c47e726a-cd18-49ee-bc20-faa4d6ed566b",
+  "teacher-中枢神经系统脱髓鞘病": "case-ef1adfc7-4097-4c41-9b3d-27777fec5c63",
+  "teacher-先天性肌无力": "case-5dedff4c-1766-4f40-bd23-ab03662617d6",
+  "teacher-癫痫全面性发作阵挛性发作": "case-31db42f5-fcf2-4213-8675-8656b3b9e1b0",
+  "teacher-儿童-肥胖症": "case-a3a869a1-23ca-40db-a47c-2bf731f0d1e6",
+  "teacher-急性白血病-急性淋巴细胞白血病": "case-3e0c843f-b420-4646-889f-352eb34d8e93",
+  "teacher-糖原贮积病iv型": "case-b115e85f-f023-4de5-ae96-dc4e788ad227"
+};
+
+const internalByPublic = new Map(Object.entries(CASE_PUBLIC_IDS).map(([internal, external]) => [external, internal]));
+export function resolveCaseId(value: string): string {
+  const decoded = decodeURIComponent(value);
+  return internalByPublic.get(decoded) ?? decoded;
+}
+export function publicCaseId(value: string): string { return CASE_PUBLIC_IDS[resolveCaseId(value)] ?? value; }
+export function findPublicCase(value: string) { return CASE_CATALOG.find(item => item.id === publicCaseId(value)); }
+export function getPublicCase(value: string) { const result = findPublicCase(value); if (!result) throw new Error('CASE_NOT_FOUND'); return result; }
+export function isTrainableCase(value: string) { return Boolean(findPublicCase(value)); }

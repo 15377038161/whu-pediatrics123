@@ -1,3 +1,4 @@
+import { resolveCaseId } from '@/lib/case-identity';
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { NextRequest } from 'next/server';
@@ -25,7 +26,8 @@ function isStudentMediaAccessEnabled(): boolean {
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireUser(request, 'student');
-    const { id } = await context.params;
+    const { id: requestedId } = await context.params;
+    const id = resolveCaseId(requestedId);
     const root = getTeacherCaseResourceRoot(id);
     const files: CaseResourceEntry[] = [];
     if (root) {

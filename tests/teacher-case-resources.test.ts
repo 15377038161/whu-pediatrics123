@@ -31,7 +31,7 @@ test('学生不可获得知识库原图外链：本地目录缺失时仅教师�
   // 本地 teaching-cases 与资源目录均缺失 → 走知识库快照媒体回退路径
   await mkdir(path.join(temp, 'teaching-cases'), { recursive: true });
   try {
-    const catalogOnly = TEACHER_CASE_CATALOG.find((item) => item.status === 'catalog-only');
+    const catalogOnly = TEACHER_CASE_CATALOG.find((item) => item.id === id);
     assert.ok(catalogOnly, '目录中应存在 catalog-only 病例');
     const context = { params: Promise.resolve({ id: catalogOnly.id }) };
     process.env.PEDIATRICS_SNAPSHOT_TEST_PRIME = '1';

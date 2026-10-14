@@ -21,11 +21,11 @@ export async function POST(request: NextRequest) {
     const user = await requireAuth(request, 'student');
     const parsed = createSessionSchema.safeParse(await request.json());
     if (!parsed.success) return fail({ code: 'INVALID_REQUEST', message: '训练模式无效。', retryable: false }, undefined, 422);
-    const session = await new AgentRepository(user).createSession(parsed.data.mode, parsed.data.caseId, parsed.data.focus);
+    const session = await new AgentRepository(user).createRequestedSession(parsed.data);
     // 防透题投影：建会话响应同样中性化（sourceName 中性标题、tests 剥离）
     return ok(projectSessionForRole(session, user.role), undefined, 201);
   } catch (error) {
     const detail = errorFromUnknown(error);
-    return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'CASE_NOT_FOUND' ? 404 : detail.code === 'CASE_UNPUBLISHED' || detail.code === 'CASE_INSUFFICIENT' ? 403 : 500);
+    return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'CASE_NOT_FOUND' ? 404 : ['NO_ELIGIBLE_CASE', 'ONLY_CURRENT_CASE', 'CREATION_REQUEST_CONFLICT'].includes(detail.code) ? 409 : detail.code === 'CASE_UNPUBLISHED' || detail.code === 'CASE_INSUFFICIENT' ? 403 : 500);
   }
 }

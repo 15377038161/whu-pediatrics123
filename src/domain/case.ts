@@ -1,5 +1,7 @@
+import { verifiedComplaint } from '@/lib/admission-complaint';
+import { sourceExamDefinitions } from '@/domain/exam-methods';
 import type { Emotion, Stage, VitalSigns } from '@/domain/agent';
-import { getPublicCase } from '@/domain/case-catalog';
+import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
 import { getSessionTestsCatalog } from '@/lib/case-snapshot';
 import { readTeacherCaseData, type TeacherCaseData } from '@/lib/teacher-case-data';
 
@@ -194,6 +196,7 @@ export const PEDIATRIC_CASES: FlagshipCase[] = [FLAGSHIP_CASE, FEMALE_WHEEZE_CAS
  *  sessionId 提供时（学生会话）：教学事实读取按会话作用域缓存键（sourceId@version#sessionId）
  *  优先命中本人会话的投影事实，避免读到其他会话/教师直读的完整事实（跨会话泄露）。 */
 export function getCase(caseId: string, version?: string | null, sessionId?: string | null): FlagshipCase {
+  caseId = resolveCaseId(caseId);
   const pediatricCase = PEDIATRIC_CASES.find((item) => item.id === caseId);
   if (pediatricCase) return pediatricCase;
   if (caseId.startsWith('teacher-')) {
@@ -234,23 +237,11 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   const source = readTeacherCaseData(caseId, version, sessionId);
   const unknown = { temperature: null, heartRate: null, respiratoryRate: null, spo2: null };
   const examText = source?.sections.exam ?? '';
-  const snippets = (pattern: RegExp) => examText.split(/[，,；;。\n]/).filter((part) => pattern.test(part)).join('，');
-  const definitions = [
-    ['thermometer', 'forehead', '体温测量', snippets(/体温|\bT\s*[:：]?\s*\d/i)],
-    ['oximeter', 'finger', '血氧监测', snippets(/spo[₂2]|血氧|氧饱和度/i)],
-    ['bp-cuff', 'upper-arm', '血压测量', snippets(/\bBP|血压/i)],
-    ['stethoscope', 'chest', '心肺听诊', snippets(/肺|呼吸音|啰音|罗音|心音|心律|杂音/)],
-    ['tongue-depressor', 'mouth', '口咽检查', snippets(/口|咽|扁桃体|舌/)],
-    ['flashlight', 'forehead', '头面部与眼部检查', snippets(/前囟|瞳孔|眼|耳|鼻|面|头/)],
-    ['inspection', 'skin', '皮肤与一般状态', snippets(/皮肤|黄染|皮疹|水肿|精神|神清|面色|青紫|反应/)],
-    ['palpation', 'abdomen', '腹部检查', snippets(/腹|肝|脾|肠鸣音|肾区|压痛|反跳痛|移动浊音/)],
-    ['reflex-hammer', 'limbs', '四肢与神经系统', snippets(/四肢|神经|肌张力|反射|颈|克氏|布氏|巴氏|双下肢/)],
-  ];
+  const definitions = sourceExamDefinitions(examText);
   const exams: ExamRule[] = [{ id: 'prep-hygiene', toolId: 'hand-hygiene', bodyPartId: 'hands', label: '手卫生与检查说明', result: '已完成手卫生，并向患儿及家长说明检查。', evidenceCode: 'EX_PREP', requires: [], risk: 'normal' }];
   definitions.forEach(([toolId, bodyPartId, label, result]) => {
-    if (result) exams.push({ id: `source-exam-${toolId}`, toolId, bodyPartId, label, result: `病例记录：${result}。`, evidenceCode: `SOURCE_EX_${toolId}_${bodyPartId}`, requires: ['EX_PREP'], risk: 'normal' });
+    if (result) exams.push({ id: `source-exam-${toolId}-${bodyPartId}`, toolId, bodyPartId, label, result: `病例记录：${result}。`, evidenceCode: `SOURCE_EX_${toolId}_${bodyPartId}`, requires: ['EX_PREP'], risk: 'normal' });
   });
-  if (examText && exams.length === 1) exams.push({ id: 'source-exam', toolId: 'inspection', bodyPartId: 'skin', label: '查看原始查体记录', result: examText, evidenceCode: 'SOURCE_EX_ALL', requires: ['EX_PREP'], risk: 'normal' });
   const testLines = source?.sections.tests.split('\n').filter((line) => line.trim() && !/^(?:辅助检查|辅检|入院后辅检)[：:]?$/.test(line.trim())) ?? [];
   // 目录/结果分离：label 走白名单最长前缀匹配（trustedTestLabel，与 SQL 迁移 20261011160000 同规则）——
   // 冒号前缀不保证无答案（「降钙素原 0.58 ng/mL：明显升高」会把数值带入目录），
@@ -271,9 +262,9 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
     }
   }
   return {
-    ...profile, version: 2, age: source?.age ?? '年龄未记录', sex: source?.sex ?? '性别未记录', patientName: '小朋友',
-    triage: source ? `${source.age}患儿就诊。${source.complaint}。` : '请先采集主诉、现病史和一般状态。本病种尚未加载独立病例正文，可记录自己的问诊与诊疗思路。',
-    openingParent: source ? `医生，孩子这次主要是${source.complaint.replace(/^[：:\s]+/, '')}，请您看看。` : '医生，具体病史还需要补充，请先告诉我您想了解什么。',
+    ...profile, id: caseId, version: 2, age: source?.age ?? '年龄未记录', sex: source?.sex ?? '性别未记录', patientName: '小朋友',
+    triage: source ? `${source.age}患儿就诊。${verifiedComplaint(source) ?? '主诉需进一步核实'}。` : '请先采集主诉、现病史和一般状态。本病种尚未加载独立病例正文，可记录自己的问诊与诊疗思路。',
+    openingParent: source ? `医生，孩子这次主要是${verifiedComplaint(source) ?? '不舒服，具体情况还需核实'}，请您看看。` : '医生，具体病史还需要补充，请先告诉我您想了解什么。',
     initialEmotion: 'nervous', initialVitals: source?.vitals ?? unknown, stages: FLAGSHIP_CASE.stages,
     history: [], exams, tests, sourceFacts: source,
   };

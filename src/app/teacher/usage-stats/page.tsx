@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, BarChart3, CalendarRange, Download, Filter, LoaderCircle, Timer, TrendingUp, Users, AlertTriangle } from 'lucide-react';
 import type { UsageStatsResult, StudentUsageRow } from '@/app/api/teacher/usage-stats/route';
 import { formatDate } from '@/lib/format-date';
-import { authedFetch } from '@/lib/authed-api';
+import { authedFetch, authedFetchRaw } from '@/lib/authed-api';
 
 const MODE_LABELS: Record<string, string> = {
   guided: '带教引导',
@@ -134,13 +134,13 @@ export default function TeacherUsageStatsPage() {
     const url = buildQuery(filters, undefined, 'csv');
     void (async () => {
       try {
-        const response = await fetch(url, { credentials: 'same-origin' });
+        const response = await authedFetchRaw(url);
         if (!response.ok) throw new Error('导出失败');
         const blob = await response.blob();
         const objectUrl = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = objectUrl;
-        anchor.download = `usage-stats-${new Date().toISOString().slice(0, 10)}.csv`;
+        anchor.download = `usage-stats-${formatDate(new Date()).replaceAll('/', '-')}.csv`;
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();

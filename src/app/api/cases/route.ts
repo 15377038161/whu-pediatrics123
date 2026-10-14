@@ -1,8 +1,10 @@
+import { resolveCaseId } from '@/lib/case-identity';
 import { NextRequest } from 'next/server';
 import { CASE_CATALOG } from '@/domain/case-catalog';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { requireAuth } from '@/lib/request-auth';
 import { getUnpublishedCaseIds } from '@/lib/case-publication';
+import { admissionProfile } from '@/lib/case-admission';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,14 +17,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth(request);
-    if (user.role === 'teacher' || !user.accessToken) return ok(CASE_CATALOG);
-    try {
-      const unpublished = await getUnpublishedCaseIds(user.accessToken);
-      if (unpublished.size === 0) return ok(CASE_CATALOG);
-      return ok(CASE_CATALOG.filter((item) => !(item.id.startsWith('teacher-') && unpublished.has(item.id))));
-    } catch {
-      return ok(CASE_CATALOG);
-    }
+    const unpublished = user.role === 'teacher' ? new Set<string>() : await getUnpublishedCaseIds(user.accessToken);
+    return ok(CASE_CATALOG.filter(item => !unpublished.has(resolveCaseId(item.id))).map(admissionProfile));
   } catch (error) {
     const detail = errorFromUnknown(error);
     return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : 500);

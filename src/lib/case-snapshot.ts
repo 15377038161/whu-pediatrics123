@@ -273,12 +273,13 @@ function buildSnapshot(caseId: string, caseName: string, chunks: Array<{ text: s
 export async function ensureCaseSnapshot(caseId: string, options?: { accessToken?: string | null; teacher?: boolean }): Promise<SnapshotResult | null> {
   const sourceId = getTeacherSourceId(caseId);
   const item = TEACHER_CASE_CATALOG.find((entry) => entry.id === sourceId);
-  if (!item || !isKnowledgeConfigured()) return null;
+  if (!item) return null;
   // 来源守卫（失败关闭）：别名解析后仍无已审核来源文件夹（D 类 3 项缺独立来源）不召回，
   // 保持「资料不足」，不因关键词召回拼入其他患者事实。
   if (!item.folder) return null;
   const entry = snapshotStore.get(sourceId);
   if (entry && entry.expiresAt > Date.now()) return { data: entry.data, media: entry.media, meta: entry.meta };
+  if (!isKnowledgeConfigured()) return null;
   if (entry?.inflight) return entry.inflight;
   const task = (async (): Promise<SnapshotResult | null> => {
     try {

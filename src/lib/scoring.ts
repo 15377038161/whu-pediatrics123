@@ -120,6 +120,7 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
 
   return {
     id: reportId,
+    studentDecision: session.decision ? { ...session.decision } : null,
     sessionId: session.id,
     userId: session.userId,
     caseId: session.caseId,
@@ -154,6 +155,7 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
   if (diagnosisReference) evidence.push({ code: 'SOURCE_DIAGNOSIS_REFERENCE', label: '原病例诊断对照', achieved: true, score: 0, maxScore: 0, detail: diagnosisReference, eventIds: [] });
   if (planReference) evidence.push({ code: 'SOURCE_PLAN_REFERENCE', label: '原病例诊疗经过对照', achieved: true, score: 0, maxScore: 0, detail: planReference, eventIds: [] });
   return { id: reportId, sessionId: session.id, userId: session.userId, caseId: session.caseId, mode: session.mode,
+    studentDecision: session.decision ? { ...session.decision } : null,
     caseTitle: resolveCaseTitleForReport(session),
     totalScore: Object.values(abilities).reduce((sum, score) => sum + score, 0), abilities, evidence,
     strengths: checks.filter((check) => check.complete).map((check) => check.label), improvements: checks.filter((check) => !check.complete).map((check) => check.label),

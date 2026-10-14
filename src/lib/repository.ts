@@ -6,7 +6,10 @@ import { ensureCaseSnapshot, getSnapshotVersion, listCaseTests, restoreCaseSnaps
 import { resolveTeacherCaseVersion } from '@/lib/case-version-select';
 import { assertCasePublishedForNewSession } from '@/lib/case-publication';
 import { isScorableCase } from '@/domain/case-classification';
-import { getPublicCase } from '@/domain/case-catalog';
+import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
+import { eligibleAdmissions, selectAdmission } from '@/lib/case-admission';
+import { getUnpublishedCaseIds } from '@/lib/case-publication';
+import { creationSessionId, creationFingerprint, type SessionCreationOptions } from '@/lib/session-creation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface TeacherStudentSummary {
@@ -110,7 +113,39 @@ export class AgentRepository {
     return getSupabaseUserClient(this.actor.accessToken);
   }
 
-  async createSession(mode: SessionMode, caseId?: string, practiceFocus?: PracticeFocus): Promise<SessionState> {
+  async createRequestedSession(options: SessionCreationOptions): Promise<SessionState> {
+    options = { ...options, caseId: options.caseId ? resolveCaseId(options.caseId) : undefined, excludeCaseId: options.excludeCaseId ? resolveCaseId(options.excludeCaseId) : undefined };
+    const fingerprint = creationFingerprint(options);
+    const id = options.clientRequestId ? creationSessionId(this.actor.id, options.clientRequestId) : undefined;
+    if (id) {
+      try {
+        const existing = await this.getSession(id);
+        if (existing.creationRequest !== fingerprint) throw new Error('CREATION_REQUEST_CONFLICT');
+        return existing;
+      } catch (error) {
+        if (!(error instanceof Error && error.message === 'SESSION_NOT_FOUND')) throw error;
+      }
+    }
+    const caseId = options.random
+      ? selectAdmission(eligibleAdmissions(await getUnpublishedCaseIds(this.actor.accessToken)), options.excludeCaseId, options.allowRepeat)
+      : options.caseId;
+    try {
+      const created = await this.createSession(options.mode, caseId, options.focus, id, fingerprint);
+      if (created.creationRequest !== fingerprint) throw new Error('CREATION_REQUEST_CONFLICT');
+      return created;
+    }
+    catch (error) {
+      // 数据库唯一主键覆盖并发、断网重试及进程重启；不吞掉普通写入错误。
+      if (id && (error as { code?: string }).code === '23505') {
+        const existing = await this.getSession(id);
+        if (existing.creationRequest !== fingerprint) throw new Error('CREATION_REQUEST_CONFLICT');
+        return existing;
+      }
+      throw error;
+    }
+  }
+
+  async createSession(mode: SessionMode, caseId?: string, practiceFocus?: PracticeFocus, creationId?: string, fingerprint?: string): Promise<SessionState> {
     // 版本选择（权威稳定序，详见 case-version-select.ts）：本地完整审核哈希 > DB 导入版本 > 召回快照。
     // 防止完整本地材料被绑定零散召回指纹；召回已有不完整版本不能挡住 DB 完整导入版本。
     // 旧会话不受影响：getSession 按会话已绑定版本恢复，保持不漂移。
@@ -136,9 +171,12 @@ export class AgentRepository {
       const version = resolution.version;
       if (resolution.coldStart) coldStartVersion = version;
       const session = createInitialSession(this.actor.id, mode, caseId, practiceFocus, version);
+      if (creationId) session.id = creationId;
+      if (fingerprint) session.creationRequest = fingerprint;
       if (version) session.sourceSnapshotVersion = version;
       if (this.isPreview()) {
         const store = memoryStore();
+        if (store.sessions.has(session.id)) return clone(store.sessions.get(session.id)!);
         store.users.set(this.actor.id, this.actor);
         store.sessions.set(session.id, clone(session));
         return session;
@@ -185,8 +223,11 @@ export class AgentRepository {
       return session;
     }
     const session = createInitialSession(this.actor.id, mode, caseId, practiceFocus);
+    if (creationId) session.id = creationId;
+    if (fingerprint) session.creationRequest = fingerprint;
     if (this.isPreview()) {
       const store = memoryStore();
+      if (store.sessions.has(session.id)) return clone(store.sessions.get(session.id)!);
       store.users.set(this.actor.id, this.actor);
       store.sessions.set(session.id, clone(session));
       return session;

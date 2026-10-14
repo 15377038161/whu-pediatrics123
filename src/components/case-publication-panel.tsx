@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { formatDateTime } from '@/lib/format-date';
 import { authedFetch } from '@/lib/authed-api';
 
 interface PublicationRow {
@@ -102,7 +103,7 @@ export function CasePublicationPanel() {
                   <tr key={row.caseId}>
                     <td>{row.caseId}</td>
                     <td>{row.published ? '已发布' : '已下架'}</td>
-                    <td>{row.updatedAt ? new Date(row.updatedAt).toLocaleString('zh-CN') : '—'}</td>
+                    <td>{row.updatedAt ? formatDateTime(row.updatedAt) : '—'}</td>
                     <td>{row.reason || '—'}</td>
                     <td>
                       <button className="btn btn-secondary" onClick={() => void toggle(row)} disabled={busy !== null}>

@@ -55,7 +55,7 @@ function hasIndexedMaterials(profile: PublicCaseProfile): boolean {
 
 /** 单病例分类画像（纯函数，仅依赖中性目录字段）。资料不足 = 教师病例无独立材料且无源关联。 */
 export function classifyCase(profile: PublicCaseProfile): CaseClassification {
-  const isTeacher = profile.id.startsWith('teacher-');
+  const isTeacher = !profile.id.startsWith('peds-');
   const linked = isTeacher && profile.sourceRelation !== null;
   const hasFolder = isTeacher && hasIndexedMaterials(profile);
   const isInsufficient = isTeacher && !hasFolder && !linked;

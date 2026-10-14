@@ -1,3 +1,4 @@
+import { resolveCaseId } from '@/lib/case-identity';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createInitialSession, runAgentTurn } from '@/lib/agent-engine';
@@ -157,13 +158,13 @@ test('沉浸式会话保留统一病例内核并初始化场景状态', () => {
 });
 
 test('全部教师病例均可创建训练、沉浸式与OSCE会话', () => {
-  const teacherCases = CASE_CATALOG.filter((item) => item.id.startsWith('teacher-'));
+  const teacherCases = CASE_CATALOG.filter((item) => item.id.startsWith('case-'));
   assert.equal(teacherCases.length, 70);
   for (const item of teacherCases) {
-    assert.equal(getCase(item.id).id, item.id);
+    assert.equal(getCase(item.id).id, resolveCaseId(item.id));
     for (const mode of ['guided', 'immersive', 'osce'] as const) {
       const session = createInitialSession('student-1', mode, item.id);
-      assert.equal(session.caseId, item.id);
+      assert.equal(session.caseId, resolveCaseId(item.id));
       assert.equal(session.mode, mode);
       assert.ok(session.caseOptions);
     }

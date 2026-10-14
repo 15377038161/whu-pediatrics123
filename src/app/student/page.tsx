@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Bone, ClipboardCheck, Clock3, HeartPulse, MessagesSquare, Sparkles, Stethoscope } from 'lucide-react';
 import Image from 'next/image';
+import { RandomAdmission } from '@/components/random-admission';
 import Link from 'next/link';
 import { CASE_CATALOG, getPublicCase, isTrainableCase } from '@/domain/case-catalog';
 import type { SessionState, TrainingReport } from '@/domain/agent';
@@ -43,7 +44,7 @@ export default function StudentHome() {
   const latestReport = reports?.[0];
   const active = sessions?.find((session) => session.status === 'active' && isTrainableCase(session.caseId));
   const activeProfile = active ? getPublicCase(active.caseId) : CASE_CATALOG[0];
-  const activeCase = active?.caseOptions ? { ...activeProfile, age: active.caseOptions.age } : activeProfile;
+  const activeCase = active?.caseOptions ? { ...activeProfile, title: active.caseOptions.complaint ?? active.caseOptions.sourceName, age: active.caseOptions.age } : activeProfile;
   const abilities = latestReport?.abilities;
 
   if (error) {
@@ -76,7 +77,7 @@ export default function StudentHome() {
             <a className="btn btn-primary" href={active ? `/student/training?session=${active.id}` : `/student/training?mode=guided&case=${activeCase.id}`}>
               {active ? '继续训练' : '开始接诊'} <ArrowRight size={17} />
             </a>
-            <a className="btn btn-secondary" href="/student/practice"><Sparkles size={16} /> 先做专项热身</a>
+            <RandomAdmission excludeCaseId={active?.caseId} /><a className="btn btn-secondary" href="/student/practice"><Sparkles size={16} /> 先做专项热身</a>
           </div>
           <div className="case-note">{activeCase.expectedMinutes > 0 && <span><Clock3 size={14} /> 建议 {activeCase.expectedMinutes} 分钟</span>}<span><HeartPulse size={14} /> 自主问诊与检查</span><span>过程自动保存</span></div>
         </div>
@@ -101,7 +102,7 @@ export default function StudentHome() {
           <span className="entry-mark"><ClipboardCheck /></span><h3>OSCE 考站</h3><p>同一病例切换为限时、无提示、不可重试的证据化考核。</p><span className="entry-meta">查看考站说明 <ArrowRight size={14} /></span>
         </a>
         <a className="entry" href="/student/anatomy">
-          <span className="entry-mark"><Bone /></span><h3>3D 解剖实验室</h3><p>用爆炸视图认识人体骨骼结构，为查体和病例定位建立空间基础。</p><span className="entry-meta">进入实验室 <ArrowRight size={14} /></span>
+          <span className="entry-mark"><Bone /></span><h3>解剖示意学习</h3><p>通过二维部件示意认识结构位置，为查体定位提供辅助。</p><span className="entry-meta">查看解剖示意 <ArrowRight size={14} /></span>
         </a>
       </div>
 

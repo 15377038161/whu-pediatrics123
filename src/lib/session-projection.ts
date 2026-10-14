@@ -1,5 +1,7 @@
 import type { AppRole, SessionState } from '@/domain/agent';
-import { findPublicCase } from '@/domain/case-catalog';
+import { findPublicCase, publicCaseId } from '@/lib/case-identity';
+import { verifiedComplaint } from '@/lib/case-admission';
+import { readTeacherCaseData } from '@/lib/teacher-case-data';
 
 /**
  * 学生会话公开投影（防透题，2026-10-12 第一批任务1）：
@@ -19,14 +21,21 @@ import { findPublicCase } from '@/domain/case-catalog';
  * 只过滤响应投影，不修改持久化状态（投影是纯函数，原始 state 落库不变）。
  */
 export function projectSessionForRole(session: SessionState, role: AppRole): SessionState {
-  if (role === 'teacher' || session.status !== 'active') return session;
-  if (!session.caseOptions) return session;
+  if (role === 'teacher') return session;
+  const publicSession = { ...session, caseId: publicCaseId(session.caseId) };
+  // 创建指纹包含服务端原病例ID，仅用于幂等核对，不能作为公开会话字段。
+  delete publicSession.creationRequest;
+  if (session.status !== 'active') return publicSession;
+  if (!session.caseOptions) return session.creationRequest ? publicSession : session;
   const profile = findPublicCase(session.caseId);
+  const complaint = verifiedComplaint(readTeacherCaseData(session.caseId, session.sourceSnapshotVersion, session.id));
   return {
-    ...session,
+    ...publicSession,
+    caseId: publicCaseId(session.caseId),
     caseOptions: {
       ...session.caseOptions,
-      sourceName: profile?.title ?? '真实教学病例',
+      sourceName: complaint ?? profile?.title ?? '真实教学病例',
+      complaint: complaint ?? undefined,
       tests: [],
     },
   };
