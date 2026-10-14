@@ -233,11 +233,16 @@ textarea { resize: vertical; }
 .anatomy-stage, .anatomy-info { border: 1px solid var(--line); border-radius: 24px; background: rgba(255,255,255,.86); box-shadow: 0 16px 45px rgba(23,60,60,.07); }
 .anatomy-stage { min-height: 620px; position: relative; overflow: hidden; background: radial-gradient(circle at 50% 35%, #eff9f4, #dcece6 58%, #c6ddd6); }
 .anatomy-stage-toolbar { position: absolute; top: 16px; right: 16px; z-index: 5; display: flex; gap: 7px; }
-.anatomy-three { position: absolute; inset: 62px 0 74px; }
+.anatomy-three { position: absolute; inset: 62px 0 108px; }
 .anatomy-model-status { position: absolute; left: 18px; bottom: 88px; color: var(--muted); font-size: 12px; pointer-events: none; }
 .anatomy-loading { padding: 100px 24px; text-align: center; }
 .anatomy-info select { display: block; width: 100%; margin: 8px 0 20px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: white; color: var(--ink); }
 .anatomy-attribution { font-size: 12px; line-height: 1.8; }
+.anatomy-zoom-controls { position: absolute; left: 18px; top: 18px; display: flex; gap: 6px; z-index: 5; }
+.anatomy-selection-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.anatomy-search-label { display: block; margin-top: 16px; font-size: 13px; }
+.anatomy-search-label input { display: block; width: 100%; padding: 10px; margin-top: 6px; border: 1px solid var(--line); border-radius: 12px; }
+.anatomy-part-list button span small { display: block; font-size: 10px; color: var(--muted); margin-top: 4px; }
 .explode-control { position: absolute; left: 28px; right: 28px; bottom: 25px; z-index: 5; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 11px 14px; border-radius: 14px; background: rgba(255,255,255,.75); color: var(--ink); font-size: 13px; font-weight: 800; }
 .explode-control input { accent-color: var(--moss); }
 .anatomy-info { padding: 24px; }
@@ -735,6 +740,8 @@ textarea { resize: vertical; }
   .anatomy-lab-head .btn { width: 100%; }
   .anatomy-lab-grid { grid-template-columns: 1fr; }
   .anatomy-stage { min-height: 560px; }
+  .anatomy-zoom-controls { top: 72px; }
+  .anatomy-three { top: 120px; bottom: 155px; }
   .anatomy-model-status { bottom: 125px; left: 20px; right: 20px; font-size: 11px; }
   .explode-control { left: 12px; right: 12px; grid-template-columns: 1fr auto; }
   .explode-control input { grid-column: 1 / -1; grid-row: 2; width: 100%; }

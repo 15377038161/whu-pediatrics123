@@ -8,21 +8,29 @@ from collections import defaultdict, Counter
 import numpy as np
 
 root=Path(sys.argv[1]); source=root/'PIPER_ChildModel_6YO'
+age=re.search(r'<anthropometry name="age">.*?<value>(.*?)</value>',(source/'Child_model.pmr').read_text(),re.S)
+if not age or float(age.group(1))!=6: raise ValueError('Only verified 6-year-old source is supported')
 out=Path('public/models/anatomy'); out.mkdir(parents=True,exist_ok=True)
-parts={}
-for file in source.glob('*.k'):
+parts={}; part_files={}
+for file in sorted(source.glob('*.k')):
     lines=[x.strip() for x in file.read_text(errors='replace').splitlines() if x.strip() and not x.lstrip().startswith('$')]
     for i,line in enumerate(lines):
-        if line=='*PART': parts[int(lines[i+2].split()[0])]=lines[i+1]
+        if line=='*PART':
+            pid=int(lines[i+2].split()[0])
+            if pid in parts: raise ValueError(f'Duplicate part definition: {pid}')
+            parts[pid]=lines[i+1];part_files[pid]=file.name
 chosen={pid:name for pid,name in parts.items() if '_BO_' in name}
 nodes={}; shells=defaultdict(list); solids=defaultdict(list); state=''; skip=0
-mesh_text='\n'.join((source/name).read_text() for name in ('mesh_PIPER_Body.k','main_Head_Skull.k','main_Neck.k'))
+mesh_files=sorted({'mesh_PIPER_Body.k',*(part_files[pid] for pid in chosen)})
+mesh_text='\n'.join((source/name).read_text() for name in mesh_files)
 for line in mesh_text.splitlines():
     if not line.strip() or line.startswith('$'): continue
     if line.startswith('*'): state=line.strip();skip=0;continue
     if state=='*NODE':
         # LS-DYNA node fields use 8 + 3*16 columns, even when no whitespace separates floats.
-        nodes[int(line[:8])]=[float(line[8:24]),float(line[24:40]),float(line[40:56])]
+        nid=int(line[:8]);xyz=[float(line[8:24]),float(line[24:40]),float(line[40:56])]
+        if nid in nodes and not np.allclose(nodes[nid],xyz,atol=1e-8,rtol=0):raise ValueError(f'Conflicting node: {nid}')
+        nodes[nid]=xyz
     elif state in ('*ELEMENT_SOLID','*ELEMENT_SHELL','*ELEMENT_SHELL_THICKNESS'):
         if skip: skip=0;continue
         values=[int(line[i:i+8]) for i in range(0,len(line.rstrip()),8) if line[i:i+8].strip()]
@@ -43,7 +51,7 @@ def region(name):
     if name.startswith('HE_'):return 'skull'
     if name.startswith('NK_') or re.search(r'TX_BO_[TL]\d',name):return 'spine'
     if name.startswith('PV_'):return 'pelvis'
-    if name.startswith('UX_'):return 'left-arm' if '_L_' in name else 'right-arm'
+    if name.startswith('UX_') or 'Scapula' in name or 'Clavicle' in name:return 'left-arm' if '_L_' in name else 'right-arm'
     if name.startswith('LX_'):return 'left-leg' if '_L_' in name else 'right-leg'
     return 'thorax'
 
@@ -67,27 +75,36 @@ for pid,name in sorted(chosen.items()):
     # Z-up millimetres -> Y-up metres: no geometry/proportion changes.
     pos=np.array([[nodes[n][1]/1000,nodes[n][2]/1000,nodes[n][0]/1000] for n in used],dtype='<f4')
     idx=np.array([[lookup[n] for n in t] for t in triangles],dtype='<u4')
-    normals=np.zeros_like(pos)
+    normals=np.zeros_like(pos);fallback_normals=np.zeros_like(pos)
     for face in idx:
         normal=np.cross(pos[face[1]]-pos[face[0]],pos[face[2]]-pos[face[0]])
-        for n in face:normals[n]+=normal
-    lengths=np.linalg.norm(normals,axis=1);normals/=np.maximum(lengths[:,None],1e-12)
+        for n in face:
+            normals[n]+=normal
+            if np.linalg.norm(normal)>1e-12:fallback_normals[n]=normal
+    lengths=np.linalg.norm(normals,axis=1)
+    # 相反绕序的相邻面可能抵消法线；只修正渲染法线，不更改骨骼顶点。
+    weak=lengths<1e-12;normals[weak]=fallback_normals[weak]
+    lengths=np.linalg.norm(normals,axis=1)
+    if np.any(lengths<1e-12):raise ValueError(f'No valid normal for part {pid}')
+    normals/=lengths[:,None]
     p=accessor(pos,5126,'VEC3',34962);n=accessor(normals.astype('<f4'),5126,'VEC3',34962);i=accessor(idx.flatten(),5125,'SCALAR',34963)
     r=region(name);label=next((v for k,v in translations.items() if k in name),labels[r])
     vertebra=re.search(r'_([CTL]\d+)_',name)
     if vertebra:label=vertebra[1]+'椎骨'
+    rib=re.search(r'_Rib(\d+)_',name)
+    if rib:label=f'第{rib.group(1)}肋骨'
     if '_L_' in name:label+='（左）'
     elif '_R_' in name:label+='（右）'
     suffix='骨骺' if 'Epiph' in name else '干骺端' if 'Metaph' in name else '骨干' if 'Diaph' in name else ''
     label+=('近端' if 'Proximal' in name else '远端' if 'Distal' in name else '')+suffix
-    item={'id':str(pid),'label':label,'region':r,'sourcePart':name,'triangles':len(idx)};manifest.append(item)
+    item={'id':str(pid),'label':label,'region':r,'sourcePart':name,'surfaceKind':'壳单元表面' if shells.get(pid) else '实体外表面','triangles':len(idx)};manifest.append(item)
     meshes.append({'name':name,'primitives':[{'attributes':{'POSITION':p,'NORMAL':n},'indices':i,'material':0}]})
     gltf_nodes.append({'name':'part-'+str(pid),'mesh':len(meshes)-1,'extras':item})
 doc={'asset':{'version':'2.0','generator':'PIPER 6YO surface extraction','copyright':'PIPER project contributors; GPLv3 + liability/open science clauses'},'scene':0,'scenes':[{'nodes':list(range(len(gltf_nodes)))}],'nodes':gltf_nodes,'meshes':meshes,'materials':[{'doubleSided':True,'pbrMetallicRoughness':{'baseColorFactor':[.88,.82,.7,1],'metallicFactor':0,'roughnessFactor':.65}}],'buffers':[{'byteLength':len(blob)}],'bufferViews':views,'accessors':accessors}
 j=json.dumps(doc,separators=(',',':')).encode();j+=b' ' *((-len(j))%4);blob.extend(b'\0'*((-len(blob))%4))
 glb=struct.pack('<III',0x46546c67,2,12+8+len(j)+8+len(blob))+struct.pack('<II',len(j),0x4e4f534a)+j+struct.pack('<II',len(blob),0x004e4942)+blob
 (out/'piper-child-6yo.glb').write_bytes(glb)
-(out/'manifest.json').write_text(json.dumps({'age':6,'posture':'原始研究模型姿势','parts':manifest,'regions':labels,'meshSha256':hashlib.sha256(glb).hexdigest()},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+(out/'manifest.json').write_text(json.dumps({'age':6,'posture':'原始研究模型姿势','sourceFiles':{name:hashlib.sha256((source/name).read_bytes()).hexdigest() for name in mesh_files},'parts':manifest,'regions':labels,'meshSha256':hashlib.sha256(glb).hexdigest()},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 # Corresponding source is supplied together with derived mesh, not fetched at runtime.
 with zipfile.ZipFile(out/'piper-corresponding-source.zip','w',zipfile.ZIP_DEFLATED) as archive:
     for file in source.rglob('*'):
