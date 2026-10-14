@@ -9,12 +9,16 @@ export const dynamic = 'force-dynamic';
 
 /**
  * 教师单例上下架 API（仅教师）：
- * - GET  /api/teacher/case-publication  53 例目录发布状态对照（无行=已发布缺省开放）
+ * - GET  /api/teacher/case-publication  目录发布状态对照（全部教师病例目录条目，含 folder=null
+ *   的 catalog-only 条目，missingSource 标记"缺少原始接诊资料"；无行=已发布缺省开放）
  * - POST /api/teacher/case-publication  body: { caseId, published, reason? }
  *   下架插入/更新 published=false 行；重新上架置 true（保留行作审计痕迹）。
  *
  * 安全边界（与 case-drafts/case-import 路由同一模式）：
  * - 严格交集：应用层教师角色（requireAuth 'teacher'）AND 数据库白名单（app_is_teacher RPC）；
+ * - 目录有效性 = 存在于教师病例目录（TEACHER_CASE_CATALOG）；folder=null 条目同样可上下架
+ *   （缺原始资料的目录病例需要可恢复停用），未知 ID 拒绝 CASE_NOT_FOUND；
+ * - 该放宽仅限发布管理，不适用于病例导入（无资料病例依旧不能导入）；
  * - 下架不删除 case_snapshot_facts/answers 原文，不触碰历史会话与成绩；
  * - 幂等初始化（facts/answers 导入）不写 case_publication，不重置下架决定；
  * - 学生守卫仅拦截新建会话与目录展示；既有会话恢复、教师访问不受影响。

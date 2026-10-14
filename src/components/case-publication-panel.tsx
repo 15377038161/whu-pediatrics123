@@ -2,7 +2,8 @@
 
 /**
  * 教师单例上下架面板（仅教师）：
- * - GET /api/teacher/case-publication：53 例发布状态对照（无行=已发布缺省开放）
+ * - GET /api/teacher/case-publication：目录发布状态对照（全部教师病例目录条目，含
+ *   folder=null 的 catalog-only 条目，missingSource 展示"缺少原始接诊资料"；无行=已发布缺省开放）
  * - POST /api/teacher/case-publication：{ caseId, published, reason? }
  * 语义：下架=可恢复停用（不删原文/历史会话/成绩）；学生不可新建该病例训练且目录隐藏；
  * 既有会话恢复与教师访问不受影响；幂等初始化不重置下架决定。
@@ -19,6 +20,8 @@ interface PublicationRow {
   updatedAt: string | null;
   updatedBy: string | null;
   reason: string;
+  /** true = 目录条目缺少原始接诊资料（folder=null，catalog-only）。 */
+  missingSource?: boolean;
 }
 
 interface PublicationOverview {
@@ -101,7 +104,12 @@ export function CasePublicationPanel() {
               <tbody>
                 {overview.cases.map((row) => (
                   <tr key={row.caseId}>
-                    <td>{row.caseId}</td>
+                    <td>
+                      {row.caseId}
+                      {row.missingSource && (
+                        <span className="publication-missing-source" title="该目录条目缺少原始接诊资料（folder=null），下架不影响既有训练记录">缺少原始接诊资料</span>
+                      )}
+                    </td>
                     <td>{row.published ? '已发布' : '已下架'}</td>
                     <td>{row.updatedAt ? formatDateTime(row.updatedAt) : '—'}</td>
                     <td>{row.reason || '—'}</td>

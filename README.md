@@ -110,11 +110,12 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 
 ## 教师单例上下架（发布状态）
 
-教师在「病例草稿」页底部的「病例发布状态」面板可对 53 份 teacher 病例逐例上架/下架（`/api/teacher/case-publication`，双重授权同上）：
+教师在「病例草稿」页底部的「病例发布状态」面板可对教师病例目录的全部条目逐例上架/下架（`/api/teacher/case-publication`，双重授权同上）。目录有效性 = 存在于教师病例目录：`folder=null` 的 catalog-only 条目（缺少原始接诊资料）同样纳入管理，面板以「缺少原始接诊资料」徽章标记；未知 ID 拒绝（`CASE_NOT_FOUND`）。该放宽仅限发布管理，病例导入仍要求完整资料。
 
-- 语义：无行 = 已发布（缺省开放，兼容现状 53 入口）；下架写入 `case_publication.published=false`，是**可恢复停用**——不删除病例原文（`case_snapshot_*`）与历史训练记录/成绩；重新上架置 true 并保留行作审计痕迹（含操作时间与理由）。
+- 语义：无行 = 已发布（缺省开放）；下架写入 `case_publication.published=false`，是**可恢复停用**——不删除病例原文（`case_snapshot_*`）与历史训练记录/成绩；重新上架置 true 并保留行作审计痕迹（含操作时间与理由）。
 - 生效范围：学生不能基于已下架病例新建训练（`CASE_UNPUBLISHED` 403），且该病例从学生目录（`/api/cases`）隐藏；教师不受限（可继续预览复核）；学生既有会话的恢复不受影响。病例资料的幂等初始化/导入不写本表，不会重置教师的下架决定。
 - 验收脚本：`pnpm tsx scripts/verify-case53-init-publication.ts --teacher-cred-file ... --student-cred-file ...`（内容保真 53/53 + 上下架守卫闭环 10 项断言）。
+- 缺资料条目暂时下架（2026-10-14，进行中）：3 个无独立接诊资料的目录条目（teacher-新生儿脑梗死 / case-3f7233bb、teacher-支气管肺炎 / case-9651f03b、teacher-格林巴利综合征 / case-5dc2a192）经用户授权执行 `published=false`，理由「缺少原始接诊资料，暂时下架；资料补齐并审核后恢复」。代码与守卫已就绪并经单测/负测验证；**数据库下架未执行**——沙箱环境缺授权教师登录条件（白名单探针密码未注入且凭据文件已随 /tmp 清理丢失），待授权教师登录后经教师后台执行（入口与步骤见 `验收记录.md`「接诊摘要部署与缺资料病例下架」节）。
 
 资料准备依赖 Python（`scripts/requirements-cases.txt`）、LibreOffice（旧版 Word 转换）、FFmpeg（视频转码）。安装后执行 `pnpm prepare:cases`；流程仅生成教学衍生文件，不修改原件。先前生成的旧版 Word 与 MP4 会被复用。
 

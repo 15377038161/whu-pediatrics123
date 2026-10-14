@@ -823,3 +823,6 @@ textarea { resize: vertical; }
 }
 .spin { animation: usage-spin 0.9s linear infinite; }
 @keyframes usage-spin { to { transform: rotate(360deg); } }
+
+/* 教师发布面板：缺少原始接诊资料标记（folder=null 目录条目） */
+.publication-missing-source { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; color: #8a5a00; background: #fff4dc; border: 1px solid #ead9ae; vertical-align: middle; white-space: nowrap; }

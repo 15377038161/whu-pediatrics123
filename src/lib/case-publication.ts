@@ -17,6 +17,8 @@ export interface CasePublicationRow {
   updatedAt: string | null;
   updatedBy: string | null;
   reason: string;
+  /** 缺少原始接诊资料（folder=null 目录条目）：教师列表展示提示，不影响上下架能力。 */
+  missingSource: boolean;
 }
 
 /** 读取全部下架病例 ID（published=false 的行）。无行/无权限/预览态返回空集合。
@@ -41,13 +43,16 @@ export async function assertCasePublishedForNewSession(caseId: string | undefine
   if (unpublished.has(caseId)) throw new Error('CASE_UNPUBLISHED');
 }
 
-/** 教师端：目录病例 + 发布状态对照（供上下架面板）。 */
+/** 教师端：目录病例 + 发布状态对照（供上下架面板）。
+ *  目录有效性 = 存在于教师病例目录（TEACHER_CASE_CATALOG）；folder=null 的 catalog-only
+ *  条目同样纳入管理（可上下架），并以 missingSource 标记"缺少原始接诊资料"。
+ *  未知 ID（不在目录中）仍由 setCasePublication 拒绝。 */
 export async function getCasePublicationOverview(accessToken: string): Promise<CasePublicationRow[]> {
   const db = getSupabaseUserClient(accessToken);
   const { data, error } = await db.from('case_publication').select('case_id,published,updated_at,updated_by,reason');
   if (error) throw error;
   const byId = new Map(((data ?? []) as Array<{ case_id: string; published: boolean; updated_at: string | null; updated_by: string | null; reason: string }>).map((row) => [row.case_id, row]));
-  return TEACHER_CASE_CATALOG.filter((item) => item.folder).map((item) => {
+  return TEACHER_CASE_CATALOG.map((item) => {
     const row = byId.get(item.id);
     return {
       caseId: item.id,
@@ -55,19 +60,23 @@ export async function getCasePublicationOverview(accessToken: string): Promise<C
       updatedAt: row?.updated_at ?? null,
       updatedBy: row?.updated_by ?? null,
       reason: row?.reason ?? '',
+      missingSource: !item.folder,
     };
   });
 }
 
-/** 教师端：上架/下架写入（upsert 单行；updated_by 记录操作教师，保留审计痕迹）。 */
+/** 教师端：上架/下架写入（upsert 单行；updated_by 记录操作教师，保留审计痕迹）。
+ *  目录有效性 = 存在于教师病例目录；folder=null 的 catalog-only 条目同样可上下架
+ *  （缺原始资料的目录病例需要可恢复停用）。未知 ID（不在目录中）拒绝 CASE_NOT_FOUND。
+ *  该放宽仅适用于发布管理，不适用于病例导入（无资料病例依旧不能导入）。 */
 export async function setCasePublication(accessToken: string, teacherId: string, caseId: string, published: boolean, reason: string): Promise<CasePublicationRow> {
-  const catalog = TEACHER_CASE_CATALOG.some((item) => item.id === caseId && item.folder);
-  if (!catalog) throw new Error('CASE_NOT_FOUND');
+  const inCatalog = TEACHER_CASE_CATALOG.some((item) => item.id === caseId);
+  if (!inCatalog) throw new Error('CASE_NOT_FOUND');
   const db = getSupabaseUserClient(accessToken);
   const { error } = await db.from('case_publication').upsert(
     { case_id: caseId, published, updated_by: teacherId, updated_at: new Date().toISOString(), reason },
     { onConflict: 'case_id' },
   );
   if (error) throw error;
-  return { caseId, published, updatedAt: new Date().toISOString(), updatedBy: teacherId, reason };
+  return { caseId, published, updatedAt: new Date().toISOString(), updatedBy: teacherId, reason, missingSource: TEACHER_CASE_CATALOG.find((item) => item.id === caseId)?.folder == null };
 }
