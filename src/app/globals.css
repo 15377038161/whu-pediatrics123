@@ -544,6 +544,7 @@ textarea { resize: vertical; }
 .student-table { width: 100%; border-collapse: collapse; min-width: 680px; }
 .student-table th, .student-table td { padding: 13px 16px; text-align: left; border-bottom: 1px solid var(--line); }
 .student-table th { color: #687976; font-size: 12px; background: #f0f1eb; }
+.student-avatar { display: inline-block; vertical-align: -11px; margin-right: 9px; width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); background: #f0f1eb; }
 .student-table tr:last-child td { border-bottom: 0; }
 .score-tag { display: inline-grid; place-items: center; min-width: 44px; min-height: 32px; border-radius: 9px; background: #edf3ef; font-weight: 800; }
 .score-tag[data-level="strong"] { color: #0e6755; background: #dff5eb; }

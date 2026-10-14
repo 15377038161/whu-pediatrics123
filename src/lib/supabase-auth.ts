@@ -37,6 +37,12 @@ export function normalizeSupabaseUser(user: User): UserContext {
   const fid = text(chaoxing, 'fid');
   const uid = text(chaoxing, 'uid');
   const providerRoles = roles(chaoxing.role);
+  // 平台代理超星 OAuth（supabase-auth 技能 chaoxing-oauth.md/chaoxing-login.md 契约）：
+  // 姓名（realname）与超星号（cxid）随 user_metadata 首建落库，与本地超星身份
+  //（app_metadata.chaoxing.*，应用自带 OAuth 路径）双链兼容；缺失字段按技能约定做空值兜底。
+  const cxid = text(metadata, 'cxid');
+  const realname = text(metadata, 'realname');
+  const chaoxingUid = uid || cxid;
   const hasProviderIdentity = Boolean(fid || uid || providerRoles.length);
   const teacherAllowed = hasProviderIdentity
     ? isTeacherIdentityAllowed({ fid, uid, role: providerRoles })
@@ -45,11 +51,17 @@ export function normalizeSupabaseUser(user: User): UserContext {
   return {
     id: user.id,
     role,
-    displayName: text(metadata, 'full_name') || text(chaoxing, 'displayName') || '用户',
-    avatarUrl: text(metadata, 'avatar_url') || null,
-    studentNo: text(chaoxing, 'studentNo') || null,
+    displayName: text(metadata, 'full_name')
+      || text(chaoxing, 'displayName')
+      || realname
+      || (cxid ? `超星用户 ${cxid}` : '')
+      || '用户',
+    avatarUrl: text(metadata, 'avatar_url')
+      || text(chaoxing, 'avatar')
+      || (chaoxingUid ? `https://photo.chaoxing.com/p/${encodeURIComponent(chaoxingUid)}_80` : null),
+    studentNo: text(chaoxing, 'studentNo') || cxid || null,
     provider: 'chaoxing',
-    chaoxingUid: text(chaoxing, 'uid') || null,
+    chaoxingUid: chaoxingUid || null,
   };
 }
 

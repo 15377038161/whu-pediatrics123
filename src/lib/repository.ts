@@ -16,6 +16,7 @@ export interface TeacherStudentSummary {
   id: string;
   displayName: string;
   studentNo: string | null;
+  avatarUrl: string | null;
   latestScore: number | null;
   latestScoreBasis?: 'clinical' | 'process';
   latestMode: SessionMode | null;
@@ -28,7 +29,13 @@ export interface TeacherStudentSummary {
 export interface TeacherSessionDetail {
   session: SessionState;
   report: TrainingReport | null;
-  student: { id: string; displayName: string; studentNo: string | null };
+  student: { id: string; displayName: string; studentNo: string | null; avatarUrl: string | null };
+}
+
+/** 超星头像 URL（公网可访问，无需接口）：由 profiles.chaoxing_uid 构造。 */
+export function chaoxingAvatarUrl(chaoxingUid: string | null | undefined): string | null {
+  if (!chaoxingUid) return null;
+  return `https://photo.chaoxing.com/p/${encodeURIComponent(chaoxingUid)}_80`;
 }
 
 interface Store {
@@ -443,6 +450,7 @@ export class AgentRepository {
           id: user.id,
           displayName: user.displayName,
           studentNo: user.studentNo,
+          avatarUrl: null,
           latestScore: latest?.totalScore ?? [86, 78, 92][index] ?? null,
           latestScoreBasis: latest?.scoreBasis ?? 'clinical',
           latestMode: latest?.mode ?? 'osce',
@@ -472,7 +480,7 @@ export class AgentRepository {
       ...(sessions ?? []).map((row) => row.user_id as string),
     ])];
     if (ids.length === 0) return [];
-    const { data: profiles, error: profileError } = await db.from('profiles').select('id,display_name,student_no').in('id', ids);
+    const { data: profiles, error: profileError } = await db.from('profiles').select('id,display_name,student_no,chaoxing_uid').in('id', ids);
     if (profileError) throw profileError;
     return (profiles ?? []).map((profile) => {
       const own = (reports ?? []).filter((report) => report.user_id === profile.id);
@@ -482,6 +490,7 @@ export class AgentRepository {
         id: profile.id,
         displayName: profile.display_name,
         studentNo: profile.student_no,
+        avatarUrl: chaoxingAvatarUrl(profile.chaoxing_uid),
         latestScore: latest?.total_score ?? null,
         latestScoreBasis: (latest?.data as TrainingReport | undefined)?.scoreBasis ?? 'clinical',
         latestMode: (latest?.mode as SessionMode | undefined) ?? null,
@@ -515,12 +524,12 @@ export class AgentRepository {
     if (this.isPreview()) {
       const user = memoryStore().users.get(session.userId) ?? { id: session.userId, displayName: '学生', studentNo: null };
       const report = [...memoryStore().reports.values()].find((item) => item.sessionId === id) ?? null;
-      return { session, report: report ? clone(report) : null, student: { id: user.id, displayName: user.displayName, studentNo: user.studentNo } };
+      return { session, report: report ? clone(report) : null, student: { id: user.id, displayName: user.displayName, studentNo: user.studentNo, avatarUrl: null } };
     }
     const db = this.db();
     const [{ data: profile }, { data: reportRow }] = await Promise.all([
       withDatabaseRetry(async () => {
-        const result = await db.from('profiles').select('id,display_name,student_no').eq('id', session.userId).single();
+        const result = await db.from('profiles').select('id,display_name,student_no,chaoxing_uid').eq('id', session.userId).single();
         if (result.error) throw result.error;
         return result;
       }),
@@ -530,6 +539,6 @@ export class AgentRepository {
         return result;
       }),
     ]);
-    return { session, report: reportRow?.data as TrainingReport | null ?? null, student: { id: profile.id, displayName: profile.display_name, studentNo: profile.student_no } };
+    return { session, report: reportRow?.data as TrainingReport | null ?? null, student: { id: profile.id, displayName: profile.display_name, studentNo: profile.student_no, avatarUrl: chaoxingAvatarUrl(profile.chaoxing_uid) } };
   }
 }
