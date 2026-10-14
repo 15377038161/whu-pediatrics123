@@ -11,7 +11,9 @@ export function admissionProfile(profile: PublicCaseProfile): PublicCaseProfile 
   if (!resolveCaseId(profile.id).startsWith('teacher-')) return profile;
   const source = readTeacherCaseData(resolveCaseId(profile.id));
   const complaint = verifiedComplaint(source);
-  return { ...profile, title: complaint ?? '待补充接诊信息', presentingSymptoms: complaint ? [complaint] : [],
+  if (!source || !complaint) return profile;
+  const sex = source.sex === '男' ? '男童' : source.sex === '女' ? '女童' : '患儿';
+  return { ...profile, title: `${source.age}${sex}，${complaint}`, presentingSymptoms: [complaint],
     age: source?.age || '待核验', sex: source?.sex === '男' || source?.sex === '女' ? source.sex : '待核验' };
 }
 
