@@ -45,7 +45,13 @@ export async function POST(request: NextRequest) {
         return fail({ code: 'CROSS_ORIGIN_REJECTED', message: '跨站请求被拒绝', retryable: false }, undefined, 403);
       }
     }
-    const body = (await request.json()) as PlatformSessionBody;
+    let body: PlatformSessionBody;
+    try {
+      body = (await request.json()) as PlatformSessionBody;
+    } catch {
+      // 空 body / 非法 JSON：参数不完整，400 拒绝（不进入 500 兜底）
+      return fail({ code: 'INVALID_SESSION', message: 'session 参数不完整', retryable: false }, undefined, 400);
+    }
     const accessToken = typeof body.access_token === 'string' ? body.access_token.trim() : '';
     const refreshToken = typeof body.refresh_token === 'string' ? body.refresh_token.trim() : '';
     if (!accessToken || !refreshToken) {
