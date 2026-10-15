@@ -1,4 +1,5 @@
 import admissionSummaries from './admission-summaries.json';
+import { patientAppearance } from './patient-appearance';
 const summaries: Record<string, { age: string; sex: string; complaint: string }> = admissionSummaries;
 // 学生侧公开病例目录（防透题收敛，2026-10-12 第一批任务1）：
 // - 教师病例条目为客户端安全的中性目录（学科+序号），病种名/源病种名不进入本文件；
@@ -146,7 +147,7 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
     difficulty: '基础进阶',
     expectedMinutes: 12,
     patientName: '小宁',
-    patientImage: '/media/clinical/virtual-child-girl-front.png',
+    patientImage: '/media/clinical/virtual-child-girl-standing-v2.png',
     patientAlt: '5岁虚拟女童正面站立于儿科诊室，轻度紧张并伴呼吸稍快',
     contentStatus: 'demo-pending-review',
     sourceRelation: null,
@@ -163,7 +164,7 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
     difficulty: item.contentStatus === 'teacher-catalog-only' && item.sourceRelation === null ? '病种自主研习' : '真实案例学习',
     expectedMinutes: 0,
     patientName: '小朋友',
-    patientImage: '/media/clinical/virtual-child-front.png',
+    patientImage: patientAppearance(summaries[item.id]?.sex ?? '待核验','standing',item.id).src ?? '/media/clinical/virtual-child-unclassified.svg',
     patientAlt: '用于检查部位定位的教学示意模型，不代表原病例患儿外貌',
     contentStatus: item.contentStatus,
     sourceRelation: item.sourceRelation,

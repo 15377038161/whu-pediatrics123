@@ -62,7 +62,6 @@ textarea { resize: vertical; }
 .random-admission { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .random-admission p { flex-basis: 100%; margin: 0; color: #9b3c31; font-size: 13px; }
 .report-actions { flex-wrap: wrap; }
-.textbook-feature { font-weight: 600; letter-spacing: .06em; color: #466d61; }
 @media (max-width: 767px) {
   :where(input, textarea, select) { font-size: 16px; }
   :where(.btn, .icon-btn, .stage-chip, .bottom-nav a) { min-height: 44px; }
@@ -87,8 +86,8 @@ textarea { resize: vertical; }
 .brand-logo { width: 62px; height: 62px; object-fit: contain; border-radius: 50%; box-shadow: 0 8px 24px rgba(0,37,84,.12); }
 .brand-name { margin: 0; font-family: var(--font-display); font-size: clamp(29px, 7vw, 48px); letter-spacing: .06em; line-height: 1.15; }
 .brand-kicker { margin: 4px 0 0; color: #68817d; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; }
-.landing-hero-row { position: relative; min-height: 260px; display: flex; align-items: center; }
-.landing-copy { min-width: 0; max-width: 650px; margin: 38px 0 32px; }
+.landing-hero-row { position: relative; min-height: 150px; display: flex; align-items: center; }
+.landing-copy { min-width: 0; max-width: 650px; margin: 30px 0 26px; }
 .landing-copy h2 { max-width: 570px; font-family: var(--font-display); font-size: clamp(34px, 7vw, 52px); line-height: 1.18; margin: 15px 0 12px; font-weight: 800; letter-spacing: .03em; }
 .landing-copy p { margin: 0; color: var(--muted); max-width: 460px; font-size: clamp(14px, 2vw, 17px); }
 .welcome-chip { width: fit-content; min-height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border: 1px solid #f3c9bd; border-radius: 999px; color: #a9473c; background: #fff2ed; font-size: 12px; font-weight: 800; }
@@ -113,25 +112,11 @@ textarea { resize: vertical; }
 .login-actions { display: grid; gap: 10px; }
 .login-panel .login-actions { margin-top: 22px; }
 
-/* ── 双端登录入口（登录入口升级） ── */
-.login-entries { display: grid; gap: 14px; }
-.login-entries-lead { margin: 0; color: var(--muted); font-size: 13px; }
-.login-entry-grid { display: grid; gap: 12px; }
-.login-entry-card { position: relative; overflow: hidden; min-height: 116px; display: grid; align-content: start; gap: 6px; padding: 18px 48px 18px 18px; text-align: left; border: 1px solid rgba(25,117,104,.18); border-radius: 20px 20px 30px 20px; background: var(--white); box-shadow: 0 12px 30px rgba(23,60,60,.07); cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-.login-entry-card:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(23,60,60,.1); }
-.login-entry-card:focus-visible { outline: 3px solid rgba(25,117,104,.4); outline-offset: 2px; }
-.login-entry-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--pine); }
-.login-entry-card-student::before { background: var(--brick); }
-.login-entry-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px 14px 20px 14px; color: var(--pine-dark); background: var(--mint); }
-.login-entry-card-student .login-entry-icon { color: var(--brick); background: #fff2ed; }
-.login-entry-title { font-family: var(--font-display); font-size: 19px; font-weight: 800; letter-spacing: .03em; color: var(--ink); }
-.login-entry-desc { color: var(--muted); font-size: 12px; }
-.login-entry-arrow { position: absolute; right: 16px; top: 18px; color: var(--pine); }
-.login-entry-card-student .login-entry-arrow { color: var(--brick); }
-
+/* ── 登录面板（2026-10-14 按老师批注收敛：取消双入口卡两步流程，教师入口为角落小按钮） ── */
 .login-entry-panel { display: grid; gap: 12px; }
-.login-entry-back { width: fit-content; min-height: 36px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border: 1px solid rgba(23,60,60,.18); border-radius: 999px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; }
-.login-entry-back:hover { border-color: var(--pine); color: var(--pine-dark); background: var(--mint); }
+.login-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.login-teacher-corner { width: fit-content; min-height: 32px; display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border: 1px solid rgba(23,60,60,.2); border-radius: 999px; background: rgba(255,255,255,.7); color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; transition: border-color .18s ease, color .18s ease, background .18s ease; }
+.login-teacher-corner:hover { border-color: var(--pine); color: var(--pine-dark); background: var(--mint); }
 .login-entry-hint { margin: 0; color: var(--muted); font-size: 12.5px; }
 .login-divider { display: flex; align-items: center; gap: 10px; margin: 8px 0 2px; color: #78908b; font-size: 12px; }
 .login-divider::before, .login-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
@@ -359,18 +344,19 @@ textarea { resize: vertical; }
 .patient-stage { position: relative; min-height: 620px; display: grid; place-items: center; overflow: hidden; padding: 14px 10px 78px; background: #e8ece8; }
 .patient-stage::before { content: ""; position: absolute; inset: 14px; border: 1px solid rgba(23,60,60,.13); border-radius: 24px; pointer-events: none; }
 .patient-figure { position: relative; width: min(100%, 360px); aspect-ratio: 957/1644; overflow: hidden; border-radius: 20px; background: #f2efe9; box-shadow: 0 20px 38px rgba(23,60,60,.18); }
-.patient-photo { object-fit: cover; }
-.patient-stage[data-posture="supine"] .patient-figure { aspect-ratio: 2/3; background: #edf3ef; }
+.patient-photo { object-fit: contain; }
+.patient-unspecified { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 28px; text-align: center; color: var(--muted); }
+.patient-stage[data-posture="supine"] .patient-figure { background: #edf3ef; }
 .patient-stage[data-posture="supine"] .patient-photo { object-fit: contain; }
 .patient-stage[data-posture="supine"] .hotspot-forehead { top: 12%; }
 .patient-stage[data-posture="supine"] .hotspot-mouth { top: 22%; }
-.patient-stage[data-posture="supine"] .hotspot-chest { top: 33%; }
-.patient-stage[data-posture="supine"] .hotspot-arm { top: 38%; }
-.patient-stage[data-posture="supine"] .hotspot-skin { top: 43%; }
-.patient-stage[data-posture="supine"] .hotspot-abdomen { top: 52%; }
-.patient-stage[data-posture="supine"] .hotspot-finger { top: 61%; }
-.patient-stage[data-posture="supine"] .hotspot-hands { top: 60%; }
-.patient-stage[data-posture="supine"] .hotspot-limbs { top: 75%; }
+.patient-stage[data-posture="supine"] .hotspot-chest { top: 36%; }
+.patient-stage[data-posture="supine"] .hotspot-arm { top: 43%; }
+.patient-stage[data-posture="supine"] .hotspot-skin { top: 27%; }
+.patient-stage[data-posture="supine"] .hotspot-abdomen { top: 45%; }
+.patient-stage[data-posture="supine"] .hotspot-finger { top: 55%; }
+.patient-stage[data-posture="supine"] .hotspot-hands { top: 55%; }
+.patient-stage[data-posture="supine"] .hotspot-limbs { top: 70%; }
 .posture-selector { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-block: 14px; }
 .posture-selector [aria-pressed="true"] { background: var(--ink); color: var(--paper, #fffdf8); }
 .posture-selector small { color: var(--muted); }
@@ -610,7 +596,7 @@ textarea { resize: vertical; }
   .landing { align-items: center; }
   .landing-content { display: grid; grid-template-columns: minmax(0,1.2fr) 390px; gap: clamp(48px,7vw,100px); align-items: center; padding: 50px 40px; transform: translateY(-6vh); }
   .landing-copy h2 { white-space: nowrap; }
-  .landing-hero-row { min-height: 280px; }
+  .landing-hero-row { min-height: 170px; }
   .login-panel { padding: 26px; }
   .entry-list { grid-template-columns: repeat(3,1fr); }
   .case-library { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -631,7 +617,7 @@ textarea { resize: vertical; }
   .topbar-user { gap: 7px; }
   .hint-popover { right: auto; left: 0; width: min(220px, calc(100vw - 156px)); border-radius: 14px 14px 14px 4px; }
   .hint-popover::after { right: auto; left: 15px; }
-  .landing-hero-row { min-height: 260px; display: flex; padding-right: 0; }
+  .landing-hero-row { min-height: 150px; display: flex; padding-right: 0; }
   .landing-photo { object-position: 70% 30%; }
   .landing-photo-veil { background: linear-gradient(180deg, rgba(255,253,246,.86) 0%, rgba(255,253,246,.68) 45%, rgba(255,253,246,.52) 100%); }
   .student-hero { min-height: 320px; }

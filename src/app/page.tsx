@@ -1,14 +1,12 @@
-import { teachingCopy } from '@/domain/teaching-copy';
 import Image from 'next/image';
 import { HeartPulse, MessageCircleHeart, Sparkles, Stethoscope } from 'lucide-react';
 import { LoginEntries } from '@/components/login-entries';
 
 /**
- * 登录起始页（登录入口升级）：
- * - 独立显眼的双端入口：教师端入口 / 学生端入口（组件内选择后进入登录面板）；
- * - 登录面板自主选择：一键超星登录 或 邮箱密码登录（Auth 配置 external_email_enabled=true）；
- * - 入口选择不预授权角色：角色由服务端 /api/auth/me 按真实身份（超星白名单/app_metadata）判定；
- * - 旧平行入口（评委预览直链）与旧单按钮登录面板已按需求移除；
+ * 登录起始页（2026-10-14 按老师批注收敛）：
+ * - 主标题发回原先的「练一次，会接诊」；删除介绍段与「儿童不是成人的缩影」段（排版与字体观感批注）；
+ * - 登录面板直接提供 超星一键 + 邮箱密码登录，不再先选教师/学生入口卡；
+ *   教师入口收敛为面板角落小按钮（组件内），入口意图不预授权角色，角色由服务端 /api/auth/me 判定；
  * - SSR 不做会话重定向（网关剥离 Cookie），已登录检测由 LoginEntries 挂载自愈完成。
  */
 export default function LoginPage() {
@@ -30,16 +28,13 @@ export default function LoginPage() {
           <div className="landing-hero-row">
             <div className="landing-copy">
               <span className="welcome-chip"><HeartPulse size={15} /> 未来的小医生，你好</span>
-              <h2>{teachingCopy.slogan}</h2>
-              <p>{teachingCopy.introduction}</p><p className="textbook-feature">{teachingCopy.pediatricFeature}</p>
+              <h2>练一次，会接诊</h2>
             </div>
           </div>
           <div className="landing-trust"><span><Stethoscope size={15} /> 真实临床场景</span><span><MessageCircleHeart size={15} /> 临床思维训练</span><span><Sparkles size={15} /> 患儿与家庭关怀</span></div>
         </section>
         <section className="login-panel" aria-labelledby="login-title">
-          <span className="login-panel-icon"><Stethoscope size={21} /></span>
           <LoginEntries />
-          <p className="login-footnote">教学模拟 · 非真实医疗建议 · 教学表述依据《儿科学》第10版</p>
         </section>
       </div>
     </main>

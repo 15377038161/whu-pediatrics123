@@ -1,4 +1,5 @@
 import { verifiedComplaint } from '@/lib/admission-complaint';
+import { patientAppearance } from '@/domain/patient-appearance';
 import { sourceExamDefinitions } from '@/domain/exam-methods';
 import type { Emotion, Stage, VitalSigns } from '@/domain/agent';
 import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
@@ -263,6 +264,7 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   }
   return {
     ...profile, id: caseId, version: 2, age: source?.age ?? '年龄未记录', sex: source?.sex ?? '性别未记录', patientName: '小朋友',
+    patientImage: patientAppearance(source?.sex ?? '性别未记录','standing',profile.id).src ?? '/media/clinical/virtual-child-unclassified.svg',
     triage: source ? `${source.age}患儿就诊。${verifiedComplaint(source) ?? '主诉需进一步核实'}。` : '请先采集主诉、现病史和一般状态。本病种尚未加载独立病例正文，可记录自己的问诊与诊疗思路。',
     openingParent: source ? `医生，孩子这次主要是${verifiedComplaint(source) ?? '不舒服，具体情况还需核实'}，请您看看。` : '医生，具体病史还需要补充，请先告诉我您想了解什么。',
     initialEmotion: 'nervous', initialVitals: source?.vitals ?? unknown, stages: FLAGSHIP_CASE.stages,
