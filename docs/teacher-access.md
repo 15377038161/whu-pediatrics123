@@ -31,16 +31,20 @@
 ### 步骤
 
 1. **确认绑定邮箱**（已完成）：`<BOUND_EMAIL>`，来源为服务端 `/api/auth/me` 自视图响应。
-2. **账户所有者当次授权确认**（等待中）：管理员已发起，收到明确同意回复后方可执行下一步。**未收到确认前禁止执行。**
+2. **账户所有者当次授权确认**：每次新增授权都必须收到明确同意回复后方可执行下一步。2026-10-15 本次目标账户已收到确认并完成授权；真实身份仅保存在受控数据库审计记录，不进入 Git。
 3. **管理员执行授权**（唯一写入通道：平台 db_execute；执行前以受控记录核对邮箱与已验证值一致，替换占位符后执行）：
 
 ```sql
--- 待执行（占位符由管理员在执行时以受控记录中的已验证值替换；未收到账户所有者当次确认前禁止执行）
+-- 通用操作模板（不是待执行任务；占位符须替换为当次确认、已核对的目标）
 insert into teacher_emails (email, note)
 values (
   '<BOUND_EMAIL>',
   '教师授权：<REALNAME>（cxid <CXID>，平台超星 OAuth 真实浏览器实证 2026-10-15；服务端 /api/auth/me 自视图验证绑定邮箱；绑定唯一内部用户 <USER_UUID>）'
-);
+)
+on conflict (email) do nothing;
+-- 复核唯一绑定后，仅同步目标账户的统计分类，避免将教师计入学生使用统计。
+update profiles set app_role = 'teacher'
+where id = '<USER_UUID>'::uuid and chaoxing_uid = '<CXID>';
 ```
 
 4. **回查验证**：账户所有者重新登录 → `/api/auth/me` 返回 `role=teacher` → `/teacher` 工作台可用、教师 API 200；任意学生账号访问教师 API 403。
@@ -49,10 +53,21 @@ values (
 
 ```sql
 delete from teacher_emails where email = '<BOUND_EMAIL>';
+update profiles set app_role = 'student'
+where id = '<USER_UUID>'::uuid and chaoxing_uid = '<CXID>';
 -- 回查：该账号 /api/auth/me 返回 role=student，教师 API 403
 ```
 
 审计：`teacher_emails.note` 字段记录授权对象/依据/时间；应用请求日志不含授权写入路径，授权变更仅存在于平台管理通道记录中。
+
+### 2026-10-15 正式环境验收
+
+- 正式域名已发布 `d77eb3d`，部署日志显示应用启动正常。
+- 本次目标绑定唯一（1/1）；白名单新增 1 条，目标 profiles 分类更新 1 行，未改 Auth 元数据。
+- 当前真实登录会话 `/api/auth/me` 返回 200、`role=teacher`；学情工作台、使用统计、病例管理页面加载成功；病例发布、草稿、导入查询接口均返回 200。
+- 使用统计明细不包含本次教师；3 个缺原始资料病例仍下架。本轮未进行病例新增或重新上架操作。
+- 当前平台会话未返回手机号与真实学号/工号，不能以 cxid 冒充。头像地址可加载，未设置个性头像时显示平台默认头像。
+- 新用户首次创建 profiles 的真实 INSERT 分支尚未实测；已有账户授权及读取验证不能代替该项。授权前该账号作为学生访问教师页面被拒；本轮没有新增另一学生身份的线上回归。
 
 ## 三、安全边界与已知风险
 
