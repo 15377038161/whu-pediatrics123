@@ -239,9 +239,13 @@ test('目录过滤：eligibleAdmissions 剔除三例已下架病例，其余已�
     assert.ok(!candidates.some((item) => item.caseId === caseId), `${caseId} 不应进入候选池`);
   }
   assert.ok(candidates.length > 0, '其余已发布病例仍应可选');
-  // 同源去重保留：候选池按 sourceId 去重，无重复源。
-  const sourceIds = candidates.map((item) => item.sourceId);
-  assert.equal(new Set(sourceIds).size, sourceIds.length);
+  // 原始候选可含别名；真正抽取时按源去重，不能要求原始目录已去重。
+  const sourceIds = [...new Set(candidates.map((item) => item.sourceId))];
+  const selectedSources = sourceIds.map((_, index) => {
+    const selected = selectAdmission(candidates, undefined, false, () => (index + 0.5) / sourceIds.length);
+    return candidates.find(item => item.caseId === selected)!.sourceId;
+  });
+  assert.equal(new Set(selectedSources).size, sourceIds.length);
 });
 
 test('随机/下一病例：selectAdmission 重复抽取不命中三例已下架病例', () => {
