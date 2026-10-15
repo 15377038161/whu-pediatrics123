@@ -16,6 +16,8 @@ export interface TeacherStudentSummary {
   id: string;
   displayName: string;
   studentNo: string | null;
+  /** 超星号（登录身份同步；来源为用户可修改的 user_metadata.cxid 时仅作展示参考，不作学号） */
+  chaoxingUid: string | null;
   avatarUrl: string | null;
   latestScore: number | null;
   latestScoreBasis?: 'clinical' | 'process';
@@ -29,7 +31,7 @@ export interface TeacherStudentSummary {
 export interface TeacherSessionDetail {
   session: SessionState;
   report: TrainingReport | null;
-  student: { id: string; displayName: string; studentNo: string | null; avatarUrl: string | null };
+  student: { id: string; displayName: string; studentNo: string | null; chaoxingUid: string | null; avatarUrl: string | null };
 }
 
 /** 超星头像 URL（公网可访问，无需接口）：由 profiles.chaoxing_uid 构造。 */
@@ -450,6 +452,7 @@ export class AgentRepository {
           id: user.id,
           displayName: user.displayName,
           studentNo: user.studentNo,
+          chaoxingUid: null,
           avatarUrl: null,
           latestScore: latest?.totalScore ?? [86, 78, 92][index] ?? null,
           latestScoreBasis: latest?.scoreBasis ?? 'clinical',
@@ -490,6 +493,7 @@ export class AgentRepository {
         id: profile.id,
         displayName: profile.display_name,
         studentNo: profile.student_no,
+        chaoxingUid: profile.chaoxing_uid ?? null,
         avatarUrl: chaoxingAvatarUrl(profile.chaoxing_uid),
         latestScore: latest?.total_score ?? null,
         latestScoreBasis: (latest?.data as TrainingReport | undefined)?.scoreBasis ?? 'clinical',
@@ -524,7 +528,7 @@ export class AgentRepository {
     if (this.isPreview()) {
       const user = memoryStore().users.get(session.userId) ?? { id: session.userId, displayName: '学生', studentNo: null };
       const report = [...memoryStore().reports.values()].find((item) => item.sessionId === id) ?? null;
-      return { session, report: report ? clone(report) : null, student: { id: user.id, displayName: user.displayName, studentNo: user.studentNo, avatarUrl: null } };
+      return { session, report: report ? clone(report) : null, student: { id: user.id, displayName: user.displayName, studentNo: user.studentNo, chaoxingUid: null, avatarUrl: null } };
     }
     const db = this.db();
     const [{ data: profile }, { data: reportRow }] = await Promise.all([
@@ -539,6 +543,6 @@ export class AgentRepository {
         return result;
       }),
     ]);
-    return { session, report: reportRow?.data as TrainingReport | null ?? null, student: { id: profile.id, displayName: profile.display_name, studentNo: profile.student_no, avatarUrl: chaoxingAvatarUrl(profile.chaoxing_uid) } };
+    return { session, report: reportRow?.data as TrainingReport | null ?? null, student: { id: profile.id, displayName: profile.display_name, studentNo: profile.student_no, chaoxingUid: profile.chaoxing_uid ?? null, avatarUrl: chaoxingAvatarUrl(profile.chaoxing_uid) } };
   }
 }

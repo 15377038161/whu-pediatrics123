@@ -50,7 +50,7 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ id: s
   const questions = detail.session.messages.filter((message) => message.actor === 'student' || message.actor === 'child' || message.actor === 'parent');
   return <>
       <a className="text-link" href="/teacher"><ArrowLeft size={14} /> 返回学生列表</a>
-      <div className="section-head"><div>{detail.student.avatarUrl ? <img className="student-avatar" src={detail.student.avatarUrl} alt="" width={44} height={44} loading="lazy" /> : null}<p className="eyebrow">{detail.student.studentNo ?? '未绑定学号'}</p><h1 className="page-title">{detail.student.displayName} · 训练全过程</h1></div><span className="readonly-badge" style={{ background: '#e9efeb' }}>只读证据</span></div>
+      <div className="section-head"><div>{detail.student.avatarUrl ? <img className="student-avatar" src={detail.student.avatarUrl} alt="" width={44} height={44} loading="lazy" title="头像：按登录同步的超星号构造（用户可改资料，仅展示参考）" /> : null}<p className="eyebrow">{detail.student.studentNo ? `学号 ${detail.student.studentNo}` : '学号未提供'}{detail.student.chaoxingUid ? ` · 超星号 ${detail.student.chaoxingUid}（用户提供）` : ''}</p><h1 className="page-title">{detail.student.displayName} · 训练全过程</h1></div><span className="readonly-badge" style={{ background: '#e9efeb' }}>只读证据</span></div>
       {detail.report && <ReportView report={detail.report} readonly />}
       <section className="report-section" style={{ marginTop: 14 }}>
         <h2>学生临床提交原文</h2>

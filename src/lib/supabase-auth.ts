@@ -1,5 +1,5 @@
 import type { User } from '@supabase/supabase-js';
-import type { UserContext } from '@/domain/agent';
+import type { UserContext, IdentitySource } from '@/domain/agent';
 import { isTeacherIdentityAllowed } from '@/lib/access-control';
 import type { ChaoxingRole } from '@/lib/chaoxing-client';
 import { createReadOnlySupabaseClient } from '@/lib/supabase-ssr';
@@ -37,12 +37,25 @@ export function normalizeSupabaseUser(user: User): UserContext {
   const fid = text(chaoxing, 'fid');
   const uid = text(chaoxing, 'uid');
   const providerRoles = roles(chaoxing.role);
-  // 平台代理超星 OAuth（supabase-auth 技能 chaoxing-oauth.md/chaoxing-login.md 契约）：
-  // 姓名（realname）与超星号（cxid）随 user_metadata 首建落库，与本地超星身份
-  //（app_metadata.chaoxing.*，应用自带 OAuth 路径）双链兼容；缺失字段按技能约定做空值兜底。
+  // 双链身份（supabase-auth 技能契约）：
+  // - 服务端身份（app_metadata.chaoxing.*，应用自有超星 OAuth 服务端写入）：不可由用户自行改写，作为可信展示来源；
+  // - 用户资料（user_metadata：平台代理超星 OAuth 首建落地的 realname/cxid，及 full_name/avatar_url）：
+  //   用户可自行修改，仅作展示兜底，绝不作为可信身份或权限依据。
+  // 字段语义：cxid 是超星号（chaoxingUid），不是学号/工号——学号只能来自服务端 chaoxing.studentNo，
+  // 平台未下发时显示「学号未提供」，不以 cxid 假填。
   const cxid = text(metadata, 'cxid');
   const realname = text(metadata, 'realname');
   const chaoxingUid = uid || cxid;
+  const serverName = text(chaoxing, 'displayName');
+  const userName = text(metadata, 'full_name') || realname;
+  const fallbackName = cxid ? `超星用户 ${cxid}` : '';
+  const displayName = serverName || userName || fallbackName || '用户';
+  const nameSource: IdentitySource = serverName ? 'server' : userName || fallbackName ? 'user' : 'none';
+  const serverAvatar = text(chaoxing, 'avatar');
+  const userAvatar = text(metadata, 'avatar_url');
+  const derivedAvatar = chaoxingUid ? `https://photo.chaoxing.com/p/${encodeURIComponent(chaoxingUid)}_80` : null;
+  const avatarUrl = serverAvatar || userAvatar || derivedAvatar;
+  const avatarSource: IdentitySource = serverAvatar ? 'server' : avatarUrl ? 'user' : 'none';
   const hasProviderIdentity = Boolean(fid || uid || providerRoles.length);
   const teacherAllowed = hasProviderIdentity
     ? isTeacherIdentityAllowed({ fid, uid, role: providerRoles })
@@ -51,17 +64,14 @@ export function normalizeSupabaseUser(user: User): UserContext {
   return {
     id: user.id,
     role,
-    displayName: text(metadata, 'full_name')
-      || text(chaoxing, 'displayName')
-      || realname
-      || (cxid ? `超星用户 ${cxid}` : '')
-      || '用户',
-    avatarUrl: text(metadata, 'avatar_url')
-      || text(chaoxing, 'avatar')
-      || (chaoxingUid ? `https://photo.chaoxing.com/p/${encodeURIComponent(chaoxingUid)}_80` : null),
-    studentNo: text(chaoxing, 'studentNo') || cxid || null,
+    displayName,
+    avatarUrl,
+    studentNo: text(chaoxing, 'studentNo') || null,
     provider: 'chaoxing',
     chaoxingUid: chaoxingUid || null,
+    email: user.email ?? null,
+    nameSource,
+    avatarSource,
   };
 }
 
@@ -88,7 +98,8 @@ export async function verifyHeaderToken(accessToken: string): Promise<AuthContex
     const { getSupabaseCredentialsClient } = await import('@/lib/supabase-client');
     const { data, error } = await getSupabaseCredentialsClient().auth.getUser(accessToken);
     if (error || !data.user) return null;
-    return { user: normalizeSupabaseUser(data.user), accessToken };
+    // 邮箱所有权以服务端字段为准（email_confirmed_at），不读用户可改写的 user_metadata.email_verified
+    return { user: normalizeSupabaseUser(data.user), accessToken, emailConfirmed: Boolean(data.user.email_confirmed_at) };
   } catch {
     return null;
   }
@@ -110,6 +121,13 @@ export interface AuthContext {
   user: UserContext;
   /** 当前会话的 Supabase access token（JWT）。预览身份无 token，为 null。 */
   accessToken: string | null;
+  /**
+   * 邮箱所有权核验：来自服务端 getUser() 返回的 email_confirmed_at 字段（auth schema 服务端字段，
+   * 非用户可改写的 user_metadata.email_verified）。教师白名单门禁的前置条件——只有邮箱所有权
+   * 已确认的会话才允许按白名单提升教师角色，防止他人抢注白名单邮箱的未验证账号获得教师权限。
+   * 预览身份恒为 false（预览教师角色由签名 Cookie 承担，不走白名单）。
+   */
+  emailConfirmed: boolean;
 }
 
 /**
@@ -118,7 +136,7 @@ export interface AuthContext {
  */
 export async function getCurrentAuth(cookies: CookieReader): Promise<AuthContext | null> {
   const preview = readPreviewUser(cookies);
-  if (preview) return { user: preview, accessToken: null };
+  if (preview) return { user: preview, accessToken: null, emailConfirmed: false };
   try {
     const supabase = createReadOnlySupabaseClient(cookies);
     // tokens-only cookie 模式：session.user 不在 cookie 存储中（服务端访问会抛错），
@@ -128,7 +146,8 @@ export async function getCurrentAuth(cookies: CookieReader): Promise<AuthContext
     const accessToken = sessionResult.data.session.access_token;
     const userResult = await supabase.auth.getUser(accessToken);
     if (userResult.error || !userResult.data.user) return null;
-    return { user: normalizeSupabaseUser(userResult.data.user), accessToken };
+    // 邮箱所有权以服务端字段为准（email_confirmed_at），不读用户可改写的 user_metadata.email_verified
+    return { user: normalizeSupabaseUser(userResult.data.user), accessToken, emailConfirmed: Boolean(userResult.data.user.email_confirmed_at) };
   } catch {
     return null;
   }

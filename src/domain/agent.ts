@@ -15,6 +15,8 @@ export type Actor = 'student' | 'child' | 'parent' | 'tutor' | 'system';
 export type Emotion = 'nervous' | 'calm' | 'low' | 'resistant' | 'anxious' | 'neutral';
 export type ImmersiveScene = 'arrival' | 'history' | 'exam' | 'tests' | 'assessment' | 'plan' | 'communication' | 'debrief';
 
+export type IdentitySource = 'server' | 'user' | 'none';
+
 export interface UserContext {
   id: string;
   role: AppRole;
@@ -23,6 +25,21 @@ export interface UserContext {
   studentNo: string | null;
   provider: 'preview' | 'chaoxing';
   chaoxingUid: string | null;
+  /**
+   * 服务端 getUser() 返回的账户邮箱（auth schema 字段，非用户可改写资料）。
+   * 仅在 /api/auth/me 自视图响应中返回给本人（供账户所有者确认教师白名单绑定的键值），
+   * 不进入教师端学生列表/CSV 导出等任何他人可见数据。
+   */
+  email?: string | null;
+  /**
+   * 姓名来源标注（教师端识别"谁是谁"的信任依据）：
+   * - 'server'：应用自有超星 OAuth 服务端写入（app_metadata.chaoxing.displayName，不可由用户自行改写）
+   * - 'user'：user_metadata（含平台代理超星 OAuth 首建落地的 realname/full_name/cxid——用户可自行修改，仅作展示，不作权限依据）
+   * - 'none'：无任何来源（默认"用户"）
+   */
+  nameSource?: IdentitySource;
+  /** 头像来源标注：'server'（app_metadata.chaoxing.avatar）；'user'（user_metadata.avatar_url 或按用户提供的超星号构造）；'none'（无头像） */
+  avatarSource?: IdentitySource;
 }
 
 export interface AgentMessage {

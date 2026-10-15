@@ -6,7 +6,7 @@
  * - 选择入口后进入登录面板：一键超星登录 或 邮箱密码登录（Auth 配置 external_email_enabled=true）；
  * - 入口选择只记录登录落点意图（sessionStorage，见 login-entry.ts），绝不预授权角色；
  *   角色一律由服务端 /api/auth/me 按真实身份（超星白名单 / app_metadata）判定；
- * - 学生身份走教师端入口 → 拒绝进入并提示改走学生端（教师页面另有服务端守卫兜底）；
+ * - 学生身份走教师端入口 → 按实际角色跳转学生工作台（教师端另有服务端守卫兜底）；
  * - 挂载自愈（原 LoginSelfHeal 行为）：检测 SDK 会话 → 网络校验 → 按角色+意图路由。
  */
 
@@ -34,15 +34,15 @@ export function LoginEntries() {
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
-  const [denied, setDenied] = useState(false);
   const [checking, setChecking] = useState(true);
 
   const resolveRouting = useCallback((role: string) => {
     const routing = routeAfterLogin(role, readLoginEntry());
     if (routing.denied) {
-      // 学生身份 + 教师端入口：拒绝进入教师端，留在登录页提示
-      setDenied(true);
-      setChecking(false);
+      // 学生身份 + 教师端入口：按实际角色跳转学生工作台（教师端另有服务端守卫兜底）。
+      // OAuth 回跳整页重载后 entry 状态复位，「原地提示」不可见且用户停在入口页——
+      // 改为按角色落点跳转（与邮箱登录路径行为一致）。
+      window.location.assign('/student');
       return;
     }
     if (routing.path) window.location.assign(routing.path);
@@ -78,14 +78,12 @@ export function LoginEntries() {
 
   const chooseEntry = (role: EntryRole) => {
     setEntry(role);
-    setDenied(false);
     setError('');
     setLoginEntry(role);
   };
 
   const backToSelection = () => {
     setEntry(null);
-    setDenied(false);
     setError('');
     clearLoginEntry();
   };
@@ -156,11 +154,6 @@ export function LoginEntries() {
       <p className="login-entry-hint">
         {isTeacher ? '教师权限将按真实身份与白名单校验，非授权账号无法进入。' : '使用超星账号一键进入，或使用邮箱密码登录。'}
       </p>
-      {denied && (
-        <p className="login-error" role="alert">
-          当前账号为学生身份，无法从教师端入口进入。请返回并选择学生端入口。
-        </p>
-      )}
       <div className="login-actions">
         <PlatformChaoxingLogin />
         <div className="login-divider" aria-hidden="true"><span>或使用邮箱密码登录</span></div>

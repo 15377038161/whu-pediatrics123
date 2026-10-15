@@ -7,7 +7,9 @@ import { handleOAuthLoginFlow } from '@/lib/chaoxing-oauth-client';
  * 平台超星 OAuth 登录闭环组件：挂 root layout（body 直接子层级），
  * 任意路由的回跳落点都会执行闭环（checklogin 中转 + exchange）。
  * 内部 exchange 自带 in-flight 去重，StrictMode 双执行也只发一次。
- * 登录成功后不清 URL 导航：根路径（'/'）为服务端登录页，会按 session 自动重定向到 /student 或 /teacher。
+ * 登录成功后导航回根路径：root 为客户端渲染的登录页（网关剥离 Cookie，SSR 不做会话重定向），
+ * 由 LoginEntries 挂载自愈（SDK 会话 → /api/auth/me 网络校验 → 按角色+入口意图路由）完成落点跳转；
+ * 学生身份误走教师端入口时同样按角色跳转 /student（教师端另有服务端守卫兜底）。
  */
 export function OAuthCallbackHandler() {
   useEffect(() => {
