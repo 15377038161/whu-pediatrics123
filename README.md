@@ -108,6 +108,13 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 
 技术边界：草稿表 `case_draft_imports` 仅教师可读/插入（RLS `app_is_teacher()`），无 UPDATE/DELETE 权限防篡改；API 与页面授权为严格交集（`requireAuth('teacher')` AND 白名单 RPC），fail-closed。3 个无独立来源病种（新生儿脑梗死、支气管肺炎、格林巴利综合征）保持待补状态。验收脚本：`pnpm tsx scripts/verify-case-drafts.ts`（12 项断言：非双重授权探针 403/307 拒绝、学生匿名越权拒绝、RLS 直插直读拒绝、真实服务重启后 fail-closed 不漂移）。**如实声明**：双重授权教师的 HTTP 保存/列表/重启复读在沙箱无样本，标注「未验」；Data API 层（RLS）已单独实测。
 
+## 登录身份字段来源与教师授权（2026-10-15）
+
+- 超星登录可得字段上限（经官方接口契约与真实浏览器实证核对）：**姓名**（平台代理超星 OAuth 首建落库 `user_metadata.realname`）、**超星号**（`user_metadata.cxid`）、**头像**（按 `photo.chaoxing.com/p/{cxid}_80` 构造，真实加载已实证）。**手机号不可得**——超星 OAuth 与平台业务代理均不下发，界面不显示也不假造；**学号/工号**仅当应用自有超星 OAuth 服务端路径落地 `app_metadata.chaoxing.studentNo` 时可得，平台路径未下发时显示「学号未提供」，**不以超星号假填**。
+- 双链身份信任语义（`src/lib/supabase-auth.ts`）：服务端身份（`app_metadata.chaoxing.*`，应用服务端写入，用户不可改）展示优先；用户资料（`user_metadata.*`，用户可经 `auth.updateUser` 自行改写）仅作展示兜底并标注来源（`nameSource`/`avatarSource`：server/user/none），**绝不作为可信身份或权限依据**。`user_metadata.cxid` 的可信绑定因此标记为外部阻塞（平台未提供不可改写的绑定证据）。
+- profiles 身份同步：登录身份含可识别信息（超星号或非默认姓名）时，`/api/auth/me` 幂等调用 `sync_profile_identity` RPC（SECURITY DEFINER，仅本人行）写入 `display_name/student_no/chaoxing_uid`；教师端学情工作台/会话详情经 profiles join 展示姓名+头像+学号（缺失显示「未提供」），头像与超星号标注「用户提供」口径。
+- 教师权限为应用/API/RLS 三层同源判定（`src/lib/request-auth.ts` `applyTeacherWhitelistGate`）：应用层以当前会话自身 token 调用既有 `app_is_teacher` RPC（读 `teacher_emails` 白名单，与 RLS 谓词同一函数）；邮箱所有权以服务端 `getUser()` 的 `email_confirmed_at` 为准；RPC 失败/无 token 一律不提升（fail-closed）；客户端传入的 email/uid/role 不参与判定。授权与撤销流程见 [教师权限受控管理说明](docs/teacher-access.md)（本轮未新增任何授权记录）。
+
 ## 教师单例上下架（发布状态）
 
 教师在「病例草稿」页底部的「病例发布状态」面板可对教师病例目录的全部条目逐例上架/下架（`/api/teacher/case-publication`，双重授权同上）。目录有效性 = 存在于教师病例目录：`folder=null` 的 catalog-only 条目（缺少原始接诊资料）同样纳入管理，面板以「缺少原始接诊资料」徽章标记；未知 ID 拒绝（`CASE_NOT_FOUND`）。该放宽仅限发布管理，病例导入仍要求完整资料。
@@ -115,7 +122,7 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 - 语义：无行 = 已发布（缺省开放）；下架写入 `case_publication.published=false`，是**可恢复停用**——不删除病例原文（`case_snapshot_*`）与历史训练记录/成绩；重新上架置 true 并保留行作审计痕迹（含操作时间与理由）。
 - 生效范围：学生不能基于已下架病例新建训练（`CASE_UNPUBLISHED` 403），且该病例从学生目录（`/api/cases`）隐藏；教师不受限（可继续预览复核）；学生既有会话的恢复不受影响。病例资料的幂等初始化/导入不写本表，不会重置教师的下架决定。
 - 验收脚本：`pnpm tsx scripts/verify-case53-init-publication.ts --teacher-cred-file ... --student-cred-file ...`（内容保真 53/53 + 上下架守卫闭环 10 项断言）。
-- 缺资料条目暂时下架（2026-10-14，进行中）：3 个无独立接诊资料的目录条目（teacher-新生儿脑梗死 / case-3f7233bb、teacher-支气管肺炎 / case-9651f03b、teacher-格林巴利综合征 / case-5dc2a192）经用户授权执行 `published=false`，理由「缺少原始接诊资料，暂时下架；资料补齐并审核后恢复」。代码与守卫已就绪并经单测/负测验证；**数据库下架未执行**——沙箱环境缺授权教师登录条件（白名单探针密码未注入且凭据文件已随 /tmp 清理丢失），待授权教师登录后经教师后台执行（入口与步骤见 `验收记录.md`「接诊摘要部署与缺资料病例下架」节）。
+- 缺资料条目软下架（2026-10-15 已执行）：3 个无独立接诊资料的目录条目（teacher-新生儿脑梗死 / case-3f7233bb、teacher-支气管肺炎 / case-9651f03b、teacher-格林巴利综合征 / case-5dc2a192）已经教师发布 API（`/api/teacher/case-publication`，应用层教师 + 数据库白名单双重授权）写入 `published=false`，理由「缺原始接诊资料：无可信年龄/性别/主诉（catalog-only，0 媒体 0 文档），软下架待补资料后恢复」。真实学生 API 负测通过：学生目录 69 条 0 命中三例、指定新建返回 403 `CASE_UNPUBLISHED`、随机接诊不选中三例；历史会话/原文/成绩保留（可恢复停用）。
 
 资料准备依赖 Python（`scripts/requirements-cases.txt`）、LibreOffice（旧版 Word 转换）、FFmpeg（视频转码）。安装后执行 `pnpm prepare:cases`；流程仅生成教学衍生文件，不修改原件。先前生成的旧版 Word 与 MP4 会被复用。
 
