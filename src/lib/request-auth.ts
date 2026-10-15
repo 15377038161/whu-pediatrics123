@@ -91,10 +91,7 @@ export async function requireAuth(request: NextRequest, role?: AppRole): Promise
 }
 
 export async function requireUser(request: NextRequest, role?: AppRole): Promise<UserContext> {
-  const headerToken = readBearerToken(request);
-  const auth = headerToken
-    ? await verifyHeaderToken(headerToken)
-    : await getCurrentAuth(request.cookies);
+  const auth = await resolveAuth(request);
   if (!auth) throw new Error('AUTH_REQUIRED');
   const user = await applyTeacherWhitelistGate(auth);
   if (role && !canAccessRole(user.role, role)) throw new Error('FORBIDDEN');

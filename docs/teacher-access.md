@@ -2,6 +2,8 @@
 
 本文档说明本项目的教师授权机制、受控授权/撤销流程与安全边界。授权记录仅由管理员经平台正规管理通道（db_execute）维护；应用与 Agent 代码不含任何授权写入路径。
 
+资料同步须应用 `20261015161000_profile_identity_server_role.sql`：旧参数 `p_app_role` 仅保留签名兼容，新行统计分类由服务端 `app_is_teacher()` 派生，不采信调用方角色。既有行分类不自动重写；新增或撤销教师后管理员应按统计口径复核 profiles 分类。`requireUser` 与 `requireAuth` 共用身份解析器，均保留 header/cookie 身份冲突拒绝规则。
+
 ## 一、机制（应用 / API / RLS 同源判定）
 
 | 层 | 判定 | 实现 |
@@ -54,7 +56,7 @@ delete from teacher_emails where email = '<BOUND_EMAIL>';
 
 ## 三、安全边界与已知风险
 
-- **cxid 不可作为授权键**：`user_metadata.cxid` 用户可经 `auth.updateUser` 自行改写，任何按 cxid 的授权都会被学生伪造升级。授权键只能是服务端邮箱声明 + 管理员维护的白名单。
+- **当前资料 cxid 不可直接作为授权键**：`user_metadata.cxid` 可由用户自行改写，不能凭它匹配教师授权。当前接入使用已验证账号的服务端邮箱声明与受控白名单；将来只有获得不可由用户改写的服务端 cxid 绑定后，才可评估直接按该绑定授权。
 - **抢注风险**：若白名单邮箱尚无已确认账户，他人可能在开放注册下抢注。授权前必须确认该邮箱已完成所有权确认（`email_confirmed_at`）；门禁已将该核验作为硬性前置条件。
 - **auth.users 平台边界**：应用与 Agent 不读不写 `auth.users`（含 app_metadata/管理 API/SERVICE_ROLE 密钥，均为平台安全约束禁止项）；不通过 search_path、动态 SQL、触发器等任何变体绕过。
 - **预览身份不参与**：预览教师角色由签名 Cookie 承担（生产 fail-closed），与白名单机制无关。

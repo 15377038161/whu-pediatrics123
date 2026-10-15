@@ -27,7 +27,8 @@ async function syncProfileIdentity(
       p_display_name: user.displayName,
       p_student_no: user.studentNo ?? '',
       p_chaoxing_uid: user.chaoxingUid ?? '',
-      p_app_role: user.role,
+      // 兼容旧 RPC 签名；新迁移由 app_is_teacher() 派生分类，不采信调用方角色。
+      p_app_role: 'student',
     });
     if (error) console.error('profiles 身份同步失败:', error.message);
   } catch (error) {
