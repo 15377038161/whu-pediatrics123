@@ -173,7 +173,15 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       ? api<SessionState>(`/api/sessions/${initialSessionId}`)
       : api<SessionState>('/api/sessions', { method: 'POST', body: JSON.stringify({ mode, caseId: initialCaseId, focus: practiceFocus, clientRequestId: loadRequestId.current }) }))
       .then((value) => { setSession(value); applyDraftBackfill(value); if (value.stage === 'exam') setMobileView('patient'); if (!initialSessionId) router.replace(`/student/training?session=${value.id}`); })
-      .catch((cause) => setError(cause instanceof Error ? cause.message : '训练加载失败。'))
+      .catch((cause) => {
+        // 正式环境网关以固定 HTML 替换 403 正文（JSON 解析失败，客户端仅见 "HTTP 403"）。
+        // 此处不依赖响应正文，严格匹配该消息回退友好提示；后端 403 与守卫不变，其他错误原样显示。
+        if (cause instanceof Error && cause.message === 'HTTP 403') {
+          setError('该病例暂不可用或无访问权限，请返回病例库选择其他病例。');
+          return;
+        }
+        setError(cause instanceof Error ? cause.message : '训练加载失败。');
+      })
       .finally(() => setBusy(false));
   }, [applyDraftBackfill, initialCaseId, initialSessionId, mode, practiceFocus, router, loadAttempt]);
 

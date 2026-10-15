@@ -16,30 +16,37 @@
 3. **fail-closed**：RPC 调用失败/异常/无 token/未配置数据库 → 不提升。
 4. **仅恢复既有授权**：本轮未新增任何授权记录；门禁变更只是让既有白名单教师在应用层与数据层一致放行。
 
-## 二、受控授权流程（准备中，未执行）
+## 二、受控授权流程（邮箱已验证，SQL 已备，未执行）
 
-目标账号：cxid `238792026`（账户所有者已用真实浏览器经平台超星 OAuth 登录实证：姓名「陈思盈」、头像 `photo.chaoxing.com/p/238792026_80` 实际加载成功；profiles 只读核对：绑定内部用户唯一（1/1），有 9 条真实训练记录）。
+目标账号的真实姓名/cxid/内部用户 ID/绑定邮箱均为**受控值，不写入本仓库**（仅存于平台管理通道记录与当次授权沟通中），本文以占位符表示：`<REALNAME>`、`<CXID>`、`<BOUND_EMAIL>`、`<USER_UUID>`。
+
+绑定证据链（2026-10-15，核对结果存于受控记录）：
+
+1. **服务端自视图实证**：账户所有者真实浏览器登录（教师入口 → 平台超星 OAuth，自动跳转 `/student`，姓名/头像正常），经 `/api/auth/me`（200）读取服务端响应：`chaoxingUid=<CXID>`、`displayName=<REALNAME>`、**绑定邮箱 `<BOUND_EMAIL>`**（平台代理超星 OAuth 首建的服务端字段，非 user_metadata 猜测）、`role=student`、`studentNo=null`、唯一用户 id `<USER_UUID>`。
+2. **profiles 一致性核对（管理员只读查询）**：`chaoxing_uid='<CXID>'` → profiles 匹配 1 条、绑定内部用户唯一（distinct 1/1），且该行 `id` 与自视图用户 id 完全一致；该邮箱当前**不在** `teacher_emails` 白名单（`already_whitelisted=false`）。
+3. **浏览器实证**：头像 `photo.chaoxing.com/p/<CXID>_80` 实际加载成功；有 9 条真实训练记录。
 
 ### 步骤
 
-1. **确认绑定邮箱**：账户所有者登录后在 `/api/auth/me` 自视图响应的 `email` 字段读取本人绑定邮箱（服务端字段，仅本人可见），提供给管理员。
-2. **管理员执行授权**（唯一写入通道：平台 db_execute；执行前核对邮箱与账户所有者提供值一致）：
+1. **确认绑定邮箱**（已完成）：`<BOUND_EMAIL>`，来源为服务端 `/api/auth/me` 自视图响应。
+2. **账户所有者当次授权确认**（等待中）：管理员已发起，收到明确同意回复后方可执行下一步。**未收到确认前禁止执行。**
+3. **管理员执行授权**（唯一写入通道：平台 db_execute；执行前以受控记录核对邮箱与已验证值一致，替换占位符后执行）：
 
 ```sql
--- 待执行（占位邮箱未填，未经账户所有者确认前禁止执行）
+-- 待执行（占位符由管理员在执行时以受控记录中的已验证值替换；未收到账户所有者当次确认前禁止执行）
 insert into teacher_emails (email, note)
 values (
-  '<账户所有者经 /api/auth/me 确认的绑定邮箱>',
-  '教师授权：陈思盈（cxid 238792026，平台超星 OAuth 真实浏览器实证 2026-10-15；绑定唯一内部用户，profiles 1 条 / 训练 9 次）'
+  '<BOUND_EMAIL>',
+  '教师授权：<REALNAME>（cxid <CXID>，平台超星 OAuth 真实浏览器实证 2026-10-15；服务端 /api/auth/me 自视图验证绑定邮箱；绑定唯一内部用户 <USER_UUID>）'
 );
 ```
 
-3. **回查验证**：账户所有者重新登录 → `/api/auth/me` 返回 `role=teacher` → `/teacher` 工作台可用、教师 API 200；任意学生账号访问教师 API 403。
+4. **回查验证**：账户所有者重新登录 → `/api/auth/me` 返回 `role=teacher` → `/teacher` 工作台可用、教师 API 200；任意学生账号访问教师 API 403。
 
 ### 撤销（随时可执行，立即生效于下一个请求）
 
 ```sql
-delete from teacher_emails where email = '<同一邮箱>';
+delete from teacher_emails where email = '<BOUND_EMAIL>';
 -- 回查：该账号 /api/auth/me 返回 role=student，教师 API 403
 ```
 
