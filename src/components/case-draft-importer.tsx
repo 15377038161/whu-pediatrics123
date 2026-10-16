@@ -77,8 +77,45 @@ export function CaseDraftImporter() {
         event.returnValue = '';
       }
     };
+    const guardNavigation = (event: MouseEvent) => {
+      if (
+        !dirty ||
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      const anchor =
+        event.target instanceof Element
+          ? event.target.closest('a[href]')
+          : null;
+      if (
+        !(anchor instanceof HTMLAnchorElement) ||
+        anchor.target === '_blank' ||
+        anchor.hasAttribute('download')
+      )
+        return;
+      const target = new URL(anchor.href, window.location.href);
+      if (
+        target.origin === window.location.origin &&
+        target.pathname === window.location.pathname &&
+        target.search === window.location.search
+      )
+        return;
+      if (!window.confirm('当前有未保存的病例修改，确定放弃并离开吗？')) {
+        event.preventDefault();
+        event.stopPropagation();
+      } else setDirty(false);
+    };
     window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
+    document.addEventListener('click', guardNavigation, true);
+    return () => {
+      window.removeEventListener('beforeunload', warn);
+      document.removeEventListener('click', guardNavigation, true);
+    };
   }, [dirty]);
   function changed() {
     setDirty(true);
