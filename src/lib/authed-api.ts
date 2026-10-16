@@ -69,7 +69,7 @@ async function applyAuthHeader(headers: Headers): Promise<void> {
 export async function authedFetch<T = unknown>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   await applyAuthHeader(headers);
-  if (!headers.has('content-type')) headers.set('content-type', 'application/json');
+  if (!headers.has('content-type') && !(init?.body instanceof FormData)) headers.set('content-type', 'application/json');
   const response = await fetch(url, { ...init, headers });
   if (response.status === 401) {
     await handleUnauthorized();

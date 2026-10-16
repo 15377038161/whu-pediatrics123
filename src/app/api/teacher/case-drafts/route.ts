@@ -4,6 +4,13 @@ import { requireAuth } from '@/lib/request-auth';
 import { isDatabaseConfigured } from '@/lib/supabase-client';
 import { isTeacherByWhitelist, normalizeDraftVersion, parseDraftPayload, precheckDraft, saveDraft } from '@/lib/case-draft-import';
 
+export const dynamic = 'force-dynamic';
+function privateResult<T>(value: T) {
+  const response = ok(value);
+  response.headers.set('Cache-Control', 'private, no-store');
+  return response;
+}
+
 /**
  * 教师病例草稿导入 API（仅教师）：
  * - GET  /api/teacher/case-drafts            草稿列表
@@ -23,11 +30,19 @@ export async function GET(request: NextRequest) {
     if (!(await isTeacherByWhitelist(user.accessToken))) {
       return fail({ code: 'FORBIDDEN', message: '仅教师可访问病例草稿', retryable: false }, undefined, 403);
     }
+    const draftId = request.nextUrl.searchParams.get('id');
+    if (draftId) {
+      if (!/^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(draftId)) return fail({ code: 'INVALID_DRAFT_ID', message: '病例记录编号无效。', retryable: false }, undefined, 400);
+      const { getDraft } = await import('@/lib/case-draft-import');
+      const draft = await getDraft(user.accessToken, draftId);
+      if (!draft) return fail({ code: 'DRAFT_NOT_FOUND', message: '未找到此草稿，请刷新列表。', retryable: false }, undefined, 404);
+      return privateResult(draft);
+    }
     const { listDrafts } = await import('@/lib/case-draft-import');
-    return ok(await listDrafts(user.accessToken));
+    return privateResult(await listDrafts(user.accessToken));
   } catch (error) {
     const detail = errorFromUnknown(error);
-    return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : 403);
+    return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : 500);
   }
 }
 
@@ -51,13 +66,16 @@ export async function POST(request: NextRequest) {
     };
     if (action === 'precheck') {
       const precheck = await precheckDraft(user.accessToken, payload, draftVersion, options);
-      return ok({ action, draftVersion, precheck });
+      return privateResult({ action, draftVersion, precheck });
     }
     const saved = await saveDraft(user.accessToken, payload, draftVersion, options);
-    return ok({ action, draftVersion, ...saved });
+    return privateResult({ action, draftVersion, ...saved });
   } catch (error) {
+    if (error instanceof SyntaxError || (error instanceof Error && ['CASE_ID_REQUIRED', 'INVALID_DRAFT_PAYLOAD', 'INVALID_DRAFT_VERSION'].includes(error.message))) {
+      return fail({ code: 'INVALID_DRAFT', message: '病例资料格式无效，请重新打开草稿后重试。', retryable: false }, undefined, 400);
+    }
     const detail = errorFromUnknown(error);
-    const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'CASE_ID_REQUIRED' || detail.code === 'INVALID_DRAFT_PAYLOAD' || detail.code === 'INVALID_DRAFT_VERSION' ? 400 : 403;
+    const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : 500;
     return fail(detail, undefined, status);
   }
 }

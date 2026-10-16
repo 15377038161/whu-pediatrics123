@@ -8,15 +8,29 @@ import { CasePublicationPanel } from '@/components/case-publication-panel';
  * 非白名单教师的任何读写都会被 /api/teacher/case-drafts 以 403 拒绝。
  */
 export default function TeacherCaseDraftsPage() {
-  return <main className="teacher-case-drafts">
-    <a className="text-link" href="/teacher">返回教师工作台</a>
-    <p className="eyebrow">病例草稿导入 · 教师受限</p>
-    <h1 className="page-title">结构化病例草稿导入</h1>
-    <p className="page-lead">粘贴结构化病例资料（JSON），预校验必填字段、来源匹配、脱敏与媒体审核状态后保存为草稿。草稿与运行中病例事实完全隔离，不发布给学生；修订通过递增草稿版本实现，旧版本不会被覆盖。3 个无独立来源的病种（新生儿脑梗死、支气管肺炎、格林巴利综合征）保持待补，不自动补造患者事实。</p>
-    <CaseDraftImporter />
-    <hr />
-    <TeacherCaseImportPanel />
-    <hr />
-    <CasePublicationPanel />
-  </main>;
+  return (
+    <main className="teacher-case-drafts">
+      <a className="text-link" href="/teacher">
+        返回教师工作台
+      </a>
+      <p className="eyebrow">教学资料 · 病例工作室</p>
+      <h1 className="page-title">让临床经验成为教学病例</h1>
+      <p className="page-lead">
+        上传已有资料，核对临床信息，逐步完善每一份教学病例。
+      </p>
+      <CaseDraftImporter />
+      <details className="studio-maintenance">
+        <summary>
+          已发布病例管理<span>查看现有病例的上架状态</span>
+        </summary>
+        <CasePublicationPanel />
+      </details>
+      <details className="studio-maintenance">
+        <summary>
+          资料维护<span>技术协助：既有资料的检查与缓存维护</span>
+        </summary>
+        <TeacherCaseImportPanel />
+      </details>
+    </main>
+  );
 }

@@ -99,14 +99,14 @@ export interface CaseDraftDetail extends CaseDraftRecord {
 
 /** 必填字段：五段核心事实 + 基本人口学（年龄/性别/主诉）。诊断/处置属于答案面，草稿需记录但同样必填。 */
 const REQUIRED_FIELDS: Array<{ key: string; label: string }> = [
-  { key: 'age', label: 'age（年龄）' },
-  { key: 'sex', label: 'sex（性别）' },
-  { key: 'complaint', label: 'complaint（主诉）' },
-  { key: 'history', label: 'sections.history（病史）' },
-  { key: 'exam', label: 'sections.exam（查体）' },
-  { key: 'tests', label: 'sections.tests（辅助检查）' },
-  { key: 'diagnosis', label: 'sections.diagnosis（诊断）' },
-  { key: 'plan', label: 'sections.plan（诊疗计划）' },
+  { key: 'age', label: '年龄' },
+  { key: 'sex', label: '性别' },
+  { key: 'complaint', label: '主诉' },
+  { key: 'history', label: '病史' },
+  { key: 'exam', label: '体格检查' },
+  { key: 'tests', label: '辅助检查' },
+  { key: 'diagnosis', label: '诊断' },
+  { key: 'plan', label: '诊疗计划' },
 ];
 
 /** 与 prepare-teacher-cases.py / case-snapshot.ts 一致的身份信息模式（用于脱敏预检提示）。 */
@@ -209,7 +209,7 @@ export async function precheckDraft(accessToken: string, payload: CaseDraftPaylo
 
   const issues: string[] = [];
   if (missingFields.length > 0) issues.push(`必填字段缺失 ${missingFields.length} 项：${missingFields.join('、')}`);
-  if (catalog.sourceMatch === 'unknown') issues.push('病例不在教师目录且无别名映射，来源不可追溯（仅可存草稿，不计入 53 独立来源覆盖）');
+  if (catalog.sourceMatch === 'unknown') issues.push('这是独立新病例，将保存到待审核草稿；尚未加入学生病例库。');
   if (!desensitized && PII_PATTERNS.some((p) => p.test(joinDraftText(payload)))) {
     issues.push('正文疑似含未脱敏身份信息（姓名/证件号/电话等），保存前请确认脱敏状态');
   }
@@ -221,7 +221,7 @@ export async function precheckDraft(accessToken: string, payload: CaseDraftPaylo
     const { data } = await db.from('case_draft_imports').select('id').eq('case_id', payload.caseId).eq('draft_version', draftVersion).maybeSingle();
     duplicate = Boolean(data);
   }
-  if (duplicate) issues.push(`草稿已存在（${payload.caseId}@${draftVersion}），重复导入不会覆盖旧版本；如需修订请使用新的 draft_version`);
+  if (duplicate) issues.push(`本版本已保存，重复提交不会覆盖旧记录；请从病例草稿中打开后修改`);
 
   return {
     caseId: payload.caseId,
@@ -310,7 +310,8 @@ export async function getDraft(accessToken: string, draftId: string): Promise<Ca
   const { data, error } = await db.from('case_draft_imports')
     .select('id, case_id, draft_version, source_name, alias_source_id, status, desensitized, media_reviewed, missing_fields, completeness, payload, created_by, created_at')
     .eq('id', draftId).maybeSingle();
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return null;
   return {
     id: data.id, caseId: data.case_id, caseName: data.source_name, draftVersion: data.draft_version,
     sourceName: data.source_name, sourceKind: 'structured_json', aliasSourceId: data.alias_source_id,
