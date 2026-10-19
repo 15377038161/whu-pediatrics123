@@ -10,12 +10,12 @@ import type { PublicCaseProfile } from '@/domain/case-catalog';
  *   53）| 关联来源（sourceRelation 非 null，14）| 资料不足（教师项无 folder 且无关联，3 项）
  *   ——资料不足项如实标注且不得进入可评分测试。
  * - 教学难度星级（可解释映射）：演示病例 1★；真实材料病例 2★。
- * - 搜索分页：客户端过滤（72 项静态中性目录），12/页，筛选变化重置页码。
+ * - 搜索分页：客户端过滤公开目录，9/页，筛选变化重置页码。
  *   searchableText 不含病种名（教师病例 title 为中性学科+序号）——按病种关键词搜索
  *   属于透题面，本轮移除；症状关键词搜索仅对演示病例 presentingSymptoms 生效。
  */
 
-export const PAGE_SIZE = 12;
+export const PAGE_SIZE = 9;
 export const RECENT_LIMIT = 6;
 export const RECENT_KEY_PREFIX = 'case-library-recent:';
 

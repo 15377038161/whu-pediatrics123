@@ -162,37 +162,16 @@ textarea { resize: vertical; }
 .hero-actions .btn-secondary { background: white; color: var(--ink); border-color: var(--line); }
 .case-note { display: flex; gap: 12px 18px; flex-wrap: wrap; margin-top: 22px; font-size: 13px; color: #607976; }
 .case-note span { display: inline-flex; align-items: center; gap: 5px; }
-.student-hero { display: block; min-height: 360px; }
-/* 学生首页英雄区背景图（温馨婴幼儿体检实景，主体中右下、左侧大片干净墙面）：
- * 作用域限定 student-hero，不影响 about/osce 页共用 hero-desk；左侧白渐变遮罩保证文案可读。 */
-.student-hero::after { display: none; }
-.student-hero-photo { position: absolute; inset: 0; z-index: 0; object-fit: cover; object-position: 70% 38%; }
-.student-hero-veil { position: absolute; inset: 0; z-index: 0; background: linear-gradient(90deg, rgba(255,255,255,.93) 0%, rgba(255,255,255,.68) 42%, rgba(255,255,255,.1) 74%, rgba(255,255,255,0) 100%); }
-/* 学生首页整页大背景（温馨儿科病房实景，用户指定）：
- * 负 z-index 固定层铺满视口，白绿高透遮罩弱化细节保证前景卡片/文字可读；
- * 卡片自带白色背景覆盖其上，页面滚动时背景固定形成整页氛围衬底。 */
-.student-home-backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
-.student-home-backdrop-photo { object-fit: cover; object-position: 62% center; }
-.student-home-backdrop-veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(247,252,249,.87) 0%, rgba(255,255,255,.85) 46%, rgba(241,250,245,.87) 100%); }
-.student-hero-copy { max-width: 720px; padding: 8px 0; }
-.journey-strip { margin-top: 14px; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
-.journey-strip::-webkit-scrollbar { display: none; }
-.journey-strip div { flex: 0 0 112px; min-height: 62px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; scroll-snap-align: start; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.8); box-shadow: var(--shadow-soft); }
-.journey-strip span { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 9px; color: var(--pine-dark); background: var(--mint); font-size: 12px; font-weight: 900; }
-.journey-strip strong { white-space: nowrap; font-size: 13px; }
 
 .entry-list { display: grid; gap: 12px; }
-.case-library { display: grid; gap: 12px; }
-.case-card { position: relative; min-height: 176px; overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: var(--white); box-shadow: 0 10px 28px rgba(23,60,60,.06); }
-.case-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--moss); }
-.case-card:nth-child(even)::before { background: var(--brick); }
-.case-card-copy { min-height: 198px; display: grid; grid-template-columns: 1fr auto; grid-template-areas: "number action" "title action" "meta action" "symptoms action"; align-content: center; align-items: center; gap: 7px 18px; padding: 20px 18px 20px 24px; }
+.case-library { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.case-card { position: relative; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--white); transition: border-color .18s, box-shadow .18s; }
+.case-card-copy { height: 100%; min-height: 264px; display: flex; flex-direction: column; gap: 12px; padding: 20px; }
 .case-number { grid-area: number; margin: 0; color: var(--brick); font-size: 11px; font-weight: 900; letter-spacing: .14em; }
-.case-card-copy h3 { grid-area: title; margin: 0; font: 800 23px/1.3 var(--font-display); }
+.case-card-copy h3 { margin: 0; min-height: 52px; font: 800 20px/1.4 var(--font-display); }
 .case-meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: 11px; }
 .symptom-list { grid-area: symptoms; display: flex; flex-wrap: wrap; gap: 6px; }
 .symptom-list span { display: inline-flex; min-height: 28px; align-items: center; padding: 4px 9px; border: 1px solid #d9dfda; border-radius: 999px; background: #f5f5ef; color: #536763; font-size: 12px; }
-.case-card .btn { grid-area: action; white-space: nowrap; }
 .entry { position: relative; min-height: 150px; padding: 20px 20px 20px 88px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,255,255,.88); overflow: hidden; transition: border .18s, transform .18s, box-shadow .18s; }
 .entry:hover { border-color: var(--moss); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(23,60,60,.08); }
 .entry-mark { position: absolute; left: 18px; top: 20px; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 16px 16px 24px 16px; background: var(--sky); color: var(--ink); }
@@ -201,7 +180,7 @@ textarea { resize: vertical; }
 .entry h3 { margin: 0 0 6px; font-size: 18px; }
 .entry p { margin: 0; color: #657572; font-size: 14px; }
 .entry-meta { margin-top: 14px; display: flex; align-items: center; gap: 6px; color: var(--pine-dark); font-size: 13px; font-weight: 900; }
-.case-card-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.case-card-actions { display: flex; align-items: center; gap: 0 14px; flex-wrap: wrap; margin-top: auto; padding-top: 4px; }
 .teacher-case-library { display: flex; justify-content: space-between; gap: 24px; align-items: center; margin: 20px 0; padding: 20px; border: 1px solid var(--line); border-radius: 20px; background: #f2f8f5; }
 .teacher-case-library h2 { margin: 4px 0 6px; }
 .teacher-case-library p { max-width: 680px; margin: 0; color: var(--muted); line-height: 1.65; font-size: 14px; }
@@ -258,11 +237,6 @@ textarea { resize: vertical; }
 .resource-item p { overflow: hidden; margin: 6px 2px 0; color: var(--muted); font-size: 10px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .resource-more { margin: 9px 2px 0; color: var(--muted); font-size: 11px; }
 
-.ability-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); }
-.ability-item { padding: 10px 6px; text-align: center; border-right: 1px solid var(--line); }
-.ability-item:nth-child(3n) { border-right: 0; }
-.ability-value { display: block; font-size: 23px; font-family: ui-monospace, monospace; font-weight: 800; }
-.ability-label { font-size: 11px; color: #657572; }
 
 .training-shell { width: min(100%, 1500px); margin: 0 auto; padding: 0 0 92px; min-height: 100svh; background: var(--paper); }
 .training-head { position: sticky; top: 0; z-index: 45; background: rgba(250,253,251,.96); border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); }
@@ -602,12 +576,8 @@ textarea { resize: vertical; }
   .landing-hero-row { min-height: 170px; }
   .login-panel { padding: 26px; }
   .entry-list { grid-template-columns: repeat(3,1fr); }
-  .case-library { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .entry { min-height: 220px; padding: 92px 20px 20px; }
   .entry-mark { left: 20px; top: 20px; }
-  .ability-strip { grid-template-columns: repeat(6,1fr); }
-  .ability-item { border-right: 1px solid var(--line) !important; }
-  .ability-item:last-child { border: 0 !important; }
   .report-grid { grid-template-columns: minmax(0,1.1fr) minmax(300px,.9fr); }
   .report-summary { grid-template-columns: repeat(4,1fr); }
   .practice-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -623,13 +593,9 @@ textarea { resize: vertical; }
   .landing-hero-row { min-height: 150px; display: flex; padding-right: 0; }
   .landing-photo { object-position: 70% 30%; }
   .landing-photo-veil { background: linear-gradient(180deg, rgba(255,253,246,.86) 0%, rgba(255,253,246,.68) 45%, rgba(255,253,246,.52) 100%); }
-  .student-hero { min-height: 320px; }
-  .student-hero-photo { object-position: 74% 42%; }
-  .student-hero-veil { background: linear-gradient(180deg, rgba(255,255,255,.9) 0%, rgba(255,255,255,.74) 52%, rgba(255,255,255,.58) 100%); }
   .landing-trust { gap: 8px 13px; }
   .hero-actions .btn { width: 100%; }
-  .case-card-copy { grid-template-columns: 1fr; grid-template-areas: "number" "title" "meta" "symptoms" "action"; }
-  .case-card .btn { justify-self: start; margin-top: 5px; }
+
   .bottom-nav[data-items="5"] { grid-template-columns: repeat(5,1fr); }
   .osce-station-bar { align-items: stretch; }
   .osce-station-timer { min-width: 118px; }
@@ -705,7 +671,8 @@ textarea { resize: vertical; }
 .readiness-insufficient { border: 1px solid #e4c9c2; background: #f9efec; color: #a24a38; }
 .case-insufficient-note { display: flex; align-items: center; gap: 6px; color: #a24a38; }
 .symptom-pending { border-style: dashed !important; color: #97a49e !important; }
-.case-recent { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.case-recent { margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+.case-recent > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .case-recent-label { color: var(--muted); font-size: 13px; font-weight: 700; }
 .case-recent a { display: inline-flex; align-items: center; min-height: 32px; padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: white; color: var(--pine-dark); font-size: 12.5px; font-weight: 700; text-decoration: none; }
 .case-recent a:hover { border-color: var(--moss); }
@@ -717,6 +684,40 @@ textarea { resize: vertical; }
 .case-pagination button:focus-visible { outline: 2px solid var(--moss); }
 .case-pagination button:disabled { opacity: .4; cursor: not-allowed; }
 .case-pagination button.page-active { border-color: var(--moss); background: var(--mint); color: var(--pine-dark); font-weight: 900; }
+.case-card:hover { border-color: #a8c8ba; box-shadow: 0 8px 24px rgba(23,60,60,.06); }
+.case-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.case-card-heading .case-number { color: var(--pine); letter-spacing: .04em; }
+.case-card-actions .text-link { font-size: 12px; }
+.case-card-entry::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.case-card-entry:focus-visible { outline: none; }
+.case-card-entry:focus-visible::after { outline: 3px solid var(--pine); outline-offset: -3px; border-radius: 12px; }
+.case-card-actions { position: relative; z-index: 2; }
+.case-mode-menu { width: 100%; font-size: 12px; color: var(--muted); }
+.case-mode-menu summary { min-height: 44px; align-content: center; cursor: pointer; }
+.case-mode-menu > div { display: flex; flex-wrap: wrap; gap: 0 14px; }
+.case-recent summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; }
+.case-mode-menu .case-source-note { flex-basis: 100%; margin: 4px 0; }
+.case-advanced-filter { position: relative; color: var(--muted); font-size: 13px; }
+.case-advanced-filter summary { min-height: 44px; align-content: center; cursor: pointer; }
+.case-advanced-filter select { position: absolute; z-index: 5; top: 48px; right: 0; min-width: 160px; box-shadow: var(--shadow-soft); }
+.case-page-jump, .case-page-jump label { display: flex; gap: 8px; align-items: center; }
+.case-page-jump input { width: 58px; min-height: 44px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: white; }
+.case-pagination > span { flex-basis: 100%; text-align: center; }
+@media (max-width: 699px) {
+  .case-library { gap: 8px; }
+  .case-card { border-radius: 12px; }
+  .case-card-copy { min-height: 180px; padding: 12px 8px 8px; gap: 8px; }
+  .case-card-copy h3 { min-height: 0; font-family: var(--font); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+  .case-card-heading .case-number { font-size: 11px; letter-spacing: 0; }
+  .case-card-heading .case-stars, .case-card .case-meta, .case-card .symptom-list { display: none; }
+  .case-card-actions { gap: 0; }
+  .case-card-actions .text-link { font-size: 11px; line-height: 1.5; }
+  .case-insufficient-note { font-size: 11px; }
+}
+@media (min-width: 1024px) {
+  .app-frame[data-view="student"] .topbar { justify-content: flex-end; }
+  .app-frame[data-view="student"] .topbar-brand { display: none; }
+}
 .case-source-banner { margin: 14px 22px; padding: 14px 18px; border: 1px solid #cfe5dc; background: #edf7f2; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .training-resources { margin: 12px 22px 28px; }
 .resource-pagination { display: flex; justify-content: center; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 16px; font-size: 13px; }

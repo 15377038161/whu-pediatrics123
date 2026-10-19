@@ -50,11 +50,21 @@ test('可评分守卫：3 项资料不足不可评分，其余可评分', () => 
   }
 });
 
-test('搜索分页：72 项默认 12/页，页数正确', () => {
+test('搜索分页：病例库默认 9/页，页数正确', () => {
+  assert.equal(PAGE_SIZE, 9);
   const result = searchCases(CASE_CATALOG, { keyword: '', subject: 'all', readiness: 'all', page: 1 });
   assert.equal(result.total, CASE_CATALOG.length);
   assert.equal(result.items.length, PAGE_SIZE);
   assert.equal(result.pageCount, Math.ceil(CASE_CATALOG.length / PAGE_SIZE));
+});
+
+test('九宫格分页：相邻页不重复，末页保留全部余项', () => {
+  const first = searchCases(CASE_CATALOG, { keyword: '', subject: 'all', readiness: 'all', page: 1 });
+  const second = searchCases(CASE_CATALOG, { keyword: '', subject: 'all', readiness: 'all', page: 2 });
+  assert.equal(second.items.length, 9);
+  assert.equal(new Set([...first.items, ...second.items].map((item) => item.id)).size, 18);
+  const last = searchCases(CASE_CATALOG, { keyword: '', subject: 'all', readiness: 'all', page: first.pageCount });
+  assert.equal(last.items.length, CASE_CATALOG.length - (first.pageCount - 1) * 9);
 });
 
 test('搜索分页：关键词 + 学科 + 来源组合筛选', () => {

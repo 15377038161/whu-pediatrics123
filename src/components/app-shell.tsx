@@ -44,7 +44,7 @@ export function AppShell({ user, children }: { user: UserContext; children: Reac
     router.refresh();
   }
   return (
-    <div className="app-frame">
+    <div className="app-frame" data-view={teacherView ? 'teacher' : 'student'}>
       <header className="topbar">
         <a className="topbar-brand" href={teacherView ? '/teacher' : '/student'}>
           <span className="mini-seal" aria-hidden="true">珞珈</span>
