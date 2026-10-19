@@ -58,3 +58,9 @@
 本地新增测试在独立 WASM PostgreSQL 运行真实迁移、RLS 和 RPC，覆盖历史 boolean 与平台 integer 两种班级启用字段；仅合成账号，不连接正式数据库，不改真实名单。测试开发依赖 PGlite 不进入业务客户端。
 
 真实平台多身份登录条件不足时，必须在交付记录中逐项标为未验收。没有真实名单时不创建虚构学生或训练记录。本轮不创建班级转移、跨校学生编号统一、课程后台挂载等远期功能。
+
+### 真实接口回归脚本
+
+`pnpm exec tsx scripts/verify-classroom-access.ts --cred-file <受限临时文件路径>` 复用既有学生／教师测试账号；不注册账号，不输出密码、token、姓名或原始响应。包含只读查询与预期拒绝的创建／审核负测请求；结束对这两个测试账号执行 signOut(global)，不触碰真实管理员会话。
+
+受限 JSON 文件字段为 `appOrigin、supabaseUrl、anonKey、tenantId、student.email/password、teacher.email/password、otherUserId`；`otherClassId` 可选，用于跨班拒绝验证。来源只能是当前项目的受控配置与既有测试凭据，禁止把密钥写入示例、命令参数或 Git。Linux 权限为 0600，Windows 须关闭继承并仅授予当前用户访问，用后删除。`otherUserId` 只作为非秘密定位符；脚本只接受既有两个测试邮箱及 HTTPS cxiagents 项目地址，缺字段即退出。
