@@ -318,7 +318,7 @@ create policy class_teacher_read_agent_call_records on agent_call_records for se
 create policy class_scope_members on cohort_members as restrictive for select to authenticated using(user_id=auth.uid() or app_manages_class(cohort_id));
 
 -- 成员与班级只能由受控 RPC 修改，学生不能直接把自己插入班级。
-revoke insert,update,delete on cohorts,cohort_members from authenticated,anon;
+revoke insert,update,delete on cohorts,cohort_members from public,authenticated,anon;
 
 -- SECURITY DEFINER 聚合不经过调用者 RLS，必须逐一限制资料来源。
 create or replace function teacher_stats_per_student(

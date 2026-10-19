@@ -44,7 +44,7 @@ export function ClassWorkspacePanel({ teacher = false }: { teacher?: boolean }) 
   }
   return <div className={styles.workspace}>
     <header className={styles.heading}><div><h1 className="page-title">{teacher ? '班级管理' : '我的班级'}</h1>
-      <p className="page-lead">{teacher ? '创建班级、维护名单，审核学生入班申请。' : '名单匹配后自动入班，未匹配时可申请加入。'}</p></div>
+      <p className="page-lead">{teacher ? '创建班级、维护名单，审核学生入班申请。' : '查看所属班级，或向任课老师申请加入。'}</p></div>
       {teacher && data?.isAdmin && <Link className="btn btn-secondary" href="/teacher/access">教师权限</Link>}
     </header>
     {error && <div className={styles.feedback} role="alert">{error} <button type="button" className="btn btn-quiet" onClick={() => void load().catch(() => setError('读取失败，请稍后重试'))}>重试</button></div>}

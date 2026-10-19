@@ -89,6 +89,10 @@ for (const integerActive of [false, true]) test(`班级数据库（is_active=${i
     await asUser(studentA,'400');
     const workspace=await scalar<{members:unknown[];roster:unknown[]}>('select class_workspace($1)',[classA]);
     assert.deepEqual(workspace.members,[]); assert.deepEqual(workspace.roster,[]);
+    assert.equal(await scalar('select count(*)::int from class_account_identities'),1,'只可读取本人身份快照');
+    assert.equal(await scalar("select has_function_privilege('anon','class_workspace(uuid)','execute')"),false);
+    assert.equal(await scalar("select has_function_privilege('authenticated','class_bind_trusted_roster(uuid,uuid)','execute')"),false);
+    await assert.rejects(()=>db.query('select class_import_roster($1,$2)',[classA,'[]']),/FORBIDDEN/);
     await assert.rejects(()=>db.query("select teacher_access_workspace('200')"),/FORBIDDEN/);
     await asUser(admin,'100'); await db.query('select teacher_access_revoke($1,true)',[teacherA]);
     await asUser(teacherA,'200'); assert.equal(await scalar('select app_is_teacher()'),false);
