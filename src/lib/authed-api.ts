@@ -17,7 +17,7 @@
  * 多标签一致性：localStorage 会话由 SDK 跨标签共享（storage 事件），此处不做额外缓存。
  */
 
-import { getBrowserSupabase } from '@/lib/supabase-browser';
+import { getBrowserSupabase, isBrowserSupabaseConfigured } from '@/lib/supabase-browser';
 
 const LOGIN_PATH = '/';
 
@@ -62,7 +62,14 @@ async function currentAccessToken(): Promise<string | null> {
 
 async function applyAuthHeader(headers: Headers): Promise<void> {
   const token = await currentAccessToken();
-  if (token) headers.set('Authorization', `Bearer ${token}`);
+  if (token) { headers.set('Authorization', `Bearer ${token}`); return; }
+  // 网关剥离 Cookie，无 SDK 会话时没有合法的 Cookie 回退。
+  // 在发请求前回登录，避免平台把 401 改成无 Location 的 HTML 302 后停在错误页。
+  // 本地直连的 Cookie / 签名预览路径仍按既有服务端规则处理。
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('.cxiagents.com') && isBrowserSupabaseConfigured()) {
+    await handleUnauthorized();
+    throw new AuthedApiError('AUTH_REQUIRED', '未登录或会话已过期。');
+  }
 }
 
 /** 鉴权 fetch：附带当前会话 token（如有）；401 时清理会话并跳登录页。返回解析后的业务数据。 */

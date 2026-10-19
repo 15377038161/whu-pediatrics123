@@ -29,15 +29,17 @@ async function main() {
       if(result.error || !result.data.session) throw new Error('TEST_ACCOUNT_LOGIN_FAILED');
       tokens[role]=result.data.session.access_token;
     }
-    async function check(name:string,path:string,expected:number,role?:'student'|'teacher',body?:object) {
+    async function check(name:string,path:string,expected:number|number[],role?:'student'|'teacher',body?:object) {
       const response=await fetch(new URL(path,origin),{method:body?'POST':'GET',headers:{'content-type':'application/json',...(role?{Authorization:`Bearer ${tokens[role]}`}:{})},...(body?{body:JSON.stringify(body)}:{})});
       const payload=await response.json().catch(()=>null);
-      checks.push({name,status:response.status,pass:response.status===expected});
-      assert.equal(response.status,expected,name);
+      const allowed=Array.isArray(expected)?expected:[expected];
+      checks.push({name,status:response.status,pass:allowed.includes(response.status)});
+      assert(allowed.includes(response.status),name);
+      if(response.status===302) assert(response.headers.get('content-type')?.includes('text/html') && !payload?.data,'网关拒绝不能包含业务数据');
       return payload;
     }
-    await check('anonymous_classes','/api/classes',401);
-    await check('anonymous_teacher_access','/api/teacher/access',401);
+    await check('anonymous_classes','/api/classes',[401,302]);
+    await check('anonymous_teacher_access','/api/teacher/access',[401,302]);
     for(const role of ['student','teacher'] as const) {
       const me=await check(`${role}_me`,'/api/auth/me',200,role);
       assert.equal(me.data.user.role,role);
