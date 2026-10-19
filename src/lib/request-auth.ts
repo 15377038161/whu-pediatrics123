@@ -31,7 +31,7 @@ export interface AuthedUserContext extends UserContext {
  * - 不信任客户端传入的 email/uid/role：白名单判定完全来自服务端 RPC（auth.jwt() 由 Supabase 签发）；
  * - 邮箱所有权必须经服务端 getUser() 的 email_confirmed_at 确认（防他人抢注白名单邮箱未验证账号）；
  * - RPC 调用失败/异常一律不提升（fail-closed）；无 token（预览）不提升；
- * - 仅恢复既有受控白名单授权，授权/撤销记录由管理员经平台管理通道维护（docs/teacher-access.md）。
+ * - 仅恢复既有受控白名单授权，授权/撤销由项目管理员受控管理，旧邮箱白名单仍由平台维护（docs/teacher-access.md）。
  */
 
 /** 教师白名单门禁决策（纯函数，便于负测覆盖）。 */

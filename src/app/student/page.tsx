@@ -66,6 +66,7 @@ export default function StudentHome() {
       <h1 className="page-title">你好，{user.displayName}</h1>
       <p className="page-lead">今天也从一个真实临床任务开始。放心提问、判断和操作，智能体只给方向，不会替你完成训练。</p>
 
+      <p><Link className="btn btn-secondary" href="/student/classes">我的班级 · 选班与入班申请</Link></p>
       <section className="hero-desk student-hero">
         <Image className="student-hero-photo" src="/home-bg.webp" alt="" fill priority sizes="100vw" />
         <span className="student-hero-veil" aria-hidden="true" />

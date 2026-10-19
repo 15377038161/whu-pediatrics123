@@ -40,6 +40,11 @@ export async function GET(request: NextRequest) {
   try {
     const { accessToken, ...user } = await requireAuth(request);
     await syncProfileIdentity(user, accessToken);
+    if (accessToken && isDatabaseConfigured()) {
+      // 从已验证 JWT 同步账号；仅可信服务端编号可触发自动分班。
+      // 迁移未部署或同步失败不阻断原有登录，也不回退到可编辑资料匹配。
+      await getSupabaseUserClient(accessToken).rpc('class_sync_identity').then(() => undefined, () => undefined);
+    }
     return ok({ user });
   } catch (error) {
     const code = error instanceof Error ? error.message : 'AUTH_REQUIRED';
