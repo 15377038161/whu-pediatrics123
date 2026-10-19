@@ -77,10 +77,15 @@ export function prepareCaseDocument(raw: string, sourceName: string) {
     .filter(Boolean);
   const value = (label: string) => {
     const values: string[] = [];
-    const pattern = new RegExp(`^(?:${label})[：:]?\\s*(.*)$`);
+    // Exact table label or a colon-separated field; template instructions are not patient records.
+    const pattern = new RegExp(`^(?:${label})(?:[：:]\\s*(.*)|\\s*)$`);
     lines.forEach((line, i) => {
       const match = line.match(pattern);
-      if (match) values.push(match[1] || lines[i + 1] || '');
+      if (match) {
+        const candidate = match[1] || lines[i + 1] || '';
+        // Empty Word table cells must not borrow the following field's label as a clinical fact.
+        if (!/^(?:项目|填写内容|病种名称|病例名称|所属系统或专科|病例类型|适用对象|病例难度|主要教学目标|资料整理教师|医学审核教师|患儿代称|性别[、，, /]*年龄|年龄[、，, /]*性别|性别|年龄|主诉|现病史|既往史|出生史|生长发育史|喂养史|预防接种史|家族史|接触史或流行病学史|体格检查|本病例最有诊断价值的表现)$/.test(candidate)) values.push(candidate);
+      }
     });
     return [...new Set(values.filter(Boolean))];
   };

@@ -36,6 +36,17 @@ test('同名字段冲突不擅自选择；缺少的结果不编造正常', () =>
   assert.equal(result.payload.sections.exam, '');
   assert.ok(result.issues.some((issue) => issue.includes('年龄出现多种记录')));
 });
+test('模板文件夹说明不应误报重复病种名称', () => {
+  const result = prepareCaseDocument(`${clinical}\n病种名称/\n病种名称、病例类型、整理教师`, 'source.docx');
+  assert.equal(result.sourceName, '教学病例');
+  assert.ok(!result.issues.some(issue => issue.includes('病例名称出现多种记录')));
+});
+test('空表格单元格不把下一字段标题当作病例事实', () => {
+  const result = prepareCaseDocument('病种名称\n所属系统或专科\n呼吸系统\n主诉\n现病史\n发热2天', '待核对.docx');
+  assert.equal(result.sourceName, '待核对');
+  assert.equal(result.payload.complaint, '');
+  assert.equal(result.payload.sections.history, '发热2天');
+});
 test('含身份字段或长编号必须提示，不修改源事实', () => {
   const result = prepareCaseDocument(
     '姓名：测试姓名\n住院号：123456789012345\n主诉：发热',

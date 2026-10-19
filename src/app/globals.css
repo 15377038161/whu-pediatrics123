@@ -852,6 +852,9 @@ textarea { resize: vertical; }
 .studio-maintenance { border-top: 1px solid var(--line); padding: 20px 0; }
 .studio-maintenance summary { font-size: 14px; }
 .studio-maintenance summary span { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 12px; }
+@media(max-width: 1023px) {
+  .studio-savebar { bottom: calc(78px + env(safe-area-inset-bottom)); }
+}
 @media(max-width: 900px) {
   .studio-editor-layout { grid-template-columns: minmax(0, 1fr); }
   .studio-review { position: static; grid-row: 1; }
@@ -865,12 +868,12 @@ textarea { resize: vertical; }
   .case-studio .studio-tabs button { padding: 12px 10px; font-size: 14px; }
   .studio-editor-heading, .studio-library-heading { align-items: flex-start; flex-direction: column; }
   .studio-card { padding: 18px 15px; }
-  .studio-savebar { flex-wrap: wrap; bottom: 8px; padding: 12px; }
+  .studio-savebar { flex-wrap: wrap; padding: 12px; }
   .studio-savebar > div { width: 100%; }
   .studio-savebar > div button { flex: 1; padding-inline: 8px; font-size: 13px; }
-  .studio-draft-list article { flex-wrap: wrap; gap: 12px; padding: 16px; }
+  .studio-draft-list article { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: start; gap: 12px; padding: 16px; }
   .studio-document-icon { padding: 10px; }
-  .studio-draft-list article > button { margin-left: auto; }
+  .studio-draft-list article > button { grid-column: 2; justify-self: start; margin-left: 0; }
   .studio-maintenance summary span { display: block; margin: 6px 0 0 16px; }
 }
 
