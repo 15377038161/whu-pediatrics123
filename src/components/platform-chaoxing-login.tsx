@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { setLoginEntry, type EntryRole } from '@/lib/login-entry';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import {
   LOGIN_DIAG_VERSION,
@@ -11,12 +12,12 @@ import {
 } from '@/lib/chaoxing-oauth-client';
 
 const STAGE_LABELS: Record<LoginStage, string> = {
-  'fetch-start': '阶段1：正在请求登录服务',
-  'fetch-network-error': '阶段1失败：网络层异常',
-  'fetch-http-error': '阶段1失败：登录服务返回错误',
-  'authorize-url-ok': '阶段2：已获取授权地址',
-  'authorize-url-invalid': '阶段2失败：授权地址无效',
-  'nav-assign': '阶段3：正在跳转超星授权页',
+  'fetch-start': '正在连接登录服务…',
+  'fetch-network-error': '网络连接失败',
+  'fetch-http-error': '登录服务暂不可用',
+  'authorize-url-ok': '正在准备跳转…',
+  'authorize-url-invalid': '登录地址无效，请重试',
+  'nav-assign': '正在跳转超星登录页…',
 };
 
 /**
@@ -27,12 +28,11 @@ const STAGE_LABELS: Record<LoginStage, string> = {
  * 导致页面重载回本站，挂载时消费标记并显示「手动打开超星登录页」新窗口链接，
  * 绝不静默恢复按钮让用户无从判断。
  */
-export function PlatformChaoxingLogin() {
+export function PlatformChaoxingLogin({ entryRole = 'student', onPendingChange }: { entryRole?: EntryRole; onPendingChange?: (pending: boolean) => void }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [blockedUrl, setBlockedUrl] = useState('');
   const [stage, setStage] = useState<LoginStage | null>(null);
-  const [stageDetail, setStageDetail] = useState('');
 
   useEffect(() => {
     const attempted = consumeNavigationAttempt();
@@ -45,18 +45,20 @@ export function PlatformChaoxingLogin() {
   }, []);
 
   const login = async () => {
+    if (pending) return;
+    setLoginEntry(entryRole);
     setPending(true);
+    onPendingChange?.(true);
     setError('');
     setBlockedUrl('');
     setStage('fetch-start');
-    setStageDetail('');
-    const result = await loginWithChaoxingOAuth((s, detail) => {
+    const result = await loginWithChaoxingOAuth((s) => {
       setStage(s);
-      setStageDetail(detail || '');
     });
     if (!result.success) {
       setError(result.error || '跳转授权页失败');
       setPending(false);
+      onPendingChange?.(false);
     }
     // 成功分支：页面即将顶层跳转到超星授权页，无需复位
   };
@@ -74,17 +76,16 @@ export function PlatformChaoxingLogin() {
         disabled={pending}
       >
         <Image className="chaoxing-mark" src="/media/brand/chaoxing-logo.png" alt="" width={135} height={135} />
-        {pending ? '正在连接超星…' : '使用超星账号进入'}
+        {pending ? '正在连接超星…' : `超星${entryRole === 'teacher' ? '教师' : '学生'}登录`}
         {!pending && <ArrowRight size={17} />}
       </button>
       {stage && (
         <p className="login-stage" data-stage={stage} role="status">
-          {STAGE_LABELS[stage]}
-          {stageDetail ? `（${stageDetail}）` : ''}
+          {stage === 'nav-assign' ? '正在跳转登录页…' : STAGE_LABELS[stage]}
         </p>
       )}
       {pending && stage === 'nav-assign' && (
-        <p className="login-stage-hint">若 3 秒内未跳转且无变化，说明顶层导航被当前浏览器环境拦截</p>
+        <p className="login-stage-hint">无法跳转时，请稍后使用手动打开入口</p>
       )}
       {error && <p className="login-error" role="alert">{error}</p>}
       {blockedUrl && (
