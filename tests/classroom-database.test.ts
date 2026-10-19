@@ -18,7 +18,8 @@ for (const integerActive of [false, true]) test(`班级数据库（is_active=${i
     const initial = (await readFile('supabase/migrations/202608230001_pediatrics_agent.sql','utf8')).replace('create extension if not exists pgcrypto;','');
     await db.exec(initial);
     if (integerActive) await db.exec(`alter table cohorts alter column is_active drop default; alter table cohorts alter column is_active type integer using case when is_active then 1 else 0 end; alter table cohorts alter column is_active set default 1;`);
-    await db.exec(`alter table profiles add column account_kind text not null default 'real';
+    await db.exec(`alter table profiles alter column app_role drop default; alter table profiles alter column app_role type text using app_role::text; alter table profiles alter column app_role set default 'student';
+      alter table profiles add column account_kind text not null default 'real';
       create table teacher_emails(email text primary key,note text);
       create function app_is_teacher() returns boolean language sql stable security definer as $$ select exists(select 1 from teacher_emails where email=auth.jwt()->>'email') $$;
       create table quiz_questions(id uuid primary key,case_id text,difficulty text);
@@ -29,6 +30,7 @@ for (const integerActive of [false, true]) test(`班级数据库（is_active=${i
       create policy legacy_global_teacher_sessions on training_sessions for select to authenticated using(app_is_teacher());
       create policy legacy_global_teacher_reports on training_reports for select to authenticated using(app_is_teacher());`);
     await db.exec(await readFile('supabase/migrations/20261011100000_session_engagement_events.sql','utf8'));
+    await db.exec(await readFile('supabase/migrations/20261015161000_profile_identity_server_role.sql','utf8'));
     await db.exec(await readFile('supabase/migrations/20261019023824_classroom_management.sql','utf8'));
     for (const [index,id] of ids.entries()) {
       await db.query('insert into auth.users values($1)',[id]);
@@ -43,6 +45,10 @@ for (const integerActive of [false, true]) test(`班级数据库（is_active=${i
       await db.query('select class_sync_identity()');
     }
     async function scalar<T>(sql: string,args: unknown[]=[]): Promise<T> { const r=await db.query<Record<string,T>>(sql,args); return Object.values(r.rows[0])[0]; }
+    const firstLogin = '00000000-0000-4000-8000-000000000006';
+    await db.query('insert into auth.users values($1)',[firstLogin]);
+    await asUser(firstLogin,'600');
+    assert.equal(await scalar('select count(*)::int from profiles where id=auth.uid()'),1,'首次登录创建本人资料');
     await asUser(teacherA,'200'); await asUser(teacherB,'300');
     await asUser(admin,'100');
     assert.equal(await scalar('select teacher_access_grant($1,$2,true)',[teacherA,'200']),true);

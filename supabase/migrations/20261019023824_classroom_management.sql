@@ -118,7 +118,10 @@ create or replace function class_sync_identity() returns boolean language plpgsq
 declare v_uid uuid:=auth.uid(); v_app jsonb:=auth.jwt()->'app_metadata'->'chaoxing'; v_meta jsonb:=auth.jwt()->'user_metadata';
 begin
   if v_uid is null then raise exception 'FORBIDDEN' using errcode='42501'; end if;
-  if not exists(select 1 from profiles where id=v_uid) then return false; end if;
+  if not exists(select 1 from profiles where id=v_uid) then
+    perform sync_profile_identity(coalesce(nullif(v_app->>'displayName',''),nullif(v_meta->>'realname',''),nullif(v_meta->>'full_name',''),'用户'),
+      coalesce(v_app->>'studentNo',''),coalesce(v_app->>'uid',v_meta->>'cxid',''),'student');
+  end if;
   insert into class_account_identities(user_id,name,email,claimed_cxid,trusted_cxid,trusted_student_no,institution_fid)
   values(v_uid,coalesce(nullif(v_app->>'displayName',''),nullif(v_meta->>'realname',''),nullif(v_meta->>'full_name',''),'用户'),
     coalesce(auth.jwt()->>'email',''),nullif(v_meta->>'cxid',''),nullif(v_app->>'uid',''),nullif(v_app->>'studentNo',''),nullif(v_app->>'fid',''))
