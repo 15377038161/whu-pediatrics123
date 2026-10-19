@@ -28,7 +28,7 @@ const STAGE_LABELS: Record<LoginStage, string> = {
  * 导致页面重载回本站，挂载时消费标记并显示「手动打开超星登录页」新窗口链接，
  * 绝不静默恢复按钮让用户无从判断。
  */
-export function PlatformChaoxingLogin({ entryRole = 'student', onPendingChange }: { entryRole?: EntryRole; onPendingChange?: (pending: boolean) => void }) {
+export function PlatformChaoxingLogin({ entryRole = 'student', onPendingChange, disabled = false }: { entryRole?: EntryRole; onPendingChange?: (pending: boolean) => void; disabled?: boolean }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [blockedUrl, setBlockedUrl] = useState('');
@@ -45,7 +45,7 @@ export function PlatformChaoxingLogin({ entryRole = 'student', onPendingChange }
   }, []);
 
   const login = async () => {
-    if (pending) return;
+    if (pending || disabled) return;
     setLoginEntry(entryRole);
     setPending(true);
     onPendingChange?.(true);
@@ -70,13 +70,13 @@ export function PlatformChaoxingLogin({ entryRole = 'student', onPendingChange }
   return (
     <div className="chaoxing-login-entry" data-login-diag={LOGIN_DIAG_VERSION}>
       <button
-        className="btn btn-primary btn-block"
+        className="btn btn-secondary btn-block"
         type="button"
         onClick={login}
-        disabled={pending}
+        disabled={pending || disabled}
       >
         <Image className="chaoxing-mark" src="/media/brand/chaoxing-logo.png" alt="" width={135} height={135} />
-        {pending ? '正在连接超星…' : `超星${entryRole === 'teacher' ? '教师' : '学生'}登录`}
+        {pending ? '正在连接超星…' : '超星一键登录'}
         {!pending && <ArrowRight size={17} />}
       </button>
       {stage && (

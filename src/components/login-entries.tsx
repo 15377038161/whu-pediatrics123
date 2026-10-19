@@ -108,8 +108,7 @@ export function LoginEntries() {
 
   return (
     <div className="login-entry-panel" aria-busy={checking}>
-      <h2 className="section-title" id="login-title">欢迎登录</h2>
-      <div className="login-role-switch" role="group" aria-label="登录入口">
+      <div className="login-role-switch" id="login-title" role="group" aria-label="登录入口">
         {(['student', 'teacher'] as const).map((role) => (
           <button key={role} type="button" aria-pressed={entryRole === role}
             disabled={pending} onClick={() => selectEntry(role)}>
@@ -118,18 +117,16 @@ export function LoginEntries() {
         ))}
       </div>
       <div className="login-actions">
-        <PlatformChaoxingLogin entryRole={entryRole} onPendingChange={setPending} />
-        <details className="login-email-option">
-          <summary>使用邮箱密码登录</summary>
         <form className="login-form" onSubmit={submitPassword}>
           <label className="login-field">
-            邮箱
+            账号
             <input
               type="email"
               name="email"
-              autoComplete="email"
+              autoComplete="username"
+              aria-describedby="login-account-help"
               required
-              placeholder="name@example.com"
+              placeholder="请输入本平台邮箱账号"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={pending}
@@ -150,11 +147,12 @@ export function LoginEntries() {
             />
           </label>
           {error && <p className="login-error" role="alert">{error}</p>}
-          <button className="btn btn-secondary btn-block" type="submit" disabled={pending}>
-            {pending ? '正在登录…' : '邮箱密码登录'}
+          <button className="btn btn-primary btn-block" type="submit" disabled={pending}>
+            {pending ? '正在登录…' : '登录'}
           </button>
         </form>
-        </details>
+        <PlatformChaoxingLogin entryRole={entryRole} onPendingChange={setPending} disabled={pending} />
+        <p className="login-account-help" id="login-account-help">账号密码登录使用本平台邮箱账号；超星账号请选择超星一键登录。</p>
       </div>
       <p className="login-footnote">仅用于教学训练</p>
     </div>

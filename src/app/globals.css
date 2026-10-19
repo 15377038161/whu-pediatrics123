@@ -116,8 +116,7 @@ textarea { resize: vertical; }
 .login-role-switch button[aria-pressed="true"] { color: var(--pine-dark); background: white; box-shadow: 0 1px 5px rgba(23,60,60,.09); }
 .login-role-switch button:focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
 .login-role-switch button:disabled { cursor: wait; opacity: .6; }
-.login-email-option summary { padding: 12px 0; color: var(--muted); text-align: center; cursor: pointer; font-size: 13px; }
-.login-email-option[open] summary { margin-bottom: 10px; }
+.login-account-help { margin: 2px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
 .login-form { display: grid; gap: 12px; }
 .login-field input { width: 100%; min-height: var(--tap); border: 1px solid var(--line); border-radius: 12px; background: var(--white); color: var(--ink); padding: 9px 12px; font: inherit; }
 .login-field input:focus-visible { outline: 2px solid rgba(25,117,104,.45); outline-offset: 1px; border-color: var(--pine); }
