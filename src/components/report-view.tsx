@@ -2,7 +2,7 @@ import { ArrowRight, BookOpenCheck, CheckCircle2, CircleAlert, RotateCcw } from 
 import type { TrainingReport } from '@/domain/agent';
 import { findPublicCase } from '@/domain/case-catalog';
 import { RandomAdmission } from '@/components/random-admission';
-import { flagshipClinicalRubric, focusedRubrics, rubricStatusForDisplay, type RubricDefinition, type RubricItem } from '@/domain/training-rubric';
+import { findRubricForReport, rubricStatusForDisplay, type RubricItem } from '@/domain/training-rubric';
 import { practiceScenarios } from '@/domain/practice-scenarios';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
@@ -13,18 +13,6 @@ const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string;
   { key: 'communication', label: '医患沟通', max: 10 },
   { key: 'professionalism', label: '职业素养', max: 5 },
 ];
-
-const knownRubrics: RubricDefinition[] = [flagshipClinicalRubric, ...Object.values(focusedRubrics)];
-
-function rubricForReport(report: TrainingReport): RubricDefinition | undefined {
-  if (!report.rubricId) return undefined;
-  // 先按 id+version 精确匹配；历史版本报告回退同 id 匹配用于量表名称与结构展示
-  // （v1→v2 仅证据规则变化、分项与满分结构不变），版本号以报告快照为准，不重算旧分。
-  return (
-    knownRubrics.find((rubric) => rubric.id === report.rubricId && rubric.version === report.rubricVersion) ??
-    knownRubrics.find((rubric) => rubric.id === report.rubricId)
-  );
-}
 
 const evaluationBasisLabels: Record<NonNullable<TrainingReport['evaluationBasis']>, string> = {
   clinical_rubric: '临床量表评分',
@@ -42,7 +30,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
   const caseTitle = report.caseTitle ?? caseProfile?.title ?? `病例 ${report.caseId}`;
   const processReport = report.scoreBasis === 'process';
   // 量表元数据（方案 4.6）：报告快照带 rubricId/version/evaluationBasis；历史报告无 rubricId 时降级展示固定六维。
-  const rubric = rubricForReport(report);
+  const rubric = findRubricForReport(report);
   // 适用满分口径（方案 4.4）：总满分=适用计分项满分之和；无法评价/不适用项不计入维度满分。
   const evidenceStatusByCode = new Map(report.evidence.map((item) => [item.code, item.status]));
   const isAssessableRubricItem = (item: RubricItem): boolean => {
@@ -59,7 +47,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           <p className="eyebrow">{mode}{focusScenario ? ` · ${focusScenario.title}` : ''} · {readonly ? '只读报告' : '训练完成'}</p>
           <h1>{caseTitle}</h1>
           <p>{processReport ? '分数表示训练过程完成度。原病例诊断与诊疗经过用于对照，诊断和处置的正确性由教师复核。' : report.mode === 'osce' ? '模拟站参考评分依据实际问答、器材操作、临床决策与沟通原文生成，不构成正式考试成绩。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
-          <p style={{ fontSize: 13, opacity: 0.75 }}>评分量表：{rubric ? `${rubric.name}（v${report.rubricVersion}）` : '历史记录未保存'} · 成绩口径：{evaluationBasisLabels[evaluationBasis]}</p>
+          <p style={{ fontSize: 13, opacity: 0.75 }}>评分量表：{rubric ? `${rubric.name}（v${report.rubricVersion}）` : `版本 v${report.rubricVersion ?? '未记录'} 的历史量表定义未存档，按报告快照展示`} · 成绩口径：{evaluationBasisLabels[evaluationBasis]}</p>
         </div>
       </section>
       <div className="report-grid">

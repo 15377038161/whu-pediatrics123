@@ -58,22 +58,22 @@ export const practiceScenarios: Record<PracticeFocus, PracticeScenario> = {
   },
   exam: {
     focus: 'exam',
-    configVersion: 2,
+    configVersion: 3,
     title: '肺部规范查体',
     goal: '按规范流程完成本病例的重点查体',
     briefing: [
       '本病例的必要病史已由系统直接提供（标记为 provided，不计入你的查体得分）。',
       '先完成手卫生与检查说明，再按「器材 × 部位」逻辑逐项检查；腹部检查请切换仰卧位。',
-      '完成本项查体操作后结束训练即可，不需要写完整诊断；操作证据用于流程与规范评分，结果识别需另提交观察内容后才可评价。',
+      '完成本项查体操作后结束训练即可，不需要写完整诊断；操作证据用于流程与规范评分，结果识别不在本专项机器评分范围（无观察提交入口），待教师结合查体记录复核。',
     ],
     initialStage: 'exam',
     allowedStages: ['exam', 'report'],
     allowedActions: ['EXAM_ACTION', 'NAVIGATE_STAGE'],
     providedEvidence: ['HX_PROVIDED'],
     completion: 'exam_observation',
-    completionHint: '完成至少一项有效查体操作后可结束训练；操作证据评价流程规范性，结果识别需提交观察/推理内容后方可评价。',
+    completionHint: '完成至少一项有效查体操作后可结束训练；操作证据评价流程规范性，结果识别不在本专项机器评分范围（无观察提交入口），待教师结合查体记录复核。',
     rubricId: 'rubric-focused-exam',
-    rubricVersion: 2,
+    rubricVersion: 3,
   },
   safety: {
     focus: 'safety',
@@ -96,7 +96,7 @@ export const practiceScenarios: Record<PracticeFocus, PracticeScenario> = {
   },
   communication: {
     focus: 'communication',
-    configVersion: 1,
+    configVersion: 2,
     title: '家长焦虑沟通',
     goal: '向焦虑家长解释病情、风险与后续安排',
     briefing: [
@@ -112,7 +112,7 @@ export const practiceScenarios: Record<PracticeFocus, PracticeScenario> = {
     completion: 'communication_end',
     completionHint: '完成解释与确认后结束会话，生成沟通专项报告。',
     rubricId: 'rubric-focused-communication',
-    rubricVersion: 2,
+    rubricVersion: 3,
   },
 };
 

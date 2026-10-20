@@ -19,7 +19,7 @@ test('普通病例链：完整接诊按旗舰量表生成 clinical_rubric 报告
   session.communication = '我理解您担心。孩子呼吸有风险，我们先吸氧监测。';
   const report = buildReport(session, 'report-guided');
   assert.equal(report.rubricId, 'rubric-clinical-flagship');
-  assert.equal(report.rubricVersion, 2);
+  assert.equal(report.rubricVersion, 3);
   assert.equal(report.evaluationBasis, 'clinical_rubric');
   assert.equal(report.totalScore, Object.values(report.abilities).reduce((sum, value) => sum + value, 0), '总分=分项之和');
   assert.equal(report.evidence.reduce((sum, item) => sum + item.maxScore, 0), 100, '总满分=计分项满分之和');
@@ -35,7 +35,7 @@ test('专项链：practice 会话按 focus 选专项量表，不因未开放环�
   session.unlockedEvidence = ['EX_PREP', 'EX_RESP', 'EX_SPO2', 'EX_TEMP'];
   const report = buildReport(session, 'report-exam');
   assert.equal(report.rubricId, 'rubric-focused-exam');
-  assert.equal(report.rubricVersion, 2);
+  assert.equal(report.rubricVersion, 3);
   assert.equal(report.practiceFocus, 'exam');
   assert.equal(report.evaluationBasis, 'clinical_rubric');
   // 专项量表只含查体维度项：未提交诊断/处置/沟通不计负分，总分=查体专项得分
