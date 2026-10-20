@@ -2,12 +2,13 @@
  * 语音服务（阶段 D，方案第 6 章）：平台 TTS/ASR 的服务端封装。
  * 依据 docs/SPEECH_INTEGRATION.md 的核验结论实现，铁律：
  *  1. coder-coding-dev-sdk 仅在服务端调用（密钥与配额在平台侧），本模块只被 API Route 引入。
- *  2. 能力启用状态只来自真实探测（AudioClient.listVoices），探测失败按 unavailable 返回。
+ *  2. 能力启用状态只来自真实最小调用探测（listVoices + 短句 TTS 合成 + 回灌 ASR 识别），
+ *     listVoices 不用于推断 ASR/TTS 可用；探测失败按 unavailable 返回。
  *  3. TTS 文本只取学生本人会话中已存在的角色消息（调用方传入 SessionState），
  *     本模块不合成新事实；纯括注与非可言语患儿消息返回 NOT_SPEAKABLE。
  *  4. 音色映射稳定（同一角色同一病例同一音色），映射音色不可用时回退默认音色。
  */
-import { ASRClient, AudioClient, Config, TTSClient } from 'coder-coding-dev-sdk';
+import { ASRClient, AudioClient, AudioDefaults, Config, TTSClient } from 'coder-coding-dev-sdk';
 import type { VoiceInfo } from 'coder-coding-dev-sdk';
 import { getCase } from '@/domain/case';
 import { canChildSpeak, resolveCommunicationProfile } from '@/domain/communication-profile';
@@ -21,19 +22,27 @@ import type {
   TtsResponse,
   VoiceTurnState,
 } from '@/domain/speech-contract';
-import { UNAVAILABLE_SPEECH_CAPABILITIES } from '@/domain/speech-contract';
 
-/** 角色稳定音色映射（docs/SPEECH_INTEGRATION.md）：成年配音演播的角色音，非克隆真实儿童声音。 */
+/**
+ * 角色稳定音色映射（docs/SPEECH_INTEGRATION.md）：成年配音演播的角色音，非克隆真实儿童声音。
+ * 家长音色按病例已知照护者性别选择（CommunicationProfile.caregiverGender）；
+ * 未知时明确回退平台默认音色（AudioDefaults.SPEAKER）并记日志，不装作已知身份。
+ */
 export const ROLE_VOICES = {
   childFemale: 'coder:female:cute',
   childMale: 'coder:male:cheerful',
-  parent: 'coder:female:canan',
+  parentFemale: 'coder:female:canan',
+  parentMale: 'coder:male:elegant',
   tutor: 'coder:male:default',
 } as const;
-const FALLBACK_VOICE = 'coder:female:default';
+const FALLBACK_VOICE = AudioDefaults.SPEAKER;
 
-/** 平台签名音频 URL 的有效期（默认 24 小时）；过期后播放器需重新合成。 */
-export const TTS_AUDIO_URL_TTL_MS = 24 * 60 * 60 * 1000;
+/** 家长音色偏好（纯函数，供回归测试）：已知性别选对应音色；未知明确回退平台默认音色。 */
+export function resolveParentVoicePreference(caregiverGender: 'female' | 'male' | 'unknown'): string {
+  if (caregiverGender === 'female') return ROLE_VOICES.parentFemale;
+  if (caregiverGender === 'male') return ROLE_VOICES.parentMale;
+  return FALLBACK_VOICE;
+}
 
 /** base64 直传上限：原始音频 ≤ 10MB（base64 膨胀 4/3）。 */
 const MAX_BASE64_LENGTH = Math.ceil((10 * 1024 * 1024) / 3) * 4;
@@ -72,12 +81,86 @@ async function listVoicesCached(forwardHeaders?: Record<string, string>): Promis
   }
 }
 
-/** 能力探测（/api/speech/capabilities）：音色列表非空视为语音供应商可用（TTS/ASR 同族路由）；
- *  探测失败如实返回 unavailable，前端据此隐藏语音入口。 */
-export async function probeSpeechCapabilities(forwardHeaders?: Record<string, string>): Promise<SpeechCapabilities> {
-  const voices = await listVoicesCached(forwardHeaders);
-  if (!voices || voices.length === 0) return { ...UNAVAILABLE_SPEECH_CAPABILITIES };
-  return { asr: 'turn-based', tts: 'turn-based', voiceCount: voices.length };
+/** 能力探测执行器：默认为平台 SDK 真实调用；测试注入替身只验证分发逻辑，
+ *  真实供应商链路由 scripts/verify-speech-sdk-smoke.ts 冒烟覆盖。 */
+export interface SpeechProbeDeps {
+  listVoices(): Promise<VoiceInfo[]>;
+  synthesize(text: string, speaker: string): Promise<{ audioUrl: string; audioSize: number }>;
+  downloadAudio(url: string): Promise<Buffer>;
+  recognize(base64Data: string, format: string): Promise<{ text: string }>;
+}
+
+function sdkProbeDeps(forwardHeaders?: Record<string, string>): SpeechProbeDeps {
+  return {
+    listVoices: () => new AudioClient(new Config(), forwardHeaders).listVoices(),
+    synthesize: (text, speaker) =>
+      new TTSClient(new Config(), forwardHeaders).synthesize({ text, speaker, audioFormat: 'mp3', sampleRate: 24000 }),
+    downloadAudio: async (url) => {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`探测音频下载失败 HTTP ${resp.status}`);
+      return Buffer.from(await resp.arrayBuffer());
+    },
+    recognize: (base64Data, format) =>
+      new ASRClient(new Config(), forwardHeaders).recognize({ base64Data, format }),
+  };
+}
+
+/** 探测缓存：成功结果 60s 内共享（探测含真实最小 TTS/ASR 调用，避免每次页面加载消耗配额）；
+ *  失败结果短暂缓存 5s（防连环探测），之后可恢复重试。 */
+const capabilitiesCache = { at: 0, result: null as SpeechCapabilities | null };
+const CAPABILITIES_OK_TTL_MS = 60_000;
+const CAPABILITIES_FAIL_TTL_MS = 5_000;
+
+/** 探测文本：中性核验语句，不含患者数据。 */
+const PROBE_TEXT = '语音能力核验。';
+
+/**
+ * 能力探测（/api/speech/capabilities）：listVoices 只证明音色列表可达，不能推断 ASR/TTS 可用；
+ * ASR/TTS 可用性分别经真实最小调用验证（合成短句 → 回灌识别）。ASR 探测依赖 TTS 探测音频，
+ * TTS 失败时 ASR 无法验证，同样按 unavailable 处理——不宣称未经验证的可用。
+ * 任一环节失败对应能力如实 unavailable，前端据此隐藏语音入口。
+ */
+export async function probeSpeechCapabilities(
+  forwardHeaders?: Record<string, string>,
+  deps: SpeechProbeDeps = sdkProbeDeps(forwardHeaders),
+): Promise<SpeechCapabilities> {
+  const cached = capabilitiesCache.result;
+  if (cached) {
+    const ttl = cached.asr === 'turn-based' && cached.tts === 'turn-based'
+      ? CAPABILITIES_OK_TTL_MS
+      : CAPABILITIES_FAIL_TTL_MS;
+    if (Date.now() - capabilitiesCache.at < ttl) return { ...cached };
+  }
+  let voiceCount = 0;
+  try {
+    voiceCount = (await deps.listVoices()).length;
+  } catch {
+    voiceCount = 0;
+  }
+  let ttsOk = false;
+  let asrOk = false;
+  try {
+    const synth = await deps.synthesize(PROBE_TEXT, FALLBACK_VOICE);
+    const audio = await deps.downloadAudio(synth.audioUrl);
+    ttsOk = true;
+    try {
+      await deps.recognize(audio.toString('base64'), 'mp3');
+      asrOk = true;
+    } catch {
+      asrOk = false;
+    }
+  } catch {
+    ttsOk = false;
+    asrOk = false;
+  }
+  const result: SpeechCapabilities = {
+    asr: asrOk ? 'turn-based' : 'unavailable',
+    tts: ttsOk ? 'turn-based' : 'unavailable',
+    voiceCount,
+  };
+  capabilitiesCache.at = Date.now();
+  capabilitiesCache.result = result;
+  return { ...result };
 }
 
 /** ASR 转写（/api/speech/asr）：base64 直传识别，录音不落地对象存储。 */
@@ -116,11 +199,15 @@ async function resolveRoleVoice(
   forwardHeaders?: Record<string, string>,
 ): Promise<string> {
   let preferred: string;
+  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   if (message.actor === 'child') {
-    const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
     preferred = pediatricCase.sex.includes('女') ? ROLE_VOICES.childFemale : ROLE_VOICES.childMale;
   } else if (message.actor === 'parent') {
-    preferred = ROLE_VOICES.parent;
+    const profile = resolveCommunicationProfile(session.caseId, pediatricCase.age);
+    if (profile.caregiverGender === 'unknown') {
+      console.debug('[speech] 病例照护者性别未知，家长音色明确回退平台默认音色（不装作已知身份）');
+    }
+    preferred = resolveParentVoicePreference(profile.caregiverGender);
   } else {
     preferred = ROLE_VOICES.tutor;
   }
@@ -165,18 +252,20 @@ export async function synthesizeRoleAudio(
     });
     return {
       ok: true,
-      data: { audioUrl: response.audioUrl, expiresAt: new Date(Date.now() + TTS_AUDIO_URL_TTL_MS).toISOString() },
+      data: { audioUrl: response.audioUrl },
     };
   } catch (error) {
     return { ok: false, error: mapProviderError('tts', error) };
   }
 }
 
-/** 测试注入缝：重置音色探测缓存（仅测试使用，业务代码不调用）。 */
+/** 测试注入缝：重置音色/能力探测缓存（仅测试使用，业务代码不调用）。 */
 export function __resetVoiceCacheForTests(): void {
   voiceCache.at = 0;
   voiceCache.voices = null;
   voiceCache.ok = false;
+  capabilitiesCache.at = 0;
+  capabilitiesCache.result = null;
 }
 
 export type { VoiceTurnState };

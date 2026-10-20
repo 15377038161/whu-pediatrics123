@@ -45,6 +45,12 @@ export interface CommunicationProfile {
   primaryHistorian: 'child' | 'caregiver';
   /** 照护者关系：保持中性"家长"，不默认妈妈/爸爸（逐例审核后可覆盖）。 */
   caregiverRelation: string;
+  /**
+   * 照护者性别：原资料未逐例结构化，保持 unknown（方案 9.2：家长不默认妈妈/爸爸）；
+   * 逐例审核覆盖后可注入。语音播报按此选择家长音色；unknown 时明确回退平台默认音色
+   * （speech-service 回退并记日志），不装作已知身份。
+   */
+  caregiverGender: 'female' | 'male' | 'unknown';
   /** 家长知情范围：当前保持 unknown（待逐例整理），角色应答不得越界使用未告知信息。 */
   caregiverKnowledge: 'full' | 'partial' | 'unknown';
   /** 患儿知情范围：当前保持 unknown（待逐例整理）。 */
@@ -116,6 +122,7 @@ function deriveDefaultProfile(ageKnown: string): CommunicationProfile {
     distress: 'unknown',
     primaryHistorian: speechCapability === 'conversational' ? 'child' : 'caregiver',
     caregiverRelation: '家长',
+    caregiverGender: 'unknown',
     caregiverKnowledge: 'unknown',
     childKnowledge: 'unknown',
     developmentNotes: null,

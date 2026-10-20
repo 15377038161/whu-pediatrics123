@@ -3,8 +3,9 @@
  * 非实时流式。核验证据与边界见 docs/SPEECH_INTEGRATION.md。
  *
  * 契约铁律：
- *  1. 启用状态只来自服务端 /api/speech/capabilities 真实探测（listVoices），
- *     前端常量不决定可用性；探测失败按 unavailable 处理并隐藏语音入口。
+ *  1. 启用状态只来自服务端 /api/speech/capabilities 真实探测——listVoices 仅证明音色列表
+ *     可达，ASR/TTS 可用性须分别经真实最小调用验证（探测失败按 unavailable 处理并隐藏语音入口）；
+ *     前端常量不决定可用性。
  *  2. 学生语音轮必须经过「确认/编辑」：未确认的 ASR 转写不作为答、不自动发送。
  *  3. 不自动连录：一轮结束回到 idle，下一轮录音必须由用户显式开始。
  *  4. 不能言语患儿（childCapable=false）不播报语义台词；纯括注消息不进入语音合成（NOT_SPEAKABLE）。
@@ -48,7 +49,7 @@ export interface SpeechFailure {
     | 'PROVIDER_ERROR'
     | 'MESSAGE_NOT_FOUND' /** 会话中不存在该消息（或非角色消息） */
     | 'NOT_SPEAKABLE' /** 纯括注/不能言语患儿消息，契约禁止合成 */
-    | 'AUDIO_EXPIRED'; /** 签名音频 URL 已过期（默认 24h），需重新合成 */
+    | 'AUDIO_EXPIRED'; /** 签名音频 URL 播放失败（URL 可能已失效；SDK 契约未暴露有效期），需重新合成 */
   message: string;
   retryable: boolean;
 }
@@ -74,8 +75,10 @@ export interface TtsRequest {
 }
 export interface TtsResponse {
   audioUrl: string;
-  /** 签名 URL 过期时间（ISO 8601），播放器过期后重新请求。 */
-  expiresAt: string;
+  /**
+   * SDK TTS 响应契约仅含 audioUrl/audioSize，未暴露签名 URL 有效期；
+   * 播放失败（URL 失效/网络错）由播放器重新请求合成，不宣称固定有效期。
+   */
 }
 
 /** 消息语音元数据（方案第 11 章记录扩展）：

@@ -182,9 +182,10 @@ export async function requestTranscription(audio: Blob): Promise<string> {
   return data.text;
 }
 
-/** 角色消息 TTS：按 messageId 取已校验消息的签名音频 URL（默认 24 小时有效）。 */
-export async function requestMessageAudio(sessionId: string, messageId: string): Promise<{ audioUrl: string; expiresAt: string }> {
-  return authedFetch<{ audioUrl: string; expiresAt: string }>('/api/speech/tts', {
+/** 角色消息 TTS：按 messageId 取已校验消息的签名音频 URL。
+ *  SDK 契约未暴露签名 URL 有效期，播放失败时由调用方重新请求合成。 */
+export async function requestMessageAudio(sessionId: string, messageId: string): Promise<{ audioUrl: string }> {
+  return authedFetch<{ audioUrl: string }>('/api/speech/tts', {
     method: 'POST',
     body: JSON.stringify({ sessionId, messageId }),
   });
