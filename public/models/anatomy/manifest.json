@@ -1,6 +1,7 @@
 {
   "age": 6,
   "posture": "原始研究模型姿势",
+  "schemaVersion": 2,
   "sourceFiles": {
     "main_Head_Brain.k": "f6581b9b1092d90352328e5f735e89967be2c4e45587b241eba4d608e745567a",
     "main_Head_Skull.k": "bec59380b54fd28b50cb3b96b0692d33df699d1951ad42741c78f736aca43a30",
@@ -99,76 +100,22 @@
       "triangles": 2440
     },
     {
-      "id": "2109",
-      "label": "C1椎骨",
-      "region": "spine",
-      "sourcePart": "NK_BO_C1_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 2040
-    },
-    {
-      "id": "2110",
-      "label": "C2椎骨",
-      "region": "spine",
-      "sourcePart": "NK_BO_C2_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 2132
-    },
-    {
-      "id": "2111",
-      "label": "C3椎骨",
-      "region": "spine",
-      "sourcePart": "NK_BO_C3_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 1928
-    },
-    {
-      "id": "2112",
-      "label": "C4椎骨",
-      "region": "spine",
-      "sourcePart": "NK_BO_C4_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 2368
-    },
-    {
-      "id": "2113",
-      "label": "C5椎骨",
-      "region": "spine",
-      "sourcePart": "NK_BO_C5_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 1968
-    },
-    {
-      "id": "2114",
-      "label": "C6椎骨",
-      "region": "spine",
-      "sourcePart": "NK_BO_C6_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 1752
-    },
-    {
-      "id": "2115",
-      "label": "C7椎骨",
-      "region": "spine",
-      "sourcePart": "NK_BO_C7_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 2008
-    },
-    {
-      "id": "2116",
-      "label": "T1椎骨",
-      "region": "spine",
-      "sourcePart": "NK_BO_T1_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 2440
-    },
-    {
-      "id": "3100",
-      "label": "前臂骨（左）",
+      "id": "3100-Radius",
+      "label": "桡骨（左）",
       "region": "left-arm",
-      "sourcePart": "UX_BO_L_Forearm_2D",
+      "sourcePart": "UX_BO_L_Radius_split",
       "surfaceKind": "壳单元表面",
-      "triangles": 794
+      "triangles": 382,
+      "splitFrom": "UX_BO_L_Forearm_2D"
+    },
+    {
+      "id": "3100-Ulna",
+      "label": "尺骨（左）",
+      "region": "left-arm",
+      "sourcePart": "UX_BO_L_Ulna_split",
+      "surfaceKind": "壳单元表面",
+      "triangles": 412,
+      "splitFrom": "UX_BO_L_Forearm_2D"
     },
     {
       "id": "3101",
@@ -187,14 +134,6 @@
       "triangles": 320
     },
     {
-      "id": "3103",
-      "label": "肱骨（左）近端骨骺",
-      "region": "left-arm",
-      "sourcePart": "UX_BO_L_HumerusEpiphysisProximal_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 156
-    },
-    {
       "id": "3104",
       "label": "肱骨（左）近端骨骺",
       "region": "left-arm",
@@ -209,326 +148,6 @@
       "sourcePart": "UX_BO_L_HumerusEpiphysisDistal_3D",
       "surfaceKind": "实体外表面",
       "triangles": 144
-    },
-    {
-      "id": "4101",
-      "label": "T2椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T2_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 332
-    },
-    {
-      "id": "4102",
-      "label": "T3椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T3_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 338
-    },
-    {
-      "id": "4103",
-      "label": "T4椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T4_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 384
-    },
-    {
-      "id": "4104",
-      "label": "T5椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T5_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 378
-    },
-    {
-      "id": "4105",
-      "label": "T6椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T6_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 442
-    },
-    {
-      "id": "4106",
-      "label": "T7椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T7_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 432
-    },
-    {
-      "id": "4107",
-      "label": "T8椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T8_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 460
-    },
-    {
-      "id": "4108",
-      "label": "T9椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T9_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 466
-    },
-    {
-      "id": "4109",
-      "label": "T10椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T10_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 554
-    },
-    {
-      "id": "4110",
-      "label": "T11椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T11_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 528
-    },
-    {
-      "id": "4111",
-      "label": "T12椎骨",
-      "region": "spine",
-      "sourcePart": "TX_BO_T12_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 718
-    },
-    {
-      "id": "4112",
-      "label": "胸骨",
-      "region": "thorax",
-      "sourcePart": "TX_BO_Sternum_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 608
-    },
-    {
-      "id": "4113",
-      "label": "肋骨",
-      "region": "thorax",
-      "sourcePart": "TX_BO_Ribs_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 14264
-    },
-    {
-      "id": "4114",
-      "label": "第1肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib1_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 52
-    },
-    {
-      "id": "4115",
-      "label": "第1肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib1_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 52
-    },
-    {
-      "id": "4116",
-      "label": "第2肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib2_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4117",
-      "label": "第2肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib2_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4118",
-      "label": "第3肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib3_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4119",
-      "label": "第3肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib3_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4120",
-      "label": "第4肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib4_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4121",
-      "label": "第4肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib4_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4122",
-      "label": "第5肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib5_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4123",
-      "label": "第5肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib5_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4124",
-      "label": "第6肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib6_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4125",
-      "label": "第6肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib6_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4126",
-      "label": "第7肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib7_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4127",
-      "label": "第7肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib7_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4128",
-      "label": "第8肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib8_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4129",
-      "label": "第8肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib8_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4130",
-      "label": "第9肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib9_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4131",
-      "label": "第9肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib9_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4132",
-      "label": "第10肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib10_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4133",
-      "label": "第10肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib10_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4134",
-      "label": "第11肋骨（左）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_L_Rib11_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4135",
-      "label": "第11肋骨（右）",
-      "region": "thorax",
-      "sourcePart": "TX_BO_R_Rib11_2D_Rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 54
-    },
-    {
-      "id": "4136",
-      "label": "肩胛骨（右）",
-      "region": "right-arm",
-      "sourcePart": "TX_BO_R_Scapula_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 748
-    },
-    {
-      "id": "4137",
-      "label": "肩胛骨（左）",
-      "region": "left-arm",
-      "sourcePart": "TX_BO_L_Scapula_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 768
-    },
-    {
-      "id": "4138",
-      "label": "锁骨（右）",
-      "region": "right-arm",
-      "sourcePart": "TX_BO_R_Clavicle_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 320
-    },
-    {
-      "id": "4139",
-      "label": "锁骨（左）",
-      "region": "left-arm",
-      "sourcePart": "TX_BO_L_Clavicle_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 320
-    },
-    {
-      "id": "4140",
-      "label": "胸骨",
-      "region": "thorax",
-      "sourcePart": "TX_BO_Sternum_2D_rigid",
-      "surfaceKind": "壳单元表面",
-      "triangles": 36
     },
     {
       "id": "4141",
@@ -659,20 +278,220 @@
       "triangles": 3992
     },
     {
-      "id": "4158",
-      "label": "肋骨",
+      "id": "4158-L1",
+      "label": "第1肋骨（左）",
       "region": "thorax",
-      "sourcePart": "TX_BO_Ribs_3D",
+      "sourcePart": "TX_BO_Rib1_L_split",
       "surfaceKind": "实体外表面",
-      "triangles": 15448
+      "triangles": 368,
+      "splitFrom": "TX_BO_Ribs_3D"
     },
     {
-      "id": "5100",
-      "label": "前臂骨（右）",
+      "id": "4158-L2",
+      "label": "第2肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib2_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 636,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-L3",
+      "label": "第3肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib3_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 744,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-L4",
+      "label": "第4肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib4_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 828,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-L5",
+      "label": "第5肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib5_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 864,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-L6",
+      "label": "第6肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib6_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 876,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-L7",
+      "label": "第7肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib7_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 840,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-L8",
+      "label": "第8肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib8_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 804,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-L9",
+      "label": "第9肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib9_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 732,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-L10",
+      "label": "第10肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib10_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 624,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-L11",
+      "label": "第11肋骨（左）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib11_L_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 408,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R1",
+      "label": "第1肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib1_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 368,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R2",
+      "label": "第2肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib2_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 636,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R3",
+      "label": "第3肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib3_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 744,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R4",
+      "label": "第4肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib4_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 828,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R5",
+      "label": "第5肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib5_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 864,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R6",
+      "label": "第6肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib6_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 876,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R7",
+      "label": "第7肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib7_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 840,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R8",
+      "label": "第8肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib8_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 804,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R9",
+      "label": "第9肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib9_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 732,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R10",
+      "label": "第10肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib10_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 624,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "4158-R11",
+      "label": "第11肋骨（右）",
+      "region": "thorax",
+      "sourcePart": "TX_BO_Rib11_R_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 408,
+      "splitFrom": "TX_BO_Ribs_3D"
+    },
+    {
+      "id": "5100-Radius",
+      "label": "桡骨（右）",
       "region": "right-arm",
-      "sourcePart": "UX_BO_R_Forearm_2D",
+      "sourcePart": "UX_BO_R_Radius_split",
       "surfaceKind": "壳单元表面",
-      "triangles": 794
+      "triangles": 382,
+      "splitFrom": "UX_BO_R_Forearm_2D"
+    },
+    {
+      "id": "5100-Ulna",
+      "label": "尺骨（右）",
+      "region": "right-arm",
+      "sourcePart": "UX_BO_R_Ulna_split",
+      "surfaceKind": "壳单元表面",
+      "triangles": 412,
+      "splitFrom": "UX_BO_R_Forearm_2D"
     },
     {
       "id": "5101",
@@ -691,14 +510,6 @@
       "triangles": 320
     },
     {
-      "id": "5103",
-      "label": "肱骨（右）近端骨骺",
-      "region": "right-arm",
-      "sourcePart": "UX_BO_R_HumerusEpiphysisProximal_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 156
-    },
-    {
       "id": "5104",
       "label": "肱骨（右）远端骨骺",
       "region": "right-arm",
@@ -715,49 +526,9 @@
       "triangles": 428
     },
     {
-      "id": "6100",
-      "label": "L1椎骨",
-      "region": "thorax",
-      "sourcePart": "AB_BO_L1_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 752
-    },
-    {
-      "id": "6101",
-      "label": "L2椎骨",
-      "region": "thorax",
-      "sourcePart": "AB_BO_L2_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 746
-    },
-    {
-      "id": "6102",
-      "label": "L3椎骨",
-      "region": "thorax",
-      "sourcePart": "AB_BO_L3_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 632
-    },
-    {
-      "id": "6103",
-      "label": "L4椎骨",
-      "region": "thorax",
-      "sourcePart": "AB_BO_L4_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 624
-    },
-    {
-      "id": "6104",
-      "label": "L5椎骨",
-      "region": "thorax",
-      "sourcePart": "AB_BO_L5_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 732
-    },
-    {
       "id": "6105",
       "label": "L1椎骨",
-      "region": "thorax",
+      "region": "spine",
       "sourcePart": "AB_BO_L1_3D_Rigid",
       "surfaceKind": "实体外表面",
       "triangles": 5370
@@ -765,7 +536,7 @@
     {
       "id": "6106",
       "label": "L2椎骨",
-      "region": "thorax",
+      "region": "spine",
       "sourcePart": "AB_BO_L2_3D_Rigid",
       "surfaceKind": "实体外表面",
       "triangles": 4514
@@ -773,7 +544,7 @@
     {
       "id": "6107",
       "label": "L3椎骨",
-      "region": "thorax",
+      "region": "spine",
       "sourcePart": "AB_BO_L3_3D_Rigid",
       "surfaceKind": "实体外表面",
       "triangles": 3670
@@ -781,7 +552,7 @@
     {
       "id": "6108",
       "label": "L4椎骨",
-      "region": "thorax",
+      "region": "spine",
       "sourcePart": "AB_BO_L4_3D_Rigid",
       "surfaceKind": "实体外表面",
       "triangles": 3774
@@ -789,7 +560,7 @@
     {
       "id": "6109",
       "label": "L5椎骨",
-      "region": "thorax",
+      "region": "spine",
       "sourcePart": "AB_BO_L5_3D_Rigid",
       "surfaceKind": "实体外表面",
       "triangles": 4692
@@ -840,14 +611,6 @@
       "region": "left-leg",
       "sourcePart": "LX_BO_L_Patella_3D_Rigid",
       "surfaceKind": "实体外表面",
-      "triangles": 208
-    },
-    {
-      "id": "7112",
-      "label": "髌骨（左）",
-      "region": "left-leg",
-      "sourcePart": "LX_BO_L_Patella_2D_Rigid",
-      "surfaceKind": "壳单元表面",
       "triangles": 208
     },
     {
@@ -915,20 +678,58 @@
       "triangles": 10730
     },
     {
-      "id": "8101",
-      "label": "骨盆",
+      "id": "8101-L-髂骨",
+      "label": "髂骨（左）",
       "region": "pelvis",
-      "sourcePart": "PV_BO_Pelvis_3D",
+      "sourcePart": "PV_BO_Pelvis_L_髂骨_split",
       "surfaceKind": "实体外表面",
-      "triangles": 28368
+      "triangles": 9628,
+      "splitFrom": "PV_BO_Pelvis_3D"
     },
     {
-      "id": "8105",
-      "label": "骨盆",
+      "id": "8101-L-耻骨",
+      "label": "耻骨（左）",
       "region": "pelvis",
-      "sourcePart": "PV_BO_Pelvis_2D",
-      "surfaceKind": "壳单元表面",
-      "triangles": 3388
+      "sourcePart": "PV_BO_Pelvis_L_耻骨_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 1900,
+      "splitFrom": "PV_BO_Pelvis_3D"
+    },
+    {
+      "id": "8101-L-坐骨",
+      "label": "坐骨（左）",
+      "region": "pelvis",
+      "sourcePart": "PV_BO_Pelvis_L_坐骨_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 3282,
+      "splitFrom": "PV_BO_Pelvis_3D"
+    },
+    {
+      "id": "8101-R-髂骨",
+      "label": "髂骨（右）",
+      "region": "pelvis",
+      "sourcePart": "PV_BO_Pelvis_R_髂骨_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 8750,
+      "splitFrom": "PV_BO_Pelvis_3D"
+    },
+    {
+      "id": "8101-R-耻骨",
+      "label": "耻骨（右）",
+      "region": "pelvis",
+      "sourcePart": "PV_BO_Pelvis_R_耻骨_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 1808,
+      "splitFrom": "PV_BO_Pelvis_3D"
+    },
+    {
+      "id": "8101-R-坐骨",
+      "label": "坐骨（右）",
+      "region": "pelvis",
+      "sourcePart": "PV_BO_Pelvis_R_坐骨_split",
+      "surfaceKind": "实体外表面",
+      "triangles": 3000,
+      "splitFrom": "PV_BO_Pelvis_3D"
     },
     {
       "id": "8110",
@@ -984,14 +785,6 @@
       "region": "right-leg",
       "sourcePart": "LX_BO_R_Patella_3D_Rigid",
       "surfaceKind": "实体外表面",
-      "triangles": 208
-    },
-    {
-      "id": "9112",
-      "label": "髌骨（右）",
-      "region": "right-leg",
-      "sourcePart": "LX_BO_R_Patella_2D_Rigid",
-      "surfaceKind": "壳单元表面",
       "triangles": 208
     },
     {
@@ -1069,5 +862,5 @@
     "right-leg": "右下肢",
     "thorax": "胸廓"
   },
-  "meshSha256": "53e52b062658e070c1bb0022e865a9fbf0466f88e90aa04c50dcbb68cb6ad32a"
+  "meshSha256": "07556cea2e4d329eee9348cc75715db61ccda6c20e4fbb5f99ddca1d7aafbec4"
 }

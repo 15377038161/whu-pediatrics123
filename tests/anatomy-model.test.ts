@@ -14,11 +14,14 @@ test('儿童模型完整性：6岁来源、八区域、头颈表面、GLB与清�
   assert.equal(new Set(manifest.parts.map(part => part.id)).size,manifest.parts.length);
   assert.equal(new Set(manifest.parts.map(part => part.region)).size,8);
   assert.ok(manifest.parts.some(part => part.sourcePart === 'HE_BO_ExternalTable'));
-  assert.ok(manifest.parts.some(part => part.sourcePart === 'NK_BO_C1_2D'));
+  assert.ok(manifest.parts.some(part => part.sourcePart === 'NK_BO_C1_3D'));
   assert.ok(manifest.parts.some(part => part.sourcePart === 'HE_BO_InternalTable'));
   assert.ok(manifest.sourceFiles['main_Head_Brain.k']);
-  assert.equal(manifest.parts.find(part => part.id === '4114')?.label,'第1肋骨（左）');
-  assert.equal(manifest.parts.find(part => part.id === '4136')?.region,'right-arm');
+  assert.equal(manifest.schemaVersion,2);
+  assert.ok(manifest.parts.some(part => part.label==='第1肋骨（左）' && part.region==='thorax'));
+  assert.ok(manifest.parts.some(part => part.label==='肩胛骨（右）' && part.region==='right-arm'));
+  assert.ok(manifest.parts.filter(part => /^L[1-5]椎骨$/.test(part.label)).every(part => part.region==='spine'));
+  assert.ok(manifest.parts.every(part => !/_Rib\d+_2D_Rigid$/.test(part.sourcePart)),'连接片不能当独立肋骨');
   assert.ok(manifest.parts.every(part => part.triangles>0));
   assert.ok(doc.accessors.filter((item:{type:string}) => item.type==='VEC3').every((item:{min:number[];max:number[]}) => [...item.min,...item.max].every(Number.isFinite)));
   assert.ok(readFileSync('public/models/anatomy/LICENSE.txt','utf8').includes('Any public release of any scientific claims'));
