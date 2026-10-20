@@ -15,6 +15,7 @@ import { FLAGSHIP_CASE, findExamRule, findTest, getCase, identifyHistoryIntents,
 import { retrieveKnowledge } from '@/domain/knowledge';
 import { getCaseTestResult, recordCaseTestOrder, refreshProjectedFacts } from '@/lib/case-snapshot';
 import { matchRequestedTest, splitRequestedTests } from '@/lib/test-name-matcher';
+import { canChildSpeak, resolveCommunicationProfile } from '@/domain/communication-profile';
 import { renderRoleReply } from '@/lib/role-agent';
 
 /** 开单 RPC 注入缝：生产默认指向 case-snapshot 封装；仅测试注入 503/守卫拒绝失败路径，
@@ -253,10 +254,13 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   const newMessages: AgentMessage[] = [studentMessage];
   const traces = [trace('角色调度', '按患儿年龄、问题意图和家长插话状态选择回答者')];
   if (spokenIntervention) traces.push(trace('病例状态', '从学生原话识别沟通干预并更新应答状态'));
+  // 发言计划（方案 8.2）：角色能力决定患儿能否输出语义台词；不能言语一律家长代答。
+  const profile = resolveCommunicationProfile(session.caseId, pediatricCase.age);
+  const childCapable = canChildSpeak(profile);
 
   if (intents.length === 0) {
     newMessages.push(
-      message('child', '我不知道怎么说……妈妈知道。', { emotion: session.childEmotion }),
+      ...(childCapable ? [message('child', '我不知道怎么说……妈妈知道。', { emotion: session.childEmotion })] : []),
       message('parent', '医生，您可以问得再具体一点吗？', { emotion: 'anxious' }),
     );
     session.behavior.childResponseStyle = 'off_topic';
@@ -352,13 +356,29 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
     if (/哪里不舒服|怎么了|主诉|为什么来/.test(text) && source) matches = [{ fact: verifiedComplaint(source) ?? '主诉尚需补充核实', index: -2 }];
   }
   const fact = matches.map((item) => item.fact).join('。');
+  // 发言计划（方案 8.2/8.4）：先按病例角色能力决定说话者，再渲染角色回复。
+  const profile = resolveCommunicationProfile(session.caseId, pediatricCase.age);
+  const childCapable = canChildSpeak(profile);
+  const parentPaused = session.parentInterruption === 'paused';
   const roleResult = fact ? await renderRoleReply({ childAge: pediatricCase.age, childSex: pediatricCase.sex,
-    question: text, childFact: '', parentFact: fact, preferredActor: 'parent', parentPaused: session.parentInterruption === 'paused',
+    question: text, childFact: '', parentFact: fact, preferredActor: 'parent', parentPaused,
     childComforted: session.childEmotion === 'calm', recentMessages: session.messages.slice(-6),
+    communicationProfile: profile,
   }, forwardHeaders) : null;
   const reply = fact ? roleResult?.reply?.parent ?? casualParentReply(fact, session.messages.length) : '这部分我说不清楚，需要再核实一下。';
-  const newMessages = [message('student', text), message(session.parentInterruption === 'paused' ? 'child' : 'parent', session.parentInterruption === 'paused' ? '这个我说不清楚，可以请家长补充吗？' : reply, { emotion: session.childEmotion })];
-  const codes = session.parentInterruption === 'paused' ? [] : matches.map((item) => `SOURCE_HX_${item.index}`);
+  const nonverbalNote = roleResult?.reply?.nonverbal;
+  const responder: AgentMessage = !parentPaused
+    ? message('parent', reply, { emotion: session.childEmotion })
+    : childCapable
+      // 暂停家长后由患儿先答：仅适用于能语言表达的患儿，答不上时自然请家长补充。
+      ? message('child', '这个我说不清楚，可以请家长补充吗？', { emotion: session.childEmotion })
+      // 不能言语患儿 + 暂停家长：不机械产出患儿台词（方案 8.2）；家长给出合理场景回应并继续训练。
+      : message('parent', '好的医生，不过孩子还不会说话，这些还是我来回答吧。', { emotion: session.childEmotion });
+  const newMessages = [message('student', text), responder];
+  // 非言语反馈独立展示（括注舞台提示，非语义台词）；不把旁白混进患儿语音（方案 8.4）。
+  if (nonverbalNote && !childCapable) newMessages.push(message('child', `（${nonverbalNote}）`, { emotion: session.childEmotion }));
+  // 家长代答时证据照常解锁；仅"患儿先答但答不上"（能表达且被暂停）不解锁。
+  const codes = parentPaused && childCapable ? [] : matches.map((item) => `SOURCE_HX_${item.index}`);
   session.askedIntents = uniq([...session.askedIntents, ...codes]);
   session.unlockedEvidence = uniq([...session.unlockedEvidence, ...codes]);
   session.messages.push(...newMessages);
@@ -369,7 +389,8 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
 }
 
 function handleIntervention(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'], clientEventId: string, spokenText?: string): AgentTurnResult {
-  const patientName = getCase(session.caseId, session.sourceSnapshotVersion, session.id).patientName;
+  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
+  const patientName = pediatricCase.patientName;
   const copy = {
     child_answer: `${patientName}，接下来请你自己告诉我哪里不舒服，可以慢慢说。`,
     pause_parent: '我想先听孩子本人回答，家长稍后再补充，可以吗？',
@@ -378,12 +399,21 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
   const studentMessage = message('student', spokenText ?? copy);
   let response: AgentMessage;
   applyInterventionState(session, action);
+  // 发言计划（方案 8.2）：不能言语患儿的干预不机械执行固定台词；
+  // 安抚只影响情绪与配合，不改变语言能力；"让孩子自己说"按能力给出合理场景回应。
+  const childCapable = canChildSpeak(resolveCommunicationProfile(session.caseId, pediatricCase.age));
   if (action === 'pause_parent') {
-    response = message('parent', '好的，我等孩子说完再补充。', { emotion: 'neutral' });
+    response = childCapable
+      ? message('parent', '好的，我等孩子说完再补充。', { emotion: 'neutral' })
+      : message('parent', '好的医生……不过孩子还不会说话，想了解什么还是我来回答吧。', { emotion: 'neutral' });
   } else if (action === 'comfort_child') {
-    response = message('child', '好……我会慢慢说。', { emotion: 'calm' });
+    response = childCapable
+      ? message('child', '好……我会慢慢说。', { emotion: 'calm' })
+      : message('parent', '医生，您这么一安抚，孩子好像安静了一些。', { emotion: 'neutral' });
   } else {
-    response = message('child', '嗯，我自己说。', { emotion: session.childEmotion });
+    response = childCapable
+      ? message('child', '嗯，我自己说。', { emotion: session.childEmotion })
+      : message('parent', '医生，孩子现在还说不上话，有什么想了解的我来回答。', { emotion: 'neutral' });
   }
   const newMessages = [studentMessage, response];
   session.messages.push(...newMessages);
