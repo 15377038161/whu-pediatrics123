@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import manifest from '../public/models/anatomy/manifest.json';
-test('儿童模型完整性：6岁来源、八区域、头颈表面、GLB与清单一致', () => {
+test('儿童模型技术一致性：6岁来源、八区域、头颈表面、GLB与清单一致（非医学完整性证明）', () => {
   const binary=readFileSync('public/models/anatomy/piper-child-6yo.glb');
   assert.equal(binary.readUInt32LE(0),0x46546c67);
   assert.equal(binary.readUInt32LE(4),2);

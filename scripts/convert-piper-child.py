@@ -2,18 +2,17 @@
 Usage: python scripts/convert-piper-child.py outputs/piper-child
 
 v2 changes (2026-10-20), all derived from source topology only -- no invented geometry:
-- Deduplicate: when a bone exists as both 2D shell and 3D solid surfaces, keep the 3D
-  solid exterior only (they were spatially coincident duplicates).
+- Prefer 3D when both 2D/3D representations exist. These are not assumed identical:
+  audit-anatomy-completeness.py records surface differences for specialist review.
 - Drop LS-DYNA rigid connector patches (per-rib *_Rib*_2D_Rigid ~1cm patches and
   TX_BO_Sternum_2D_rigid): they are FE connection artifacts, NOT ribs/sternum.
 - Split merged meshes along source connected components (lossless topology split):
   * TX_BO_Ribs_3D -> 22 individual ribs, numbered by 1:1 nearest match against the
     rigid rib patches (authoritative Rib1-11 L/R naming), cross-validated against
     superior->inferior centroid ordering and left/right X sign. Fails loudly on mismatch.
-  * PV_BO_Pelvis_3D -> ilium/ischium/pubis L+R (6yo triradiate cartilage is unfused,
-    so the three ossification centers are genuinely separate surfaces). Identification
-    by anatomy-consistent spatial rules, asserted symmetric per side.
-  * UX_BO_*_Forearm_2D -> radius (lateral, larger |X|) + ulna (medial).
+  * PV_BO_Pelvis_3D -> 6 connected surfaces with inferred ilium/ischium/pubis labels.
+    Spatial naming rules are provisional, NOT medical approval.
+  * UX_BO_*_Forearm_2D -> radius/ulna using source-defined radius styloid node sets.
 - Hand (19 comps) / foot (18 comps) components do NOT map 1:1 to the 27/26 anatomical
   bones, so they stay merged and are honestly labelled as merged meshes (no fake names).
 - Vertebra multi-components are body+processes of ONE bone -> never split.
@@ -138,7 +137,7 @@ def rib_assignment(rib_pos,rib_idx,patch_centroids):
     comps=connected_components(len(rib_pos),rib_idx)
     if len(comps)!=22: raise ValueError(f'Ribs_3D must have 22 components, got {len(comps)}')
     cc=[rib_pos[c].mean(axis=0) for c in comps]
-    used={}; 
+    used={}
     for pname,pc in patch_centroids.items():
         dists=sorted(((np.linalg.norm(cc[i]-pc),i) for i in range(22) if i not in used.values()))
         if not dists: raise ValueError('rib patch matching exhausted components')
@@ -181,9 +180,17 @@ def pelvis_assignment(pos,idx):
 def forearm_assignment(pos,idx,side):
     comps=connected_components(len(pos),idx)
     if len(comps)!=2: raise ValueError(f'Forearm must have 2 components, got {len(comps)}')
-    a,b=comps
-    ma,mb=abs(pos[a][:,0].mean()),abs(pos[b][:,0].mean())
-    radius,ulna=(a,b) if ma>mb else (b,a)
+    # Use upstream named landmark rather than guessing anatomy from current pose.
+    lines=[line.strip() for line in (source/'landmarks_ISB.k').read_text(encoding='utf-8').splitlines()
+           if line.strip() and not line.lstrip().startswith('$')]
+    title=f'Styloid_process_of_{"left" if side=="L" else "right"}_radius'
+    landmark=int(lines[lines.index(title)+2].split()[0])
+    coordinate=nodes[landmark]
+    target=np.array([coordinate[1],coordinate[2],coordinate[0]])/1000
+    candidates=[c for c in comps if np.any(np.linalg.norm(pos[c]-target,axis=1)<1e-8)]
+    if len(candidates)!=1: raise ValueError(f'Radius source landmark is ambiguous/missing: {title}')
+    radius=candidates[0]
+    ulna=next(c for c in comps if c is not radius)
     return [(radius,f'桡骨（{"左" if side=="L" else "右"}）'),(ulna,f'尺骨（{"左" if side=="L" else "右"}）')]
 
 def region(name):

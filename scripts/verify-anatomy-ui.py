@@ -21,6 +21,9 @@ with sync_playwright() as p:
         page.route('**/*',intercept);page.goto(base+'/student/anatomy')
         page.get_by_text('儿童模型已加载',exact=False).wait_for(timeout=90000)
         page.locator('canvas').wait_for();page.wait_for_timeout(1500)
+        assert page.get_by_role('button',name='原位骨架',exact=True).count()==1
+        assert page.get_by_role('button',name='完整骨架',exact=True).count()==0
+        assert page.get_by_text('模型覆盖尚不完整',exact=True).count()==1
         structure_count=int(page.locator('.anatomy-stage').get_attribute('data-structure-count'))
         assert page.locator('.anatomy-part').count()==0
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
@@ -40,7 +43,7 @@ with sync_playwright() as p:
         assert ImageChops.difference(assembled,flat).getbbox(),'flat layout must change actual rendered pixels'
         page.evaluate('window.scrollTo(0,0)');page.wait_for_timeout(150)
         page.screenshot(path=f'outputs/anatomy-flat-{width}.png',full_page=True,animations='disabled')
-        page.get_by_role('button',name='完整骨架',exact=True).click();page.wait_for_timeout(1800)
+        page.get_by_role('button',name='原位骨架',exact=True).click();page.wait_for_timeout(1800)
         restored=Image.open(BytesIO(page.locator('canvas').screenshot())).convert('RGB')
         # Same geometry, arrangement and front framing return after assembly (allow antialiasing rounding).
         diff=ImageChops.difference(assembled,restored)
