@@ -289,13 +289,19 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
     recentMessages: session.messages.slice(-6).map((item) => ({ actor: item.actor, content: item.content })),
     cooperation: session.behavior.cooperation,
     disclosedFacts: session.askedIntents,
+    communicationProfile: profile,
   }, forwardHeaders);
   const modelReply = roleResult.reply;
   const childAnswer = modelReply?.child ?? childFact;
   const parentAnswer = modelReply?.parent ?? parentFact;
   const parentPaused = session.parentInterruption === 'paused';
 
-  if (preferredActor === 'parent' && !parentPaused) {
+  // 发言计划（方案 8.2）：不能言语患儿不输出语义台词，一律家长代答，仅保留非言语括注。
+  if (!childCapable) {
+    const prefix = session.parentInterruption === 'active' ? '我补充一下：' : '';
+    newMessages.push(message('parent', `${prefix}${parentAnswer}`, { emotion: 'anxious' }));
+    if (modelReply?.nonverbal) newMessages.push(message('child', `（${modelReply.nonverbal}）`, { emotion: session.childEmotion }));
+  } else if (preferredActor === 'parent' && !parentPaused) {
     newMessages.push(message('parent', parentAnswer, { emotion: 'anxious' }));
   } else if (preferredActor === 'child' || parentPaused) {
     newMessages.push(message('child', childAnswer, { emotion: modelReply?.childEmotion ?? session.childEmotion }));
