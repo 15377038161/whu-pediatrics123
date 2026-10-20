@@ -58,22 +58,22 @@ export const practiceScenarios: Record<PracticeFocus, PracticeScenario> = {
   },
   exam: {
     focus: 'exam',
-    configVersion: 1,
+    configVersion: 2,
     title: '肺部规范查体',
     goal: '按规范流程完成本病例的重点查体',
     briefing: [
       '本病例的必要病史已由系统直接提供（标记为 provided，不计入你的查体得分）。',
       '先完成手卫生与检查说明，再按「器材 × 部位」逻辑逐项检查；腹部检查请切换仰卧位。',
-      '完成本项查体操作后结束训练即可，不需要写完整诊断。',
+      '完成本项查体操作后结束训练即可，不需要写完整诊断；操作证据用于流程与规范评分，结果识别需另提交观察内容后才可评价。',
     ],
     initialStage: 'exam',
     allowedStages: ['exam', 'report'],
     allowedActions: ['EXAM_ACTION', 'NAVIGATE_STAGE'],
     providedEvidence: ['HX_PROVIDED'],
     completion: 'exam_observation',
-    completionHint: '完成至少一项有效查体操作后可结束训练，系统按操作证据评分。',
+    completionHint: '完成至少一项有效查体操作后可结束训练；操作证据评价流程规范性，结果识别需提交观察/推理内容后方可评价。',
     rubricId: 'rubric-focused-exam',
-    rubricVersion: 1,
+    rubricVersion: 2,
   },
   safety: {
     focus: 'safety',
@@ -112,7 +112,7 @@ export const practiceScenarios: Record<PracticeFocus, PracticeScenario> = {
     completion: 'communication_end',
     completionHint: '完成解释与确认后结束会话，生成沟通专项报告。',
     rubricId: 'rubric-focused-communication',
-    rubricVersion: 1,
+    rubricVersion: 2,
   },
 };
 

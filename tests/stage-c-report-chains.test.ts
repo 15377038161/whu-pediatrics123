@@ -19,7 +19,7 @@ test('普通病例链：完整接诊按旗舰量表生成 clinical_rubric 报告
   session.communication = '我理解您担心。孩子呼吸有风险，我们先吸氧监测。';
   const report = buildReport(session, 'report-guided');
   assert.equal(report.rubricId, 'rubric-clinical-flagship');
-  assert.equal(report.rubricVersion, 1);
+  assert.equal(report.rubricVersion, 2);
   assert.equal(report.evaluationBasis, 'clinical_rubric');
   assert.equal(report.totalScore, Object.values(report.abilities).reduce((sum, value) => sum + value, 0), '总分=分项之和');
   assert.equal(report.evidence.reduce((sum, item) => sum + item.maxScore, 0), 100, '总满分=计分项满分之和');
@@ -35,6 +35,7 @@ test('专项链：practice 会话按 focus 选专项量表，不因未开放环�
   session.unlockedEvidence = ['EX_PREP', 'EX_RESP', 'EX_SPO2', 'EX_TEMP'];
   const report = buildReport(session, 'report-exam');
   assert.equal(report.rubricId, 'rubric-focused-exam');
+  assert.equal(report.rubricVersion, 2);
   assert.equal(report.practiceFocus, 'exam');
   assert.equal(report.evaluationBasis, 'clinical_rubric');
   // 专项量表只含查体维度项：未提交诊断/处置/沟通不计负分，总分=查体专项得分
@@ -44,6 +45,12 @@ test('专项链：practice 会话按 focus 选专项量表，不因未开放环�
   assert.equal(report.evidence.reduce((sum, item) => sum + item.maxScore, 0), 100, '专项量表满分 100');
   assert.ok(report.studentSubmissions);
   assert.equal(report.studentSubmissions?.decision, null, '未提交诊断保留为空快照');
+  // C-评分补验-01：仅操作点击不足以评价结果识别，EX_FINDINGS 记无法评价，不列为重点改进
+  const findings = report.evidence.find((item) => item.code === 'RUBRIC_EX_FINDINGS');
+  assert.equal(findings?.status, 'not_assessable', '无观察提交时结果识别记无法评价');
+  assert.equal(findings?.score, 0);
+  assert.ok(!report.improvements.includes('结果识别'), '无法评价项不列为重点改进');
+  assert.ok(report.recommendation.includes('无法评价'), '推荐语说明待复核项');
 });
 
 test('OSCE 链：站点契约元数据 + 服务器计时 + 时间到拒绝新增操作', async () => {

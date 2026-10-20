@@ -50,12 +50,14 @@ export interface RubricDefinition {
   items: RubricItem[];
 }
 
-/** 演示病例完整接诊量表（rubric-clinical-flagship v1）：六维 100 分全量分项化。
+/** 演示病例完整接诊量表（rubric-clinical-flagship v2）：六维 100 分全量分项化。
  *  保持既有证据码（RUBRIC_SAFETY/RUBRIC_EXAM_RESP/RUBRIC_EXAM_OXYGEN/RUBRIC_HISTORY_DANGER/RUBRIC_COMMUNICATION）
- *  不变，新增分项补齐「总分=计分项之和」口径（原证据分项仅覆盖 70/100）。 */
+ *  不变，新增分项补齐「总分=计分项之和」口径（原证据分项仅覆盖 70/100）。
+ *  v2（C-评分补验-01）：沟通项关键词命中降为候选证据——沟通原文须含病例相关实际内容方可评价，
+ *  共情候选词部分计分待教师复核；无可评价内容记无法评价。分项结构与满分不变，历史 v1 报告不重算。 */
 export const flagshipClinicalRubric: RubricDefinition = {
   id: 'rubric-clinical-flagship',
-  version: 1,
+  version: 2,
   name: '儿童呼吸道病例完整接诊量表',
   scope: 'clinical',
   evaluationBasis: 'clinical_rubric',
@@ -73,12 +75,14 @@ export const flagshipClinicalRubric: RubricDefinition = {
     { itemId: 'REASONING_RISK', dimension: 'reasoning', label: '低氧与危险识别', maxScore: 6, applicability: '演示病例完整接诊', evidenceRule: '识别低氧、呼吸困难等危险信号（否定表述不计）', partialCredit: null, feedback: '未识别低氧等危险信号。', reference: '低氧识别' },
     { itemId: 'REASONING_DIFFERENTIAL', dimension: 'reasoning', label: '鉴别诊断', maxScore: 4, applicability: '演示病例完整接诊', evidenceRule: '鉴别诊断含鉴别方向与理由表述', partialCredit: '仅列举疾病名词 2 分', feedback: '未提供鉴别诊断思路。', reference: '鉴别诊断表达' },
     { itemId: 'SAFETY', dimension: 'safety', label: '患者安全与处置优先级', maxScore: 15, applicability: '演示病例完整接诊', evidenceRule: '首要处置稳定生命体征 8 分；安排进一步评估 4 分；无不安全出院 3 分；出现不安全出院表述计 incorrect', partialCredit: '按构成部分计分', feedback: '处置未同时覆盖生命体征稳定和进一步评估。', reference: '患者安全优先级' },
-    { itemId: 'COMMUNICATION', dimension: 'communication', label: '家长沟通', maxScore: 10, applicability: '演示病例完整接诊', evidenceRule: '共情 3 分；解释风险 4 分；明确下一步 3 分', partialCredit: '按构成部分计分', feedback: '沟通中仍缺少共情、风险解释或明确的下一步。', reference: '家长沟通要素' },
+    { itemId: 'COMMUNICATION', dimension: 'communication', label: '家长沟通', maxScore: 10, applicability: '演示病例完整接诊（无可评价病例内容的沟通记无法评价）', evidenceRule: '沟通原文须含病例相关实际内容方可评价：共情候选词 2 分（待教师复核）；解释呼吸/血氧风险 4 分；明确下一步 3 分', partialCredit: '共情候选词部分计分；无病例相关实际内容记无法评价', feedback: '沟通中仍缺少共情、风险解释或明确的下一步。', reference: '家长沟通要素' },
     { itemId: 'PROFESSIONALISM', dimension: 'professionalism', label: '职业素养', maxScore: 5, applicability: '演示病例完整接诊', evidenceRule: '完成手卫生 2 分；使用安抚干预 2 分；手卫生先于任何接触性查体 1 分', partialCredit: '按构成部分计分', feedback: '未形成职业素养证据。', reference: '查体顺序与安抚' },
   ],
 };
 
-/** 专项量表（方案 4.5 权重结构）：分数只评价本专项，不因未开放环节扣分。 */
+/** 专项量表（方案 4.5 权重结构）：分数只评价本专项，不因未开放环节扣分。
+ *  适用满分口径（方案 4.4）：总满分=适用计分项满分之和，not_applicable/not_assessable 项
+ *  不计入适用满分（报告展示层按证据状态排除），不适用项不记零分（maxScore 为 0 仅作展示）。 */
 export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
   history: {
     id: 'rubric-focused-history',
@@ -96,7 +100,7 @@ export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
   },
   exam: {
     id: 'rubric-focused-exam',
-    version: 1,
+    version: 2,
     name: '肺部规范查体专项量表',
     scope: 'focused',
     focus: 'exam',
@@ -106,7 +110,7 @@ export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
       { itemId: 'EX_LUNG_AUSCULTATION', dimension: 'examination', label: '肺部听诊', maxScore: 20, applicability: '规范查体专项', evidenceRule: '听诊器×胸部获得肺部听诊证据', partialCredit: null, feedback: '未完成肺部听诊。', reference: '肺部听诊规范' },
       { itemId: 'EX_OXIMETRY', dimension: 'examination', label: '血氧监测', maxScore: 15, applicability: '规范查体专项', evidenceRule: '血氧仪获得静息血氧结果', partialCredit: null, feedback: '未完成血氧监测。', reference: '脉搏血氧监测' },
       { itemId: 'EX_SEQUENCE', dimension: 'examination', label: '顺序与安全', maxScore: 25, applicability: '规范查体专项', evidenceRule: '手卫生先于任何接触性检查 15；未出现未备即查的深层检查 10', partialCredit: '备后补序 12 分', feedback: '查体顺序不合规（未先手卫生或存在未备即查）。', reference: '查体顺序规范' },
-      { itemId: 'EX_FINDINGS', dimension: 'examination', label: '结果识别', maxScore: 20, applicability: '规范查体专项', evidenceRule: '额外有效查体组合≥2 项达成、1 项部分', partialCredit: '1 项 12 分', feedback: '有效查体覆盖不足。', reference: '系统查体广度' },
+      { itemId: 'EX_FINDINGS', dimension: 'examination', label: '结果识别', maxScore: 20, applicability: '规范查体专项（查体操作点击仅为过程证据）', evidenceRule: '学生观察/推理提交锚定本病例查体所见≥2 项达成、1 项部分；仅有操作点击记无法评价', partialCredit: '锚定 1 项查体所见 12 分', feedback: '缺少可评价结果识别的观察/推理提交。', reference: '查体所见识别' },
     ],
   },
   safety: {
@@ -124,17 +128,17 @@ export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
   },
   communication: {
     id: 'rubric-focused-communication',
-    version: 1,
+    version: 2,
     name: '家长焦虑沟通专项量表',
     scope: 'focused',
     focus: 'communication',
     evaluationBasis: 'clinical_rubric',
     items: [
-      { itemId: 'CM_CONCERN_RESPONSE', dimension: 'communication', label: '回应顾虑', maxScore: 25, applicability: '家长沟通专项（关键词为候选证据，质量待教师复核）', evidenceRule: '沟通中包含共情回应表述', partialCredit: null, feedback: '未回应家长顾虑与情绪。', reference: '共情沟通' },
-      { itemId: 'CM_PLAIN_EXPLANATION', dimension: 'communication', label: '通俗解释', maxScore: 25, applicability: '家长沟通专项（关键词为候选证据，质量待教师复核）', evidenceRule: '具体解释呼吸/血氧/危险 25；仅一般病情说明 15', partialCredit: '一般说明 15 分', feedback: '未用通俗语言解释病情与风险。', reference: '风险沟通' },
-      { itemId: 'CM_UNDERSTANDING_CHECK', dimension: 'communication', label: '核实理解', maxScore: 20, applicability: '家长沟通专项', evidenceRule: '主动核实家长是否理解（还有什么问题/明白吗等）', partialCredit: null, feedback: '未核实家长理解情况。', reference: 'teach-back 沟通' },
-      { itemId: 'CM_NEXT_STEPS', dimension: 'communication', label: '后续安排', maxScore: 20, applicability: '家长沟通专项', evidenceRule: '说明下一步监测/检查/处理安排', partialCredit: null, feedback: '未说明后续安排。', reference: '后续安排告知' },
-      { itemId: 'CM_RESPECTFUL_TONE', dimension: 'communication', label: '尊重与表达', maxScore: 10, applicability: '家长沟通专项（关键词为候选证据，质量待教师复核）', evidenceRule: '使用陪伴/安抚性表达', partialCredit: null, feedback: '表达缺少尊重与安抚性语言。', reference: '尊重表达' },
+      { itemId: 'CM_CONCERN_RESPONSE', dimension: 'communication', label: '回应顾虑', maxScore: 25, applicability: '家长沟通专项（无可评价病例内容的沟通记无法评价）', evidenceRule: '共情候选表达按过程证据部分计分，最终沟通质量待教师复核', partialCredit: '候选表达 15 分', feedback: '未回应家长顾虑与情绪。', reference: '共情沟通' },
+      { itemId: 'CM_PLAIN_EXPLANATION', dimension: 'communication', label: '通俗解释', maxScore: 25, applicability: '家长沟通专项（无可评价病例内容的沟通记无法评价）', evidenceRule: '具体解释呼吸/血氧/危险 25；仅一般病情说明 15', partialCredit: '一般说明 15 分', feedback: '未用通俗语言解释病情与风险。', reference: '风险沟通' },
+      { itemId: 'CM_UNDERSTANDING_CHECK', dimension: 'communication', label: '核实理解', maxScore: 20, applicability: '家长沟通专项（无可评价病例内容的沟通记无法评价）', evidenceRule: '主动核实家长是否理解（还有什么问题/明白吗等）', partialCredit: null, feedback: '未核实家长理解情况。', reference: 'teach-back 沟通' },
+      { itemId: 'CM_NEXT_STEPS', dimension: 'communication', label: '后续安排', maxScore: 20, applicability: '家长沟通专项（无可评价病例内容的沟通记无法评价）', evidenceRule: '说明下一步监测/检查/处理安排', partialCredit: null, feedback: '未说明后续安排。', reference: '后续安排告知' },
+      { itemId: 'CM_RESPECTFUL_TONE', dimension: 'communication', label: '尊重与表达', maxScore: 10, applicability: '家长沟通专项（无可评价病例内容的沟通记无法评价）', evidenceRule: '安抚性候选表达按过程证据部分计分，最终沟通质量待教师复核', partialCredit: '候选表达 6 分', feedback: '表达缺少尊重与安抚性语言。', reference: '尊重表达' },
     ],
   },
 };
