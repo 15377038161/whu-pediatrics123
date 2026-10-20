@@ -4,7 +4,8 @@
  *  - 登录后本人会话成功路径：能力探测 200、ASR 真实音频经路由识别、TTS 本人会话角色消息合成；
  *  - 守卫经路由：学生本人发言不播报（422 NOT_SPEAKABLE）、消息不存在（404）；
  *  - 会话隔离：本人另一会话中查不到第一会话消息（404）；
- *  - 跨用户拒绝：教师身份（合法受控预览身份）访问学生会话 TTS → 403；
+ *  - 跨用户拒绝：教师身份（合法受控预览身份）访问学生会话 TTS → 403 PERMISSION_DENIED
+ *    （D-核查-02 fail-closed：督导读取不延伸为跨用户合成）；教师本人会话合成保留 → 200；
  *    仓库层另一学生上下文取本人会话 → FORBIDDEN（路由级第二名学生请求需真实第二身份，列待验收）。
  *
  * 身份：仅使用既有预览受控身份（ENABLE_UI_PREVIEW + setPreviewCookie），不注册新账号、
@@ -118,12 +119,32 @@ test('语音路由登录后链路：本人会话成功路径、守卫与会话�
     assert.equal(crossSession.status, 404);
     assert.equal((await crossSession.json()).error.code, 'MESSAGE_NOT_FOUND');
 
-    // 8. 教师督导访问（设计允许，非拒绝方向）：教师访问学生会话由 RLS teacher_select 放行
-    //    （repository.getSession 与数据层同源判定），语音路由沿用该语义 → 200；
-    //    真正的拒绝方向是学生侧跨学生（见第 9 步），教师侧督导属授权访问。
-    const teacherSupervision = await speechTts(asTeacher('/api/speech/tts', { sessionId: session.id, messageId: parentMessage.id }));
-    assert.equal(teacherSupervision.status, 200);
-    assert.equal(typeof (await teacherSupervision.json()).data.audioUrl, 'string');
+    // 8. 教师他人会话拒绝（D-核查-02 fail-closed 修复后断言）：教师督导读取语义
+    //    （getSession/RLS teacher_select 同源）只授予"读"，不延伸为跨用户语音合成——
+    //    教师为学生消息请求 TTS → 403 PERMISSION_DENIED。不靠改断言过测：路由已加显式
+    //    本人归属限制（session.userId === 当前用户），教师跨用户督导语音需阶段 E 明确
+    //    范围后专门授权；当前无可信班级范围授权服务，不以宽泛 role 绕过。
+    const teacherCrossUser = await speechTts(asTeacher('/api/speech/tts', { sessionId: session.id, messageId: parentMessage.id }));
+    assert.equal(teacherCrossUser.status, 403);
+    assert.equal((await teacherCrossUser.json()).error.code, 'PERMISSION_DENIED');
+
+    // 8b. 教师本人会话训练保留：教师创建本人会话问诊产生角色消息后，为本人消息合成 → 200
+    const teacherSessionResp = await createSession(asTeacher('/api/sessions', { mode: 'guided', caseId: 'peds-respiratory-001', clientRequestId: crypto.randomUUID() }));
+    assert.equal(teacherSessionResp.status, 201);
+    const teacherSession = (await teacherSessionResp.json()).data;
+    const teacherTurn = await agentTurn(asTeacher('/api/agent/turn', {
+      sessionId: teacherSession.id,
+      clientEventId: crypto.randomUUID(),
+      event: { type: 'ASK_QUESTION', data: { text: '孩子精神状态怎么样？' } },
+    }));
+    assert.equal(teacherTurn.status, 200);
+    const teacherRepo = new AgentRepository({ id: 'preview-teacher-001', role: 'teacher', displayName: '评委预览教师', studentNo: null, chaoxingUid: null, provider: 'preview', accessToken: null });
+    const teacherFresh = await teacherRepo.getSession(teacherSession.id);
+    const teacherParentMessage = teacherFresh.messages.find((item) => item.actor === 'parent');
+    assert.ok(teacherParentMessage, '教师本人会话问诊后应存在家长角色消息');
+    const teacherOwn = await speechTts(asTeacher('/api/speech/tts', { sessionId: teacherSession.id, messageId: teacherParentMessage.id }));
+    assert.equal(teacherOwn.status, 200);
+    assert.equal(typeof (await teacherOwn.json()).data.audioUrl, 'string');
 
     // 9. 跨学生归属拒绝（仓库层，与既有 workflow-route 模式一致）：另一学生上下文 → FORBIDDEN
     //    路由级第二名学生 HTTP 请求需真实第二身份，列待验收（不注册新账号/伪造 JWT）

@@ -18,8 +18,13 @@ const STATUS_BY_CODE: Record<string, number> = {
 };
 
 /**
- * 角色消息 TTS（阶段 D）：只按 messageId 取学生本人会话（getSession 已做归属校验）中
- * 已存在的角色消息合成——TTS 不能自己生成新事实，text 不由客户端传入。
+ * 角色消息 TTS（阶段 D）：只按 messageId 取**本人**会话中已存在的角色消息合成——
+ * TTS 不能自己生成新事实，text 不由客户端传入。
+ * 归属边界（D-核查-02 fail-closed 修复）：getSession 的教师督导读取语义（RLS teacher_select）
+ * 只授予"读"，不自动授予跨用户语音合成——本路由显式要求 session.userId === 当前用户 id，
+ * 教师仅可为自己创建的本人会话合成音频（教师本人会话训练保留），为他人（学生）会话合成
+ * 返回 403 PERMISSION_DENIED。教师跨用户督导语音需求留待阶段 E 明确范围后专门授权，
+ * 不以宽泛 role 绕过（当前亦无可信班级范围授权服务，纯角色判定无范围限定）。
  * 不能言语患儿的语义台词与纯括注消息返回 NOT_SPEAKABLE（不当婴儿台词守卫）。
  */
 export async function POST(request: NextRequest) {
@@ -34,6 +39,14 @@ export async function POST(request: NextRequest) {
       );
     }
     const session = await new AgentRepository(user).getSession(parsed.data.sessionId);
+    // 显式本人归属限制（契约"仅本人会话已存在消息"）：督导读取语义不延伸为跨用户合成
+    if (session.userId !== user.id) {
+      return fail(
+        { code: 'PERMISSION_DENIED', message: '语音合成仅限本人会话的消息。', retryable: false },
+        undefined,
+        403,
+      );
+    }
     const forwardHeaders = extractForwardHeaders(Object.fromEntries(request.headers.entries()));
     const result = await synthesizeRoleAudio(session, parsed.data.messageId, forwardHeaders);
     if (!result.ok) {
