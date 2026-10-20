@@ -21,8 +21,8 @@ importers:
         specifier: 2.110.8
         version: 2.110.8
       coder-coding-dev-sdk:
-        specifier: https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz
-        version: https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz(openai@7.5.0(ws@8.21.3)(zod@3.25.76))(ws@8.21.3)
+        specifier: https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20261019.d5eff68.tgz
+        version: https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20261019.d5eff68.tgz
       coze-coding-dev-sdk:
         specifier: ^0.7.24
         version: 0.7.24(openai@7.5.0(ws@8.21.3)(zod@3.25.76))(ws@8.21.3)
@@ -1601,9 +1601,9 @@ packages:
   client-only@0.0.1:
     resolution: {integrity: sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==}
 
-  coder-coding-dev-sdk@https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz:
-    resolution: {tarball: https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz}
-    version: 1.0.0-20260922.abfcac8
+  coder-coding-dev-sdk@https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20261019.d5eff68.tgz:
+    resolution: {tarball: https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20261019.d5eff68.tgz}
+    version: 1.0.0-20261019.d5eff68
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -4679,26 +4679,14 @@ snapshots:
 
   client-only@0.0.1: {}
 
-  coder-coding-dev-sdk@https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20260922.abfcac8.tgz(openai@7.5.0(ws@8.21.3)(zod@3.25.76))(ws@8.21.3):
+  coder-coding-dev-sdk@https://robot.chaoxing.com/coder-sdk/coder-coding-dev-sdk-1.0.0-20261019.d5eff68.tgz:
     dependencies:
       axios: 1.19.0
       cheerio: 1.2.0
-      coze-coding-dev-sdk: 0.7.24(openai@7.5.0(ws@8.21.3)(zod@3.25.76))(ws@8.21.3)
       pptxgenjs: 3.12.0
     transitivePeerDependencies:
-      - '@aws-sdk/credential-provider-node'
-      - '@opentelemetry/api'
-      - '@opentelemetry/exporter-trace-otlp-proto'
-      - '@opentelemetry/sdk-trace-base'
-      - '@smithy/hash-node'
-      - '@smithy/signature-v4'
-      - bufferutil
       - debug
-      - openai
-      - pg-native
       - supports-color
-      - utf-8-validate
-      - ws
 
   color-convert@2.0.1:
     dependencies:
@@ -5092,7 +5080,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.14.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0)):
+  eslint-module-utils@2.14.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.5(jiti@2.7.0)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -5114,7 +5102,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.39.5(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-module-utils: 2.14.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.5(jiti@2.7.0)))(eslint@9.39.5(jiti@2.7.0))
+      eslint-module-utils: 2.14.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.5(jiti@2.7.0))
       hasown: 2.0.4
       is-core-module: 2.16.2
       is-glob: 4.0.3

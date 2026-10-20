@@ -6,6 +6,7 @@ import type {
   AgentTraceItem,
   AgentTurnResult,
   ClinicalEvent,
+  EventSpeechMeta,
   PracticeFocus,
   SessionMode,
   SessionState,
@@ -38,7 +39,7 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function message(actor: AgentMessage['actor'], content: string, options?: Partial<Pick<AgentMessage, 'emotion' | 'kind'>>): AgentMessage {
+function message(actor: AgentMessage['actor'], content: string, options?: Partial<Pick<AgentMessage, 'emotion' | 'kind' | 'inputMode' | 'asrRawText' | 'transcriptEdited'>>): AgentMessage {
   return {
     id: crypto.randomUUID(),
     actor,
@@ -46,7 +47,16 @@ function message(actor: AgentMessage['actor'], content: string, options?: Partia
     emotion: options?.emotion ?? 'neutral',
     kind: options?.kind ?? 'dialogue',
     createdAt: now(),
+    ...(options?.inputMode === 'voice'
+      ? { inputMode: 'voice', asrRawText: options.asrRawText, transcriptEdited: options.transcriptEdited }
+      : {}),
   };
+}
+
+/** 语音轮元数据 → 学生消息字段（阶段 D）：仅语音输入附带；文字输入不产生字段。 */
+function speechOptions(speech?: EventSpeechMeta): Partial<Pick<AgentMessage, 'inputMode' | 'asrRawText' | 'transcriptEdited'>> | undefined {
+  if (!speech) return undefined;
+  return { inputMode: speech.inputMode, asrRawText: speech.asrRawText, transcriptEdited: speech.transcriptEdited };
 }
 
 function clinicalEvent(
@@ -277,17 +287,17 @@ function casualParentReply(fact: string, turnIndex: number): string {
   return `${opener}${spoken}。`;
 }
 
-async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>): Promise<AgentTurnResult> {
+async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>, speech?: EventSpeechMeta): Promise<AgentTurnResult> {
   const spokenIntervention = detectSpokenIntervention(text);
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   if (pediatricCase.sourceFacts !== undefined) {
     if (spokenIntervention) applyInterventionState(session, spokenIntervention);
-    return handleSourceQuestion(session, text, clientEventId, forwardHeaders);
+    return handleSourceQuestion(session, text, clientEventId, forwardHeaders, speech);
   }
   const intents = identifyHistoryIntents(session.caseId, text, session.sourceSnapshotVersion, session.id);
-  if (spokenIntervention && intents.length === 0) return handleIntervention(session, spokenIntervention, clientEventId, text);
+  if (spokenIntervention && intents.length === 0) return handleIntervention(session, spokenIntervention, clientEventId, text, speech);
   if (spokenIntervention) applyInterventionState(session, spokenIntervention);
-  const studentMessage = message('student', text);
+  const studentMessage = message('student', text, speechOptions(speech));
   const newMessages: AgentMessage[] = [studentMessage];
   const traces = [trace('角色调度', '按患儿年龄、问题意图和家长插话状态选择回答者')];
   if (spokenIntervention) traces.push(trace('病例状态', '从学生原话识别沟通干预并更新应答状态'));
@@ -367,7 +377,7 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   return { session, newMessages, feedback: feedbackFor(session, `已形成“${labels}”的过程证据。`), trace: traces, runtime: roleResult.runtime };
 }
 
-async function handleSourceQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>): Promise<AgentTurnResult> {
+async function handleSourceQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>, speech?: EventSpeechMeta): Promise<AgentTurnResult> {
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   const source = pediatricCase.sourceFacts;
   const history = source?.sections.history ?? '';
@@ -417,7 +427,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
       ? message('child', '这个我说不清楚，可以请家长补充吗？', { emotion: session.childEmotion })
       // 不能言语患儿 + 暂停家长：不机械产出患儿台词（方案 8.2）；家长给出合理场景回应并继续训练。
       : message('parent', '好的医生，不过孩子还不会说话，这些还是我来回答吧。', { emotion: session.childEmotion });
-  const newMessages = [message('student', text), responder];
+  const newMessages = [message('student', text, speechOptions(speech)), responder];
   // 非言语反馈独立展示（括注舞台提示，非语义台词）；不把旁白混进患儿语音（方案 8.4）。
   if (nonverbalNote && !childCapable) newMessages.push(message('child', `（${nonverbalNote}）`, { emotion: session.childEmotion }));
   // 家长代答时证据照常解锁；仅"患儿先答但答不上"（能表达且被暂停）不解锁。
@@ -431,7 +441,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
     trace: [trace('知识检索', '按本病例病史检索已提供事实', source ? [source.caseId] : []), trace('病例状态', '保留未知信息，不补写病史')], runtime: roleResult?.runtime };
 }
 
-function handleIntervention(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'], clientEventId: string, spokenText?: string): AgentTurnResult {
+function handleIntervention(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'], clientEventId: string, spokenText?: string, speech?: EventSpeechMeta): AgentTurnResult {
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   const patientName = pediatricCase.patientName;
   const copy = {
@@ -439,7 +449,7 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
     pause_parent: '我想先听孩子本人回答，家长稍后再补充，可以吗？',
     comfort_child: `${patientName}别紧张，我会一步一步告诉你要做什么，不舒服可以随时说。`,
   }[action];
-  const studentMessage = message('student', spokenText ?? copy);
+  const studentMessage = message('student', spokenText ?? copy, speechOptions(speech));
   let response: AgentMessage;
   applyInterventionState(session, action);
   // 发言计划（方案 8.2）：不能言语患儿的干预不机械执行固定台词；
@@ -668,10 +678,10 @@ function handlePlan(session: SessionState, data: Extract<AgentEvent, { type: 'SU
   };
 }
 
-function handleCommunication(session: SessionState, text: string, clientEventId: string): AgentTurnResult {
+function handleCommunication(session: SessionState, text: string, clientEventId: string, speech?: EventSpeechMeta): AgentTurnResult {
   session.communication = text;
   session.unlockedEvidence = uniq([...session.unlockedEvidence, 'COMMUNICATION']);
-  const studentMessage = message('student', text);
+  const studentMessage = message('student', text, speechOptions(speech));
   const hasEmpathy = /理解|担心|别紧张|一起|我会/.test(text);
   const isSourceCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts !== undefined;
   const explainsRisk = (isSourceCase ? /危险|风险|注意|症状|病情|可能|观察/ : /呼吸|血氧|危险|风险/).test(text);
@@ -725,14 +735,14 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
   if (!validateEventStage(session, event)) throw new Error(session.mode === 'practice' ? 'PRACTICE_EVENT_FORBIDDEN' : 'OSCE_EVENT_STAGE_FORBIDDEN');
 
   switch (event.type) {
-    case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders);
+    case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders, event.data.speech);
     case 'DOCTOR_INTERVENTION': return handleIntervention(session, event.data.action, clientEventId);
     case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId, event.data.posture);
     case 'ORDER_TEST': return handleTest(session, event.data, clientEventId, options?.accessToken);
     case 'SUBMIT_DECISION': return handleDecision(session, event.data, clientEventId);
     case 'SUBMIT_HISTORY_SUMMARY': return handleHistorySummary(session, event.data.summary, clientEventId);
     case 'SUBMIT_PLAN': return handlePlan(session, event.data, clientEventId);
-    case 'SEND_COMMUNICATION': return handleCommunication(session, event.data.text, clientEventId);
+    case 'SEND_COMMUNICATION': return handleCommunication(session, event.data.text, clientEventId, event.data.speech);
     case 'NAVIGATE_STAGE': {
       if (!validateStageNavigation(session, event.data.stage)) throw new Error(session.mode === 'practice' ? 'PRACTICE_STAGE_FORBIDDEN' : 'OSCE_STAGE_BACKTRACK_FORBIDDEN');
       // 非 OSCE 的「非前进一格」导航（回看已完成阶段/返回会话中心/同格重进）只记录展示阶段

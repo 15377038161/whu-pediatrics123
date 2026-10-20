@@ -5,16 +5,21 @@ import { patientAppearance } from '@/domain/patient-appearance';
 
 import {
   Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home,
-  ClipboardList, Lightbulb, LoaderCircle, MessageCircle, Send, Stethoscope, UserRound, Volume2, Waves,
+  ClipboardList, Lightbulb, LoaderCircle, MessageCircle, Mic, Send, Stethoscope, UserRound, Volume2, VolumeX, Waves,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AgentEvent, AgentMessage, AgentTurnResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
+import type { AgentEvent, AgentTurnResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
 import { getPracticeScenario } from '@/domain/practice-scenarios';
 import { getPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 import { CaseResourcePanel } from '@/components/case-resource-panel';
+import { CommunicationCall } from '@/components/communication-call';
+import { RoleAudioPlayer, type RoleAudioPlayerHandle } from '@/components/role-audio-player';
+import { VoiceInput } from '@/components/voice-input';
 import { reportSessionEvent } from '@/lib/engagement-tracker';
+import { fetchSpeechCapabilities } from '@/lib/speech';
+import type { SpeechCapabilities, SpeechTurnMeta } from '@/domain/speech-contract';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
   { id: 'triage', label: '接诊与分诊', short: '接诊' }, { id: 'history', label: '问诊与沟通', short: '交流' },
@@ -136,6 +141,11 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [mobileView, setMobileView] = useState<'task' | 'patient' | 'record'>('task');
   const [hintIndex, setHintIndex] = useState(0);
   const [hintOpen, setHintOpen] = useState(false);
+  // 阶段 D 语音链：能力探测（服务端真实探测，失败按不可用隐藏入口）；文字/语音输入切换；角色播报静音。
+  const [speechCapabilities, setSpeechCapabilities] = useState<SpeechCapabilities | null>(null);
+  const [inputMode, setInputMode] = useState<'text' | 'voice'>('text');
+  const [roleAudioMuted, setRoleAudioMuted] = useState(false);
+  const audioPlayerRef = useRef<RoleAudioPlayerHandle>(null);
 
   // 查体结果音效播放（真实音频文件，非 speechSynthesis；无音效的观察结果返回 false 由调用方处理）
   const playExamObservationAudio = useCallback((observation: ExamObservation) => {
@@ -197,6 +207,18 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       reportSessionEvent('session_end', session.id);
     };
   }, [session?.id]);
+
+
+  // 阶段 D：语音能力真实探测（每会话一次）；探测失败按不可用处理，语音入口隐藏、文字流程不受影响
+  const speechProbeSessionId = session?.id ?? null;
+  useEffect(() => {
+    if (!speechProbeSessionId) return;
+    let cancelled = false;
+    void fetchSpeechCapabilities().then((capabilities) => {
+      if (!cancelled) setSpeechCapabilities(capabilities);
+    });
+    return () => { cancelled = true; };
+  }, [speechProbeSessionId]);
 
 
   useEffect(() => {
@@ -274,6 +296,18 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     const result = await sendEvent(isCommunication ? { type: 'SEND_COMMUNICATION', data: { text } } : { type: 'ASK_QUESTION', data: { text } });
     if (!result) setQuestion(text);
   }
+  // 语音轮发送（阶段 D）：语义推导与单聊天框一致；携带语音轮元数据（ASR 原文与是否编辑）。
+  // 返回是否成功：失败时语音组件保留确认草稿可重试/回退文字，训练进度不受影响。
+  async function sendConversationText(text: string, speech: SpeechTurnMeta | null): Promise<boolean> {
+    if (!text.trim() || !session) return false;
+    const isCommunication = session.stage === 'communication' || Boolean(session.plan);
+    const result = await sendEvent(
+      isCommunication
+        ? { type: 'SEND_COMMUNICATION', data: { text, speech: speech ?? undefined } }
+        : { type: 'ASK_QUESTION', data: { text, speech: speech ?? undefined } },
+    );
+    return Boolean(result);
+  }
   async function examine(part: string, toolOverride?: string) {
     const partLabel = ({ forehead: '头面', mouth: '口咽', chest: '胸部', 'upper-arm': '上臂', finger: '手指', hands: '双手', skin: '皮肤', abdomen: '腹部', limbs: '四肢' } as Record<string,string>)[part] ?? part;
     const activeTool = toolOverride ?? selectedTool;
@@ -338,6 +372,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     router.push('/student');
   }
   const communicationModeActive = session.stage === 'communication' || Boolean(session.plan);
+  // 语音能力就绪（服务端真实探测 asr/tts 均 turn-based）；否则语音入口隐藏、文字流程不受影响
+  const speechReady = speechCapabilities?.asr === 'turn-based' && speechCapabilities?.tts === 'turn-based';
   const practiceCompletion = activeScenario?.completion ?? null;
   const stageCompleted = (stage: Stage) => ({
     triage: session.stage !== 'triage',
@@ -353,10 +389,27 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const conversationContent = <>
     <div className="message-list history-chat" aria-live="polite" ref={historyChatRef}>
       {session.messages.filter((item) => item.kind !== 'navigation' || item.actor !== 'system').map((item) => {
-        return <div className="message" data-actor={item.actor} key={item.id}><p className="message-label"><span>{actorLabel(item.actor)} · {item.emotion}</span></p><div className="message-bubble">{item.content}</div></div>;
+        return <div className="message" data-actor={item.actor} key={item.id}><p className="message-label"><span>{actorLabel(item.actor)} · {item.emotion}{item.inputMode === 'voice' ? ' · 语音输入' : ''}</span></p><div className="message-bubble">{item.content}</div></div>;
       })}
     </div>
+    {speechReady && (
+      <>
+        <RoleAudioPlayer ref={audioPlayerRef} sessionId={session.id} messages={session.messages} enabled={!roleAudioMuted} />
+        <div className="voice-toolbar" role="group" aria-label="语音控制">
+          <button className="btn btn-secondary" type="button" aria-pressed={inputMode === 'voice'} onClick={() => setInputMode((value) => (value === 'voice' ? 'text' : 'voice'))}>
+            {inputMode === 'voice' ? <MessageCircle size={15} /> : <Mic size={15} />} {inputMode === 'voice' ? '改用文字输入' : '语音输入'}
+          </button>
+          <button className="btn btn-secondary" type="button" aria-pressed={!roleAudioMuted} onClick={() => setRoleAudioMuted((value) => !value)} title="角色语音播报开关">
+            {roleAudioMuted ? <VolumeX size={15} /> : <Volume2 size={15} />} {roleAudioMuted ? '角色播报已静音' : '角色语音播报中'}
+          </button>
+        </div>
+      </>
+    )}
+    {inputMode === 'voice' && speechReady ? (
+      <VoiceInput communicationMode={communicationModeActive} disabled={busy} onSend={sendConversationText} />
+    ) : (
     <div className="composer" data-mode={communicationModeActive ? 'communication' : 'history'}><label className="sr-only" htmlFor="question">{communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={communicationModeActive ? '直接向患儿和家长说明，例如：我理解您很担心，孩子目前呼吸和血氧需要先处理……' : '直接和患儿或家长交流，例如：小朋友别紧张，可以告诉我哪里不舒服吗？'} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitConversation(); } }} /><div className="composer-actions">{session.mode !== 'osce' && !communicationModeActive && <div className="hint-anchor"><button className="icon-btn hint-trigger" type="button" aria-label="查看问诊提示" aria-expanded={hintOpen} onClick={() => setHintOpen((value) => !value)}><Lightbulb size={17} /></button>{hintOpen && <div className="hint-popover" role="status"><p>{hints[hintIndex % hints.length]}</p><button type="button" onClick={() => setHintIndex((value) => (value + 1) % hints.length)}>换一个方向</button></div>}</div>}<button className="btn btn-primary" type="button" disabled={busy || !question.trim()} onClick={submitConversation}><Send size={16} /> 发送</button></div></div>
+    )}
     {practiceCompletion === 'history_summary' && (
       <form className="clinical-form practice-summary-form" onSubmit={async (event) => { event.preventDefault(); if (historySummaryText.trim().length < 10) return; await sendEvent({ type: 'SUBMIT_HISTORY_SUMMARY', data: { summary: historySummaryText.trim() } }); }}>
         <div className="form-field"><label htmlFor="history-summary">病史采集小结（专项结束条件）</label><textarea id="history-summary" required minLength={10} rows={3} value={historySummaryText} onChange={(e) => setHistorySummaryText(e.target.value)} placeholder="主诉、现病史要点、重要阴性发现…（不要求答中全部评分点）" /></div>
@@ -411,7 +464,11 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="form-field"><label htmlFor="plan-detail">完整计划</label><textarea id="plan-detail" required minLength={5} value={planDetail} onChange={(e) => setPlanDetail(e.target.value)} placeholder="生命体征稳定、检查、治疗、复评或转诊计划…" /></div>
         <button className="btn btn-primary btn-block" disabled={busy}>{session.caseOptions ? '保存处置计划并继续' : '安全校验并继续'}</button>
       </form>;
-      case 'communication': return conversationContent;
+      case 'communication': return activeScenario?.focus === 'communication'
+        // 阶段 D：家长焦虑沟通专项使用模拟通话界面（AI 模拟标识、通话时长、静音、停止播报、结束确认）；
+        // 语音不可用时组件内提供文字输入，训练进度不受影响。
+        ? <CommunicationCall session={session} speechReady={speechReady} busy={busy} onSend={sendConversationText} onFinish={finish} canFinish={Boolean(session.communication)} />
+        : conversationContent;
       case 'report': return <div className="loading-screen"><div><div className="pulse-mark"><Activity /></div><strong>正在生成可解释报告…</strong></div></div>;
     }
   })();

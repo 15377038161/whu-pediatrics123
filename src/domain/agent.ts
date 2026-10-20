@@ -49,6 +49,16 @@ export interface AgentMessage {
   emotion: Emotion;
   kind: 'dialogue' | 'feedback' | 'safety' | 'navigation';
   createdAt: string;
+  /**
+   * 语音输入元数据（阶段 D，方案 11 章）：学生语音提问经确认发送后记录；
+   * 历史消息无此字段（按文字输入处理）。评分只看确认后的语义内容，
+   * 语音速度、口音与 ASR 错误不进入能力评分。
+   */
+  inputMode?: 'voice';
+  /** ASR 原始转写（确认前），用于回看学生真实表述与编辑痕迹。 */
+  asrRawText?: string;
+  /** 学生是否编辑过转写（确认文本与 ASR 原文不一致时为 true）。 */
+  transcriptEdited?: boolean;
 }
 
 export interface ClinicalEvent {
@@ -144,15 +154,23 @@ export interface SessionState {
   };
 }
 
+/** 学生语音轮元数据（阶段 D）：客户端发送 ASK_QUESTION / SEND_COMMUNICATION 时附带；
+ *  只记录真实语音轮（inputMode 固定 'voice'），文字输入不附带此字段。 */
+export interface EventSpeechMeta {
+  inputMode: 'voice';
+  asrRawText: string;
+  transcriptEdited: boolean;
+}
+
 export type AgentEvent =
-  | { type: 'ASK_QUESTION'; data: { text: string } }
+  | { type: 'ASK_QUESTION'; data: { text: string; speech?: EventSpeechMeta } }
   | { type: 'DOCTOR_INTERVENTION'; data: { action: 'child_answer' | 'pause_parent' | 'comfort_child' } }
   | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string; posture?: 'standing' | 'supine' } }
   | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
   | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string } }
   | { type: 'SUBMIT_HISTORY_SUMMARY'; data: { summary: string } }
   | { type: 'SUBMIT_PLAN'; data: { priority: string; detail: string } }
-  | { type: 'SEND_COMMUNICATION'; data: { text: string } }
+  | { type: 'SEND_COMMUNICATION'; data: { text: string; speech?: EventSpeechMeta } }
   | { type: 'NAVIGATE_STAGE'; data: { stage: Stage } }
   | { type: 'FINISH_SESSION'; data: Record<string, never> };
 

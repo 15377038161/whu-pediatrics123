@@ -41,6 +41,52 @@ test('医生干预改变家长插话和患儿情绪状态', async () => {
   assert.ok(session.behavior.cooperation > 35);
 });
 
+test('语音提问经确认发送后记录语音轮元数据，文字提问不产生语音字段', async () => {
+  const session = createInitialSession('student-1', 'guided');
+  // 语音轮：ASR 原文与确认文本一致（未编辑）
+  const voiceTurn = await runAgentTurn(
+    session,
+    { type: 'ASK_QUESTION', data: { text: '什么时候开始发热咳嗽的？', speech: { inputMode: 'voice', asrRawText: '什么时候开始发热咳嗽的？', transcriptEdited: false } } },
+    'event-voice-onset',
+  );
+  const voiceStudentMessage = voiceTurn.newMessages.find((message) => message.actor === 'student');
+  assert.ok(voiceStudentMessage);
+  assert.equal(voiceStudentMessage.inputMode, 'voice');
+  assert.equal(voiceStudentMessage.asrRawText, '什么时候开始发热咳嗽的？');
+  assert.equal(voiceStudentMessage.transcriptEdited, false);
+
+  // 语音轮：学生编辑过转写，评分只看确认后的语义内容
+  const editedTurn = await runAgentTurn(
+    session,
+    { type: 'ASK_QUESTION', data: { text: '精神状态怎么样？', speech: { inputMode: 'voice', asrRawText: '精神怎么样', transcriptEdited: true } } },
+    'event-voice-edited',
+  );
+  const editedStudentMessage = editedTurn.newMessages.find((message) => message.actor === 'student');
+  assert.ok(editedStudentMessage);
+  assert.equal(editedStudentMessage.inputMode, 'voice');
+  assert.equal(editedStudentMessage.asrRawText, '精神怎么样');
+  assert.equal(editedStudentMessage.transcriptEdited, true);
+
+  // 文字轮：不附带 speech 时消息无语音字段（历史消息兼容口径）
+  const textTurn = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '吃什么退烧药了？' } }, 'event-text-only');
+  const textStudentMessage = textTurn.newMessages.find((message) => message.actor === 'student');
+  assert.ok(textStudentMessage);
+  assert.equal(textStudentMessage.inputMode, undefined);
+  assert.equal(textStudentMessage.asrRawText, undefined);
+  assert.equal(textStudentMessage.transcriptEdited, undefined);
+
+  // 沟通事件同样支持语音元数据
+  const commTurn = await runAgentTurn(
+    session,
+    { type: 'SEND_COMMUNICATION', data: { text: '我理解您的担心，我们先处理呼吸问题，之后我会一步步告诉您检查结果。', speech: { inputMode: 'voice', asrRawText: '我理解您的担心先处理呼吸问题', transcriptEdited: true } } },
+    'event-voice-comm',
+  );
+  const commStudentMessage = commTurn.newMessages.find((message) => message.actor === 'student');
+  assert.ok(commStudentMessage);
+  assert.equal(commStudentMessage.inputMode, 'voice');
+  assert.equal(commStudentMessage.transcriptEdited, true);
+});
+
 test('学生说出的沟通干预可被自然语言识别并保留原话', async () => {
   const session = createInitialSession('student-1', 'guided');
   const pauseText = '家长先不要补充，我想先听孩子说。';
