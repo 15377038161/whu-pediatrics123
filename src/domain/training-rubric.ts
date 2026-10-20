@@ -55,10 +55,13 @@ export interface RubricDefinition {
  *  不变，新增分项补齐「总分=计分项之和」口径（原证据分项仅覆盖 70/100）。
  *  v2（C-评分补验-01）：沟通项关键词命中降为候选证据；无可评价内容记无法评价。
  *  v3（C-评分补验-02）：沟通质量与能力分分离——共情/风险解释表述仅记候选证据不计分（待教师复核），
- *  能力分只评价可验证的下一步说明（否定表述不计）。分项结构与满分不变，历史 v1/v2 报告不重算。 */
+ *  能力分只评价可验证的下一步说明（否定表述不计）。
+ *  v4（C-评分补验-03）：沟通项整项按不可评价处理——下一步表述真实性同样无法机器可靠区分
+ *  （长距离否定/前后矛盾表述可满分），全部表述仅记过程反馈不计分，整项排除出计分与适用满分，
+ *  待教师结合提交原文复核。分项结构与展示满分不变，历史 v1-v3 报告不重算（v3 冻结入 legacyRubrics）。 */
 export const flagshipClinicalRubric: RubricDefinition = {
   id: 'rubric-clinical-flagship',
-  version: 3,
+  version: 4,
   name: '儿童呼吸道病例完整接诊量表',
   scope: 'clinical',
   evaluationBasis: 'clinical_rubric',
@@ -76,7 +79,7 @@ export const flagshipClinicalRubric: RubricDefinition = {
     { itemId: 'REASONING_RISK', dimension: 'reasoning', label: '低氧与危险识别', maxScore: 6, applicability: '演示病例完整接诊', evidenceRule: '识别低氧、呼吸困难等危险信号（否定表述不计）', partialCredit: null, feedback: '未识别低氧等危险信号。', reference: '低氧识别' },
     { itemId: 'REASONING_DIFFERENTIAL', dimension: 'reasoning', label: '鉴别诊断', maxScore: 4, applicability: '演示病例完整接诊', evidenceRule: '鉴别诊断含鉴别方向与理由表述', partialCredit: '仅列举疾病名词 2 分', feedback: '未提供鉴别诊断思路。', reference: '鉴别诊断表达' },
     { itemId: 'SAFETY', dimension: 'safety', label: '患者安全与处置优先级', maxScore: 15, applicability: '演示病例完整接诊', evidenceRule: '首要处置稳定生命体征 8 分；安排进一步评估 4 分；无不安全出院 3 分；出现不安全出院表述计 incorrect', partialCredit: '按构成部分计分', feedback: '处置未同时覆盖生命体征稳定和进一步评估。', reference: '患者安全优先级' },
-    { itemId: 'COMMUNICATION', dimension: 'communication', label: '家长沟通', maxScore: 10, applicability: '演示病例完整接诊（无可评价病例内容的沟通记无法评价）', evidenceRule: '沟通原文须含病例相关实际内容方可评价：明确下一步安排（否定表述不计）3 分；共情与风险解释表述记候选证据不计分，沟通质量待教师复核', partialCredit: '仅可验证部分计分，质量部分记候选证据待复核', feedback: '沟通中缺少可验证的下一步安排；共情与风险解释质量待教师复核。', reference: '家长沟通要素' },
+    { itemId: 'COMMUNICATION', dimension: 'communication', label: '家长沟通', maxScore: 10, applicability: '演示病例完整接诊（沟通项整项无法机器可靠评价，记无法评价不计分）', evidenceRule: '沟通表述（下一步安排/共情/风险解释）无法机器可靠评价：表述命中仅记过程反馈（写入说明，原文保留在提交快照），整项记无法评价、排除出计分与适用满分，待教师结合提交原文复核', partialCredit: null, feedback: '沟通表述待教师结合提交原文复核。', reference: '家长沟通要素' },
     { itemId: 'PROFESSIONALISM', dimension: 'professionalism', label: '职业素养', maxScore: 5, applicability: '演示病例完整接诊', evidenceRule: '完成手卫生 2 分；使用安抚干预 2 分；手卫生先于任何接触性查体 1 分', partialCredit: '按构成部分计分', feedback: '未形成职业素养证据。', reference: '查体顺序与安抚' },
   ],
 };
@@ -101,7 +104,7 @@ export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
   },
   exam: {
     id: 'rubric-focused-exam',
-    version: 3,
+    version: 4,
     name: '肺部规范查体专项量表',
     scope: 'focused',
     focus: 'exam',
@@ -111,7 +114,7 @@ export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
       { itemId: 'EX_LUNG_AUSCULTATION', dimension: 'examination', label: '肺部听诊', maxScore: 20, applicability: '规范查体专项', evidenceRule: '听诊器×胸部获得肺部听诊证据', partialCredit: null, feedback: '未完成肺部听诊。', reference: '肺部听诊规范' },
       { itemId: 'EX_OXIMETRY', dimension: 'examination', label: '血氧监测', maxScore: 15, applicability: '规范查体专项', evidenceRule: '血氧仪获得静息血氧结果', partialCredit: null, feedback: '未完成血氧监测。', reference: '脉搏血氧监测' },
       { itemId: 'EX_SEQUENCE', dimension: 'examination', label: '顺序与安全', maxScore: 25, applicability: '规范查体专项', evidenceRule: '手卫生先于任何接触性检查 15；未出现未备即查的深层检查 10', partialCredit: '备后补序 12 分', feedback: '查体顺序不合规（未先手卫生或存在未备即查）。', reference: '查体顺序规范' },
-      { itemId: 'EX_FINDINGS', dimension: 'examination', label: '结果识别', maxScore: 20, applicability: '规范查体专项（查体操作点击仅为过程证据）', evidenceRule: '本专项未开放观察/推理提交入口，仅有操作点击记无法评价；如存在提交文本（异常路径），须与本会话已解锁病例查体所见可靠核对一致方可评价，否定病例所见计错误做法', partialCredit: null, feedback: '缺少可评价结果识别的观察/推理提交。', reference: '查体所见识别' },
+      { itemId: 'EX_FINDINGS', dimension: 'examination', label: '结果识别', maxScore: 20, applicability: '规范查体专项（查体操作点击仅为过程证据）', evidenceRule: '本专项未开放观察/推理提交入口（服务端事件门控 SUBMIT_DECISION 拒绝），操作点击仅为过程证据，本项恒记无法评价不计分；观察/解释提交通道与可靠核对判据缺失为已知 C 待办，待教师结合查体记录复核', partialCredit: null, feedback: '缺少可评价结果识别的观察/推理提交。', reference: '查体所见识别' },
     ],
   },
   safety: {
@@ -129,7 +132,7 @@ export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
   },
   communication: {
     id: 'rubric-focused-communication',
-    version: 3,
+    version: 4,
     name: '家长焦虑沟通专项量表',
     scope: 'focused',
     focus: 'communication',
@@ -137,8 +140,8 @@ export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
     items: [
       { itemId: 'CM_CONCERN_RESPONSE', dimension: 'communication', label: '回应顾虑', maxScore: 25, applicability: '家长沟通专项（沟通质量项：记候选证据待教师复核，本项不机器计分）', evidenceRule: '回应顾虑属沟通质量项，无法机器可靠评价：命中候选表达（理解/担心等）记候选证据，本项记无法评价，待教师结合提交原文复核', partialCredit: null, feedback: '未回应家长顾虑与情绪。', reference: '共情沟通' },
       { itemId: 'CM_PLAIN_EXPLANATION', dimension: 'communication', label: '通俗解释', maxScore: 25, applicability: '家长沟通专项（沟通质量项：记候选证据待教师复核，本项不机器计分）', evidenceRule: '解释通俗性属沟通质量项，无法机器可靠评价：命中风险相关表述（呼吸/血氧/危险等）记候选证据，本项记无法评价，待教师结合提交原文复核', partialCredit: null, feedback: '未用通俗语言解释病情与风险。', reference: '风险沟通' },
-      { itemId: 'CM_UNDERSTANDING_CHECK', dimension: 'communication', label: '核实理解', maxScore: 20, applicability: '家长沟通专项（无可评价病例内容的沟通记无法评价）', evidenceRule: '主动核实家长是否理解（还有什么问题/明白吗等，否定表述不计）', partialCredit: null, feedback: '未核实家长理解情况。', reference: 'teach-back 沟通' },
-      { itemId: 'CM_NEXT_STEPS', dimension: 'communication', label: '后续安排', maxScore: 20, applicability: '家长沟通专项（无可评价病例内容的沟通记无法评价）', evidenceRule: '说明下一步监测/检查/处理安排（否定表述不计）', partialCredit: null, feedback: '未说明后续安排。', reference: '后续安排告知' },
+      { itemId: 'CM_UNDERSTANDING_CHECK', dimension: 'communication', label: '核实理解', maxScore: 20, applicability: '家长沟通专项（沟通表述项：命中仅记候选/过程反馈，本项不机器计分）', evidenceRule: '核实理解表述无法机器可靠区分真实核实与模板化/长距离否定/前后矛盾表述：命中表述（还有什么问题/明白吗等）仅记候选/过程反馈，本项记无法评价，待教师结合提交原文复核', partialCredit: null, feedback: '未核实家长理解情况。', reference: 'teach-back 沟通' },
+      { itemId: 'CM_NEXT_STEPS', dimension: 'communication', label: '后续安排', maxScore: 20, applicability: '家长沟通专项（沟通表述项：命中仅记候选/过程反馈，本项不机器计分）', evidenceRule: '后续安排表述无法机器可靠区分真实安排与模板化/长距离否定/前后矛盾表述：命中表述（监测/检查/处理等）仅记候选/过程反馈，本项记无法评价，待教师结合提交原文复核', partialCredit: null, feedback: '未说明后续安排。', reference: '后续安排告知' },
       { itemId: 'CM_RESPECTFUL_TONE', dimension: 'communication', label: '尊重与表达', maxScore: 10, applicability: '家长沟通专项（沟通质量项：记候选证据待教师复核，本项不机器计分）', evidenceRule: '语气尊重性属沟通质量项，无法机器可靠评价：命中安抚候选表达记候选证据，本项记无法评价，待教师结合提交原文复核', partialCredit: null, feedback: '表达缺少尊重与安抚性语言。', reference: '尊重表达' },
     ],
   },
@@ -159,10 +162,68 @@ export function rubricStatusForDisplay(status: RubricItemStatus): string {
   return ({ achieved: '达成', partial: '部分达成', missing: '未达成', incorrect: '错误做法', not_applicable: '不适用', not_assessable: '无法评价' } as const)[status];
 }
 
-/** 历史量表版本冻结注册表（C-评分补验-02）：仅收录已停用版本的冻结副本，
+/** 历史量表版本冻结注册表（C-评分补验-02/-03）：仅收录已停用版本的冻结副本，
  *  供历史报告展示精确匹配（id+version），不参与新会话评分（scoring 恒用上方当前版本），
- *  不随当前版本规则更新而改写——旧报告的量表名称与规则说明以其生成时版本为准，旧分不重算。 */
+ *  不随当前版本规则更新而改写——旧报告的量表名称与规则说明以其生成时版本为准，旧分不重算。
+ *  v3 三份（flagship/exam/communication）于 C-评分补验-03 升 v4 时冻结收录。 */
 export const legacyRubrics: RubricDefinition[] = [
+  {
+    // C-评分补验-03 冻结：rubric-clinical-flagship v3（C-评分补验-02 定稿原文），仅供 v3 历史报告展示。
+    id: 'rubric-clinical-flagship',
+    version: 3,
+    name: '儿童呼吸道病例完整接诊量表',
+    scope: 'clinical',
+    evaluationBasis: 'clinical_rubric',
+    items: [
+      { itemId: 'HISTORY_PRESENTING', dimension: 'history', label: '主诉与现病史要点', maxScore: 10, applicability: '演示病例完整接诊', evidenceRule: '问诊获得起病/发热/咳嗽/院前用药四项要点，每项部分计分', partialCredit: '起病 3、发热 3、咳嗽 2、用药 2', feedback: '尚未获得主诉与现病史要点证据。', reference: '儿童肺炎问诊要点' },
+      { itemId: 'HISTORY_DANGER', dimension: 'history', label: '呼吸危险信号问诊', maxScore: 8, applicability: '演示病例完整接诊', evidenceRule: '主动询问气促、喘憋或青紫等危险信号', partialCredit: null, feedback: '未形成呼吸困难、青紫等危险信号的有效追问证据。', reference: '儿童呼吸危险信号' },
+      { itemId: 'HISTORY_GENERAL', dimension: 'history', label: '一般状态问诊', maxScore: 3, applicability: '演示病例完整接诊', evidenceRule: '询问精神、进食、尿量等一般状态', partialCredit: null, feedback: '未询问一般状态。', reference: '儿科一般状态评估' },
+      { itemId: 'HISTORY_EXPOSURE', dimension: 'history', label: '接触史问诊', maxScore: 2, applicability: '演示病例完整接诊', evidenceRule: '询问接触史与诱因', partialCredit: null, feedback: '未询问接触史。', reference: '流行病学接触史' },
+      { itemId: 'HISTORY_BACKGROUND', dimension: 'history', label: '预防接种/出生/过敏史问诊', maxScore: 2, applicability: '演示病例完整接诊', evidenceRule: '询问预防接种、出生发育或过敏既往史之一', partialCredit: null, feedback: '未询问相关背景病史。', reference: '儿童背景病史' },
+      { itemId: 'EXAM_PREP', dimension: 'examination', label: '查体前准备', maxScore: 4, applicability: '演示病例完整接诊', evidenceRule: '完成手卫生与检查说明', partialCredit: null, feedback: '未完成查体前准备。', reference: '标准预防与查体礼仪' },
+      { itemId: 'EXAM_RESP', dimension: 'examination', label: '肺部重点查体', maxScore: 10, applicability: '演示病例完整接诊', evidenceRule: '听诊器×胸部获得肺部听诊证据', partialCredit: null, feedback: '未通过正确器材、部位和准备动作获得肺部听诊证据。', reference: '肺部体格检查规范' },
+      { itemId: 'EXAM_OXYGEN', dimension: 'examination', label: '低氧识别', maxScore: 7, applicability: '演示病例完整接诊', evidenceRule: '血氧仪获得静息血氧结果', partialCredit: null, feedback: '未完成血氧监测，低氧判断缺少直接证据。', reference: '脉搏血氧监测' },
+      { itemId: 'EXAM_OTHER', dimension: 'examination', label: '其他部位系统检查', maxScore: 4, applicability: '演示病例完整接诊', evidenceRule: '完成体温/口咽/血压等其他部位检查之一', partialCredit: null, feedback: '未完成其他部位系统检查。', reference: '系统体格检查' },
+      { itemId: 'REASONING_PRIMARY', dimension: 'reasoning', label: '主要诊断识别', maxScore: 10, applicability: '演示病例完整接诊', evidenceRule: '诊断与摘要包含本病例主要诊断方向（否定表述不计）', partialCredit: null, feedback: '诊断未覆盖本病例主要问题。', reference: '儿童肺炎诊断要点' },
+      { itemId: 'REASONING_RISK', dimension: 'reasoning', label: '低氧与危险识别', maxScore: 6, applicability: '演示病例完整接诊', evidenceRule: '识别低氧、呼吸困难等危险信号（否定表述不计）', partialCredit: null, feedback: '未识别低氧等危险信号。', reference: '低氧识别' },
+      { itemId: 'REASONING_DIFFERENTIAL', dimension: 'reasoning', label: '鉴别诊断', maxScore: 4, applicability: '演示病例完整接诊', evidenceRule: '鉴别诊断含鉴别方向与理由表述', partialCredit: '仅列举疾病名词 2 分', feedback: '未提供鉴别诊断思路。', reference: '鉴别诊断表达' },
+      { itemId: 'SAFETY', dimension: 'safety', label: '患者安全与处置优先级', maxScore: 15, applicability: '演示病例完整接诊', evidenceRule: '首要处置稳定生命体征 8 分；安排进一步评估 4 分；无不安全出院 3 分；出现不安全出院表述计 incorrect', partialCredit: '按构成部分计分', feedback: '处置未同时覆盖生命体征稳定和进一步评估。', reference: '患者安全优先级' },
+      { itemId: 'COMMUNICATION', dimension: 'communication', label: '家长沟通', maxScore: 10, applicability: '演示病例完整接诊（无可评价病例内容的沟通记无法评价）', evidenceRule: '沟通原文须含病例相关实际内容方可评价：明确下一步安排（否定表述不计）3 分；共情与风险解释表述记候选证据不计分，沟通质量待教师复核', partialCredit: '仅可验证部分计分，质量部分记候选证据待复核', feedback: '沟通中缺少可验证的下一步安排；共情与风险解释质量待教师复核。', reference: '家长沟通要素' },
+      { itemId: 'PROFESSIONALISM', dimension: 'professionalism', label: '职业素养', maxScore: 5, applicability: '演示病例完整接诊', evidenceRule: '完成手卫生 2 分；使用安抚干预 2 分；手卫生先于任何接触性查体 1 分', partialCredit: '按构成部分计分', feedback: '未形成职业素养证据。', reference: '查体顺序与安抚' },
+    ],
+  },
+  {
+    // C-评分补验-03 冻结：rubric-focused-exam v3（C-评分补验-02 定稿原文），仅供 v3 历史报告展示。
+    id: 'rubric-focused-exam',
+    version: 3,
+    name: '肺部规范查体专项量表',
+    scope: 'focused',
+    focus: 'exam',
+    evaluationBasis: 'clinical_rubric',
+    items: [
+      { itemId: 'EX_PREPARATION', dimension: 'examination', label: '准备与说明', maxScore: 20, applicability: '规范查体专项', evidenceRule: '完成手卫生与检查说明', partialCredit: null, feedback: '未完成手卫生与检查说明。', reference: '标准预防' },
+      { itemId: 'EX_LUNG_AUSCULTATION', dimension: 'examination', label: '肺部听诊', maxScore: 20, applicability: '规范查体专项', evidenceRule: '听诊器×胸部获得肺部听诊证据', partialCredit: null, feedback: '未完成肺部听诊。', reference: '肺部听诊规范' },
+      { itemId: 'EX_OXIMETRY', dimension: 'examination', label: '血氧监测', maxScore: 15, applicability: '规范查体专项', evidenceRule: '血氧仪获得静息血氧结果', partialCredit: null, feedback: '未完成血氧监测。', reference: '脉搏血氧监测' },
+      { itemId: 'EX_SEQUENCE', dimension: 'examination', label: '顺序与安全', maxScore: 25, applicability: '规范查体专项', evidenceRule: '手卫生先于任何接触性检查 15；未出现未备即查的深层检查 10', partialCredit: '备后补序 12 分', feedback: '查体顺序不合规（未先手卫生或存在未备即查）。', reference: '查体顺序规范' },
+      { itemId: 'EX_FINDINGS', dimension: 'examination', label: '结果识别', maxScore: 20, applicability: '规范查体专项（查体操作点击仅为过程证据）', evidenceRule: '本专项未开放观察/推理提交入口，仅有操作点击记无法评价；如存在提交文本（异常路径），须与本会话已解锁病例查体所见可靠核对一致方可评价，否定病例所见计错误做法', partialCredit: null, feedback: '缺少可评价结果识别的观察/推理提交。', reference: '查体所见识别' },
+    ],
+  },
+  {
+    // C-评分补验-03 冻结：rubric-focused-communication v3（C-评分补验-02 定稿原文），仅供 v3 历史报告展示。
+    id: 'rubric-focused-communication',
+    version: 3,
+    name: '家长焦虑沟通专项量表',
+    scope: 'focused',
+    focus: 'communication',
+    evaluationBasis: 'clinical_rubric',
+    items: [
+      { itemId: 'CM_CONCERN_RESPONSE', dimension: 'communication', label: '回应顾虑', maxScore: 25, applicability: '家长沟通专项（沟通质量项：记候选证据待教师复核，本项不机器计分）', evidenceRule: '回应顾虑属沟通质量项，无法机器可靠评价：命中候选表达（理解/担心等）记候选证据，本项记无法评价，待教师结合提交原文复核', partialCredit: null, feedback: '未回应家长顾虑与情绪。', reference: '共情沟通' },
+      { itemId: 'CM_PLAIN_EXPLANATION', dimension: 'communication', label: '通俗解释', maxScore: 25, applicability: '家长沟通专项（沟通质量项：记候选证据待教师复核，本项不机器计分）', evidenceRule: '解释通俗性属沟通质量项，无法机器可靠评价：命中风险相关表述（呼吸/血氧/危险等）记候选证据，本项记无法评价，待教师结合提交原文复核', partialCredit: null, feedback: '未用通俗语言解释病情与风险。', reference: '风险沟通' },
+      { itemId: 'CM_UNDERSTANDING_CHECK', dimension: 'communication', label: '核实理解', maxScore: 20, applicability: '家长沟通专项（无可评价病例内容的沟通记无法评价）', evidenceRule: '主动核实家长是否理解（还有什么问题/明白吗等，否定表述不计）', partialCredit: null, feedback: '未核实家长理解情况。', reference: 'teach-back 沟通' },
+      { itemId: 'CM_NEXT_STEPS', dimension: 'communication', label: '后续安排', maxScore: 20, applicability: '家长沟通专项（无可评价病例内容的沟通记无法评价）', evidenceRule: '说明下一步监测/检查/处理安排（否定表述不计）', partialCredit: null, feedback: '未说明后续安排。', reference: '后续安排告知' },
+      { itemId: 'CM_RESPECTFUL_TONE', dimension: 'communication', label: '尊重与表达', maxScore: 10, applicability: '家长沟通专项（沟通质量项：记候选证据待教师复核，本项不机器计分）', evidenceRule: '语气尊重性属沟通质量项，无法机器可靠评价：命中安抚候选表达记候选证据，本项记无法评价，待教师结合提交原文复核', partialCredit: null, feedback: '表达缺少尊重与安抚性语言。', reference: '尊重表达' },
+    ],
+  },
   {
     id: 'rubric-clinical-flagship',
     version: 2,

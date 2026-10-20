@@ -85,14 +85,15 @@ function communicationNotAssessable(): ItemEvaluation {
   };
 }
 
-/** 沟通质量项不可评价（C-评分补验-02）：共情/解释/语气等质量项无法机器可靠评价，
- *  候选词命中仅记候选证据（写入 detail，原文保留在报告 studentSubmissions 快照），
- *  本项记无法评价、不计能力分——不设打折分或新权重，待教师结合提交原文复核。 */
-function communicationQualityNotAssessable(candidateNote: string): ItemEvaluation {
+/** 沟通项不可评价（C-评分补验-03）：共情/解释/语气等质量项与表述真实性（长距离否定/
+ *  前后矛盾表述不可靠区分）均无法机器可靠评价，候选/过程反馈仅写入 detail（原文保留在报告
+ *  studentSubmissions 快照），本项记无法评价、不计能力分、不进适用满分——不设打折分或新权重，
+ *  待教师结合提交原文复核。 */
+function communicationItemNotAssessable(candidateNote: string): ItemEvaluation {
   return {
     status: 'not_assessable',
     score: 0,
-    detail: `${candidateNote}；沟通质量项无法机器可靠评价，本项记无法评价（0 分），待教师结合提交原文复核。`,
+    detail: `${candidateNote}；本项无法机器可靠评价，记无法评价（0 分）、不计入适用满分，待教师结合提交原文复核。`,
     evidenceCodes: ['COMMUNICATION'],
   };
 }
@@ -199,27 +200,20 @@ function evaluateFlagshipItem(session: SessionState, item: RubricItem): ItemEval
       };
     }
     case 'COMMUNICATION': {
-      // C-评分补验-02：沟通质量与能力分分离——共情/风险解释表述仅记候选证据不计分
-      // （质量待教师结合提交原文复核），能力分只评价可验证的下一步说明（否定表述不计）。
+      // C-评分补验-03（量表 v4）：沟通项整项按不可评价处理——下一步表述真实性同样无法
+      // 机器可靠区分（长距离否定/前后矛盾表述可满分），不再给「可验证下一步」3 分伪装能力分；
+      // 全部表述仅记过程反馈（写入 detail，原文保留在提交快照），整项排除出计分与适用满分，
+      // 待教师结合提交原文复核。
       if (!hasCaseContent(communicationText)) return communicationNotAssessable();
-      const empathyCandidate = includesAny(communicationText, ['理解', '担心', '别紧张', '别担心', '一起', '我会']);
-      const riskCandidate = includesAny(communicationText, ['呼吸', '血氧', '危险', '风险']);
+      const notes: string[] = [];
       const nextStepTerms = ['下一步', '接下来', '监测', '检查', '处理', '吸氧', '复查'];
       const nextStep = includesAny(communicationText, nextStepTerms) && !negatedMatch(communicationText, nextStepTerms);
-      const candidates: string[] = [];
-      if (empathyCandidate) candidates.push('共情表述');
-      if (riskCandidate) candidates.push('风险解释表述');
-      const candidateNote = candidates.length > 0
-        ? `候选证据：${candidates.join('、')}（质量待教师结合提交原文复核）`
-        : '未见共情/风险解释候选表述';
-      return {
-        status: nextStep ? 'partial' : 'missing',
-        score: nextStep ? 3 : 0,
-        detail: nextStep
-          ? `沟通原文含病例相关实际内容且明确下一步安排（否定表述不计），得 3/${item.maxScore} 分；${candidateNote}。`
-          : `沟通原文含病例相关实际内容，但无可验证的下一步说明（否定表述不计）；${candidateNote}。`,
-        evidenceCodes: ['COMMUNICATION'],
-      };
+      notes.push(nextStep ? '过程反馈：含明确下一步安排表述（非能力分，真实性待教师复核）' : '过程反馈：未见明确下一步安排表述');
+      const empathyCandidate = includesAny(communicationText, ['理解', '担心', '别紧张', '别担心', '一起', '我会']);
+      const riskCandidate = includesAny(communicationText, ['呼吸', '血氧', '危险', '风险']);
+      if (empathyCandidate) notes.push('含共情表述候选（质量待教师复核）');
+      if (riskCandidate) notes.push('含风险解释表述候选（质量待教师复核）');
+      return communicationItemNotAssessable(notes.join('；'));
     }
     case 'PROFESSIONALISM': {
       const comfortUsed = session.events.some((event) => event.summary.includes('安抚'));
@@ -323,45 +317,16 @@ function evaluateFocusedItem(session: SessionState, item: RubricItem): ItemEvalu
       };
     }
     case 'EX_FINDINGS': {
-      // C-评分补验-02：取消以锚定词数量判定能力。查体专项未开放观察/推理提交入口
-      // （allowedActions 仅 EXAM_ACTION/NAVIGATE_STAGE，服务端 validateEventStage 门控，UI 无提交表单），
-      // 查体操作点击仅为过程证据，本项记无法评价。防御路径：若存在提交文本（异常/直改数据），
-      // 须与本会话已解锁病例查体所见（EXAM_ACTION 正确操作揭示的病例事实文本）可靠核对一致方可评价；
-      // 否定病例实际所见记错误做法；无法可靠核对不给分。
-      const observationText = `${session.decision?.diagnosis ?? ''} ${session.decision?.summary ?? ''} ${session.decision?.diagnosisBasis ?? ''}`.trim();
-      if (!observationText) {
-        return {
-          status: 'not_assessable',
-          score: 0,
-          detail: '查体专项未开放观察/推理提交入口，查体操作点击仅为过程证据，结果识别无法评价，待教师结合查体记录复核。',
-          evidenceCodes: [],
-        };
-      }
-      const examFactText = session.events.filter((event) => event.type === 'EXAM_ACTION' && event.correct !== false).map((event) => event.summary).join('；');
-      const findingTerms = ['细湿啰音', '湿啰音', '哮鸣音', '呼吸音粗', '呼气相延长', '低氧', '血氧下降', '静息血氧', '咽部充血', '心率增快', '三凹征', '发绀'];
-      const contradicted = findingTerms.filter((term) => examFactText.includes(term) && negatedMatch(observationText, [term]));
-      if (contradicted.length > 0) {
-        return {
-          status: 'incorrect',
-          score: 0,
-          detail: `观察提交与病例查体所见相反（否定病例所见：${contradicted.join('、')}），结果识别记错误做法 0 分。`,
-          evidenceCodes: ['DECISION'],
-        };
-      }
-      const matched = findingTerms.filter((term) => observationText.includes(term) && examFactText.includes(term));
-      if (matched.length > 0) {
-        return {
-          status: 'achieved',
-          score: item.maxScore,
-          detail: `观察提交与本会话已解锁病例查体所见核对一致（${matched.join('、')}），结果识别可评价。`,
-          evidenceCodes: ['DECISION'],
-        };
-      }
+      // C-评分补验-03（量表 v4）：删除直改 decision 的核对计分支路——查体专项生产路径无
+      // 观察/推理提交通道（allowedActions 仅 EXAM_ACTION/NAVIGATE_STAGE，服务端 validateEventStage
+      // 门控 SUBMIT_DECISION 拒绝），该支路仅测试直改数据可触达，保留等于「绕过门控反而可得分」
+      // 的伪业务通过路径。按真实门控本项恒记无法评价（0 分）、不进适用满分；
+      // 观察/解释提交通道与可靠核对判据缺失记为 C 待办，待教师结合查体记录复核。
       return {
         status: 'not_assessable',
         score: 0,
-        detail: '观察提交未能与本会话已解锁病例查体所见可靠核对（无一致的病例所见表述），结果识别无法评价，待教师复核。',
-        evidenceCodes: ['DECISION'],
+        detail: '查体专项未开放观察/推理提交入口（服务端事件门控），查体操作点击仅为过程证据，结果识别恒无法评价、不计入适用满分；观察/解释提交通道与可靠核对判据缺失为已知待办，待教师结合查体记录复核。',
+        evidenceCodes: [],
       };
     }
     case 'SIG_DANGER_RECOGNITION': {
@@ -397,33 +362,38 @@ function evaluateFocusedItem(session: SessionState, item: RubricItem): ItemEvalu
       // （原文保留在 studentSubmissions 快照），本项恒记无法评价（0 分），不设打折分或新权重。
       if (!hasCaseContent(communicationText)) return communicationNotAssessable();
       const concernHit = includesAny(communicationText, ['理解', '担心', '别紧张', '别担心', '一起', '我会', '辛苦']);
-      return communicationQualityNotAssessable(concernHit ? '命中回应顾虑候选表达（理解/担心等），仅作候选证据' : '未见回应顾虑候选表达');
+      return communicationItemNotAssessable(concernHit ? '命中回应顾虑候选表达（理解/担心等），仅作候选证据' : '未见回应顾虑候选表达');
     }
     case 'CM_PLAIN_EXPLANATION': {
       // C-评分补验-02：解释通俗性属沟通质量项，无法机器可靠评价——风险/病情表述命中仅记
       // 候选证据，本项恒记无法评价（0 分），不再关键词命中即满分。
       if (!hasCaseContent(communicationText)) return communicationNotAssessable();
       const explanationHit = includesAny(communicationText, ['呼吸', '血氧', '低氧', '危险', '风险', '病情', '情况', '治疗', '稳定', '感染']);
-      return communicationQualityNotAssessable(explanationHit ? '命中风险/病情解释候选表述，仅作候选证据' : '未见解释候选表述');
+      return communicationItemNotAssessable(explanationHit ? '命中风险/病情解释候选表述，仅作候选证据' : '未见解释候选表述');
     }
     case 'CM_UNDERSTANDING_CHECK': {
+      // C-评分补验-03（量表 v4）：核实理解表述无法机器可靠区分真实核实与模板化/长距离否定/
+      // 前后矛盾表述（句首肯定句尾否定可满分），取消词命中计分——命中仅记候选/过程反馈，
+      // 本项恒记无法评价（0 分）、不进适用满分，待教师结合提交原文复核。
       if (!hasCaseContent(communicationText)) return communicationNotAssessable();
       const checkTerms = ['明白吗', '理解吗', '清楚吗', '还有什么问题', '疑问', '听懂'];
-      const checkHit = includesAny(communicationText, checkTerms) && !negatedMatch(communicationText, checkTerms);
-      return { status: checkHit ? 'achieved' : 'missing', score: checkHit ? item.maxScore : 0, detail: checkHit ? '主动核实家长是否理解（否定表述不计）。' : item.feedback, evidenceCodes: ['COMMUNICATION'] };
+      const checkHit = includesAny(communicationText, checkTerms);
+      return communicationItemNotAssessable(checkHit ? '过程反馈：含核实理解表述（明白吗/还有什么问题等）候选，真实性待教师复核' : '未见核实理解表述');
     }
     case 'CM_NEXT_STEPS': {
+      // C-评分补验-03（量表 v4）：后续安排表述同上无法机器可靠评价（长距离否定/前后矛盾可满分），
+      // 取消词命中计分——命中仅记候选/过程反馈，本项恒记无法评价（0 分）、不进适用满分，待教师复核。
       if (!hasCaseContent(communicationText)) return communicationNotAssessable();
       const stepTerms = ['下一步', '接下来', '监测', '复查', '检查', '处理', '吸氧', '用药'];
-      const stepHit = includesAny(communicationText, stepTerms) && !negatedMatch(communicationText, stepTerms);
-      return { status: stepHit ? 'achieved' : 'missing', score: stepHit ? item.maxScore : 0, detail: stepHit ? '说明了下一步监测/检查/处理安排（否定表述不计）。' : item.feedback, evidenceCodes: ['COMMUNICATION'] };
+      const stepHit = includesAny(communicationText, stepTerms);
+      return communicationItemNotAssessable(stepHit ? '过程反馈：含下一步安排表述（监测/检查/处理等）候选，真实性待教师复核' : '未见下一步安排表述');
     }
     case 'CM_RESPECTFUL_TONE': {
       // C-评分补验-02：语气尊重性属沟通质量项，无法机器可靠评价——安抚候选表达仅记候选证据，
       // 本项恒记无法评价（0 分），不设打折分或新权重。
       if (!hasCaseContent(communicationText)) return communicationNotAssessable();
       const toneHit = includesAny(communicationText, ['陪', '安抚', '放心', '慢慢来', '我们一起']);
-      return communicationQualityNotAssessable(toneHit ? '命中安抚性候选表达，仅作候选证据' : '未见安抚候选表达');
+      return communicationItemNotAssessable(toneHit ? '命中安抚性候选表达，仅作候选证据' : '未见安抚候选表达');
     }
     default:
       return { status: 'not_assessable', score: 0, detail: `量表项 ${item.itemId} 暂无执行器，按无法评价处理。`, evidenceCodes: [] };
