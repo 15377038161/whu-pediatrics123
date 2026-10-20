@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import struct
 import subprocess
+import xml.etree.ElementTree as ET
 import numpy as np
 
 
@@ -119,10 +120,90 @@ def read_glb(path):
     return result
 
 
+def read_landmark_sets(path):
+    lines = [line.strip() for line in path.read_text(encoding='utf-8').splitlines()
+             if line.strip() and not line.lstrip().startswith('$')]
+    result = {}
+    for i, line in enumerate(lines):
+        if line != '*SET_NODE_LIST_TITLE':
+            continue
+        ids = []
+        for data in lines[i+3:]:
+            if data.startswith('*'):
+                break
+            ids.extend(int(value) for value in data.split() if value.isdigit() and int(value))
+        if lines[i+1] in result:
+            raise ValueError(f'Duplicate landmark title in {path.name}: {lines[i+1]}')
+        result[lines[i+1]] = ids
+    return result
+
+
+def audit_component_landmarks(source, geometry_cache, nodes, glb):
+    """Record source components without inventing per-bone identities from topology."""
+    landmarks = [(file, title, ids) for file in ['landmarks_ISB.k', 'PIPER_landmark_namedmetadataCL.k']
+                 for title, ids in read_landmark_sets(source/file).items()]
+    inventories = []
+    for pid in [3101, 5101, 7170, 9170]:
+        positions, triangles, node_ids = geometry_cache[pid]
+        groups = sorted(components(len(positions), triangles), key=lambda group: min(node_ids[i] for i in group))
+        rows = []
+        for group in groups:
+            members = {node_ids[i] for i in group}
+            contained = np.zeros(len(positions), dtype=bool); contained[group] = True
+            rows.append({'componentId': f'{pid}:n{min(members)}', 'minimumSourceNodeId': min(members),
+                         'sourceNodeIdsSha256': hashlib.sha256(','.join(map(str, sorted(members))).encode()).hexdigest(),
+                         'vertices': len(group), 'triangles': int(np.all(contained[triangles], axis=1).sum()),
+                         'landmarks': [{'file': file, 'title': title, 'memberNodeIds': sorted(members.intersection(ids))}
+                                       for file, title, ids in landmarks if members.intersection(ids)]})
+        inventories.append({'sourcePartId': pid, 'components': rows, 'meaning': 'Topology components, NOT bone identities'})
+    # The experimental contour metadata labels talus and calcaneus landmarks, but
+    # their node IDs occupy the SAME connected surface. Never promote either to a bone.
+    contour = ET.parse(source/'metadata/contourCL/contourCL.xml').getroot()
+    conflicts = []
+    for side, pid in [('left', 7170), ('right', 9170)]:
+        annotations = []
+        for name, term in [(f'foot_flexion_axis_a_{side}', 'talus'), (f'foot_twist_axis_b_{side}', 'calcaneus')]:
+            descriptions = [element.attrib['info'].strip() for element in contour.iter()
+                            if (element.text or '').strip() == name and term in element.attrib.get('info', '').lower()]
+            if not descriptions:
+                raise ValueError(f'Expected upstream contour annotation is missing: {name}/{term}')
+            matches = [row for inv in inventories if inv['sourcePartId'] == pid for row in inv['components']
+                       for landmark in row['landmarks'] if landmark['title'] == name]
+            if len(matches) != 1:
+                raise ValueError(f'Upstream landmark does not resolve uniquely: {name}')
+            annotations.append({'landmarkTitle': name, 'anatomicalTermInSourceComment': term,
+                                'sourceComments': sorted(set(descriptions)), 'componentId': matches[0]['componentId']})
+        conflicts.append({'side': side, 'annotations': annotations,
+                          'differentBoneCommentsShareOneComponent': len({a['componentId'] for a in annotations}) == 1,
+                          'automaticBoneIdentificationAllowed': False,
+                          'interpretation': 'Could reflect simplified topology or inaccurate experimental comments; needs review, not an automatic split'})
+    # Pelvic landmarks are NOT members of the retained bone surface. Measure their
+    # proximity instead of misrepresenting a nearest-neighbour heuristic as membership.
+    positions, triangles, node_ids = geometry_cache[8101]
+    groups = components(len(positions), triangles)
+    pelvic = []
+    named_sets = read_landmark_sets(source/'landmarks_ISB.k')
+    for title in ['LASIS', 'LPSIS', 'RASIS', 'RPSIS']:
+        ids = named_sets[title]
+        if len(ids) != 1:
+            raise ValueError(f'Expected one pelvic landmark node: {title}')
+        xyz = nodes[ids[0]]; point = np.array([xyz[1], xyz[2], xyz[0]], dtype=np.float32)/1000
+        distances = sorted((float(np.linalg.norm(positions[group]-point, axis=1).min()), i) for i, group in enumerate(groups))
+        group_vertices = {tuple(p) for p in positions[groups[distances[0][1]]]}
+        matches = [mesh_id for mesh_id, (p, _) in glb.items() if mesh_id.startswith('8101-') and {tuple(v) for v in p} == group_vertices]
+        if len(matches) != 1:
+            raise ValueError(f'Pelvic source component has no unique exported match: {title}')
+        pelvic.append({'title': title, 'sourceNodeId': ids[0], 'nodeIsInRetainedBoneSurface': ids[0] in node_ids,
+                       'nearestExportedMeshId': matches[0], 'nearestComponentVertexDistanceMm': round(distances[0][0]*1000, 3),
+                       'nextComponentVertexDistanceMm': round(distances[1][0]*1000, 3), 'meaning': 'Proximity evidence only; label remains provisional'})
+    return inventories, conflicts, pelvic
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=Path('outputs/piper-child'))
     parser.add_argument('--output', type=Path, default=Path('docs/anatomy-audit.json'))
+    parser.add_argument('--review-plates', action='store_true', help='Also render source component review PNGs (requires matplotlib)')
     args = parser.parse_args(); source = args.source/'PIPER_ChildModel_6YO'
     manifest_path = Path('public/models/anatomy/manifest.json')
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
@@ -130,6 +211,8 @@ def main():
     source_commit = subprocess.check_output(['git', '-C', str(args.source), 'rev-parse', 'HEAD'], text=True).strip()
     if source_commit != '6aeee0cec84570e1455f797ac49e4721eb89fdee':
         raise ValueError('Unexpected upstream revision; review before auditing')
+    if subprocess.run(['git', '-C', str(args.source), 'diff', '--quiet', '--no-ext-diff', 'HEAD', '--', 'PIPER_ChildModel_6YO']).returncode:
+        raise ValueError('Upstream source has local modifications; restore/review before auditing')
     for name, expected in manifest['sourceFiles'].items():
         if digest(source/name) != expected:
             raise ValueError(f'Source hash differs from manifest: {name}')
@@ -203,6 +286,7 @@ def main():
         emitted = glb.get(f'{pid}-Radius')
         same_vertices = bool(group is not None and emitted is not None and {tuple(p) for p in positions[group]} == {tuple(p) for p in emitted[0]})
         forearms.append({'side': side, 'landmarkTitle': title, 'landmarkNodeId': landmark_id, 'landmarkFile': 'landmarks_ISB.k', 'sourceComponents': len(groups), 'radiusLabelMatchesSourceLandmark': same_vertices})
+    component_inventory, foot_conflicts, pelvic_landmarks = audit_component_landmarks(source, geometry_cache, nodes, glb)
     inventories = make_checklist(manifest, forearms)
     report = {'schemaVersion': 1, 'sourceCommit': source_commit, 'sourceFilesVerified': files,
               'manifestSha256': digest(manifest_path), 'glbSha256': digest(glb_path),
@@ -210,7 +294,9 @@ def main():
               'geometryFidelityPassed': all(not x['missingTriangles'] and not x['extraTriangles'] for x in fidelity),
               'teachingAtlasComplete': False, 'medicalReview': 'not_performed',
               'sourceParts': all_bones, 'geometryFidelity': fidelity, 'omittedRepresentationChecks': omitted_checks,
-              'evidenceFileHashes': {name: digest(source/name) for name in [*files, 'landmarks_ISB.k', 'Child_model.pmr']}, 'forearmLandmarks': forearms,
+              'evidenceFileHashes': {name: digest(source/name) for name in [*files, 'landmarks_ISB.k', 'Child_model.pmr',
+                                      'PIPER_landmark_namedmetadataCL.k', 'metadata/contourCL/contourCL.xml']}, 'forearmLandmarks': forearms,
+              'mergedComponentInventory': component_inventory, 'footLandmarkConflicts': foot_conflicts, 'pelvicLandmarkProximity': pelvic_landmarks,
               'namedInventory': inventories, 'inventorySummary': dict(Counter(x['status'] for x in inventories))}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
@@ -225,9 +311,55 @@ def main():
                                       for side in ['左','右']}}
     Path('public/models/anatomy/audit-summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     write_markdown(report, args.output.with_suffix('.md'))
+    if args.review_plates:
+        if not report['geometryFidelityPassed']:
+            raise SystemExit('Review figures require verified source/GLB fidelity')
+        write_review_plates(report, geometry_cache, args.output.parent/'anatomy-review')
     print(json.dumps({key: report[key] for key in ['geometryFidelityPassed', 'teachingAtlasComplete', 'inventorySummary', 'forearmLandmarks']}, ensure_ascii=False))
     if not report['geometryFidelityPassed']:
         raise SystemExit('Exported source geometry mismatch; inspect report')
+
+
+def write_review_plates(report, geometry_cache, directory):
+    """Source geometry contact sheets, never illustrations of invented bone anatomy."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import PolyCollection
+    directory.mkdir(parents=True, exist_ok=True)
+    for pid, slug, title in [(3101, 'left-hand', 'Left hand'), (7170, 'left-foot', 'Left foot')]:
+        positions, triangles, ids = geometry_cache[pid]
+        # One rigid change of basis for the ENTIRE source part gives a readable
+        # principal-plane projection. Never rotate/scale components separately.
+        centered = (positions.astype(np.float64)-positions.mean(axis=0))*1000
+        _, _, axes = np.linalg.svd(centered, full_matrices=False)
+        projected_positions = centered @ axes[[1, 0]].T
+        groups = sorted(components(len(positions), triangles), key=lambda group: min(ids[i] for i in group))
+        fig = plt.figure(figsize=(12, 15), facecolor='white', layout='constrained')
+        grid = fig.add_gridspec(7, 4)
+        overview = fig.add_subplot(grid[:2, :])
+        extent = max(float(np.ptp(projected_positions[group], axis=0).max()) for group in groups)*1.15
+        for index, group in enumerate(groups):
+            mask = np.zeros(len(positions), dtype=bool); mask[group] = True
+            faces = triangles[np.all(mask[triangles], axis=1)]
+            color = plt.get_cmap('tab20')(index)
+            projected = projected_positions[faces]
+            overview.add_collection(PolyCollection(projected, facecolor=color, edgecolor='#283747', linewidth=.18, alpha=.85))
+            center = projected_positions[group].mean(axis=0)
+            overview.text(*center, str(index+1), fontsize=8, ha='center', va='center', bbox={'facecolor': 'white', 'alpha': .8, 'pad': .5, 'edgecolor': 'none'})
+            axis = fig.add_subplot(grid[2+index//4, index%4])
+            axis.add_collection(PolyCollection(projected, facecolor=color, edgecolor='#283747', linewidth=.3))
+            middle = (projected_positions[group].min(axis=0)+projected_positions[group].max(axis=0))/2
+            axis.set_xlim(middle[0]-extent/2, middle[0]+extent/2); axis.set_ylim(middle[1]-extent/2, middle[1]+extent/2)
+            axis.set_aspect('equal'); axis.axis('off')
+            axis.set_title(f'C{index+1:02d} | node {min(ids[i] for i in group)}\n{len(group)} vertices, {len(faces)} triangles', fontsize=8)
+        overview.autoscale(); overview.margins(.12); overview.set_aspect('equal')
+        overview.set_xlabel('Principal axis U (mm)'); overview.set_ylabel('Principal axis V (mm)')
+        overview.set_title(f'{title}: original merged surface, {len(groups)} connected components', fontsize=13)
+        fig.suptitle(f'PIPER 6YO | {title} source review\nComponent numbers are NOT bone names or bone counts', fontsize=15)
+        fig.supxlabel(f'One rigid source-part rotation; all component panels share a scale and orientation.\nGPLv3 + upstream clauses | GLB {report["glbSha256"][:16]} | No medical approval', fontsize=9)
+        fig.savefig(directory/f'{slug}.png', dpi=150, metadata={'Software': 'PIPER source component audit; no generated anatomy'})
+        plt.close(fig)
 
 
 def make_checklist(manifest, forearms):
@@ -320,7 +452,21 @@ def write_markdown(report, path):
               '| 侧别 | 原始地标 | 节点 | 与导出桡骨一致 |', '|---|---|---:|---|']
     for row in report['forearmLandmarks']:
         lines.append(f'| {row["side"]} | {row["landmarkTitle"]} | {row["landmarkNodeId"]} | {row["radiusLabelMatchesSourceLandmark"]} |')
-    lines += ['', '骨盆髂/坐/耻骨命名仍依据空间规则，尚无逐部件权威标注核对；当前标为待专业复核。肋骨编号有源参考片及顺序核对，但仍不是医学审定。', '',
+    lines += ['', '### 3.1 骨盆地标仅支持邻近关系，不能升级为精确匹配', '',
+              '四个髂前/后上棘地标最接近当前髂骨分量，但它们的节点均不属于保留的骨表面，最近顶点仍相距约 5.6—6.6 mm。下面测量的是点到分量顶点的最短距离，不是点到连续三角表面的距离，也不构成精确解剖标注。因此髂/坐/耻骨标签全部继续保留空间规则推断、待专业复核状态。', '',
+              '| 地标 | 节点 | 在保留骨表面节点中 | 最近分量 | 最近顶点距离 mm | 次近分量顶点距离 mm |', '|---|---:|---|---|---:|---:|']
+    for row in report['pelvicLandmarkProximity']:
+        lines.append(f'| {row["title"]} | {row["sourceNodeId"]} | {row["nodeIsInRetainedBoneSurface"]} | {row["nearestExportedMeshId"]} | {row["nearestComponentVertexDistanceMm"]} | {row["nextComponentVertexDistanceMm"]} |')
+    lines += ['', '### 3.2 足部原始注释与连通拓扑存在冲突', '',
+              '实验性 contour 元数据把一处地标描述为距骨（talus），另一处描述为跟骨（calcaneus），但两处节点落在同一个源连通分量；左右足都如此。这可能来自简化拓扑或实验注释不准确，尚不能判定是哪一种。禁止据此给同一网格贴上两个独立骨名，也不能把近邻结果当作自动分割依据。', '',
+              '| 侧别 | 地标 | 源注释中的骨名 | 同一连通分量 ID |', '|---|---|---|---|']
+    for row in report['footLandmarkConflicts']:
+        for annotation in row['annotations']:
+            lines.append(f'| {row["side"]} | {annotation["landmarkTitle"]} | {annotation["anatomicalTermInSourceComment"]} | {annotation["componentId"]} |')
+    lines += ['', '### 3.3 手足逐分量审阅材料', '',
+              '机器证据的 `mergedComponentInventory` 为双手、双足的全部 74 个连通分量记录最小源节点号、节点集合指纹、顶点/三角面数和命中的源地标。分量编号不是骨名或骨头计数。部件轮廓直接来自已核对的源三角面，无 AI 补画、独立缩放或逐块旋转。审阅图仅对整个源部件做一次刚性换轴，再同尺度正投影。', '',
+              '重绘命令：`python -X utf8 scripts/audit-anatomy-completeness.py --source outputs/piper-child --review-plates`（离线额外依赖 matplotlib；生产应用不增加依赖）。', '',
+              '[左手审阅图](anatomy-review/left-hand.png) · [左足审阅图](anatomy-review/left-foot.png)。图中 C 编号按最小源节点号排序，对应机器证据中的顺序；当前仅制作左侧图，双侧节点证据均在 JSON 中。图件及由 PIPER 模型支持的分析保留其 GPLv3 与责任/Open Science 附加条款，见 [原许可](../public/models/anatomy/LICENSE.txt) 和 [GPL 正文](../public/models/anatomy/GPL-3.0.txt)。', '',
               '## 4. 不能直接当作“完全重合”的去重项', '',
               f'{len(report["omittedRepresentationChecks"])} 对省略的 2D 表示与保留 3D 表示中，18 对逐三角面列表不同；所有这些省略表面的顶点都存在于对应保留表示中。另有 23 个参考/连接片与 2 个空源部件分别记账，不将其当作遗漏骨头。区别可能来自三角剖分、表面层或拓扑表达，不能把列表不同直接当成缺骨，也不能无证据称表面完全相同。需专业结合原始网格进一步审查。', '',
               '| 省略表示 | 保留表示 | 不同三角面数 | 未保留顶点数 |', '|---|---|---:|---:|']
@@ -331,7 +477,7 @@ def write_markdown(report, path):
     for index, row in enumerate(report['namedInventory'], 1):
         lines.append(f'| {index} | {row["name"]} | {row["region"]} | {statuses[row["status"]]} | {", ".join(row["meshIds"]) or "未定位"} | {row["note"] or "以来源命名为线索，尚未医学审定"} |')
     lines += ['', '## 6. 下一阶段与放行条件', '',
-              '1. 先复核骨盆及 2D/3D 表面差异，不为了数字齐全增加未经验证的骨头。',
+              '1. 先复核骨盆、手足注释冲突及 2D/3D 表面差异，不为了数字齐全增加未经验证的骨头。',
               '2. 寻找有年龄信息、来源标注、许可和专业审核依据的儿童逐骨模型/分割；成人模型等比缩小不能作为儿童模型替代。',
               '3. 第 12 肋、舌骨、尾骨、听小骨等需要明确来源后制作新版本；手足和颅面需要逐骨标注、分割与复核。',
               '4. AI 可协助标注建议、建模草稿和资料整理；其输出进入未发布候选资产，必须与可靠参考、年龄特征和相邻关节关系核对后再由专业人员放行。不能直接生成“正确骨头”自动上架。',
@@ -339,9 +485,12 @@ def write_markdown(report, path):
               '6. 本轮不补造新骨骼、不重新设计动画。学生界面改用“原位骨架”“全部已收录结构”，增加覆盖不完整及命名证据说明。', '',
               '## 7. 补充/替换来源初筛', '',
               '| 候选 | 已核实信息 | 为什么尚未直接替换 |', '|---|---|---|',
-              '| [MARTIN 原始研究](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0241682) | 29 月龄男童的 MRI/CT 全身数值模型，论文报告专业影像审核 | 年龄不是本模型的 6 岁；组织分区不等于每骨独立。需核实模型获取方式、资产许可与逐骨分割，不能把论文许可直接当模型嵌入许可 |',
+              '| [MARTIN 官方模型页](https://itis.swiss/virtual-population/virtual-population/hosted-models/martin)与[结构清单](https://itis.swiss/assets/Downloads/VirtualPopulation/MARTIN/MARTIN-V1.0-tissuelist.txt) | 29 月龄男童；可申请 STL，不分发原始影像；86 个组织分区。清单中的骨分区为 Bones(cortical)、Rib_and_vertebrae(cortical)、Skull(cortical) 等合并项 | 年龄不同，且骨骼清单不是逐骨结构，无法直接满足手足/颅面逐骨平铺；获取需遵守资产单独协议及可能的处理费用，不将论文许可当作资产嵌入许可 |',
               '| [CASIMIR 作者模型卡](https://huggingface.co/fjhorvath/casimir) | 儿童/青年全身 MRI 的器官和部分骨骼结构分割模型 | 是分割算法而非现成完整骨骼网格；不能自行从缺少影像和标注的数据生成全部骨头 |',
-              '| [SciePro 儿童骨骼资源页](https://library.sciepro.com/en/illustrations/the-complete-skeletal-system-of-a-female-child-933961516259152) | 检索到的为儿童骨骼插画资源页 | 尚未核实有可下载逐骨 3D 网格、年龄证据及网页嵌入许可，不能凭预览图采购或接入 |', '',
+              '| [ICRP Publication 156 官方页](https://www.icrp.org/publication.asp?id=ICRP+Publication+156) | 有新生儿、1/5/10/15 岁男女儿童网格体模，主要用于辐射剂量计算；官方提供大于 10 GB 的补充材料入口 | 不是当前 6 岁源模型；还未核实逐骨层级及应用再分发许可，不能从“覆盖剂量计算组织”推断骨骼教学图谱齐全 |',
+              '| [儿童详细松质骨研究](https://pmc.ncbi.nlm.nih.gov/articles/PMC13373995/) | 作者明确说明微结构以成人微 CT 数据调整，不能完全再现发育中儿童骨骼解剖；用途为剂量学 | 不能把这套剂量学微结构块当儿童宏观逐骨资产，也不适合直接拼补当前缺项 |',
+              '| [SciePro 官方 FAQ](https://www.sciepro.com/faq)与[许可说明](https://www.sciepro.com/licensing-terms) | 厂商称提供完整儿童模型、可按单个系统授权、FBX/OBJ 交付；Real-Time 3D 许可列明支持 WebGL 应用及运行时分发 | 尚未取得具体儿童资产年龄、逐骨目录、专业审核记录及项目报价；厂商宣传不是本项目验收。需核实交付粒度及 GitHub/源码包再分发是否获准，不能凭预览图采购或接入 |', '',
+              '来源页面于 2026-10-20 核查。商业备选仅为线索，不推荐直接购买：SciePro [公开价格页](https://www.sciepro.com/pricing)的男女全身单模型标为 $29,900 起，该价格不是儿童骨骼单系统报价；儿童单系统需单独询价。未发出询价、未注册/签署协议、未购买资产。', '',
               '目前没有核实到能直接替换、年龄与完整性证据齐备、且许可允许本项目使用的儿童逐骨模型。先筛来源，再决定是否需要授权素材或专业建模；本轮未购买、未下载患者影像、未把不同年龄模型混装。', '',
               '## 8. 来源与适用边界', '',
               '- [PIPER 官方模型定位](https://www.piper-project.org/child)：儿童碰撞响应有限元研究模型；不据此认定逐骨教学图谱完整。',

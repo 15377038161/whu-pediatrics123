@@ -32,3 +32,28 @@ test('桡骨/尺骨有源地标证据；骨盆推断标签和未定位结构不�
   assert.equal(new Set(keys).size,keys.length,'核对目标不能重复计数');
   assert.ok(audit.namedInventory.filter(item => item.region.endsWith('hand') || item.region.endsWith('foot')).every(item => item.status==='merged_unresolved'));
 });
+
+test('源注释冲突和邻近地标不能被升级为逐骨医学标注',() => {
+  const components=audit.mergedComponentInventory.flatMap(item => item.components);
+  assert.equal(components.length,74);
+  assert.equal(new Set(components.map(item => item.componentId)).size,74);
+  for (const item of audit.mergedComponentInventory) {
+    const part=manifest.parts.find(part => part.id===String(item.sourcePartId))!;
+    assert.equal(item.components.reduce((count,component) => count+component.triangles,0),part.triangles);
+  }
+  assert.equal(audit.footLandmarkConflicts.length,2);
+  for (const conflict of audit.footLandmarkConflicts) {
+    assert.equal(conflict.differentBoneCommentsShareOneComponent,true);
+    assert.equal(conflict.automaticBoneIdentificationAllowed,false);
+    assert.deepEqual(conflict.annotations.map(item => item.anatomicalTermInSourceComment),['talus','calcaneus']);
+    const part=components.find(item => item.componentId===conflict.annotations[0].componentId)!;
+    assert.equal(conflict.annotations[1].componentId,part.componentId);
+    assert.ok(conflict.annotations.every(item => part.landmarks.some(landmark => landmark.title===item.landmarkTitle)));
+  }
+  assert.equal(audit.pelvicLandmarkProximity.length,4);
+  assert.ok(audit.pelvicLandmarkProximity.every(item => !item.nodeIsInRetainedBoneSurface
+    && item.nearestComponentVertexDistanceMm>5 && item.nextComponentVertexDistanceMm>50));
+  for (const item of audit.pelvicLandmarkProximity) {
+    assert.ok(!summary.sourceLandmarkSupportedIds.includes(item.nearestExportedMeshId));
+  }
+});

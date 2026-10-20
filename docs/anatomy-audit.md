@@ -38,7 +38,35 @@
 | L | Styloid_process_of_left_radius | 3100496 | True |
 | R | Styloid_process_of_right_radius | 5100496 | True |
 
-骨盆髂/坐/耻骨命名仍依据空间规则，尚无逐部件权威标注核对；当前标为待专业复核。肋骨编号有源参考片及顺序核对，但仍不是医学审定。
+### 3.1 骨盆地标仅支持邻近关系，不能升级为精确匹配
+
+四个髂前/后上棘地标最接近当前髂骨分量，但它们的节点均不属于保留的骨表面，最近顶点仍相距约 5.6—6.6 mm。下面测量的是点到分量顶点的最短距离，不是点到连续三角表面的距离，也不构成精确解剖标注。因此髂/坐/耻骨标签全部继续保留空间规则推断、待专业复核状态。
+
+| 地标 | 节点 | 在保留骨表面节点中 | 最近分量 | 最近顶点距离 mm | 次近分量顶点距离 mm |
+|---|---:|---|---|---:|---:|
+| LASIS | 8201870 | False | 8101-L-髂骨 | 6.551 | 53.499 |
+| LPSIS | 8201890 | False | 8101-L-髂骨 | 5.584 | 54.258 |
+| RASIS | 8201775 | False | 8101-R-髂骨 | 6.551 | 53.499 |
+| RPSIS | 8201819 | False | 8101-R-髂骨 | 6.456 | 53.159 |
+
+### 3.2 足部原始注释与连通拓扑存在冲突
+
+实验性 contour 元数据把一处地标描述为距骨（talus），另一处描述为跟骨（calcaneus），但两处节点落在同一个源连通分量；左右足都如此。这可能来自简化拓扑或实验注释不准确，尚不能判定是哪一种。禁止据此给同一网格贴上两个独立骨名，也不能把近邻结果当作自动分割依据。
+
+| 侧别 | 地标 | 源注释中的骨名 | 同一连通分量 ID |
+|---|---|---|---|
+| left | foot_flexion_axis_a_left | talus | 7170:n7171373 |
+| left | foot_twist_axis_b_left | calcaneus | 7170:n7171373 |
+| right | foot_flexion_axis_a_right | talus | 9170:n9171373 |
+| right | foot_twist_axis_b_right | calcaneus | 9170:n9171373 |
+
+### 3.3 手足逐分量审阅材料
+
+机器证据的 `mergedComponentInventory` 为双手、双足的全部 74 个连通分量记录最小源节点号、节点集合指纹、顶点/三角面数和命中的源地标。分量编号不是骨名或骨头计数。部件轮廓直接来自已核对的源三角面，无 AI 补画、独立缩放或逐块旋转。审阅图仅对整个源部件做一次刚性换轴，再同尺度正投影。
+
+重绘命令：`python -X utf8 scripts/audit-anatomy-completeness.py --source outputs/piper-child --review-plates`（离线额外依赖 matplotlib；生产应用不增加依赖）。
+
+[左手审阅图](anatomy-review/left-hand.png) · [左足审阅图](anatomy-review/left-foot.png)。图中 C 编号按最小源节点号排序，对应机器证据中的顺序；当前仅制作左侧图，双侧节点证据均在 JSON 中。图件及由 PIPER 模型支持的分析保留其 GPLv3 与责任/Open Science 附加条款，见 [原许可](../public/models/anatomy/LICENSE.txt) 和 [GPL 正文](../public/models/anatomy/GPL-3.0.txt)。
 
 ## 4. 不能直接当作“完全重合”的去重项
 
@@ -282,7 +310,7 @@
 
 ## 6. 下一阶段与放行条件
 
-1. 先复核骨盆及 2D/3D 表面差异，不为了数字齐全增加未经验证的骨头。
+1. 先复核骨盆、手足注释冲突及 2D/3D 表面差异，不为了数字齐全增加未经验证的骨头。
 2. 寻找有年龄信息、来源标注、许可和专业审核依据的儿童逐骨模型/分割；成人模型等比缩小不能作为儿童模型替代。
 3. 第 12 肋、舌骨、尾骨、听小骨等需要明确来源后制作新版本；手足和颅面需要逐骨标注、分割与复核。
 4. AI 可协助标注建议、建模草稿和资料整理；其输出进入未发布候选资产，必须与可靠参考、年龄特征和相邻关节关系核对后再由专业人员放行。不能直接生成“正确骨头”自动上架。
@@ -293,9 +321,13 @@
 
 | 候选 | 已核实信息 | 为什么尚未直接替换 |
 |---|---|---|
-| [MARTIN 原始研究](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0241682) | 29 月龄男童的 MRI/CT 全身数值模型，论文报告专业影像审核 | 年龄不是本模型的 6 岁；组织分区不等于每骨独立。需核实模型获取方式、资产许可与逐骨分割，不能把论文许可直接当模型嵌入许可 |
+| [MARTIN 官方模型页](https://itis.swiss/virtual-population/virtual-population/hosted-models/martin)与[结构清单](https://itis.swiss/assets/Downloads/VirtualPopulation/MARTIN/MARTIN-V1.0-tissuelist.txt) | 29 月龄男童；可申请 STL，不分发原始影像；86 个组织分区。清单中的骨分区为 Bones(cortical)、Rib_and_vertebrae(cortical)、Skull(cortical) 等合并项 | 年龄不同，且骨骼清单不是逐骨结构，无法直接满足手足/颅面逐骨平铺；获取需遵守资产单独协议及可能的处理费用，不将论文许可当作资产嵌入许可 |
 | [CASIMIR 作者模型卡](https://huggingface.co/fjhorvath/casimir) | 儿童/青年全身 MRI 的器官和部分骨骼结构分割模型 | 是分割算法而非现成完整骨骼网格；不能自行从缺少影像和标注的数据生成全部骨头 |
-| [SciePro 儿童骨骼资源页](https://library.sciepro.com/en/illustrations/the-complete-skeletal-system-of-a-female-child-933961516259152) | 检索到的为儿童骨骼插画资源页 | 尚未核实有可下载逐骨 3D 网格、年龄证据及网页嵌入许可，不能凭预览图采购或接入 |
+| [ICRP Publication 156 官方页](https://www.icrp.org/publication.asp?id=ICRP+Publication+156) | 有新生儿、1/5/10/15 岁男女儿童网格体模，主要用于辐射剂量计算；官方提供大于 10 GB 的补充材料入口 | 不是当前 6 岁源模型；还未核实逐骨层级及应用再分发许可，不能从“覆盖剂量计算组织”推断骨骼教学图谱齐全 |
+| [儿童详细松质骨研究](https://pmc.ncbi.nlm.nih.gov/articles/PMC13373995/) | 作者明确说明微结构以成人微 CT 数据调整，不能完全再现发育中儿童骨骼解剖；用途为剂量学 | 不能把这套剂量学微结构块当儿童宏观逐骨资产，也不适合直接拼补当前缺项 |
+| [SciePro 官方 FAQ](https://www.sciepro.com/faq)与[许可说明](https://www.sciepro.com/licensing-terms) | 厂商称提供完整儿童模型、可按单个系统授权、FBX/OBJ 交付；Real-Time 3D 许可列明支持 WebGL 应用及运行时分发 | 尚未取得具体儿童资产年龄、逐骨目录、专业审核记录及项目报价；厂商宣传不是本项目验收。需核实交付粒度及 GitHub/源码包再分发是否获准，不能凭预览图采购或接入 |
+
+来源页面于 2026-10-20 核查。商业备选仅为线索，不推荐直接购买：SciePro [公开价格页](https://www.sciepro.com/pricing)的男女全身单模型标为 $29,900 起，该价格不是儿童骨骼单系统报价；儿童单系统需单独询价。未发出询价、未注册/签署协议、未购买资产。
 
 目前没有核实到能直接替换、年龄与完整性证据齐备、且许可允许本项目使用的儿童逐骨模型。先筛来源，再决定是否需要授权素材或专业建模；本轮未购买、未下载患者影像、未把不同年龄模型混装。
 

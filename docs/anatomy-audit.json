@@ -2201,7 +2201,9 @@
     "main_Trunk_UpperEx.k": "79ddbdd7b315acdf62272518749283a724906d33500e6349b66d79ca3cf070ef",
     "mesh_PIPER_Body.k": "9ec109b6e3294dbba94322daa39c5e2aa9277c082b7fbb05df4b7005882f8ff5",
     "landmarks_ISB.k": "bd403071b94602eaa5eb1f09efd9bac3627cc2f7a7025e7c004642b1ff0d86e1",
-    "Child_model.pmr": "ad72ac290027470bb3f6a29587b5d49928f7a7fe293e0bd3ce79443cac2c1aa4"
+    "Child_model.pmr": "ad72ac290027470bb3f6a29587b5d49928f7a7fe293e0bd3ce79443cac2c1aa4",
+    "PIPER_landmark_namedmetadataCL.k": "40b53fcf34a79ecc8f313d513151af6e5ddf63a555e46683bdfe39355e0e96d3",
+    "metadata/contourCL/contourCL.xml": "be8b95ba1560dcd0fb9853137461deab2a779e573a54b35bc42c8d2284751f1b"
   },
   "forearmLandmarks": [
     {
@@ -2219,6 +2221,820 @@
       "landmarkFile": "landmarks_ISB.k",
       "sourceComponents": 2,
       "radiusLabelMatchesSourceLandmark": true
+    }
+  ],
+  "mergedComponentInventory": [
+    {
+      "sourcePartId": 3101,
+      "components": [
+        {
+          "componentId": "3101:n3100649",
+          "minimumSourceNodeId": 3100649,
+          "sourceNodeIdsSha256": "cd596e74b000a020d95b873f675536a64bbf60fa5e618a56ca69f6b3e95ec474",
+          "vertices": 35,
+          "triangles": 66,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100650",
+          "minimumSourceNodeId": 3100650,
+          "sourceNodeIdsSha256": "7c0b3b5ea90174697a065911764ba57b2aa9f1e2bf5d9de987f23e2c2b211370",
+          "vertices": 46,
+          "triangles": 88,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100654",
+          "minimumSourceNodeId": 3100654,
+          "sourceNodeIdsSha256": "89e19223eac41e4760b1db0805a4c0011b672dfa143fb81df62e1f95058e1ab2",
+          "vertices": 50,
+          "triangles": 96,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100659",
+          "minimumSourceNodeId": 3100659,
+          "sourceNodeIdsSha256": "c59b642bb8143712787d0c26c1981d67c58a004dad2f3830fa2ab5669d723779",
+          "vertices": 35,
+          "triangles": 66,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100668",
+          "minimumSourceNodeId": 3100668,
+          "sourceNodeIdsSha256": "4ed26f0270e203cc1f110075fef28a7471c996ad6660e9689145b85d87760d6c",
+          "vertices": 49,
+          "triangles": 94,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100669",
+          "minimumSourceNodeId": 3100669,
+          "sourceNodeIdsSha256": "72fa6675f15ed16fd81be85d44f1d3700f979839f97172a093140363fcbd8f24",
+          "vertices": 50,
+          "triangles": 94,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100678",
+          "minimumSourceNodeId": 3100678,
+          "sourceNodeIdsSha256": "a0c05050073dfe37416338f925d9eebf57f45236754c817d0b2fbfb0ee70d3c6",
+          "vertices": 25,
+          "triangles": 46,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100688",
+          "minimumSourceNodeId": 3100688,
+          "sourceNodeIdsSha256": "13a6727383ad0b9b1db71abe5c7789119c75add6eec7ce7cc1f2db8d10ebb8dc",
+          "vertices": 10,
+          "triangles": 16,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100690",
+          "minimumSourceNodeId": 3100690,
+          "sourceNodeIdsSha256": "8ca692580cc6e54d64af0f4304cf92352d7145def43cb56655e69c34e33ffccb",
+          "vertices": 21,
+          "triangles": 38,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100696",
+          "minimumSourceNodeId": 3100696,
+          "sourceNodeIdsSha256": "c48637db1c6a1b54fdb33b38d0ca11bdda50e1a565beb6d972dd7fbc91f58d9d",
+          "vertices": 31,
+          "triangles": 58,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100704",
+          "minimumSourceNodeId": 3100704,
+          "sourceNodeIdsSha256": "6fe25333e545309acc5486c117361cd1ece771d9d944eaf0892990b13205a8cd",
+          "vertices": 22,
+          "triangles": 40,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100718",
+          "minimumSourceNodeId": 3100718,
+          "sourceNodeIdsSha256": "61ab6b60d08d64c92a60af3423d91bac129fb7fb65df30d8966333956102baed",
+          "vertices": 6,
+          "triangles": 8,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100726",
+          "minimumSourceNodeId": 3100726,
+          "sourceNodeIdsSha256": "5e047bb313ea7336a4b7f478f2abcebbb548d08fa47630d08769b02eb9cc6d69",
+          "vertices": 8,
+          "triangles": 12,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100727",
+          "minimumSourceNodeId": 3100727,
+          "sourceNodeIdsSha256": "5aad75ef407f9bfb00e1663219c4b87cb620fdd1c99436eb86758cdbda85843f",
+          "vertices": 37,
+          "triangles": 70,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100921",
+          "minimumSourceNodeId": 3100921,
+          "sourceNodeIdsSha256": "c96dd75a5b11e685afe07e0d5c73d2b5256b00764761749748de1c3894040166",
+          "vertices": 10,
+          "triangles": 16,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "handl_distal",
+              "memberNodeIds": [
+                3100921
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "3101:n3100925",
+          "minimumSourceNodeId": 3100925,
+          "sourceNodeIdsSha256": "d86ca327b37eee7b4a9bd66875d3042e735cb28ff9912a87ba8fd3a8f176d50c",
+          "vertices": 9,
+          "triangles": 14,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100928",
+          "minimumSourceNodeId": 3100928,
+          "sourceNodeIdsSha256": "25b65a8ab7c7ac64775589a3c78425cffbbf12055c691f1791a88aaea89d87e6",
+          "vertices": 8,
+          "triangles": 12,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100997",
+          "minimumSourceNodeId": 3100997,
+          "sourceNodeIdsSha256": "91b9f42a72f25f7c77aab1d28c7e338ff3c80c192f95f62cbebfa027f6ef75ce",
+          "vertices": 22,
+          "triangles": 40,
+          "landmarks": [
+            {
+              "file": "landmarks_ISB.k",
+              "title": "Hand_BC3_L",
+              "memberNodeIds": [
+                3101018
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "3101:n3100999",
+          "minimumSourceNodeId": 3100999,
+          "sourceNodeIdsSha256": "9e538b996f3b70e65909517ba1ad2f5334415b7b36996aff53990e0c53c67311",
+          "vertices": 15,
+          "triangles": 26,
+          "landmarks": []
+        }
+      ],
+      "meaning": "Topology components, NOT bone identities"
+    },
+    {
+      "sourcePartId": 5101,
+      "components": [
+        {
+          "componentId": "5101:n5100649",
+          "minimumSourceNodeId": 5100649,
+          "sourceNodeIdsSha256": "b6760f478ff5c4c044871d280a8a52365168bd2e5fe069281d7b0ff8ed15b661",
+          "vertices": 35,
+          "triangles": 66,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100650",
+          "minimumSourceNodeId": 5100650,
+          "sourceNodeIdsSha256": "b6ce96f606516c5a7621707d9435cc6672ff3e99af33f9273da741dc109066c0",
+          "vertices": 46,
+          "triangles": 88,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100654",
+          "minimumSourceNodeId": 5100654,
+          "sourceNodeIdsSha256": "cf65b1edfde0eff5597fc19cf0183ae6f37ddd2211078da6507ecd279d7474ae",
+          "vertices": 50,
+          "triangles": 96,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100659",
+          "minimumSourceNodeId": 5100659,
+          "sourceNodeIdsSha256": "6b660ccd6af47fdf3b25a9e3a2fdb8331285ad8dc6451110058c93bf557e04f8",
+          "vertices": 35,
+          "triangles": 66,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100668",
+          "minimumSourceNodeId": 5100668,
+          "sourceNodeIdsSha256": "515d392fd8cdae196e5eab7c5570c8aea236ce7222df81568184d5d85158db66",
+          "vertices": 49,
+          "triangles": 94,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100669",
+          "minimumSourceNodeId": 5100669,
+          "sourceNodeIdsSha256": "6f3f4b46f7b55250e5393c46d2f264ffa7824b68b387c6148ff68b0c39cd20af",
+          "vertices": 50,
+          "triangles": 94,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100678",
+          "minimumSourceNodeId": 5100678,
+          "sourceNodeIdsSha256": "5c0c046c72918a09338a2744b158006b1e73cc585f6474b3ff3c56fb47d0cc07",
+          "vertices": 25,
+          "triangles": 46,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100688",
+          "minimumSourceNodeId": 5100688,
+          "sourceNodeIdsSha256": "e7a3b7d1833cd3bdc1b3e338868d856b7c9bbb64d51db7dcc32a5e89141a1d39",
+          "vertices": 10,
+          "triangles": 16,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100690",
+          "minimumSourceNodeId": 5100690,
+          "sourceNodeIdsSha256": "9e7fe559371436fffcdcdf0a805e70694fdd82c6c6bdd27f151c3129a5f2d650",
+          "vertices": 21,
+          "triangles": 38,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100696",
+          "minimumSourceNodeId": 5100696,
+          "sourceNodeIdsSha256": "0c460ade7283e20c5092744258613c1dbfda7ffa4fb18a7dcb1d087effa3a506",
+          "vertices": 31,
+          "triangles": 58,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100704",
+          "minimumSourceNodeId": 5100704,
+          "sourceNodeIdsSha256": "53e69cc10b25a621205a6c7caad70d87e87d7f967e007f4b28d02beea795cf37",
+          "vertices": 22,
+          "triangles": 40,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100718",
+          "minimumSourceNodeId": 5100718,
+          "sourceNodeIdsSha256": "1a62605a368449cd546620da4da534d0740ffbd2f2f0cbef3491ea2e30fea0dd",
+          "vertices": 6,
+          "triangles": 8,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100726",
+          "minimumSourceNodeId": 5100726,
+          "sourceNodeIdsSha256": "90af5443bd43e157950748d2c9ea6add70d6a58c37dc4f6e61d79a248d235ad9",
+          "vertices": 8,
+          "triangles": 12,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100727",
+          "minimumSourceNodeId": 5100727,
+          "sourceNodeIdsSha256": "2243ae22ebd2e522f658a2a801debed42397032663fa3e1cd1fa8ba25fa7c9c6",
+          "vertices": 37,
+          "triangles": 70,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100921",
+          "minimumSourceNodeId": 5100921,
+          "sourceNodeIdsSha256": "83d3fd36323cfbe0b2938345edfbf0478bd335954d1f4a03569afd92b4bf8247",
+          "vertices": 10,
+          "triangles": 16,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "handr_distal",
+              "memberNodeIds": [
+                5100921
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "5101:n5100925",
+          "minimumSourceNodeId": 5100925,
+          "sourceNodeIdsSha256": "47500ce836622c38e6cf99f8be57bbd2a68499837f206053bced56870b4db3bb",
+          "vertices": 9,
+          "triangles": 14,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100928",
+          "minimumSourceNodeId": 5100928,
+          "sourceNodeIdsSha256": "d55c8a06423b9ce9c05f29cbe43b742f6ed90dad85213e7101069aaef457d554",
+          "vertices": 8,
+          "triangles": 12,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100997",
+          "minimumSourceNodeId": 5100997,
+          "sourceNodeIdsSha256": "a6a848cbb154bb785ffb6e12afef1fc2209994a7e10596b717c5c38d3d4e25a5",
+          "vertices": 22,
+          "triangles": 40,
+          "landmarks": [
+            {
+              "file": "landmarks_ISB.k",
+              "title": "Hand_BC3_R",
+              "memberNodeIds": [
+                5101018
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "5101:n5100999",
+          "minimumSourceNodeId": 5100999,
+          "sourceNodeIdsSha256": "9f65b35202466b3014fa68e89e29e47efb0bc1307bb5c26f6ae305a46b907b91",
+          "vertices": 15,
+          "triangles": 26,
+          "landmarks": []
+        }
+      ],
+      "meaning": "Topology components, NOT bone identities"
+    },
+    {
+      "sourcePartId": 7170,
+      "components": [
+        {
+          "componentId": "7170:n7170001",
+          "minimumSourceNodeId": 7170001,
+          "sourceNodeIdsSha256": "18c117af222ef68c29d7ab2bda95f59b35af286d06e90e555077fac0c6c34412",
+          "vertices": 855,
+          "triangles": 1706,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170123",
+          "minimumSourceNodeId": 7170123,
+          "sourceNodeIdsSha256": "b1a77d5aa5fb4fc877bd7721c2c3519f89a2e837e7301beb4ef34cd04fb44113",
+          "vertices": 266,
+          "triangles": 528,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170231",
+          "minimumSourceNodeId": 7170231,
+          "sourceNodeIdsSha256": "fe67994081aa826e83a45d1b0005264522542330137462fea59176f76591440c",
+          "vertices": 160,
+          "triangles": 316,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170343",
+          "minimumSourceNodeId": 7170343,
+          "sourceNodeIdsSha256": "392483b9a20d741ad114b408fc1994ca38b5a53eb9f43b8ce09bdfed86906098",
+          "vertices": 206,
+          "triangles": 408,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "footl_proximal",
+              "memberNodeIds": [
+                7170396
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "7170:n7170486",
+          "minimumSourceNodeId": 7170486,
+          "sourceNodeIdsSha256": "bc26289e0eec2142ca625d1fa1d13dce972ac04751c1689a87556f15f717c3c7",
+          "vertices": 360,
+          "triangles": 716,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170673",
+          "minimumSourceNodeId": 7170673,
+          "sourceNodeIdsSha256": "622e036efd2b72a8828b40a6ebac7ad8903b1588c7e0880eb702eae680b4554e",
+          "vertices": 426,
+          "triangles": 848,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170811",
+          "minimumSourceNodeId": 7170811,
+          "sourceNodeIdsSha256": "4262f77df635a21cf92d3e563ee55bc204851a06d94a7078316729969328ac77",
+          "vertices": 352,
+          "triangles": 700,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170934",
+          "minimumSourceNodeId": 7170934,
+          "sourceNodeIdsSha256": "87e7dec0cde02cfb02b092e1b4d276fe45eabab8b38c15986989093186746c64",
+          "vertices": 287,
+          "triangles": 570,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171059",
+          "minimumSourceNodeId": 7171059,
+          "sourceNodeIdsSha256": "728d5d3d85d1af417ea19896baf531c3cbe858eb51e506bc39a636aaeccebe53",
+          "vertices": 296,
+          "triangles": 588,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171146",
+          "minimumSourceNodeId": 7171146,
+          "sourceNodeIdsSha256": "973c764cbc50fdbf62e285c6b5d833febb8294886a6dcfbb4317d5d534f9c10b",
+          "vertices": 266,
+          "triangles": 528,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171247",
+          "minimumSourceNodeId": 7171247,
+          "sourceNodeIdsSha256": "8759c607b6b762ce172417f98381224ab67eba8952d99ffed40ffc6cbd142d1e",
+          "vertices": 322,
+          "triangles": 640,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171373",
+          "minimumSourceNodeId": 7171373,
+          "sourceNodeIdsSha256": "ca3a8a31710f2319a632ef8e6876bae1900064655588f951243528775719493f",
+          "vertices": 587,
+          "triangles": 1170,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_twist_axis_b_left",
+              "memberNodeIds": [
+                7171515
+              ]
+            },
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_flexion_axis_b_left",
+              "memberNodeIds": [
+                7171495
+              ]
+            },
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_flexion_axis_a_left",
+              "memberNodeIds": [
+                7174893
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "7170:n7171518",
+          "minimumSourceNodeId": 7171518,
+          "sourceNodeIdsSha256": "9964d5a76baa0b59fe31f629faea5441001c6e8b83f01869285f9e700dabf7bf",
+          "vertices": 201,
+          "triangles": 398,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171645",
+          "minimumSourceNodeId": 7171645,
+          "sourceNodeIdsSha256": "835da468ec1192bf1db9e6a024f68f9b15cca71b83f6cc79b0e7e0f8e822f720",
+          "vertices": 117,
+          "triangles": 230,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171730",
+          "minimumSourceNodeId": 7171730,
+          "sourceNodeIdsSha256": "1b062a0fa24c0a0e3aca83672807ac6892b3e24bd312e62c5b4aa63b381b7b7a",
+          "vertices": 198,
+          "triangles": 392,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "footl_distal",
+              "memberNodeIds": [
+                7171815
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "7170:n7171831",
+          "minimumSourceNodeId": 7171831,
+          "sourceNodeIdsSha256": "008641511efe431a94a065307b3b6e0843e2d68b5b3bd622871cf4f9b0034233",
+          "vertices": 156,
+          "triangles": 308,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171934",
+          "minimumSourceNodeId": 7171934,
+          "sourceNodeIdsSha256": "ad61f71ba47277582da70a0c1dcad9b59413ca322ac32464d7d999edf7244f0a",
+          "vertices": 174,
+          "triangles": 344,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7172071",
+          "minimumSourceNodeId": 7172071,
+          "sourceNodeIdsSha256": "6f7aa6771272cbcd36ae3260e25af4eb8f6b7ae71633afacbb4b207b7fb06091",
+          "vertices": 172,
+          "triangles": 340,
+          "landmarks": []
+        }
+      ],
+      "meaning": "Topology components, NOT bone identities"
+    },
+    {
+      "sourcePartId": 9170,
+      "components": [
+        {
+          "componentId": "9170:n9170001",
+          "minimumSourceNodeId": 9170001,
+          "sourceNodeIdsSha256": "85afcd5bdd203d241d2442b13685f51ade2c43c75569f7ec5e7ce3c16483da5d",
+          "vertices": 855,
+          "triangles": 1706,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170123",
+          "minimumSourceNodeId": 9170123,
+          "sourceNodeIdsSha256": "9cdcd1de1ce945a7a377aa56a7b9e3c7f5e23690d159ebc4ac714cf817a6acc4",
+          "vertices": 266,
+          "triangles": 528,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170231",
+          "minimumSourceNodeId": 9170231,
+          "sourceNodeIdsSha256": "a9c6247ea12ff2670695d64fa1a1a04e74a809d8d18b2dd9ac13c020e42fa033",
+          "vertices": 160,
+          "triangles": 316,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170343",
+          "minimumSourceNodeId": 9170343,
+          "sourceNodeIdsSha256": "9dceb56e24b55256ffaec7a608c957874376ce391ea2b7816169779682abb363",
+          "vertices": 206,
+          "triangles": 408,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "footr_proximal",
+              "memberNodeIds": [
+                9170396
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "9170:n9170486",
+          "minimumSourceNodeId": 9170486,
+          "sourceNodeIdsSha256": "442af4a2b48fe71d42388fc2fd081294e3ea030966c3022bdda7596b9a87bc46",
+          "vertices": 360,
+          "triangles": 716,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170673",
+          "minimumSourceNodeId": 9170673,
+          "sourceNodeIdsSha256": "fa0eff3146a808fef9c2ec00fb9cb6d1f8a50801499eb3e0312470d08ad5734e",
+          "vertices": 426,
+          "triangles": 848,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170811",
+          "minimumSourceNodeId": 9170811,
+          "sourceNodeIdsSha256": "7a4fcd1414bd1fa80137ecf1e1a0576f99edb128efa360126bc7aeff344fe67f",
+          "vertices": 352,
+          "triangles": 700,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170934",
+          "minimumSourceNodeId": 9170934,
+          "sourceNodeIdsSha256": "001257673fa9970925b868526f8e94a8816ece0907fdaba627d6dd1efb6d87a0",
+          "vertices": 287,
+          "triangles": 570,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171059",
+          "minimumSourceNodeId": 9171059,
+          "sourceNodeIdsSha256": "498a8379a893068a5e9d02e49b30ae5dfd391b31a942fdcc0c0c28a286b52779",
+          "vertices": 296,
+          "triangles": 588,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171146",
+          "minimumSourceNodeId": 9171146,
+          "sourceNodeIdsSha256": "b9dbc1bd97687b2f465a96a8d589aa1fcb8f509a95917e48c219b6dcd97ea02a",
+          "vertices": 266,
+          "triangles": 528,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171247",
+          "minimumSourceNodeId": 9171247,
+          "sourceNodeIdsSha256": "ff39822b7bb23bf5c79cb5e084228bc11a16448d42db4415997beacb7be773e9",
+          "vertices": 322,
+          "triangles": 640,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171373",
+          "minimumSourceNodeId": 9171373,
+          "sourceNodeIdsSha256": "42a4176e0fa9d15dd758392f681a0647d36ad70bd590a69bd5da2ae70e3fd41b",
+          "vertices": 587,
+          "triangles": 1170,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_twist_axis_b_right",
+              "memberNodeIds": [
+                9171515
+              ]
+            },
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_flexion_axis_b_right",
+              "memberNodeIds": [
+                9171495
+              ]
+            },
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_flexion_axis_a_right",
+              "memberNodeIds": [
+                9174893
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "9170:n9171518",
+          "minimumSourceNodeId": 9171518,
+          "sourceNodeIdsSha256": "2225515e3bb442cdd0fadc8af62058e02cee5ecabd249ea5fa1073fde9bd29ab",
+          "vertices": 201,
+          "triangles": 398,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171645",
+          "minimumSourceNodeId": 9171645,
+          "sourceNodeIdsSha256": "718625b63df322ac46ad555764c35c2bc09d3cea0a3012f2d2c3efd921aa6b73",
+          "vertices": 117,
+          "triangles": 230,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171730",
+          "minimumSourceNodeId": 9171730,
+          "sourceNodeIdsSha256": "91d177e05f474d9ad5024c8755ee7dcc4227074e825dd8fa8cad58664f7baec0",
+          "vertices": 198,
+          "triangles": 392,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "footr_distal",
+              "memberNodeIds": [
+                9171815
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "9170:n9171831",
+          "minimumSourceNodeId": 9171831,
+          "sourceNodeIdsSha256": "885feae4cef3c42f4a306008cadb9e5d79c5d1fceb29844b70a1c44e6c207853",
+          "vertices": 156,
+          "triangles": 308,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171934",
+          "minimumSourceNodeId": 9171934,
+          "sourceNodeIdsSha256": "3587cf6c2e9b23a4ff3a682ad2cf2524f1a4cc1cec52dcf03be0dd33ef9e8538",
+          "vertices": 174,
+          "triangles": 344,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9172071",
+          "minimumSourceNodeId": 9172071,
+          "sourceNodeIdsSha256": "8ca7070a11889fde339f21d0ce4d4c6e847fd1e45a1dc749face5d530a3ef2d0",
+          "vertices": 172,
+          "triangles": 340,
+          "landmarks": []
+        }
+      ],
+      "meaning": "Topology components, NOT bone identities"
+    }
+  ],
+  "footLandmarkConflicts": [
+    {
+      "side": "left",
+      "annotations": [
+        {
+          "landmarkTitle": "foot_flexion_axis_a_left",
+          "anatomicalTermInSourceComment": "talus",
+          "sourceComments": [
+            "mid point of left talus"
+          ],
+          "componentId": "7170:n7171373"
+        },
+        {
+          "landmarkTitle": "foot_twist_axis_b_left",
+          "anatomicalTermInSourceComment": "calcaneus",
+          "sourceComments": [
+            "mid point of left calcaneus"
+          ],
+          "componentId": "7170:n7171373"
+        }
+      ],
+      "differentBoneCommentsShareOneComponent": true,
+      "automaticBoneIdentificationAllowed": false,
+      "interpretation": "Could reflect simplified topology or inaccurate experimental comments; needs review, not an automatic split"
+    },
+    {
+      "side": "right",
+      "annotations": [
+        {
+          "landmarkTitle": "foot_flexion_axis_a_right",
+          "anatomicalTermInSourceComment": "talus",
+          "sourceComments": [
+            "mid point of right talus"
+          ],
+          "componentId": "9170:n9171373"
+        },
+        {
+          "landmarkTitle": "foot_twist_axis_b_right",
+          "anatomicalTermInSourceComment": "calcaneus",
+          "sourceComments": [
+            "mid point of right calcaneus"
+          ],
+          "componentId": "9170:n9171373"
+        }
+      ],
+      "differentBoneCommentsShareOneComponent": true,
+      "automaticBoneIdentificationAllowed": false,
+      "interpretation": "Could reflect simplified topology or inaccurate experimental comments; needs review, not an automatic split"
+    }
+  ],
+  "pelvicLandmarkProximity": [
+    {
+      "title": "LASIS",
+      "sourceNodeId": 8201870,
+      "nodeIsInRetainedBoneSurface": false,
+      "nearestExportedMeshId": "8101-L-髂骨",
+      "nearestComponentVertexDistanceMm": 6.551,
+      "nextComponentVertexDistanceMm": 53.499,
+      "meaning": "Proximity evidence only; label remains provisional"
+    },
+    {
+      "title": "LPSIS",
+      "sourceNodeId": 8201890,
+      "nodeIsInRetainedBoneSurface": false,
+      "nearestExportedMeshId": "8101-L-髂骨",
+      "nearestComponentVertexDistanceMm": 5.584,
+      "nextComponentVertexDistanceMm": 54.258,
+      "meaning": "Proximity evidence only; label remains provisional"
+    },
+    {
+      "title": "RASIS",
+      "sourceNodeId": 8201775,
+      "nodeIsInRetainedBoneSurface": false,
+      "nearestExportedMeshId": "8101-R-髂骨",
+      "nearestComponentVertexDistanceMm": 6.551,
+      "nextComponentVertexDistanceMm": 53.499,
+      "meaning": "Proximity evidence only; label remains provisional"
+    },
+    {
+      "title": "RPSIS",
+      "sourceNodeId": 8201819,
+      "nodeIsInRetainedBoneSurface": false,
+      "nearestExportedMeshId": "8101-R-髂骨",
+      "nearestComponentVertexDistanceMm": 6.456,
+      "nextComponentVertexDistanceMm": 53.159,
+      "meaning": "Proximity evidence only; label remains provisional"
     }
   ],
   "namedInventory": [
