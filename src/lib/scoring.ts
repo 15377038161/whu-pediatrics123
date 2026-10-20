@@ -1,5 +1,6 @@
 import type { AbilityScores, ScoreEvidence, SessionState, TrainingReport } from '@/domain/agent';
 import { getCase } from '@/domain/case';
+import { flagshipClinicalRubric, focusedRubrics, type RubricDefinition, type RubricItem, type RubricItemStatus } from '@/domain/training-rubric';
 
 function includesAny(value: string, terms: string[]): boolean {
   const normalized = value.toLowerCase();
@@ -17,107 +18,348 @@ export interface ReportReference {
   plan?: string;
 }
 
+/** 原始提交快照（方案 4.6）：报告生成时冻结学生的全部最终提交原文，不追溯重写。 */
+function snapshotSubmissions(session: SessionState): NonNullable<TrainingReport['studentSubmissions']> {
+  return {
+    decision: session.decision ? { ...session.decision } : null,
+    plan: session.plan ? { ...session.plan } : null,
+    communication: session.communication ?? null,
+    historySummary: session.historySummary ?? null,
+  };
+}
+
+/** 量表选择（方案 4.5/5.2）：practice 会话按 focus 取专项量表，其余（guided/osce/immersive 演示病例）
+ *  用旗舰完整接诊量表；来源病例（教师病例）走过程分口径（buildSourceReport），不套用临床量表。 */
+function rubricForSession(session: SessionState): RubricDefinition {
+  if (session.mode === 'practice' && session.practiceFocus) {
+    const rubric = focusedRubrics[session.practiceFocus];
+    if (rubric) return rubric;
+  }
+  return flagshipClinicalRubric;
+}
+
 export function buildReport(session: SessionState, reportId = crypto.randomUUID(), reference?: ReportReference): TrainingReport {
   // 评分全程按会话绑定版本+会话作用域读取教学事实：teacher 病例命中本人会话投影态，
   // 不读共享键的完整事实（防跨会话泄露）；无有效事实时走 buildSourceReport 过程分口径（非生成式兜底）。
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   if (pediatricCase.sourceFacts !== undefined) return buildSourceReport(session, reportId, reference);
+  return buildRubricReport(session, reportId, rubricForSession(session));
+}
+
+interface ItemEvaluation {
+  status: RubricItemStatus;
+  score: number;
+  detail: string;
+  evidenceCodes: string[];
+}
+
+function evaluateItem(session: SessionState, item: RubricItem): ItemEvaluation {
+  return rubricForSession(session).scope === 'focused' ? evaluateFocusedItem(session, item) : evaluateFlagshipItem(session, item);
+}
+
+/** 旗舰完整接诊量表执行器（rubric-clinical-flagship v1）：证据码沿用 RUBRIC_<itemId>，
+ *  保持历史报告的 RUBRIC_SAFETY/RUBRIC_EXAM_RESP/RUBRIC_EXAM_OXYGEN/RUBRIC_HISTORY_DANGER/RUBRIC_COMMUNICATION 口径。 */
+function evaluateFlagshipItem(session: SessionState, item: RubricItem): ItemEvaluation {
   const asked = new Set(session.askedIntents);
   const evidence = new Set(session.unlockedEvidence);
   const decisionText = `${session.decision?.diagnosis ?? ''} ${session.decision?.summary ?? ''} ${session.decision?.diagnosisBasis ?? ''} ${session.decision?.differentials ?? ''}`;
   const planText = `${session.plan?.priority ?? ''} ${session.plan?.detail ?? ''}`;
   const communicationText = session.communication ?? '';
-
-  const historyScore = Math.min(25,
-    (asked.has('danger') ? 8 : 0)
-      + (asked.has('onset') ? 4 : 0)
-      + (asked.has('fever') ? 4 : 0)
-      + (asked.has('cough') ? 2 : 0)
-      + (asked.has('treatment') ? 1 : 0)
-      + (asked.has('general') ? 4 : 0)
-      + (asked.has('exposure') ? 3 : 0)
-      + (asked.has('vaccination') || asked.has('birth') || asked.has('allergy') ? 2 : 0));
-
-  const examinationScore = Math.min(25,
-    (evidence.has('EX_PREP') ? 4 : 0)
-      + (evidence.has('EX_RESP') ? 10 : 0)
-      + (evidence.has('EX_SPO2') ? 7 : 0)
-      + ([...evidence].filter((code) => ['EX_TEMP', 'EX_MOUTH', 'EX_BP'].includes(code)).length > 0 ? 4 : 0));
-
   const isWheezeCase = session.caseId === 'peds-wheeze-002';
-  const primaryDiagnosisIdentified = includesAny(decisionText, isWheezeCase ? ['喘息', '哮喘', '支气管痉挛', '气道高反应'] : ['肺炎', '下呼吸道感染']);
-  const lowOxygenIdentified = includesAny(decisionText, ['低氧', '血氧', '呼吸困难', '气促', '危险']);
-  const differentialProvided = (session.decision?.differentials.trim().length ?? 0) >= 6;
-  const reasoningScore = (primaryDiagnosisIdentified ? 10 : 0) + (lowOxygenIdentified ? 6 : 0) + (differentialProvided ? 4 : 0);
+  switch (item.itemId) {
+    case 'HISTORY_PRESENTING': {
+      const parts = [
+        asked.has('onset') ? 3 : 0,
+        asked.has('fever') ? 3 : 0,
+        asked.has('cough') ? 2 : 0,
+        asked.has('treatment') ? 2 : 0,
+      ];
+      const score = parts.reduce((sum, value) => sum + value, 0);
+      return {
+        status: score === item.maxScore ? 'achieved' : score > 0 ? 'partial' : 'missing',
+        score,
+        detail: score > 0 ? `问诊覆盖主诉与现病史要点（起病/发热/咳嗽/院前用药），得 ${score}/${item.maxScore} 分。` : item.feedback,
+        evidenceCodes: ['HX_ONSET', 'HX_FEVER', 'HX_COUGH', 'HX_TREATMENT'],
+      };
+    }
+    case 'HISTORY_DANGER': {
+      const hit = asked.has('danger');
+      return {
+        status: hit ? 'achieved' : 'missing',
+        score: hit ? item.maxScore : 0,
+        detail: hit ? '主动询问气促、喘憋或青紫，并形成可回放记录。' : item.feedback,
+        evidenceCodes: ['HX_DANGER'],
+      };
+    }
+    case 'HISTORY_GENERAL': {
+      const hit = asked.has('general');
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '询问精神、进食、尿量等一般状态。' : item.feedback, evidenceCodes: ['HX_GENERAL'] };
+    }
+    case 'HISTORY_EXPOSURE': {
+      const hit = asked.has('exposure');
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '询问接触史与诱因。' : item.feedback, evidenceCodes: ['HX_EXPOSURE'] };
+    }
+    case 'HISTORY_BACKGROUND': {
+      const hit = ['vaccination', 'birth', 'allergy'].some((intent) => asked.has(intent));
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '询问预防接种、出生发育或过敏既往史。' : item.feedback, evidenceCodes: ['HX_VACCINATION', 'HX_BIRTH', 'HX_ALLERGY'] };
+    }
+    case 'EXAM_PREP': {
+      const hit = evidence.has('EX_PREP');
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '完成手卫生与检查说明。' : item.feedback, evidenceCodes: ['EX_PREP'] };
+    }
+    case 'EXAM_RESP': {
+      const hit = evidence.has('EX_RESP');
+      return {
+        status: hit ? 'achieved' : 'missing',
+        score: hit ? item.maxScore : 0,
+        detail: hit ? `完成手卫生后使用听诊器检查胸部并获取${isWheezeCase ? '哮鸣音与呼气相变化' : '局灶体征'}。` : item.feedback,
+        evidenceCodes: ['EX_RESP'],
+      };
+    }
+    case 'EXAM_OXYGEN': {
+      const hit = evidence.has('EX_SPO2');
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '正确使用血氧仪获取静息血氧结果。' : item.feedback, evidenceCodes: ['EX_SPO2'] };
+    }
+    case 'EXAM_OTHER': {
+      const hit = ['EX_TEMP', 'EX_MOUTH', 'EX_BP'].some((code) => evidence.has(code));
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '完成体温、口咽或血压等其他部位检查。' : item.feedback, evidenceCodes: ['EX_TEMP', 'EX_MOUTH', 'EX_BP'] };
+    }
+    case 'REASONING_PRIMARY': {
+      const hit = includesAny(decisionText, isWheezeCase ? ['喘息', '哮喘', '支气管痉挛', '气道高反应'] : ['肺炎', '下呼吸道感染']);
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? `诊断覆盖本病例主要问题（${isWheezeCase ? '喘息性气道问题' : '肺部感染'}）。` : item.feedback, evidenceCodes: ['DECISION'] };
+    }
+    case 'REASONING_RISK': {
+      const hit = includesAny(decisionText, ['低氧', '血氧', '呼吸困难', '气促', '危险']);
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '识别低氧、呼吸困难等危险信号。' : item.feedback, evidenceCodes: ['DECISION'] };
+    }
+    case 'REASONING_DIFFERENTIAL': {
+      const differentials = session.decision?.differentials.trim() ?? '';
+      if (!differentials) return { status: 'missing', score: 0, detail: item.feedback, evidenceCodes: ['DECISION'] };
+      const hasReason = includesAny(differentials, ['考虑', '可能', '鉴别', '不除外', '依据', '支持', '除外']);
+      return hasReason
+        ? { status: 'achieved', score: item.maxScore, detail: '鉴别诊断包含鉴别方向与理由。', evidenceCodes: ['DECISION'] }
+        : { status: 'partial', score: 2, detail: '鉴别诊断仅列举疾病名词，未给出鉴别理由。', evidenceCodes: ['DECISION'] };
+    }
+    case 'SAFETY': {
+      if (includesAny(planText, ['回家观察', '无需处理', '仅观察'])) {
+        return { status: 'incorrect', score: 0, detail: '处置包含不安全出院表述，本项按错误做法计 0 分。', evidenceCodes: ['PLAN'] };
+      }
+      const safePriority = includesAny(planText, ['吸氧', '氧疗', '监测', '生命体征']);
+      const furtherAssessment = includesAny(planText, ['评估', '住院', '转诊', '复评', '检查']);
+      const score = (safePriority ? 8 : 0) + (furtherAssessment ? 4 : 0) + 3;
+      return {
+        status: score === item.maxScore ? 'achieved' : 'partial',
+        score,
+        detail: score > 0 ? `处置覆盖稳定生命体征与进一步评估安排，得 ${score}/${item.maxScore} 分。` : item.feedback,
+        evidenceCodes: ['PLAN'],
+      };
+    }
+    case 'COMMUNICATION': {
+      const empathy = includesAny(communicationText, ['理解', '担心', '别紧张', '一起', '我会']);
+      const explainsRisk = includesAny(communicationText, ['呼吸', '血氧', '危险', '风险']);
+      const nextStep = includesAny(communicationText, ['下一步', '先', '监测', '检查', '处理']);
+      const score = (empathy ? 3 : 0) + (explainsRisk ? 4 : 0) + (nextStep ? 3 : 0);
+      return {
+        status: score === item.maxScore ? 'achieved' : score > 0 ? 'partial' : 'missing',
+        score,
+        detail: score > 0 ? `沟通覆盖共情、风险解释与下一步安排，得 ${score}/${item.maxScore} 分。` : item.feedback,
+        evidenceCodes: ['COMMUNICATION'],
+      };
+    }
+    case 'PROFESSIONALISM': {
+      const comfortUsed = session.events.some((event) => event.summary.includes('安抚'));
+      const prepIndex = session.events.findIndex((event) => event.evidenceCodes.includes('EX_PREP'));
+      const contactIndex = session.events.findIndex((event) => event.type === 'EXAM_ACTION' && event.correct !== false && event.evidenceCodes.some((code) => CONTACT_EXAM_CODES.includes(code)));
+      const ordered = prepIndex >= 0 && (contactIndex === -1 || prepIndex < contactIndex);
+      const score = (evidence.has('EX_PREP') ? 2 : 0) + (comfortUsed ? 2 : 0) + (ordered ? 1 : 0);
+      return {
+        status: score === item.maxScore ? 'achieved' : score > 0 ? 'partial' : 'missing',
+        score,
+        detail: score > 0 ? `手卫生、安抚与查体顺序证据得 ${score}/${item.maxScore} 分。` : item.feedback,
+        evidenceCodes: ['EX_PREP'],
+      };
+    }
+    default:
+      return { status: 'not_assessable', score: 0, detail: `量表项 ${item.itemId} 暂无执行器，按无法评价处理。`, evidenceCodes: [] };
+  }
+}
 
-  const safePriority = includesAny(planText, ['吸氧', '氧疗', '监测', '生命体征']);
-  const furtherAssessment = includesAny(planText, ['评估', '住院', '转诊', '复评', '检查']);
-  const avoidsUnsafeDischarge = !includesAny(planText, ['回家观察', '无需处理', '仅观察']);
-  const safetyScore = (safePriority ? 8 : 0) + (furtherAssessment ? 4 : 0) + (avoidsUnsafeDischarge ? 3 : 0);
+const CONTACT_EXAM_CODES = ['EX_TEMP', 'EX_MOUTH', 'EX_RESP', 'EX_SPO2', 'EX_BP'];
 
-  const empathy = includesAny(communicationText, ['理解', '担心', '别紧张', '一起', '我会']);
-  const explainsRisk = includesAny(communicationText, ['呼吸', '血氧', '危险', '风险']);
-  const nextStep = includesAny(communicationText, ['下一步', '先', '监测', '检查', '处理']);
-  const communicationScore = (empathy ? 3 : 0) + (explainsRisk ? 4 : 0) + (nextStep ? 3 : 0);
+/** 专项量表执行器（方案 4.5）：分数只评价本专项，不因未开放环节扣分；
+ *  provided 事实（HX_PROVIDED 等）不进入计分证据。 */
+function evaluateFocusedItem(session: SessionState, item: RubricItem): ItemEvaluation {
+  const asked = new Set(session.askedIntents);
+  const evidence = new Set(session.unlockedEvidence);
+  const decisionText = `${session.decision?.diagnosis ?? ''} ${session.decision?.summary ?? ''} ${session.decision?.diagnosisBasis ?? ''}`;
+  const planText = `${session.plan?.priority ?? ''} ${session.plan?.detail ?? ''}`;
+  const communicationText = session.communication ?? '';
+  switch (item.itemId) {
+    case 'HX_PRESENTING': {
+      const score = (asked.has('onset') ? 10 : 0) + (asked.has('fever') ? 10 : 0) + (asked.has('cough') ? 8 : 0) + (asked.has('treatment') ? 7 : 0);
+      return {
+        status: score === item.maxScore ? 'achieved' : score > 0 ? 'partial' : 'missing',
+        score,
+        detail: score > 0 ? `主诉及现病史要点（起病/发热/咳嗽/院前用药）得 ${score}/${item.maxScore} 分。` : item.feedback,
+        evidenceCodes: ['HX_ONSET', 'HX_FEVER', 'HX_COUGH', 'HX_TREATMENT'],
+      };
+    }
+    case 'HX_RED_FLAGS': {
+      const score = (asked.has('danger') ? 18 : 0) + (asked.has('general') ? 12 : 0);
+      return {
+        status: score === item.maxScore ? 'achieved' : score > 0 ? 'partial' : 'missing',
+        score,
+        detail: score > 0 ? `危险信号与一般状态追问得 ${score}/${item.maxScore} 分。` : item.feedback,
+        evidenceCodes: ['HX_DANGER', 'HX_GENERAL'],
+      };
+    }
+    case 'HX_BACKGROUND': {
+      const score = (asked.has('exposure') ? 7 : 0) + (asked.has('vaccination') ? 5 : 0) + (asked.has('birth') ? 4 : 0) + (asked.has('allergy') ? 4 : 0);
+      return {
+        status: score === item.maxScore ? 'achieved' : score > 0 ? 'partial' : 'missing',
+        score,
+        detail: score > 0 ? `接触史、预防接种、出生发育与过敏既往覆盖得 ${score}/${item.maxScore} 分。` : item.feedback,
+        evidenceCodes: ['HX_EXPOSURE', 'HX_VACCINATION', 'HX_BIRTH', 'HX_ALLERGY'],
+      };
+    }
+    case 'HX_ORGANIZATION': {
+      const asks = session.events.filter((event) => event.type === 'ASK_QUESTION');
+      const validAsks = asks.filter((event) => event.evidenceCodes.some((code) => code.startsWith('HX_'))).length;
+      if (asks.length === 0) return { status: 'missing', score: 0, detail: item.feedback, evidenceCodes: [] };
+      const invalidRatio = 1 - validAsks / asks.length;
+      if (invalidRatio <= 0.2) return { status: 'achieved', score: item.maxScore, detail: `有效提问 ${validAsks}/${asks.length}，提问组织性良好。`, evidenceCodes: [] };
+      if (invalidRatio <= 0.45) return { status: 'partial', score: 8, detail: `有效提问 ${validAsks}/${asks.length}，宽泛提问偏多。`, evidenceCodes: [] };
+      return { status: 'missing', score: 0, detail: `有效提问仅 ${validAsks}/${asks.length}，问题过于宽泛。`, evidenceCodes: [] };
+    }
+    case 'EX_PREPARATION': {
+      const hit = evidence.has('EX_PREP');
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '完成手卫生与检查说明。' : item.feedback, evidenceCodes: ['EX_PREP'] };
+    }
+    case 'EX_LUNG_AUSCULTATION': {
+      const hit = evidence.has('EX_RESP');
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '听诊器×胸部完成肺部听诊。' : item.feedback, evidenceCodes: ['EX_RESP'] };
+    }
+    case 'EX_OXIMETRY': {
+      const hit = evidence.has('EX_SPO2');
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '血氧仪获得静息血氧结果。' : item.feedback, evidenceCodes: ['EX_SPO2'] };
+    }
+    case 'EX_SEQUENCE': {
+      const prepIndex = session.events.findIndex((event) => event.evidenceCodes.includes('EX_PREP'));
+      const contactIndex = session.events.findIndex((event) => event.type === 'EXAM_ACTION' && event.correct !== false && event.evidenceCodes.some((code) => CONTACT_EXAM_CODES.includes(code)));
+      const unpreparedAttempts = session.events.filter((event) => event.type === 'EXAM_ACTION' && event.correct === false && /缺少必要准备动作|尚未完成手卫生/.test(event.summary)).length;
+      if (prepIndex === -1) {
+        return {
+          status: unpreparedAttempts > 0 ? 'incorrect' : 'missing',
+          score: 0,
+          detail: unpreparedAttempts > 0 ? `存在 ${unpreparedAttempts} 次未备即查的深层检查尝试，本项按错误做法计 0 分。` : item.feedback,
+          evidenceCodes: ['EX_PREP'],
+        };
+      }
+      const orderScore = contactIndex === -1 || prepIndex < contactIndex ? 15 : 12;
+      const unsafeScore = unpreparedAttempts === 0 ? 10 : 0;
+      const score = orderScore + unsafeScore;
+      return {
+        status: score === item.maxScore ? 'achieved' : unpreparedAttempts > 0 ? 'incorrect' : 'partial',
+        score,
+        detail: unpreparedAttempts > 0
+          ? `存在 ${unpreparedAttempts} 次未备即查尝试；手卫生${prepIndex < contactIndex ? '先于' : '晚于'}接触性检查，得 ${score}/${item.maxScore} 分。`
+          : `手卫生${prepIndex < contactIndex ? '先于' : '晚于'}接触性检查，得 ${score}/${item.maxScore} 分。`,
+        evidenceCodes: ['EX_PREP'],
+      };
+    }
+    case 'EX_FINDINGS': {
+      const extras = ['EX_TEMP', 'EX_MOUTH', 'EX_BP'].filter((code) => evidence.has(code)).length;
+      if (extras >= 2) return { status: 'achieved', score: item.maxScore, detail: `完成 ${extras} 项额外有效查体。`, evidenceCodes: ['EX_TEMP', 'EX_MOUTH', 'EX_BP'] };
+      if (extras === 1) return { status: 'partial', score: 12, detail: '仅完成 1 项额外有效查体。', evidenceCodes: ['EX_TEMP', 'EX_MOUTH', 'EX_BP'] };
+      return { status: 'missing', score: 0, detail: item.feedback, evidenceCodes: ['EX_TEMP', 'EX_MOUTH', 'EX_BP'] };
+    }
+    case 'SIG_DANGER_RECOGNITION': {
+      const specific = includesAny(decisionText, ['气促', '呼吸困难', '低氧', '血氧', '青紫', '发绀', '喘憋']);
+      if (specific) return { status: 'achieved', score: item.maxScore, detail: '识别气促/呼吸困难/低氧/青紫等特异危险信号。', evidenceCodes: ['DECISION'] };
+      if (includesAny(decisionText, ['危重', '严重', '不稳定', '精神差'])) return { status: 'partial', score: 15, detail: '仅有一般严重度表述，未点名特异危险信号。', evidenceCodes: ['DECISION'] };
+      return { status: 'missing', score: 0, detail: item.feedback, evidenceCodes: ['DECISION'] };
+    }
+    case 'SIG_CONCLUSION_BASIS': {
+      const decision = session.decision;
+      if (!decision || !decision.diagnosis.trim() || !decision.summary.trim()) {
+        return { status: 'missing', score: 0, detail: item.feedback, evidenceCodes: ['DECISION'] };
+      }
+      if (decision.diagnosisBasis?.trim()) {
+        return { status: 'achieved', score: item.maxScore, detail: '提交病情摘要与判断，依据锚定症状体征。', evidenceCodes: ['DECISION'] };
+      }
+      return { status: 'partial', score: 20, detail: '已提交病情摘要与判断，但依据未锚定症状体征。', evidenceCodes: ['DECISION'] };
+    }
+    case 'SIG_PRIORITY': {
+      if (includesAny(planText, ['回家观察', '无需处理', '仅观察'])) {
+        return { status: 'incorrect', score: 0, detail: '处置包含不安全出院表述，本项按错误做法计 0 分。', evidenceCodes: ['PLAN'] };
+      }
+      if (includesAny(planText, ['吸氧', '氧疗', '监护', '监测', '生命体征'])) {
+        return { status: 'achieved', score: item.maxScore, detail: '首要处置覆盖氧疗与监护等稳定措施。', evidenceCodes: ['PLAN'] };
+      }
+      if (includesAny(planText, ['评估', '住院', '转诊', '复评', '检查'])) {
+        return { status: 'partial', score: 18, detail: '仅安排进一步评估，未覆盖稳定生命体征。', evidenceCodes: ['PLAN'] };
+      }
+      return { status: 'missing', score: 0, detail: item.feedback, evidenceCodes: ['PLAN'] };
+    }
+    case 'CM_CONCERN_RESPONSE': {
+      const hit = includesAny(communicationText, ['理解', '担心', '别紧张', '别担心', '一起', '我会', '辛苦']);
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '回应了家长顾虑与情绪。' : item.feedback, evidenceCodes: ['COMMUNICATION'] };
+    }
+    case 'CM_PLAIN_EXPLANATION': {
+      if (includesAny(communicationText, ['呼吸', '血氧', '低氧', '危险', '风险'])) {
+        return { status: 'achieved', score: item.maxScore, detail: '具体解释了呼吸、血氧等风险。', evidenceCodes: ['COMMUNICATION'] };
+      }
+      if (includesAny(communicationText, ['病情', '情况', '治疗', '稳定', '感染'])) {
+        return { status: 'partial', score: 15, detail: '仅一般性说明病情，未具体解释风险。', evidenceCodes: ['COMMUNICATION'] };
+      }
+      return { status: 'missing', score: 0, detail: item.feedback, evidenceCodes: ['COMMUNICATION'] };
+    }
+    case 'CM_UNDERSTANDING_CHECK': {
+      const hit = includesAny(communicationText, ['明白吗', '理解吗', '清楚吗', '还有什么问题', '疑问', '听懂']);
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '主动核实家长是否理解。' : item.feedback, evidenceCodes: ['COMMUNICATION'] };
+    }
+    case 'CM_NEXT_STEPS': {
+      const hit = includesAny(communicationText, ['下一步', '接下来', '先', '监测', '复查', '检查', '处理']);
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '说明了下一步监测/检查/处理安排。' : item.feedback, evidenceCodes: ['COMMUNICATION'] };
+    }
+    case 'CM_RESPECTFUL_TONE': {
+      const hit = includesAny(communicationText, ['陪', '安抚', '放心', '慢慢来', '我们一起']);
+      return { status: hit ? 'achieved' : 'missing', score: hit ? item.maxScore : 0, detail: hit ? '使用了陪伴/安抚性表达。' : item.feedback, evidenceCodes: ['COMMUNICATION'] };
+    }
+    default:
+      return { status: 'not_assessable', score: 0, detail: `量表项 ${item.itemId} 暂无执行器，按无法评价处理。`, evidenceCodes: [] };
+  }
+}
 
-  const comfortUsed = session.events.some((event) => event.summary.includes('安抚'));
-  const professionalScore = (evidence.has('EX_PREP') ? 2 : 0) + (comfortUsed ? 2 : 0) + (session.events.length >= 5 ? 1 : 0);
-
-  const abilities: AbilityScores = {
-    history: historyScore,
-    examination: examinationScore,
-    reasoning: reasoningScore,
-    safety: safetyScore,
-    communication: communicationScore,
-    professionalism: professionalScore,
-  };
-
-  const scoreEvidence: ScoreEvidence[] = [
-    {
-      code: 'RUBRIC_HISTORY_DANGER', label: '呼吸危险信号问诊', achieved: asked.has('danger'),
-      score: asked.has('danger') ? 8 : 0, maxScore: 8,
-      detail: asked.has('danger') ? '主动询问气促、喘憋或青紫，并形成可回放记录。' : '未形成呼吸困难、青紫等危险信号的有效追问证据。',
-      eventIds: eventIdsFor(session, ['HX_DANGER']),
-    },
-    {
-      code: 'RUBRIC_EXAM_RESP', label: '肺部重点查体', achieved: evidence.has('EX_RESP'),
-      score: evidence.has('EX_RESP') ? 10 : 0, maxScore: 10,
-      detail: evidence.has('EX_RESP') ? `完成手卫生后使用听诊器检查胸部并获取${isWheezeCase ? '哮鸣音与呼气相变化' : '局灶体征'}。` : '未通过正确器材、部位和准备动作获得肺部听诊证据。',
-      eventIds: eventIdsFor(session, ['EX_RESP']),
-    },
-    {
-      code: 'RUBRIC_EXAM_OXYGEN', label: '低氧识别', achieved: evidence.has('EX_SPO2'),
-      score: evidence.has('EX_SPO2') ? 7 : 0, maxScore: 7,
-      detail: evidence.has('EX_SPO2') ? '正确使用血氧仪获取静息血氧结果。' : '未完成血氧监测，低氧判断缺少直接证据。',
-      eventIds: eventIdsFor(session, ['EX_SPO2']),
-    },
-    {
-      code: 'RUBRIC_REASONING', label: '诊断与证据整合', achieved: primaryDiagnosisIdentified && lowOxygenIdentified,
-      score: reasoningScore, maxScore: 20,
-      detail: primaryDiagnosisIdentified && lowOxygenIdentified ? `诊断能够同时覆盖${isWheezeCase ? '喘息性气道问题' : '肺部感染'}与低氧风险。` : '诊断或病情摘要尚未把肺部证据和低氧风险完整串联。',
-      eventIds: eventIdsFor(session, ['DECISION']),
-    },
-    {
-      code: 'RUBRIC_SAFETY', label: '患者安全与处置优先级', achieved: safePriority && furtherAssessment,
-      score: safetyScore, maxScore: 15,
-      detail: safePriority && furtherAssessment ? '优先监测与氧疗，并安排进一步评估。' : '处置未同时覆盖生命体征稳定和进一步评估。',
-      eventIds: eventIdsFor(session, ['PLAN']),
-    },
-    {
-      code: 'RUBRIC_COMMUNICATION', label: '家长沟通', achieved: empathy && explainsRisk && nextStep,
-      score: communicationScore, maxScore: 10,
-      detail: empathy && explainsRisk && nextStep ? '回应家长情绪，以通俗语言说明风险和后续步骤。' : '沟通中仍缺少共情、风险解释或明确的下一步。',
-      eventIds: eventIdsFor(session, ['COMMUNICATION']),
-    },
-  ];
-
+/** 量表计分报告：总分=计分项之和，总满分=适用计分项满分之和；快照带量表元数据与原始提交。 */
+function buildRubricReport(session: SessionState, reportId: string, rubric: RubricDefinition): TrainingReport {
+  const abilities: AbilityScores = { history: 0, examination: 0, reasoning: 0, safety: 0, communication: 0, professionalism: 0 };
+  const evidence: ScoreEvidence[] = [];
+  for (const item of rubric.items) {
+    const evaluation = evaluateItem(session, item);
+    abilities[item.dimension] += evaluation.score;
+    evidence.push({
+      code: `RUBRIC_${item.itemId}`,
+      label: item.label,
+      achieved: evaluation.status === 'achieved',
+      score: evaluation.score,
+      maxScore: item.maxScore,
+      detail: evaluation.detail,
+      eventIds: eventIdsFor(session, evaluation.evidenceCodes),
+      status: evaluation.status,
+    });
+  }
   const totalScore = Object.values(abilities).reduce((total, value) => total + value, 0);
-  const strengths = scoreEvidence.filter((item) => item.achieved).slice(0, 3).map((item) => item.label);
-  const improvements = scoreEvidence.filter((item) => !item.achieved).map((item) => item.label);
+  const strengths = rubric.items.filter((item, index) => evidence[index].status === 'achieved').slice(0, 3).map((item) => item.label);
+  const improvements = rubric.items.filter((item, index) => evidence[index].status !== 'achieved').map((item) => item.label);
+  const isFocused = rubric.scope === 'focused';
   const recommendation = improvements[0]
-    ? `优先完成“${improvements[0]}”专项补练，再进入同类进阶病例。`
-    : `进入${isWheezeCase ? '儿童喘息动态评估' : '儿童肺炎动态病情变化'}与治疗后复评进阶病例。`;
-
+    ? (isFocused
+        ? `本报告按「${rubric.name}」评价，优先补强：${improvements[0]}。`
+        : `优先完成“${improvements[0]}”专项补练，再进入同类进阶病例。`)
+    : (isFocused
+        ? `本专项各评价项均达成，可结合教师反馈进入进阶训练。`
+        : `进入${session.caseId === 'peds-wheeze-002' ? '儿童喘息动态评估' : '儿童肺炎动态病情变化'}与治疗后复评进阶病例。`);
   return {
     id: reportId,
     studentDecision: session.decision ? { ...session.decision } : null,
@@ -127,11 +369,17 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
     mode: session.mode,
     totalScore,
     abilities,
-    evidence: scoreEvidence,
+    evidence,
     strengths,
     improvements,
     recommendation,
     status: 'ready',
+    scoreBasis: 'clinical',
+    ...(session.practiceFocus ? { practiceFocus: session.practiceFocus } : {}),
+    rubricId: rubric.id,
+    rubricVersion: rubric.version,
+    evaluationBasis: 'clinical_rubric',
+    studentSubmissions: snapshotSubmissions(session),
     createdAt: new Date().toISOString(),
   };
 }
@@ -160,7 +408,11 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
     totalScore: Object.values(abilities).reduce((sum, score) => sum + score, 0), abilities, evidence,
     strengths: checks.filter((check) => check.complete).map((check) => check.label), improvements: checks.filter((check) => !check.complete).map((check) => check.label),
     recommendation: source ? '对照原病例诊断与诊疗经过，解释自己的证据与判断；请教师复核诊断及处置。' : '本病种暂无独立原始病历，请整理自己的问诊与诊疗思路，待补充资料后再对照复盘。',
-    scoreBasis: 'process', status: 'pending_review', createdAt: new Date().toISOString() };
+    scoreBasis: 'process',
+    ...(session.practiceFocus ? { practiceFocus: session.practiceFocus } : {}),
+    evaluationBasis: 'process_completion',
+    studentSubmissions: snapshotSubmissions(session),
+    status: 'pending_review', createdAt: new Date().toISOString() };
 }
 
 /** 报告病例显示标题（完成后释放病种名）：教师病例用真实病种名，演示病例用症状标题。

@@ -33,7 +33,7 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('SESSION_BINDING_IMMUTABLE') || message.includes('SESSION_SNAPSHOT_BINDING_IMMUTABLE')) return { code: 'SESSION_BINDING_IMMUTABLE', message: '训练记录的病例绑定不可变更。', retryable: false };
   if (message.includes('SESSION_STATUS_REGRESSION')) return { code: 'SESSION_STATUS_REGRESSION', message: '本次训练已结束，状态不可回退。', retryable: false };
   if (message.includes('OSCE_EVENT_STAGE_FORBIDDEN')) return { code: 'OSCE_EVENT_STAGE_FORBIDDEN', message: 'OSCE 模式需按问诊、查体、检查、诊断、处置、沟通的顺序完成当前阶段。', retryable: false };
-  if (message.includes('SESSION_EXPIRED')) return { code: 'SESSION_EXPIRED', message: '考站时间已到，系统将提交现有记录。', retryable: false };
+  if (message.includes('SESSION_EXPIRED')) return { code: 'SESSION_EXPIRED', message: '模拟站时间已到，系统将冻结已确认提交并生成模拟参考评分。', retryable: false };
   if (message.includes('INVALID_DATE_RANGE')) return { code: 'INVALID_DATE_RANGE', message: '开始日期不能晚于结束日期。', retryable: false };
   if (message.includes('INVALID_DETAIL')) return { code: 'INVALID_REQUEST', message: '事件数据无效。', retryable: false };
   if (message.includes('DATABASE_NOT_CONFIGURED')) return { code: 'DATABASE_NOT_CONFIGURED', message: 'Coze项目数据库尚未配置。', retryable: false };

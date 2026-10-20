@@ -16,6 +16,8 @@ import { retrieveKnowledge } from '@/domain/knowledge';
 import { getCaseTestResult, recordCaseTestOrder, refreshProjectedFacts } from '@/lib/case-snapshot';
 import { matchRequestedTest, splitRequestedTests } from '@/lib/test-name-matcher';
 import { canChildSpeak, resolveCommunicationProfile } from '@/domain/communication-profile';
+import { getPracticeScenario, PROVIDED_HISTORY_INTENT_IDS } from '@/domain/practice-scenarios';
+import { DEFAULT_OSCE_TIME_LIMIT_SECONDS, getOsceStation } from '@/domain/osce-stations';
 import { renderRoleReply } from '@/lib/role-agent';
 
 /** 开单 RPC 注入缝：生产默认指向 case-snapshot 封装；仅测试注入 503/守卫拒绝失败路径，
@@ -61,7 +63,23 @@ function clinicalEvent(
 export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id, practiceFocus?: PracticeFocus, sourceSnapshotVersion?: string | null, sessionId?: string | null): SessionState {
   const pediatricCase = getCase(caseId, sourceSnapshotVersion, sessionId);
   const startedAt = now();
-  const expiresAt = mode === 'osce' ? new Date(Date.now() + 8 * 60_000).toISOString() : null;
+  // OSCE 时限单一来源（方案 15）：按站点契约配置设定；教师病例/历史路径未定义站点时保持默认时限。
+  const osceStation = mode === 'osce' ? getOsceStation(pediatricCase.id) : null;
+  const expiresAt = mode === 'osce' ? new Date(Date.now() + (osceStation?.timeLimitSeconds ?? DEFAULT_OSCE_TIME_LIMIT_SECONDS) * 1000).toISOString() : null;
+  // 专项训练任务化（方案 5.2）：practice 模式按 focus 配置设定初始阶段、目标简报与 provided 事实；
+  // 配置版本与 providedEvidence 写入会话，评分按 provided/elicited 区分来源。
+  const scenario = mode === 'practice' ? getPracticeScenario(practiceFocus ?? 'history') : null;
+  const openingMessages: AgentMessage[] = [
+    message('system', pediatricCase.triage, { kind: 'navigation' }),
+    message('parent', pediatricCase.openingParent, { emotion: 'anxious' }),
+  ];
+  if (scenario) {
+    openingMessages.push(message('system', `【${scenario.title}】目标：${scenario.goal} ${scenario.briefing.join(' ')} ${scenario.completionHint}`, { kind: 'navigation' }));
+    if (scenario.providedEvidence.includes('HX_PROVIDED')) {
+      const providedHistory = pediatricCase.history.filter((intent) => PROVIDED_HISTORY_INTENT_IDS.includes(intent.id)).map((intent) => `${intent.label}：${intent.parentAnswer}`);
+      if (providedHistory.length > 0) openingMessages.push(message('system', `已提供必要病史（provided，不计入你的问诊证据）：${providedHistory.join('；')}。`, { kind: 'navigation' }));
+    }
+  }
   return {
     id: crypto.randomUUID(),
     userId,
@@ -69,15 +87,15 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
     caseVersion: pediatricCase.version,
     mode,
     practiceFocus: mode === 'practice' ? practiceFocus ?? 'history' : null,
-    stage: 'triage',
+    scenarioVersion: scenario?.configVersion,
+    providedEvidence: scenario?.providedEvidence ?? [],
+    stage: scenario ? scenario.initialStage : 'triage',
     status: 'active',
     startedAt,
     updatedAt: startedAt,
     expiresAt,
-    messages: [
-      message('system', pediatricCase.triage, { kind: 'navigation' }),
-      message('parent', pediatricCase.openingParent, { emotion: 'anxious' }),
-    ],
+    osceStation: osceStation ? { stationId: osceStation.stationId, version: osceStation.version, timeLimitSeconds: osceStation.timeLimitSeconds } : null,
+    messages: openingMessages,
     events: [],
     askedIntents: [],
     preparationActions: [],
@@ -167,6 +185,11 @@ export function refreshSourceSession(session: SessionState): SessionState {
  *  考核模式下禁止回退（stage 列单向），普通训练（guided/practice/immersive）不受限，
  *  回看走 viewStage 展示态（业务阶段不变，见 NAVIGATE_STAGE 分支）。 */
 function validateStageNavigation(session: SessionState, target: Stage): boolean {
+  if (session.mode === 'practice') {
+    // 专项训练阶段门控（方案 5.2）：只允许进入本专项配置允许的阶段，服务端校验不依赖前端隐藏。
+    const scenario = getPracticeScenario(session.practiceFocus);
+    return scenario ? scenario.allowedStages.includes(target) : true;
+  }
   if (session.mode !== 'osce') return true;
   const order = getCase(session.caseId, session.sourceSnapshotVersion, session.id).stages.map((stage) => stage.id);
   return order.indexOf(target) >= order.indexOf(session.stage);
@@ -178,7 +201,19 @@ function validateStageNavigation(session: SessionState, target: Stage): boolean 
  * 沉浸式教学保持自由探索：可跨阶段尝试，反馈与 OSCE 分离（feedbackFor 已区分两种模式）。
  */
 function validateEventStage(session: SessionState, event: AgentEvent): boolean {
+  if (session.mode === 'practice') {
+    // 专项训练事件门控（方案 5.2）：按配置限制事件类型——学生不能经 API 获取
+    // 本专项不应开放的查体/检查/诊断/处置/沟通事实；结束不强制答中评分点。
+    const scenario = getPracticeScenario(session.practiceFocus);
+    if (!scenario) return true;
+    if (event.type === 'FINISH_SESSION') return true;
+    return scenario.allowedActions.includes(event.type);
+  }
   if (session.mode !== 'osce') return true;
+  // OSCE 站点契约（方案 15）：按站点定义的 allowedActions 白名单门控；
+  // 教师病例/历史路径未定义站点时走下方阶段门控（保持旧行为）。
+  const station = getOsceStation(session.caseId);
+  if (station && !station.allowedActions.includes(event.type)) return false;
   const order = getCase(session.caseId, session.sourceSnapshotVersion, session.id).stages.map((stage) => stage.id);
   const currentIndex = order.indexOf(session.stage);
   switch (event.type) {
@@ -194,6 +229,8 @@ function validateEventStage(session: SessionState, event: AgentEvent): boolean {
       return currentIndex >= order.indexOf('assessment');
     case 'SUBMIT_PLAN':
       return currentIndex >= order.indexOf('plan');
+    case 'SUBMIT_HISTORY_SUMMARY':
+      return false; // 病史采集专项专用事件：OSCE 模拟站不开放，服务端拒绝
     case 'NAVIGATE_STAGE':
     case 'FINISH_SESSION':
       return true; // NAVIGATE_STAGE 由 validateStageNavigation 单独校验；FINISH 走完成门控
@@ -594,6 +631,20 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
   };
 }
 
+/** 病史采集专项结束条件（方案 5.1）：提交简短病史摘要；可重复提交（继续补充追问后重新提交），
+ *  报告快照保留最终提交原文（原始提交不重写）。 */
+function handleHistorySummary(session: SessionState, summary: string, clientEventId: string): AgentTurnResult {
+  session.historySummary = summary;
+  session.events.push(clinicalEvent(clientEventId, 'SUBMIT_HISTORY_SUMMARY', 'history', '提交病史采集小结', null, ['HX_SUMMARY']));
+  session.updatedAt = now();
+  return {
+    session,
+    newMessages: [],
+    feedback: feedbackFor(session, '病史小结已保存。可生成专项报告，也可继续补充追问后重新提交。'),
+    trace: [trace('病例状态', '保存病史采集小结（专项结束条件）')],
+  };
+}
+
 function handlePlan(session: SessionState, data: Extract<AgentEvent, { type: 'SUBMIT_PLAN' }>['data'], clientEventId: string): AgentTurnResult {
   session.plan = data;
   if (getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts !== undefined) {
@@ -670,8 +721,8 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
   if (session.events.some((item) => item.clientEventId === clientEventId)) {
     return { session, newMessages: [], feedback: null, trace: [trace('病例状态', '重复事件已按幂等键忽略')] };
   }
-  // OSCE 事件-阶段门控：问诊阶段直发查体/检查/诊断等事件被拒绝，防止经 API 提前获取病例事实
-  if (!validateEventStage(session, event)) throw new Error('OSCE_EVENT_STAGE_FORBIDDEN');
+  // OSCE 事件-阶段门控 + 专项训练事件门控：学生不得经 API 获取当前模式不应开放的病例事实
+  if (!validateEventStage(session, event)) throw new Error(session.mode === 'practice' ? 'PRACTICE_EVENT_FORBIDDEN' : 'OSCE_EVENT_STAGE_FORBIDDEN');
 
   switch (event.type) {
     case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders);
@@ -679,10 +730,11 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
     case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId, event.data.posture);
     case 'ORDER_TEST': return handleTest(session, event.data, clientEventId, options?.accessToken);
     case 'SUBMIT_DECISION': return handleDecision(session, event.data, clientEventId);
+    case 'SUBMIT_HISTORY_SUMMARY': return handleHistorySummary(session, event.data.summary, clientEventId);
     case 'SUBMIT_PLAN': return handlePlan(session, event.data, clientEventId);
     case 'SEND_COMMUNICATION': return handleCommunication(session, event.data.text, clientEventId);
     case 'NAVIGATE_STAGE': {
-      if (!validateStageNavigation(session, event.data.stage)) throw new Error('OSCE_STAGE_BACKTRACK_FORBIDDEN');
+      if (!validateStageNavigation(session, event.data.stage)) throw new Error(session.mode === 'practice' ? 'PRACTICE_STAGE_FORBIDDEN' : 'OSCE_STAGE_BACKTRACK_FORBIDDEN');
       // 非 OSCE 的「非前进一格」导航（回看已完成阶段/返回会话中心/同格重进）只记录展示阶段
       // viewStage，不修改业务阶段 stage——stage 列单向不变，DB 防回退触发器语义保持；
       // 沉浸式/guided「处置后回会话中心继续追问/沟通」链路由此恢复（此前被触发器 409 阻断）。

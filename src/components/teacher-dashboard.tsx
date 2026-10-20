@@ -39,7 +39,7 @@ export function TeacherDashboard({ students, referenceTime, caseCatalog }: { stu
           <thead><tr><th>学生</th><th>最近训练</th><th>最近得分</th><th>报告数</th><th>最近活跃</th><th>操作</th></tr></thead>
           <tbody>{filtered.map((student) => <tr key={student.id}>
             <td data-label="学生">{student.avatarUrl ? <img className="student-avatar" src={student.avatarUrl} alt="" width={34} height={34} loading="lazy" title="头像：按登录同步的超星号构造（用户可改资料，仅展示参考）" /> : null}<strong>{student.displayName}</strong><br/><small>{student.studentNo ? `学号 ${student.studentNo}` : '学号未提供'}{student.chaoxingUid ? ` · 超星号 ${student.chaoxingUid}（用户提供）` : ''}</small></td>
-            <td data-label="最近训练">{student.latestMode === 'osce' ? 'OSCE 考核' : student.latestMode === 'practice' ? '专项训练' : '模拟病例'}</td>
+            <td data-label="最近训练">{student.latestMode === 'osce' ? 'OSCE 模拟站' : student.latestMode === 'practice' ? '专项训练' : '模拟病例'}</td>
             <td data-label="最近得分"><span className="score-tag" data-level={student.latestScore === null ? 'empty' : student.latestScore >= 85 ? 'strong' : student.latestScore >= 80 ? 'steady' : 'attention'}>{student.latestScoreBasis === 'process' ? `过程 ${student.latestScore ?? '—'}` : student.latestScore ?? '—'}</span></td>
             <td data-label="报告数">{student.reportCount}</td>
             <td data-label="最近活跃">{student.lastActiveAt ? formatDate(student.lastActiveAt) : '—'}</td>

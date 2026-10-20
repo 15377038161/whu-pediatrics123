@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentEvent, AgentMessage, AgentTurnResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
+import { getPracticeScenario } from '@/domain/practice-scenarios';
 import { getPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 import { CaseResourcePanel } from '@/components/case-resource-panel';
 import { reportSessionEvent } from '@/lib/engagement-tracker';
@@ -130,6 +131,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [planDetail, setPlanDetail] = useState('');
   const [requestedTests, setRequestedTests] = useState('');
   const [testReason, setTestReason] = useState('');
+  const [historySummaryText, setHistorySummaryText] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<'task' | 'patient' | 'record'>('task');
   const [hintIndex, setHintIndex] = useState(0);
@@ -162,6 +164,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     setDifferentials(next.decision?.differentials ?? '');
     setPriority(next.plan?.priority ?? '');
     setPlanDetail(next.plan?.detail ?? '');
+    setHistorySummaryText(next.historySummary ?? '');
     setPosture(next.examPosture ?? 'standing');
   }, []);
 
@@ -206,6 +209,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   }, [session]);
 
   const hasUnsavedDraft = Boolean(question.trim() || requestedTests.trim() || testReason.trim() ||
+    (historySummaryText.trim() && historySummaryText !== (session?.historySummary ?? '')) ||
     (session && (diagnosis !== (session.decision?.diagnosis ?? '') || summary !== (session.decision?.summary ?? '') ||
     diagnosisBasis !== (session.decision?.diagnosisBasis ?? '') || differentials !== (session.decision?.differentials ?? '') ||
     priority !== (session.plan?.priority ?? '') || planDetail !== (session.plan?.detail ?? ''))));
@@ -306,9 +310,14 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     setMobileView('patient');
   }
 
-  const visibleStages = session?.mode === 'osce' || session?.mode === 'immersive' ? stages : stages.filter((stage) => stage.id !== 'communication');
+  // 专项训练任务化（方案 5.2）：practice 模式按配置只显示本专项允许的阶段（服务端同规则门控）
+  const activeScenario = session?.mode === 'practice' ? getPracticeScenario(session.practiceFocus) : null;
+  const visibleStages = activeScenario
+    ? activeScenario.allowedStages.map((id) => stages.find((stage) => stage.id === id)).filter((stage): stage is { id: Stage; label: string; short: string } => Boolean(stage))
+    : session?.mode === 'osce' || session?.mode === 'immersive' ? stages : stages.filter((stage) => stage.id !== 'communication');
   // 展示阶段优先级：回看态 viewStage（非 OSCE，业务阶段不变）> communication 归一到会话中心 > 业务阶段
-  const displayStage: Stage | undefined = session?.viewStage ?? (session?.stage === 'communication' && session.mode !== 'osce' ? 'history' : session?.stage);
+  // （practice 沟通专项的 communication 是真实业务阶段，不归一）
+  const displayStage: Stage | undefined = session?.viewStage ?? (session?.stage === 'communication' && session.mode !== 'osce' && session.mode !== 'practice' ? 'history' : session?.stage);
   const currentIndex = visibleStages.findIndex((stage) => stage.id === displayStage);
   const evidenceEvents = useMemo(() => session?.events.filter((event) => event.evidenceCodes.length > 0) ?? [], [session?.events]);
   const examEvidenceCount = evidenceEvents.filter((event) => event.stage === 'exam').length;
@@ -324,11 +333,12 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const hints = stageHints[displayStage ?? session.stage];
   const exitMode = session.mode;
   function leaveTraining() {
-    if (exitMode === 'osce' && !window.confirm('离开后计时仍会继续，确定暂时退出考站吗？')) return;
+    if (exitMode === 'osce' && !window.confirm('离开后计时仍会继续，确定暂时退出模拟站吗？')) return;
     if (hasUnsavedDraft && !window.confirm('尚有未提交的输入，离开后这些草稿会丢失；已提交进度会保留。确定离开吗？')) return;
     router.push('/student');
   }
   const communicationModeActive = session.stage === 'communication' || Boolean(session.plan);
+  const practiceCompletion = activeScenario?.completion ?? null;
   const stageCompleted = (stage: Stage) => ({
     triage: session.stage !== 'triage',
     history: session.askedIntents.length > 0 || Boolean(session.communication),
@@ -347,7 +357,13 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       })}
     </div>
     <div className="composer" data-mode={communicationModeActive ? 'communication' : 'history'}><label className="sr-only" htmlFor="question">{communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={communicationModeActive ? '直接向患儿和家长说明，例如：我理解您很担心，孩子目前呼吸和血氧需要先处理……' : '直接和患儿或家长交流，例如：小朋友别紧张，可以告诉我哪里不舒服吗？'} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitConversation(); } }} /><div className="composer-actions">{session.mode !== 'osce' && !communicationModeActive && <div className="hint-anchor"><button className="icon-btn hint-trigger" type="button" aria-label="查看问诊提示" aria-expanded={hintOpen} onClick={() => setHintOpen((value) => !value)}><Lightbulb size={17} /></button>{hintOpen && <div className="hint-popover" role="status"><p>{hints[hintIndex % hints.length]}</p><button type="button" onClick={() => setHintIndex((value) => (value + 1) % hints.length)}>换一个方向</button></div>}</div>}<button className="btn btn-primary" type="button" disabled={busy || !question.trim()} onClick={submitConversation}><Send size={16} /> 发送</button></div></div>
-    <div className="composer-meta">{session.plan ? <><span className="conversation-status" data-complete={Boolean(session.communication)}>{session.communication ? '沟通已记录，可生成报告' : '说明风险和下一步后即可生成报告'}</span><button className="stage-next" type="button" disabled={busy || !session.communication} onClick={finish}>生成训练报告 <ChevronRight size={15} /></button></> : <button className="stage-next" type="button" onClick={() => navigate('exam')} disabled={busy}>{examEvidenceCount > 0 ? '返回查体' : '进入查体'} <ChevronRight size={15} /></button>}</div>
+    {practiceCompletion === 'history_summary' && (
+      <form className="clinical-form practice-summary-form" onSubmit={async (event) => { event.preventDefault(); if (historySummaryText.trim().length < 10) return; await sendEvent({ type: 'SUBMIT_HISTORY_SUMMARY', data: { summary: historySummaryText.trim() } }); }}>
+        <div className="form-field"><label htmlFor="history-summary">病史采集小结（专项结束条件）</label><textarea id="history-summary" required minLength={10} rows={3} value={historySummaryText} onChange={(e) => setHistorySummaryText(e.target.value)} placeholder="主诉、现病史要点、重要阴性发现…（不要求答中全部评分点）" /></div>
+        <button className="btn btn-secondary" type="submit" disabled={busy || historySummaryText.trim().length < 10}>{session.historySummary ? '重新提交小结' : '提交病史小结'}</button>
+      </form>
+    )}
+    <div className="composer-meta">{practiceCompletion === 'history_summary' ? <><span className="conversation-status" data-complete={Boolean(session.historySummary)}>{session.historySummary ? '小结已提交，可生成专项报告' : '结束采集前，请在上方提交简短病史小结'}</span><button className="stage-next" type="button" disabled={busy || !session.historySummary} onClick={finish}>生成专项报告 <ChevronRight size={15} /></button></> : practiceCompletion === 'communication_end' ? <><span className="conversation-status" data-complete={Boolean(session.communication)}>{session.communication ? '沟通已记录，可生成专项报告' : '完成一轮解释与确认后可结束会话'}</span><button className="stage-next" type="button" disabled={busy || !session.communication} onClick={finish}>结束会话，生成专项报告 <ChevronRight size={15} /></button></> : session.plan ? <><span className="conversation-status" data-complete={Boolean(session.communication)}>{session.communication ? '沟通已记录，可生成报告' : '说明风险和下一步后即可生成报告'}</span><button className="stage-next" type="button" disabled={busy || !session.communication} onClick={finish}>生成训练报告 <ChevronRight size={15} /></button></> : <button className="stage-next" type="button" onClick={() => navigate('exam')} disabled={busy}>{examEvidenceCount > 0 ? '返回查体' : '进入查体'} <ChevronRight size={15} /></button>}</div>
   </>;
 
   const stageContent = (() => {
@@ -369,7 +385,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         </div>
         <div className="exam-route" aria-label="后续操作"><span>2</span><p><strong>点击患儿检查部位</strong><small>{examEvidenceCount > 0 ? `实时病例记录已新增 ${examEvidenceCount} 项证据` : '有效结果会自动写入右侧病例记录'}</small></p></div>
         {session.caseOptions && <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'exam').map((event) => <p key={event.id}>{event.summary}</p>)}</div>}
-        <div className="form-actions"><button className="btn btn-primary exam-open-patient" onClick={() => setMobileView('patient')}><UserRound size={16} /> 打开患儿模型</button><button className="btn btn-secondary" onClick={() => navigate('tests')}>完成查体，选择辅助检查 <ChevronRight size={16} /></button></div>
+        <div className="form-actions">{practiceCompletion === 'exam_observation' ? <button className="btn btn-primary" type="button" disabled={busy || examEvidenceCount === 0} onClick={finish}>{examEvidenceCount > 0 ? '完成查体，生成专项报告' : '完成至少一项查体操作后可结束'} <ChevronRight size={16} /></button> : <><button className="btn btn-primary exam-open-patient" onClick={() => setMobileView('patient')}><UserRound size={16} /> 打开患儿模型</button><button className="btn btn-secondary" onClick={() => navigate('tests')}>完成查体，选择辅助检查 <ChevronRight size={16} /></button></>}</div>
       </>;
       case 'tests': return <>
         <div className="stage-intro"><p className="eyebrow">临床适宜性</p><h2>申请辅助检查</h2><p>像真实接诊一样自主输入需要申请的检查名称，可一次申请多项（用逗号或换行分隔）。系统只返回本病例资料已有的结果；资料未提供的项目会明确说明，不会编造。</p></div>
@@ -389,7 +405,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="form-field"><label htmlFor="differentials">鉴别诊断</label><textarea id="differentials" value={differentials} onChange={(e) => setDifferentials(e.target.value)} placeholder="列出需要鉴别的疾病及理由" /></div>
         <button className="btn btn-primary btn-block" disabled={busy}>提交诊断并继续</button>
       </form>;
-      case 'plan': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_PLAN', data: { priority, detail: planDetail } }); if (result) { await navigate(session.mode === 'osce' ? 'communication' : 'history'); } }}>
+      case 'plan': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_PLAN', data: { priority, detail: planDetail } }); if (result) { if (session.mode === 'osce') await navigate('communication'); else if (session.mode === 'practice') await finish(); else await navigate('history'); } }}>
         <div className="stage-intro"><p className="eyebrow">患者安全优先</p><h2>治疗及处置计划</h2><p>明确首要处置，再说明监测、进一步评估和后续安排。</p></div>
         <div className="form-field"><label htmlFor="priority">首要处置</label><input id="priority" required value={priority} onChange={(e) => setPriority(e.target.value)} placeholder="此刻最先做什么？" /></div>
         <div className="form-field"><label htmlFor="plan-detail">完整计划</label><textarea id="plan-detail" required minLength={5} value={planDetail} onChange={(e) => setPlanDetail(e.target.value)} placeholder="生命体征稳定、检查、治疗、复评或转诊计划…" /></div>
@@ -405,14 +421,14 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       <audio ref={cracklesAudioRef} src="/media/clinical/audio/pediatric-fine-crackles-right.mp3" preload="auto" />
       <audio ref={wheezeAudioRef} src="/media/clinical/audio/pediatric-wheeze.mp3" preload="auto" />
       <header className="training-head">
-    <div className="training-toolbar"><button className="icon-btn" type="button" onClick={leaveTraining} aria-label="暂时退出训练"><ArrowLeft size={18} /></button><div className="training-title"><strong>{caseProfile.title}</strong><span>{session.mode === 'osce' ? 'OSCE 考核模式' : session.mode === 'practice' ? `专项训练 · ${currentFocus ? focusLabels[currentFocus] : '能力补练'}` : session.mode === 'immersive' ? '沉浸式病例教学 · 场景引导' : '智能体引导模式'}</span></div>{session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <button className="icon-btn" type="button" onClick={leaveTraining} aria-label="回到首页"><Home size={17} /></button>}</div>
-        <div className="stage-scroll" aria-label="训练阶段">{visibleStages.map((stage,index) => <button key={stage.id} className="stage-chip" data-current={displayStage === stage.id} data-done={stageCompleted(stage.id)} disabled={busy || stage.id === 'report' || (session.mode === 'osce' && index < currentIndex)} onClick={() => { void navigate(stage.id); }} aria-label={stage.label}>{stage.short}</button>)}</div>
+    <div className="training-toolbar"><button className="icon-btn" type="button" onClick={leaveTraining} aria-label="暂时退出训练"><ArrowLeft size={18} /></button><div className="training-title"><strong>{caseProfile.title}</strong><span>{session.mode === 'osce' ? 'OSCE 模拟站' : session.mode === 'practice' ? `专项训练 · ${currentFocus ? focusLabels[currentFocus] : '能力补练'}` : session.mode === 'immersive' ? '沉浸式病例教学 · 场景引导' : '智能体引导模式'}</span></div>{session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <button className="icon-btn" type="button" onClick={leaveTraining} aria-label="回到首页"><Home size={17} /></button>}</div>
+        <div className="stage-scroll" aria-label="训练阶段">{visibleStages.map((stage,index) => <button key={stage.id} className="stage-chip" data-current={displayStage === stage.id} data-done={stageCompleted(stage.id)} disabled={busy || stage.id === 'report' || (session.mode === 'osce' && index < currentIndex) || (practiceCompletion === 'safety_decision_plan' && stage.id === 'plan' && !session.decision)} onClick={() => { void navigate(stage.id); }} aria-label={stage.label}>{stage.short}</button>)}</div>
       </header>
       <div className="case-band"><span>{session.mode === 'osce' ? '无提示、不可重试' : session.mode === 'immersive' ? '场景教学 · 可暂停、回看与获得方向性提示' : '操作自动保存 · 提供方向性反馈'}</span><span>病例 v{session.caseVersion}</span><span>证据 {session.unlockedEvidence.length} 项</span></div>
       {session.caseOptions && <div className="case-source-banner"><strong>学习案例：{session.caseOptions.sourceName}</strong><span>{session.caseOptions.hasSource ? '问诊、查体与检查按原病例资料展开；完成后对照诊疗经过复盘。' : '尚无独立病例正文，可开展问诊与诊疗思路记录。'}</span></div>}
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       <div className="training-grid">
-        <section className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={mobileView !== 'task'} data-mobile-drawer={spatialExam && mobileView === 'task'}><div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>
+        <section className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={mobileView !== 'task'} data-mobile-drawer={spatialExam && mobileView === 'task'}><div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>
         <section className="workspace-panel training-patient" data-mobile-hidden={spatialExam ? false : mobileView !== 'patient'}><div className="panel-head"><h2>{session.caseOptions ? '教学部位示意' : '患儿交互模型'}</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}</span></div><PatientFigure posture={posture} patient={caseProfile} hotspots={examHotspots} selectedTool={selectedTool} onExamine={examine} onReplayObservation={(observation) => { if (!playExamObservationAudio(observation)) setFeedback('当前浏览器不支持结果声音播放，请直接阅读查体结果。'); }} observation={examObservation} busy={busy} interactive={spatialExam} />{!spatialExam && <div className="case-band">{session.caseOptions ? '教学示意模型；真实体征请查看本病例查体记录' : '进入查体阶段后解锁器材和体表热区'}</div>}</section>
         <details className="workspace-panel training-record" data-mobile-hidden={mobileView !== 'record'} data-mobile-drawer={spatialExam && mobileView === 'record'} open><summary className="panel-head"><h2>实时病例记录</h2><span>{evidenceEvents.length} 项本轮证据</span></summary><div className="panel-body"><p className="record-kicker">接诊已知</p><div className="vitals"><div className="vital"><strong>{session.vitals.temperature ?? '未记录'}</strong><span>体温 ℃</span></div><div className="vital"><strong>{session.vitals.heartRate ?? '未记录'}</strong><span>心率</span></div><div className="vital"><strong>{session.vitals.respiratoryRate ?? '未记录'}</strong><span>呼吸</span></div><div className="vital"><strong>{session.vitals.spo2 === null ? '未记录' : `${session.vitals.spo2}%`}</strong><span>SpO₂</span></div></div><div className="record-section-head"><h3>本轮新增</h3><span>随有效操作实时更新</span></div>{evidenceEvents.length === 0 ? <div className="empty-note">尚未获得新的问诊或查体证据。</div> : <div className="evidence-log" aria-live="polite">{evidenceEvents.slice(-8).reverse().map((event) => <div className="evidence-item" key={event.id}><strong>{event.summary}</strong><span>{stages.find((stage) => stage.id === event.stage)?.short ?? '训练'}阶段 · 已记录 {event.evidenceCodes.length} 项证据</span></div>)}</div>}</div></details>
       </div>

@@ -32,6 +32,7 @@ export const agentTurnSchema = z.object({
       ]),
     }),
     z.object({ type: z.literal('SUBMIT_DECISION'), data: z.object({ diagnosis: z.string().trim().min(2).max(200), summary: z.string().trim().min(10).max(1500), diagnosisBasis: z.string().trim().min(10).max(1500), differentials: z.string().trim().max(800) }) }),
+    z.object({ type: z.literal('SUBMIT_HISTORY_SUMMARY'), data: z.object({ summary: z.string().trim().min(10).max(1500) }) }),
     z.object({ type: z.literal('SUBMIT_PLAN'), data: z.object({ priority: z.string().trim().min(2).max(300), detail: z.string().trim().min(5).max(1500) }) }),
     z.object({ type: z.literal('SEND_COMMUNICATION'), data: z.object({ text: z.string().trim().min(2).max(1000) }) }),
     z.object({ type: z.literal('NAVIGATE_STAGE'), data: z.object({ stage }) }),

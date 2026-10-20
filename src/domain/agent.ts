@@ -76,6 +76,13 @@ export interface SessionState {
   caseVersion: number;
   mode: SessionMode;
   practiceFocus: PracticeFocus | null;
+  /** 专项训练配置版本（方案 5.2）：会话创建时写入，报告按版本可解释；历史会话无此字段。 */
+  scenarioVersion?: number;
+  /** 系统直接提供的证据码（provided，方案 5.2）：与学生主动获得的 elicited/observed 区分；
+   *  历史会话无此字段时按空数组处理。 */
+  providedEvidence?: string[];
+  /** 病史采集专项的最终提交（方案 5.1 结束条件）：报告快照保留原始提交文本。 */
+  historySummary?: string | null;
   stage: Stage;
   /** 回看展示阶段（非 OSCE 专用）：查看已完成阶段/返回会话中心时记录 UI 展示阶段，
    *  不修改业务阶段 stage（DB 防回退触发器语义保持）；前进导航时清除。 */
@@ -84,6 +91,9 @@ export interface SessionState {
   startedAt: string;
   updatedAt: string;
   expiresAt: string | null;
+  /** OSCE 站点契约（方案 15）：会话创建时写入站点 ID/版本与时限；历史会话无此字段按默认时限。
+   *  服务器保存 startedAt/expiresAt，刷新不能重置计时；时间到后 runAgentTurn 拒绝新增临床操作。 */
+  osceStation?: { stationId: string; version: number; timeLimitSeconds: number } | null;
   messages: AgentMessage[];
   events: ClinicalEvent[];
   askedIntents: string[];
@@ -140,6 +150,7 @@ export type AgentEvent =
   | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string; posture?: 'standing' | 'supine' } }
   | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
   | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string } }
+  | { type: 'SUBMIT_HISTORY_SUMMARY'; data: { summary: string } }
   | { type: 'SUBMIT_PLAN'; data: { priority: string; detail: string } }
   | { type: 'SEND_COMMUNICATION'; data: { text: string } }
   | { type: 'NAVIGATE_STAGE'; data: { stage: Stage } }
@@ -190,6 +201,8 @@ export interface ScoreEvidence {
   maxScore: number;
   detail: string;
   eventIds: string[];
+  /** 分项评价状态（方案 4.4）：不再只有达成/未达成；历史报告无此字段时按 achieved 布尔降级。 */
+  status?: 'achieved' | 'partial' | 'missing' | 'incorrect' | 'not_applicable' | 'not_assessable';
 }
 
 export interface TrainingReport {
@@ -212,6 +225,21 @@ export interface TrainingReport {
   recommendation: string;
   status: 'ready' | 'pending_review';
   scoreBasis?: 'clinical' | 'process';
+  /** 专项训练聚焦能力（方案 4.6 快照字段）：完整接诊报告无此字段。 */
+  practiceFocus?: PracticeFocus | null;
+  /** 评分量表元数据（方案 4.6 快照字段）：历史报告无此字段时显示「历史记录未保存」。 */
+  rubricId?: string;
+  rubricVersion?: number;
+  /** 成绩口径（方案 4.3）：clinical_rubric/process_completion/quiz_accuracy/unscored，
+   *  与旧 scoreBasis 有迁移映射（clinical→clinical_rubric，process→process_completion）。 */
+  evaluationBasis?: 'clinical_rubric' | 'process_completion' | 'quiz_accuracy' | 'unscored';
+  /** 原始提交快照（方案 4.6）：生成时冻结学生的全部最终提交原文，不追溯重写历史报告。 */
+  studentSubmissions?: {
+    decision: SessionState['decision'];
+    plan: SessionState['plan'];
+    communication: string | null;
+    historySummary: string | null;
+  };
   createdAt: string;
 }
 
