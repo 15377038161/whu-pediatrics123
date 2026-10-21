@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "modelSha256": "07556cea2e4d329eee9348cc75715db61ccda6c20e4fbb5f99ddca1d7aafbec4",
+  "sourceCommit": "6aeee0cec84570e1455f797ac49e4721eb89fdee",
+  "medicalReview": "not_performed",
+  "teachingAtlasComplete": false,
+  "geometryFidelityPassed": true,
+  "sourceLandmarkSupportedIds": [
+    "3100-Radius",
+    "3100-Ulna",
+    "5100-Radius",
+    "5100-Ulna"
+  ],
+  "notIndividuallyIdentified": [
+    "锤骨（左）",
+    "砧骨（左）",
+    "镫骨（左）",
+    "锤骨（右）",
+    "砧骨（右）",
+    "镫骨（右）",
+    "舌骨",
+    "尾骨",
+    "第12肋骨（左）",
+    "第12肋骨（右）"
+  ],
+  "ribsNumberedPerSide": {
+    "左": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "右": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ]
+  }
+}

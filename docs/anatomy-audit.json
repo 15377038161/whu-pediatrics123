@@ -1,0 +1,4985 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "6aeee0cec84570e1455f797ac49e4721eb89fdee",
+  "sourceFilesVerified": [
+    "main_Head_Brain.k",
+    "main_Head_Skull.k",
+    "main_LEx.k",
+    "main_Neck.k",
+    "main_Trunk_UpperEx.k",
+    "mesh_PIPER_Body.k"
+  ],
+  "manifestSha256": "2b574e8db469e9e859ada4c4f7c62fe77b3f2ef0f86d95041742d4f870713563",
+  "glbSha256": "07556cea2e4d329eee9348cc75715db61ccda6c20e4fbb5f99ddca1d7aafbec4",
+  "auditMeaning": "Technical/source inventory, NOT medical approval or a six-year-old bone count",
+  "geometryFidelityPassed": true,
+  "teachingAtlasComplete": false,
+  "medicalReview": "not_performed",
+  "sourceParts": [
+    {
+      "partId": 1100,
+      "name": "HE_BO_SkullDiploe",
+      "file": "main_Head_Skull.k",
+      "vertices": 4936,
+      "triangles": 9876,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "1100"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 1110,
+      "name": "HE_BO_ExternalTable",
+      "file": "main_Head_Skull.k",
+      "vertices": 2675,
+      "triangles": 5332,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "1110"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 1120,
+      "name": "HE_BO_InternalTable",
+      "file": "main_Head_Brain.k",
+      "vertices": 2261,
+      "triangles": 4496,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "1120"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 1130,
+      "name": "HE_BO_CranialSuture",
+      "file": "main_Head_Brain.k",
+      "vertices": 0,
+      "triangles": 0,
+      "connectedComponents": 0,
+      "exportedIds": [],
+      "exportStatus": "empty_source_part"
+    },
+    {
+      "partId": 2101,
+      "name": "NK_BO_C1_3D",
+      "file": "main_Neck.k",
+      "vertices": 1086,
+      "triangles": 2168,
+      "connectedComponents": 3,
+      "exportedIds": [
+        "2101"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 2102,
+      "name": "NK_BO_C2_3D",
+      "file": "main_Neck.k",
+      "vertices": 1532,
+      "triangles": 3168,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "2102"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 2103,
+      "name": "NK_BO_C3_3D",
+      "file": "main_Neck.k",
+      "vertices": 1106,
+      "triangles": 2200,
+      "connectedComponents": 3,
+      "exportedIds": [
+        "2103"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 2104,
+      "name": "NK_BO_C4_3D",
+      "file": "main_Neck.k",
+      "vertices": 1346,
+      "triangles": 2680,
+      "connectedComponents": 3,
+      "exportedIds": [
+        "2104"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 2105,
+      "name": "NK_BO_C5_3D",
+      "file": "main_Neck.k",
+      "vertices": 1126,
+      "triangles": 2240,
+      "connectedComponents": 3,
+      "exportedIds": [
+        "2105"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 2106,
+      "name": "NK_BO_C6_3D",
+      "file": "main_Neck.k",
+      "vertices": 1014,
+      "triangles": 2016,
+      "connectedComponents": 3,
+      "exportedIds": [
+        "2106"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 2107,
+      "name": "NK_BO_C7_3D",
+      "file": "main_Neck.k",
+      "vertices": 1166,
+      "triangles": 2320,
+      "connectedComponents": 3,
+      "exportedIds": [
+        "2107"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 2108,
+      "name": "NK_BO_T1_3D",
+      "file": "main_Neck.k",
+      "vertices": 1220,
+      "triangles": 2440,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "2108"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 2109,
+      "name": "NK_BO_C1_2D",
+      "file": "main_Neck.k",
+      "vertices": 1058,
+      "triangles": 2040,
+      "connectedComponents": 3,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 2110,
+      "name": "NK_BO_C2_2D",
+      "file": "main_Neck.k",
+      "vertices": 1163,
+      "triangles": 2132,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 2111,
+      "name": "NK_BO_C3_2D",
+      "file": "main_Neck.k",
+      "vertices": 1030,
+      "triangles": 1928,
+      "connectedComponents": 3,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 2112,
+      "name": "NK_BO_C4_2D",
+      "file": "main_Neck.k",
+      "vertices": 1258,
+      "triangles": 2368,
+      "connectedComponents": 3,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 2113,
+      "name": "NK_BO_C5_2D",
+      "file": "main_Neck.k",
+      "vertices": 1052,
+      "triangles": 1968,
+      "connectedComponents": 3,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 2114,
+      "name": "NK_BO_C6_2D",
+      "file": "main_Neck.k",
+      "vertices": 942,
+      "triangles": 1752,
+      "connectedComponents": 3,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 2115,
+      "name": "NK_BO_C7_2D",
+      "file": "main_Neck.k",
+      "vertices": 1082,
+      "triangles": 2008,
+      "connectedComponents": 3,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 2116,
+      "name": "NK_BO_T1_2D",
+      "file": "main_Neck.k",
+      "vertices": 1220,
+      "triangles": 2440,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 3100,
+      "name": "UX_BO_L_Forearm_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 401,
+      "triangles": 794,
+      "connectedComponents": 2,
+      "exportedIds": [
+        "3100-Radius",
+        "3100-Ulna"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 3101,
+      "name": "UX_BO_L_Hand_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 489,
+      "triangles": 900,
+      "connectedComponents": 19,
+      "exportedIds": [
+        "3101"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 3102,
+      "name": "UX_BO_L_Humerus_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 168,
+      "triangles": 320,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "3102"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 3103,
+      "name": "UX_BO_L_HumerusEpiphysisProximal_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 93,
+      "triangles": 156,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 3104,
+      "name": "UX_BO_L_HumerusEpiphysisProximal_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 216,
+      "triangles": 428,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "3104"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 3105,
+      "name": "UX_BO_L_HumerusEpiphysisDistal_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 74,
+      "triangles": 144,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "3105"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4100,
+      "name": "TX_BO_T1_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 0,
+      "triangles": 0,
+      "connectedComponents": 0,
+      "exportedIds": [],
+      "exportStatus": "empty_source_part"
+    },
+    {
+      "partId": 4101,
+      "name": "TX_BO_T2_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 166,
+      "triangles": 332,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4102,
+      "name": "TX_BO_T3_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 169,
+      "triangles": 338,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4103,
+      "name": "TX_BO_T4_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 192,
+      "triangles": 384,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4104,
+      "name": "TX_BO_T5_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 189,
+      "triangles": 378,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4105,
+      "name": "TX_BO_T6_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 221,
+      "triangles": 442,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4106,
+      "name": "TX_BO_T7_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 216,
+      "triangles": 432,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4107,
+      "name": "TX_BO_T8_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 230,
+      "triangles": 460,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4108,
+      "name": "TX_BO_T9_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 233,
+      "triangles": 466,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4109,
+      "name": "TX_BO_T10_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 277,
+      "triangles": 554,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4110,
+      "name": "TX_BO_T11_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 260,
+      "triangles": 528,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4111,
+      "name": "TX_BO_T12_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 359,
+      "triangles": 718,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4112,
+      "name": "TX_BO_Sternum_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 306,
+      "triangles": 608,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4113,
+      "name": "TX_BO_Ribs_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 7220,
+      "triangles": 14264,
+      "connectedComponents": 22,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4114,
+      "name": "TX_BO_L_Rib1_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 30,
+      "triangles": 52,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4115,
+      "name": "TX_BO_R_Rib1_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 30,
+      "triangles": 52,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4116,
+      "name": "TX_BO_L_Rib2_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4117,
+      "name": "TX_BO_R_Rib2_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4118,
+      "name": "TX_BO_L_Rib3_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4119,
+      "name": "TX_BO_R_Rib3_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4120,
+      "name": "TX_BO_L_Rib4_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4121,
+      "name": "TX_BO_R_Rib4_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4122,
+      "name": "TX_BO_L_Rib5_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4123,
+      "name": "TX_BO_R_Rib5_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4124,
+      "name": "TX_BO_L_Rib6_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4125,
+      "name": "TX_BO_R_Rib6_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4126,
+      "name": "TX_BO_L_Rib7_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4127,
+      "name": "TX_BO_R_Rib7_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4128,
+      "name": "TX_BO_L_Rib8_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4129,
+      "name": "TX_BO_R_Rib8_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4130,
+      "name": "TX_BO_L_Rib9_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4131,
+      "name": "TX_BO_R_Rib9_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4132,
+      "name": "TX_BO_L_Rib10_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4133,
+      "name": "TX_BO_R_Rib10_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4134,
+      "name": "TX_BO_L_Rib11_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4135,
+      "name": "TX_BO_R_Rib11_2D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 31,
+      "triangles": 54,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4136,
+      "name": "TX_BO_R_Scapula_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 378,
+      "triangles": 748,
+      "connectedComponents": 2,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4137,
+      "name": "TX_BO_L_Scapula_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 378,
+      "triangles": 768,
+      "connectedComponents": 2,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4138,
+      "name": "TX_BO_R_Clavicle_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 168,
+      "triangles": 320,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4139,
+      "name": "TX_BO_L_Clavicle_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 168,
+      "triangles": 320,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 4140,
+      "name": "TX_BO_Sternum_2D_rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 28,
+      "triangles": 36,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "omitted_reference_connector",
+      "reason": "FE reference/connector patch, not advertised as an independent anatomical bone"
+    },
+    {
+      "partId": 4141,
+      "name": "TX_BO_L_Scapula_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 378,
+      "triangles": 748,
+      "connectedComponents": 2,
+      "exportedIds": [
+        "4141"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4142,
+      "name": "TX_BO_R_Scapula_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 378,
+      "triangles": 748,
+      "connectedComponents": 2,
+      "exportedIds": [
+        "4142"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4143,
+      "name": "TX_BO_L_Clavicle_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 186,
+      "triangles": 368,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4143"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4144,
+      "name": "TX_BO_R_Clavicle_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 186,
+      "triangles": 368,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4144"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4146,
+      "name": "TX_BO_T2_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 182,
+      "triangles": 1506,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4146"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4147,
+      "name": "TX_BO_T3_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 184,
+      "triangles": 1526,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4147"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4148,
+      "name": "TX_BO_T4_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 208,
+      "triangles": 1764,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4148"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4149,
+      "name": "TX_BO_T5_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 204,
+      "triangles": 1684,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4149"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4150,
+      "name": "TX_BO_T6_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 241,
+      "triangles": 2052,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4150"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4151,
+      "name": "TX_BO_T7_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 234,
+      "triangles": 1992,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4151"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4152,
+      "name": "TX_BO_T8_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 257,
+      "triangles": 2376,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4152"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4153,
+      "name": "TX_BO_T9_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 264,
+      "triangles": 2442,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4153"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4154,
+      "name": "TX_BO_T10_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 317,
+      "triangles": 3074,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4154"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4155,
+      "name": "TX_BO_T11_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 298,
+      "triangles": 2840,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4155"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4156,
+      "name": "TX_BO_T12_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 425,
+      "triangles": 4470,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4156"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4157,
+      "name": "TX_BO_Sternum_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 378,
+      "triangles": 3992,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "4157"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 4158,
+      "name": "TX_BO_Ribs_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 7768,
+      "triangles": 15448,
+      "connectedComponents": 22,
+      "exportedIds": [
+        "4158-L1",
+        "4158-L2",
+        "4158-L3",
+        "4158-L4",
+        "4158-L5",
+        "4158-L6",
+        "4158-L7",
+        "4158-L8",
+        "4158-L9",
+        "4158-L10",
+        "4158-L11",
+        "4158-R1",
+        "4158-R2",
+        "4158-R3",
+        "4158-R4",
+        "4158-R5",
+        "4158-R6",
+        "4158-R7",
+        "4158-R8",
+        "4158-R9",
+        "4158-R10",
+        "4158-R11"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 5100,
+      "name": "UX_BO_R_Forearm_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 401,
+      "triangles": 794,
+      "connectedComponents": 2,
+      "exportedIds": [
+        "5100-Radius",
+        "5100-Ulna"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 5101,
+      "name": "UX_BO_R_Hand_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 489,
+      "triangles": 900,
+      "connectedComponents": 19,
+      "exportedIds": [
+        "5101"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 5102,
+      "name": "UX_BO_R_Humerus_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 168,
+      "triangles": 320,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "5102"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 5103,
+      "name": "UX_BO_R_HumerusEpiphysisProximal_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 93,
+      "triangles": 156,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 5104,
+      "name": "UX_BO_R_HumerusEpiphysisDistal_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 74,
+      "triangles": 144,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "5104"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 5105,
+      "name": "UX_BO_R_HumerusEpiphysisProximal_3D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 216,
+      "triangles": 428,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "5105"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 6100,
+      "name": "AB_BO_L1_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 376,
+      "triangles": 752,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 6101,
+      "name": "AB_BO_L2_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 373,
+      "triangles": 746,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 6102,
+      "name": "AB_BO_L3_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 316,
+      "triangles": 632,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 6103,
+      "name": "AB_BO_L4_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 312,
+      "triangles": 624,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 6104,
+      "name": "AB_BO_L5_2D",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 366,
+      "triangles": 732,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 6105,
+      "name": "AB_BO_L1_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 494,
+      "triangles": 5370,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "6105"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 6106,
+      "name": "AB_BO_L2_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 438,
+      "triangles": 4514,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "6106"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 6107,
+      "name": "AB_BO_L3_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 366,
+      "triangles": 3670,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "6107"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 6108,
+      "name": "AB_BO_L4_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 363,
+      "triangles": 3774,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "6108"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 6109,
+      "name": "AB_BO_L5_3D_Rigid",
+      "file": "main_Trunk_UpperEx.k",
+      "vertices": 441,
+      "triangles": 4692,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "6109"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7101,
+      "name": "LX_BO_L_FemurEpiphysisProximal_3D",
+      "file": "main_LEx.k",
+      "vertices": 458,
+      "triangles": 912,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7101"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7102,
+      "name": "LX_BO_L_FemurMetaphysisProximal_2D",
+      "file": "main_LEx.k",
+      "vertices": 24,
+      "triangles": 32,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7102"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7103,
+      "name": "LX_BO_L_FemurDiaphysis_2D",
+      "file": "main_LEx.k",
+      "vertices": 144,
+      "triangles": 272,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7103"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7104,
+      "name": "LX_BO_L_FemurMetaphysisDistal_2D",
+      "file": "main_LEx.k",
+      "vertices": 236,
+      "triangles": 436,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7104"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7105,
+      "name": "LX_BO_L_FemurEpiphysisDistal_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 509,
+      "triangles": 988,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7105"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7111,
+      "name": "LX_BO_L_Patella_3D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 106,
+      "triangles": 208,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7111"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7112,
+      "name": "LX_BO_L_Patella_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 106,
+      "triangles": 208,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 7121,
+      "name": "LX_BO_L_TibiaEpiphysisProximal_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 240,
+      "triangles": 454,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7121"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7122,
+      "name": "LX_BO_L_TibiaMetaphysisProximal_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 104,
+      "triangles": 176,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7122"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7123,
+      "name": "LX_BO_L_TibiaDiaphysis_2D",
+      "file": "main_LEx.k",
+      "vertices": 184,
+      "triangles": 352,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7123"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7125,
+      "name": "LX_BO_L_TibiaEpiphysisDistal_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 145,
+      "triangles": 280,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7125"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7131,
+      "name": "LX_BO_L_FibulaEpiphysisProximal_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 98,
+      "triangles": 186,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7131"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7133,
+      "name": "LX_BO_L_FibulaDiaphysis_2D",
+      "file": "main_LEx.k",
+      "vertices": 200,
+      "triangles": 384,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7133"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7135,
+      "name": "LX_BO_L_FibulaEpiphisisDistal_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 105,
+      "triangles": 200,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "7135"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 7170,
+      "name": "LX_BO_L_Foot_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 5401,
+      "triangles": 10730,
+      "connectedComponents": 18,
+      "exportedIds": [
+        "7170"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 8101,
+      "name": "PV_BO_Pelvis_3D",
+      "file": "main_LEx.k",
+      "vertices": 2434,
+      "triangles": 28368,
+      "connectedComponents": 6,
+      "exportedIds": [
+        "8101-L-髂骨",
+        "8101-L-耻骨",
+        "8101-L-坐骨",
+        "8101-R-髂骨",
+        "8101-R-耻骨",
+        "8101-R-坐骨"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 8105,
+      "name": "PV_BO_Pelvis_2D",
+      "file": "main_LEx.k",
+      "vertices": 1706,
+      "triangles": 3388,
+      "connectedComponents": 6,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 8110,
+      "name": "PV_BO_Sacrum_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 673,
+      "triangles": 1346,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "8110"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9101,
+      "name": "LX_BO_R_FemurEpiphysisProximal_3D",
+      "file": "main_LEx.k",
+      "vertices": 458,
+      "triangles": 912,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9101"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9102,
+      "name": "LX_BO_R_FemurMetaphysisProximal_2D",
+      "file": "main_LEx.k",
+      "vertices": 24,
+      "triangles": 32,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9102"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9103,
+      "name": "LX_BO_R_FemurDiaphysis_2D",
+      "file": "main_LEx.k",
+      "vertices": 144,
+      "triangles": 272,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9103"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9104,
+      "name": "LX_BO_R_FemurMetaphysisDistal_2D",
+      "file": "main_LEx.k",
+      "vertices": 236,
+      "triangles": 436,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9104"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9105,
+      "name": "LX_BO_R_FemurEpiphysisDistal_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 509,
+      "triangles": 988,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9105"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9111,
+      "name": "LX_BO_R_Patella_3D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 106,
+      "triangles": 208,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9111"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9112,
+      "name": "LX_BO_R_Patella_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 106,
+      "triangles": 208,
+      "connectedComponents": 1,
+      "exportedIds": [],
+      "exportStatus": "alternate_representation_omitted",
+      "reason": "3D preferred; surface equivalence is audited separately, not assumed"
+    },
+    {
+      "partId": 9121,
+      "name": "LX_BO_R_TibiaEpiphysisProximal_2D",
+      "file": "main_LEx.k",
+      "vertices": 240,
+      "triangles": 454,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9121"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9122,
+      "name": "LX_BO_R_TibiaMetaphysisProximal_2D",
+      "file": "main_LEx.k",
+      "vertices": 104,
+      "triangles": 176,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9122"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9123,
+      "name": "LX_BO_R_TibiaDiaphysis_2D",
+      "file": "main_LEx.k",
+      "vertices": 184,
+      "triangles": 352,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9123"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9125,
+      "name": "LX_BO_R_TibiaEpiphysisDistal_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 145,
+      "triangles": 280,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9125"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9131,
+      "name": "LX_BO_R_FibulaEpiphysisProximal_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 98,
+      "triangles": 186,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9131"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9133,
+      "name": "LX_BO_R_FibulaDiaphysis_2D",
+      "file": "main_LEx.k",
+      "vertices": 200,
+      "triangles": 384,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9133"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9135,
+      "name": "LX_BO_R_FibulaEpiphisisDistal_2D",
+      "file": "main_LEx.k",
+      "vertices": 105,
+      "triangles": 200,
+      "connectedComponents": 1,
+      "exportedIds": [
+        "9135"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    },
+    {
+      "partId": 9170,
+      "name": "LX_BO_R_Foot_2D_Rigid",
+      "file": "main_LEx.k",
+      "vertices": 5401,
+      "triangles": 10730,
+      "connectedComponents": 18,
+      "exportedIds": [
+        "9170"
+      ],
+      "exportStatus": "exported_geometry_preserved"
+    }
+  ],
+  "geometryFidelity": [
+    {
+      "sourcePart": "HE_BO_SkullDiploe",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "HE_BO_ExternalTable",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "HE_BO_InternalTable",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "NK_BO_C1_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "NK_BO_C2_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "NK_BO_C3_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "NK_BO_C4_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "NK_BO_C5_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "NK_BO_C6_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "NK_BO_C7_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "NK_BO_T1_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_L_Forearm_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_L_Hand_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_L_Humerus_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_L_HumerusEpiphysisProximal_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_L_HumerusEpiphysisDistal_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_L_Scapula_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_R_Scapula_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_L_Clavicle_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_R_Clavicle_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T2_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T3_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T4_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T5_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T6_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T7_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T8_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T9_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T10_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T11_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_T12_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_Sternum_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "TX_BO_Ribs_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_R_Forearm_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_R_Hand_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_R_Humerus_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_R_HumerusEpiphysisDistal_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "UX_BO_R_HumerusEpiphysisProximal_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "AB_BO_L1_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "AB_BO_L2_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "AB_BO_L3_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "AB_BO_L4_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "AB_BO_L5_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_FemurEpiphysisProximal_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_FemurMetaphysisProximal_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_FemurDiaphysis_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_FemurMetaphysisDistal_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_FemurEpiphysisDistal_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_Patella_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_TibiaEpiphysisProximal_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_TibiaMetaphysisProximal_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_TibiaDiaphysis_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_TibiaEpiphysisDistal_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_FibulaEpiphysisProximal_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_FibulaDiaphysis_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_FibulaEpiphisisDistal_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_L_Foot_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "PV_BO_Pelvis_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "PV_BO_Sacrum_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_FemurEpiphysisProximal_3D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_FemurMetaphysisProximal_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_FemurDiaphysis_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_FemurMetaphysisDistal_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_FemurEpiphysisDistal_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_Patella_3D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_TibiaEpiphysisProximal_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_TibiaMetaphysisProximal_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_TibiaDiaphysis_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_TibiaEpiphysisDistal_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_FibulaEpiphysisProximal_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_FibulaDiaphysis_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_FibulaEpiphisisDistal_2D",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    },
+    {
+      "sourcePart": "LX_BO_R_Foot_2D_Rigid",
+      "missingTriangles": 0,
+      "extraTriangles": 0
+    }
+  ],
+  "omittedRepresentationChecks": [
+    {
+      "omitted": "NK_BO_C1_2D",
+      "retained": "NK_BO_C1_3D",
+      "trianglesNotInRetainedSurface": 984,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "NK_BO_C2_2D",
+      "retained": "NK_BO_C2_3D",
+      "trianglesNotInRetainedSurface": 1280,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "NK_BO_C3_2D",
+      "retained": "NK_BO_C3_3D",
+      "trianglesNotInRetainedSurface": 972,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "NK_BO_C4_2D",
+      "retained": "NK_BO_C4_3D",
+      "trianglesNotInRetainedSurface": 1300,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "NK_BO_C5_2D",
+      "retained": "NK_BO_C5_3D",
+      "trianglesNotInRetainedSurface": 880,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "NK_BO_C6_2D",
+      "retained": "NK_BO_C6_3D",
+      "trianglesNotInRetainedSurface": 944,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "NK_BO_C7_2D",
+      "retained": "NK_BO_C7_3D",
+      "trianglesNotInRetainedSurface": 952,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "NK_BO_T1_2D",
+      "retained": "NK_BO_T1_3D",
+      "trianglesNotInRetainedSurface": 1324,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "UX_BO_L_HumerusEpiphysisProximal_2D",
+      "retained": "UX_BO_L_HumerusEpiphysisProximal_3D",
+      "trianglesNotInRetainedSurface": 86,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T2_2D",
+      "retained": "TX_BO_T2_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T3_2D",
+      "retained": "TX_BO_T3_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T4_2D",
+      "retained": "TX_BO_T4_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T5_2D",
+      "retained": "TX_BO_T5_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T6_2D",
+      "retained": "TX_BO_T6_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T7_2D",
+      "retained": "TX_BO_T7_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T8_2D",
+      "retained": "TX_BO_T8_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T9_2D",
+      "retained": "TX_BO_T9_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T10_2D",
+      "retained": "TX_BO_T10_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T11_2D",
+      "retained": "TX_BO_T11_3D_Rigid",
+      "trianglesNotInRetainedSurface": 8,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_T12_2D",
+      "retained": "TX_BO_T12_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_Sternum_2D",
+      "retained": "TX_BO_Sternum_3D",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_Ribs_2D",
+      "retained": "TX_BO_Ribs_3D",
+      "trianglesNotInRetainedSurface": 180,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_R_Scapula_2D",
+      "retained": "TX_BO_R_Scapula_3D",
+      "trianglesNotInRetainedSurface": 364,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_L_Scapula_2D",
+      "retained": "TX_BO_L_Scapula_3D",
+      "trianglesNotInRetainedSurface": 326,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_R_Clavicle_2D",
+      "retained": "TX_BO_R_Clavicle_3D",
+      "trianglesNotInRetainedSurface": 222,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "TX_BO_L_Clavicle_2D",
+      "retained": "TX_BO_L_Clavicle_3D",
+      "trianglesNotInRetainedSurface": 84,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "UX_BO_R_HumerusEpiphysisProximal_2D",
+      "retained": "UX_BO_R_HumerusEpiphysisProximal_3D",
+      "trianglesNotInRetainedSurface": 84,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "AB_BO_L1_2D",
+      "retained": "AB_BO_L1_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "AB_BO_L2_2D",
+      "retained": "AB_BO_L2_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "AB_BO_L3_2D",
+      "retained": "AB_BO_L3_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "AB_BO_L4_2D",
+      "retained": "AB_BO_L4_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "AB_BO_L5_2D",
+      "retained": "AB_BO_L5_3D_Rigid",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "LX_BO_L_Patella_2D_Rigid",
+      "retained": "LX_BO_L_Patella_3D_Rigid",
+      "trianglesNotInRetainedSurface": 32,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "PV_BO_Pelvis_2D",
+      "retained": "PV_BO_Pelvis_3D",
+      "trianglesNotInRetainedSurface": 0,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    },
+    {
+      "omitted": "LX_BO_R_Patella_2D_Rigid",
+      "retained": "LX_BO_R_Patella_3D_Rigid",
+      "trianglesNotInRetainedSurface": 32,
+      "omittedVerticesNotInRetained": 0,
+      "interpretation": "Different tessellation/surface positions require review; nonzero is not proof of missing anatomy"
+    }
+  ],
+  "evidenceFileHashes": {
+    "main_Head_Brain.k": "f6581b9b1092d90352328e5f735e89967be2c4e45587b241eba4d608e745567a",
+    "main_Head_Skull.k": "bec59380b54fd28b50cb3b96b0692d33df699d1951ad42741c78f736aca43a30",
+    "main_LEx.k": "7a2bcc0818f66fce290abe20e03476ed7c42075c5020da2bbdb456bb598c7eed",
+    "main_Neck.k": "b4bf9d9513918b7085ff0b3f41ed04bd1e3d09837193bfc0c8e50600d52a9604",
+    "main_Trunk_UpperEx.k": "79ddbdd7b315acdf62272518749283a724906d33500e6349b66d79ca3cf070ef",
+    "mesh_PIPER_Body.k": "9ec109b6e3294dbba94322daa39c5e2aa9277c082b7fbb05df4b7005882f8ff5",
+    "landmarks_ISB.k": "bd403071b94602eaa5eb1f09efd9bac3627cc2f7a7025e7c004642b1ff0d86e1",
+    "Child_model.pmr": "ad72ac290027470bb3f6a29587b5d49928f7a7fe293e0bd3ce79443cac2c1aa4",
+    "PIPER_landmark_namedmetadataCL.k": "40b53fcf34a79ecc8f313d513151af6e5ddf63a555e46683bdfe39355e0e96d3",
+    "metadata/contourCL/contourCL.xml": "be8b95ba1560dcd0fb9853137461deab2a779e573a54b35bc42c8d2284751f1b"
+  },
+  "forearmLandmarks": [
+    {
+      "side": "L",
+      "landmarkTitle": "Styloid_process_of_left_radius",
+      "landmarkNodeId": 3100496,
+      "landmarkFile": "landmarks_ISB.k",
+      "sourceComponents": 2,
+      "radiusLabelMatchesSourceLandmark": true
+    },
+    {
+      "side": "R",
+      "landmarkTitle": "Styloid_process_of_right_radius",
+      "landmarkNodeId": 5100496,
+      "landmarkFile": "landmarks_ISB.k",
+      "sourceComponents": 2,
+      "radiusLabelMatchesSourceLandmark": true
+    }
+  ],
+  "mergedComponentInventory": [
+    {
+      "sourcePartId": 3101,
+      "components": [
+        {
+          "componentId": "3101:n3100649",
+          "minimumSourceNodeId": 3100649,
+          "sourceNodeIdsSha256": "cd596e74b000a020d95b873f675536a64bbf60fa5e618a56ca69f6b3e95ec474",
+          "vertices": 35,
+          "triangles": 66,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100650",
+          "minimumSourceNodeId": 3100650,
+          "sourceNodeIdsSha256": "7c0b3b5ea90174697a065911764ba57b2aa9f1e2bf5d9de987f23e2c2b211370",
+          "vertices": 46,
+          "triangles": 88,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100654",
+          "minimumSourceNodeId": 3100654,
+          "sourceNodeIdsSha256": "89e19223eac41e4760b1db0805a4c0011b672dfa143fb81df62e1f95058e1ab2",
+          "vertices": 50,
+          "triangles": 96,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100659",
+          "minimumSourceNodeId": 3100659,
+          "sourceNodeIdsSha256": "c59b642bb8143712787d0c26c1981d67c58a004dad2f3830fa2ab5669d723779",
+          "vertices": 35,
+          "triangles": 66,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100668",
+          "minimumSourceNodeId": 3100668,
+          "sourceNodeIdsSha256": "4ed26f0270e203cc1f110075fef28a7471c996ad6660e9689145b85d87760d6c",
+          "vertices": 49,
+          "triangles": 94,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100669",
+          "minimumSourceNodeId": 3100669,
+          "sourceNodeIdsSha256": "72fa6675f15ed16fd81be85d44f1d3700f979839f97172a093140363fcbd8f24",
+          "vertices": 50,
+          "triangles": 94,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100678",
+          "minimumSourceNodeId": 3100678,
+          "sourceNodeIdsSha256": "a0c05050073dfe37416338f925d9eebf57f45236754c817d0b2fbfb0ee70d3c6",
+          "vertices": 25,
+          "triangles": 46,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100688",
+          "minimumSourceNodeId": 3100688,
+          "sourceNodeIdsSha256": "13a6727383ad0b9b1db71abe5c7789119c75add6eec7ce7cc1f2db8d10ebb8dc",
+          "vertices": 10,
+          "triangles": 16,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100690",
+          "minimumSourceNodeId": 3100690,
+          "sourceNodeIdsSha256": "8ca692580cc6e54d64af0f4304cf92352d7145def43cb56655e69c34e33ffccb",
+          "vertices": 21,
+          "triangles": 38,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100696",
+          "minimumSourceNodeId": 3100696,
+          "sourceNodeIdsSha256": "c48637db1c6a1b54fdb33b38d0ca11bdda50e1a565beb6d972dd7fbc91f58d9d",
+          "vertices": 31,
+          "triangles": 58,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100704",
+          "minimumSourceNodeId": 3100704,
+          "sourceNodeIdsSha256": "6fe25333e545309acc5486c117361cd1ece771d9d944eaf0892990b13205a8cd",
+          "vertices": 22,
+          "triangles": 40,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100718",
+          "minimumSourceNodeId": 3100718,
+          "sourceNodeIdsSha256": "61ab6b60d08d64c92a60af3423d91bac129fb7fb65df30d8966333956102baed",
+          "vertices": 6,
+          "triangles": 8,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100726",
+          "minimumSourceNodeId": 3100726,
+          "sourceNodeIdsSha256": "5e047bb313ea7336a4b7f478f2abcebbb548d08fa47630d08769b02eb9cc6d69",
+          "vertices": 8,
+          "triangles": 12,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100727",
+          "minimumSourceNodeId": 3100727,
+          "sourceNodeIdsSha256": "5aad75ef407f9bfb00e1663219c4b87cb620fdd1c99436eb86758cdbda85843f",
+          "vertices": 37,
+          "triangles": 70,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100921",
+          "minimumSourceNodeId": 3100921,
+          "sourceNodeIdsSha256": "c96dd75a5b11e685afe07e0d5c73d2b5256b00764761749748de1c3894040166",
+          "vertices": 10,
+          "triangles": 16,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "handl_distal",
+              "memberNodeIds": [
+                3100921
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "3101:n3100925",
+          "minimumSourceNodeId": 3100925,
+          "sourceNodeIdsSha256": "d86ca327b37eee7b4a9bd66875d3042e735cb28ff9912a87ba8fd3a8f176d50c",
+          "vertices": 9,
+          "triangles": 14,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100928",
+          "minimumSourceNodeId": 3100928,
+          "sourceNodeIdsSha256": "25b65a8ab7c7ac64775589a3c78425cffbbf12055c691f1791a88aaea89d87e6",
+          "vertices": 8,
+          "triangles": 12,
+          "landmarks": []
+        },
+        {
+          "componentId": "3101:n3100997",
+          "minimumSourceNodeId": 3100997,
+          "sourceNodeIdsSha256": "91b9f42a72f25f7c77aab1d28c7e338ff3c80c192f95f62cbebfa027f6ef75ce",
+          "vertices": 22,
+          "triangles": 40,
+          "landmarks": [
+            {
+              "file": "landmarks_ISB.k",
+              "title": "Hand_BC3_L",
+              "memberNodeIds": [
+                3101018
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "3101:n3100999",
+          "minimumSourceNodeId": 3100999,
+          "sourceNodeIdsSha256": "9e538b996f3b70e65909517ba1ad2f5334415b7b36996aff53990e0c53c67311",
+          "vertices": 15,
+          "triangles": 26,
+          "landmarks": []
+        }
+      ],
+      "meaning": "Topology components, NOT bone identities"
+    },
+    {
+      "sourcePartId": 5101,
+      "components": [
+        {
+          "componentId": "5101:n5100649",
+          "minimumSourceNodeId": 5100649,
+          "sourceNodeIdsSha256": "b6760f478ff5c4c044871d280a8a52365168bd2e5fe069281d7b0ff8ed15b661",
+          "vertices": 35,
+          "triangles": 66,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100650",
+          "minimumSourceNodeId": 5100650,
+          "sourceNodeIdsSha256": "b6ce96f606516c5a7621707d9435cc6672ff3e99af33f9273da741dc109066c0",
+          "vertices": 46,
+          "triangles": 88,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100654",
+          "minimumSourceNodeId": 5100654,
+          "sourceNodeIdsSha256": "cf65b1edfde0eff5597fc19cf0183ae6f37ddd2211078da6507ecd279d7474ae",
+          "vertices": 50,
+          "triangles": 96,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100659",
+          "minimumSourceNodeId": 5100659,
+          "sourceNodeIdsSha256": "6b660ccd6af47fdf3b25a9e3a2fdb8331285ad8dc6451110058c93bf557e04f8",
+          "vertices": 35,
+          "triangles": 66,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100668",
+          "minimumSourceNodeId": 5100668,
+          "sourceNodeIdsSha256": "515d392fd8cdae196e5eab7c5570c8aea236ce7222df81568184d5d85158db66",
+          "vertices": 49,
+          "triangles": 94,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100669",
+          "minimumSourceNodeId": 5100669,
+          "sourceNodeIdsSha256": "6f3f4b46f7b55250e5393c46d2f264ffa7824b68b387c6148ff68b0c39cd20af",
+          "vertices": 50,
+          "triangles": 94,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100678",
+          "minimumSourceNodeId": 5100678,
+          "sourceNodeIdsSha256": "5c0c046c72918a09338a2744b158006b1e73cc585f6474b3ff3c56fb47d0cc07",
+          "vertices": 25,
+          "triangles": 46,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100688",
+          "minimumSourceNodeId": 5100688,
+          "sourceNodeIdsSha256": "e7a3b7d1833cd3bdc1b3e338868d856b7c9bbb64d51db7dcc32a5e89141a1d39",
+          "vertices": 10,
+          "triangles": 16,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100690",
+          "minimumSourceNodeId": 5100690,
+          "sourceNodeIdsSha256": "9e7fe559371436fffcdcdf0a805e70694fdd82c6c6bdd27f151c3129a5f2d650",
+          "vertices": 21,
+          "triangles": 38,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100696",
+          "minimumSourceNodeId": 5100696,
+          "sourceNodeIdsSha256": "0c460ade7283e20c5092744258613c1dbfda7ffa4fb18a7dcb1d087effa3a506",
+          "vertices": 31,
+          "triangles": 58,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100704",
+          "minimumSourceNodeId": 5100704,
+          "sourceNodeIdsSha256": "53e69cc10b25a621205a6c7caad70d87e87d7f967e007f4b28d02beea795cf37",
+          "vertices": 22,
+          "triangles": 40,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100718",
+          "minimumSourceNodeId": 5100718,
+          "sourceNodeIdsSha256": "1a62605a368449cd546620da4da534d0740ffbd2f2f0cbef3491ea2e30fea0dd",
+          "vertices": 6,
+          "triangles": 8,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100726",
+          "minimumSourceNodeId": 5100726,
+          "sourceNodeIdsSha256": "90af5443bd43e157950748d2c9ea6add70d6a58c37dc4f6e61d79a248d235ad9",
+          "vertices": 8,
+          "triangles": 12,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100727",
+          "minimumSourceNodeId": 5100727,
+          "sourceNodeIdsSha256": "2243ae22ebd2e522f658a2a801debed42397032663fa3e1cd1fa8ba25fa7c9c6",
+          "vertices": 37,
+          "triangles": 70,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100921",
+          "minimumSourceNodeId": 5100921,
+          "sourceNodeIdsSha256": "83d3fd36323cfbe0b2938345edfbf0478bd335954d1f4a03569afd92b4bf8247",
+          "vertices": 10,
+          "triangles": 16,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "handr_distal",
+              "memberNodeIds": [
+                5100921
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "5101:n5100925",
+          "minimumSourceNodeId": 5100925,
+          "sourceNodeIdsSha256": "47500ce836622c38e6cf99f8be57bbd2a68499837f206053bced56870b4db3bb",
+          "vertices": 9,
+          "triangles": 14,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100928",
+          "minimumSourceNodeId": 5100928,
+          "sourceNodeIdsSha256": "d55c8a06423b9ce9c05f29cbe43b742f6ed90dad85213e7101069aaef457d554",
+          "vertices": 8,
+          "triangles": 12,
+          "landmarks": []
+        },
+        {
+          "componentId": "5101:n5100997",
+          "minimumSourceNodeId": 5100997,
+          "sourceNodeIdsSha256": "a6a848cbb154bb785ffb6e12afef1fc2209994a7e10596b717c5c38d3d4e25a5",
+          "vertices": 22,
+          "triangles": 40,
+          "landmarks": [
+            {
+              "file": "landmarks_ISB.k",
+              "title": "Hand_BC3_R",
+              "memberNodeIds": [
+                5101018
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "5101:n5100999",
+          "minimumSourceNodeId": 5100999,
+          "sourceNodeIdsSha256": "9f65b35202466b3014fa68e89e29e47efb0bc1307bb5c26f6ae305a46b907b91",
+          "vertices": 15,
+          "triangles": 26,
+          "landmarks": []
+        }
+      ],
+      "meaning": "Topology components, NOT bone identities"
+    },
+    {
+      "sourcePartId": 7170,
+      "components": [
+        {
+          "componentId": "7170:n7170001",
+          "minimumSourceNodeId": 7170001,
+          "sourceNodeIdsSha256": "18c117af222ef68c29d7ab2bda95f59b35af286d06e90e555077fac0c6c34412",
+          "vertices": 855,
+          "triangles": 1706,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170123",
+          "minimumSourceNodeId": 7170123,
+          "sourceNodeIdsSha256": "b1a77d5aa5fb4fc877bd7721c2c3519f89a2e837e7301beb4ef34cd04fb44113",
+          "vertices": 266,
+          "triangles": 528,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170231",
+          "minimumSourceNodeId": 7170231,
+          "sourceNodeIdsSha256": "fe67994081aa826e83a45d1b0005264522542330137462fea59176f76591440c",
+          "vertices": 160,
+          "triangles": 316,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170343",
+          "minimumSourceNodeId": 7170343,
+          "sourceNodeIdsSha256": "392483b9a20d741ad114b408fc1994ca38b5a53eb9f43b8ce09bdfed86906098",
+          "vertices": 206,
+          "triangles": 408,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "footl_proximal",
+              "memberNodeIds": [
+                7170396
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "7170:n7170486",
+          "minimumSourceNodeId": 7170486,
+          "sourceNodeIdsSha256": "bc26289e0eec2142ca625d1fa1d13dce972ac04751c1689a87556f15f717c3c7",
+          "vertices": 360,
+          "triangles": 716,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170673",
+          "minimumSourceNodeId": 7170673,
+          "sourceNodeIdsSha256": "622e036efd2b72a8828b40a6ebac7ad8903b1588c7e0880eb702eae680b4554e",
+          "vertices": 426,
+          "triangles": 848,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170811",
+          "minimumSourceNodeId": 7170811,
+          "sourceNodeIdsSha256": "4262f77df635a21cf92d3e563ee55bc204851a06d94a7078316729969328ac77",
+          "vertices": 352,
+          "triangles": 700,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7170934",
+          "minimumSourceNodeId": 7170934,
+          "sourceNodeIdsSha256": "87e7dec0cde02cfb02b092e1b4d276fe45eabab8b38c15986989093186746c64",
+          "vertices": 287,
+          "triangles": 570,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171059",
+          "minimumSourceNodeId": 7171059,
+          "sourceNodeIdsSha256": "728d5d3d85d1af417ea19896baf531c3cbe858eb51e506bc39a636aaeccebe53",
+          "vertices": 296,
+          "triangles": 588,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171146",
+          "minimumSourceNodeId": 7171146,
+          "sourceNodeIdsSha256": "973c764cbc50fdbf62e285c6b5d833febb8294886a6dcfbb4317d5d534f9c10b",
+          "vertices": 266,
+          "triangles": 528,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171247",
+          "minimumSourceNodeId": 7171247,
+          "sourceNodeIdsSha256": "8759c607b6b762ce172417f98381224ab67eba8952d99ffed40ffc6cbd142d1e",
+          "vertices": 322,
+          "triangles": 640,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171373",
+          "minimumSourceNodeId": 7171373,
+          "sourceNodeIdsSha256": "ca3a8a31710f2319a632ef8e6876bae1900064655588f951243528775719493f",
+          "vertices": 587,
+          "triangles": 1170,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_twist_axis_b_left",
+              "memberNodeIds": [
+                7171515
+              ]
+            },
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_flexion_axis_b_left",
+              "memberNodeIds": [
+                7171495
+              ]
+            },
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_flexion_axis_a_left",
+              "memberNodeIds": [
+                7174893
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "7170:n7171518",
+          "minimumSourceNodeId": 7171518,
+          "sourceNodeIdsSha256": "9964d5a76baa0b59fe31f629faea5441001c6e8b83f01869285f9e700dabf7bf",
+          "vertices": 201,
+          "triangles": 398,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171645",
+          "minimumSourceNodeId": 7171645,
+          "sourceNodeIdsSha256": "835da468ec1192bf1db9e6a024f68f9b15cca71b83f6cc79b0e7e0f8e822f720",
+          "vertices": 117,
+          "triangles": 230,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171730",
+          "minimumSourceNodeId": 7171730,
+          "sourceNodeIdsSha256": "1b062a0fa24c0a0e3aca83672807ac6892b3e24bd312e62c5b4aa63b381b7b7a",
+          "vertices": 198,
+          "triangles": 392,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "footl_distal",
+              "memberNodeIds": [
+                7171815
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "7170:n7171831",
+          "minimumSourceNodeId": 7171831,
+          "sourceNodeIdsSha256": "008641511efe431a94a065307b3b6e0843e2d68b5b3bd622871cf4f9b0034233",
+          "vertices": 156,
+          "triangles": 308,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7171934",
+          "minimumSourceNodeId": 7171934,
+          "sourceNodeIdsSha256": "ad61f71ba47277582da70a0c1dcad9b59413ca322ac32464d7d999edf7244f0a",
+          "vertices": 174,
+          "triangles": 344,
+          "landmarks": []
+        },
+        {
+          "componentId": "7170:n7172071",
+          "minimumSourceNodeId": 7172071,
+          "sourceNodeIdsSha256": "6f7aa6771272cbcd36ae3260e25af4eb8f6b7ae71633afacbb4b207b7fb06091",
+          "vertices": 172,
+          "triangles": 340,
+          "landmarks": []
+        }
+      ],
+      "meaning": "Topology components, NOT bone identities"
+    },
+    {
+      "sourcePartId": 9170,
+      "components": [
+        {
+          "componentId": "9170:n9170001",
+          "minimumSourceNodeId": 9170001,
+          "sourceNodeIdsSha256": "85afcd5bdd203d241d2442b13685f51ade2c43c75569f7ec5e7ce3c16483da5d",
+          "vertices": 855,
+          "triangles": 1706,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170123",
+          "minimumSourceNodeId": 9170123,
+          "sourceNodeIdsSha256": "9cdcd1de1ce945a7a377aa56a7b9e3c7f5e23690d159ebc4ac714cf817a6acc4",
+          "vertices": 266,
+          "triangles": 528,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170231",
+          "minimumSourceNodeId": 9170231,
+          "sourceNodeIdsSha256": "a9c6247ea12ff2670695d64fa1a1a04e74a809d8d18b2dd9ac13c020e42fa033",
+          "vertices": 160,
+          "triangles": 316,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170343",
+          "minimumSourceNodeId": 9170343,
+          "sourceNodeIdsSha256": "9dceb56e24b55256ffaec7a608c957874376ce391ea2b7816169779682abb363",
+          "vertices": 206,
+          "triangles": 408,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "footr_proximal",
+              "memberNodeIds": [
+                9170396
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "9170:n9170486",
+          "minimumSourceNodeId": 9170486,
+          "sourceNodeIdsSha256": "442af4a2b48fe71d42388fc2fd081294e3ea030966c3022bdda7596b9a87bc46",
+          "vertices": 360,
+          "triangles": 716,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170673",
+          "minimumSourceNodeId": 9170673,
+          "sourceNodeIdsSha256": "fa0eff3146a808fef9c2ec00fb9cb6d1f8a50801499eb3e0312470d08ad5734e",
+          "vertices": 426,
+          "triangles": 848,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170811",
+          "minimumSourceNodeId": 9170811,
+          "sourceNodeIdsSha256": "7a4fcd1414bd1fa80137ecf1e1a0576f99edb128efa360126bc7aeff344fe67f",
+          "vertices": 352,
+          "triangles": 700,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9170934",
+          "minimumSourceNodeId": 9170934,
+          "sourceNodeIdsSha256": "001257673fa9970925b868526f8e94a8816ece0907fdaba627d6dd1efb6d87a0",
+          "vertices": 287,
+          "triangles": 570,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171059",
+          "minimumSourceNodeId": 9171059,
+          "sourceNodeIdsSha256": "498a8379a893068a5e9d02e49b30ae5dfd391b31a942fdcc0c0c28a286b52779",
+          "vertices": 296,
+          "triangles": 588,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171146",
+          "minimumSourceNodeId": 9171146,
+          "sourceNodeIdsSha256": "b9dbc1bd97687b2f465a96a8d589aa1fcb8f509a95917e48c219b6dcd97ea02a",
+          "vertices": 266,
+          "triangles": 528,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171247",
+          "minimumSourceNodeId": 9171247,
+          "sourceNodeIdsSha256": "ff39822b7bb23bf5c79cb5e084228bc11a16448d42db4415997beacb7be773e9",
+          "vertices": 322,
+          "triangles": 640,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171373",
+          "minimumSourceNodeId": 9171373,
+          "sourceNodeIdsSha256": "42a4176e0fa9d15dd758392f681a0647d36ad70bd590a69bd5da2ae70e3fd41b",
+          "vertices": 587,
+          "triangles": 1170,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_twist_axis_b_right",
+              "memberNodeIds": [
+                9171515
+              ]
+            },
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_flexion_axis_b_right",
+              "memberNodeIds": [
+                9171495
+              ]
+            },
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "foot_flexion_axis_a_right",
+              "memberNodeIds": [
+                9174893
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "9170:n9171518",
+          "minimumSourceNodeId": 9171518,
+          "sourceNodeIdsSha256": "2225515e3bb442cdd0fadc8af62058e02cee5ecabd249ea5fa1073fde9bd29ab",
+          "vertices": 201,
+          "triangles": 398,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171645",
+          "minimumSourceNodeId": 9171645,
+          "sourceNodeIdsSha256": "718625b63df322ac46ad555764c35c2bc09d3cea0a3012f2d2c3efd921aa6b73",
+          "vertices": 117,
+          "triangles": 230,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171730",
+          "minimumSourceNodeId": 9171730,
+          "sourceNodeIdsSha256": "91d177e05f474d9ad5024c8755ee7dcc4227074e825dd8fa8cad58664f7baec0",
+          "vertices": 198,
+          "triangles": 392,
+          "landmarks": [
+            {
+              "file": "PIPER_landmark_namedmetadataCL.k",
+              "title": "footr_distal",
+              "memberNodeIds": [
+                9171815
+              ]
+            }
+          ]
+        },
+        {
+          "componentId": "9170:n9171831",
+          "minimumSourceNodeId": 9171831,
+          "sourceNodeIdsSha256": "885feae4cef3c42f4a306008cadb9e5d79c5d1fceb29844b70a1c44e6c207853",
+          "vertices": 156,
+          "triangles": 308,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9171934",
+          "minimumSourceNodeId": 9171934,
+          "sourceNodeIdsSha256": "3587cf6c2e9b23a4ff3a682ad2cf2524f1a4cc1cec52dcf03be0dd33ef9e8538",
+          "vertices": 174,
+          "triangles": 344,
+          "landmarks": []
+        },
+        {
+          "componentId": "9170:n9172071",
+          "minimumSourceNodeId": 9172071,
+          "sourceNodeIdsSha256": "8ca7070a11889fde339f21d0ce4d4c6e847fd1e45a1dc749face5d530a3ef2d0",
+          "vertices": 172,
+          "triangles": 340,
+          "landmarks": []
+        }
+      ],
+      "meaning": "Topology components, NOT bone identities"
+    }
+  ],
+  "footLandmarkConflicts": [
+    {
+      "side": "left",
+      "annotations": [
+        {
+          "landmarkTitle": "foot_flexion_axis_a_left",
+          "anatomicalTermInSourceComment": "talus",
+          "sourceComments": [
+            "mid point of left talus"
+          ],
+          "componentId": "7170:n7171373"
+        },
+        {
+          "landmarkTitle": "foot_twist_axis_b_left",
+          "anatomicalTermInSourceComment": "calcaneus",
+          "sourceComments": [
+            "mid point of left calcaneus"
+          ],
+          "componentId": "7170:n7171373"
+        }
+      ],
+      "differentBoneCommentsShareOneComponent": true,
+      "automaticBoneIdentificationAllowed": false,
+      "interpretation": "Could reflect simplified topology or inaccurate experimental comments; needs review, not an automatic split"
+    },
+    {
+      "side": "right",
+      "annotations": [
+        {
+          "landmarkTitle": "foot_flexion_axis_a_right",
+          "anatomicalTermInSourceComment": "talus",
+          "sourceComments": [
+            "mid point of right talus"
+          ],
+          "componentId": "9170:n9171373"
+        },
+        {
+          "landmarkTitle": "foot_twist_axis_b_right",
+          "anatomicalTermInSourceComment": "calcaneus",
+          "sourceComments": [
+            "mid point of right calcaneus"
+          ],
+          "componentId": "9170:n9171373"
+        }
+      ],
+      "differentBoneCommentsShareOneComponent": true,
+      "automaticBoneIdentificationAllowed": false,
+      "interpretation": "Could reflect simplified topology or inaccurate experimental comments; needs review, not an automatic split"
+    }
+  ],
+  "pelvicLandmarkProximity": [
+    {
+      "title": "LASIS",
+      "sourceNodeId": 8201870,
+      "nodeIsInRetainedBoneSurface": false,
+      "nearestExportedMeshId": "8101-L-髂骨",
+      "nearestComponentVertexDistanceMm": 6.551,
+      "nextComponentVertexDistanceMm": 53.499,
+      "meaning": "Proximity evidence only; label remains provisional"
+    },
+    {
+      "title": "LPSIS",
+      "sourceNodeId": 8201890,
+      "nodeIsInRetainedBoneSurface": false,
+      "nearestExportedMeshId": "8101-L-髂骨",
+      "nearestComponentVertexDistanceMm": 5.584,
+      "nextComponentVertexDistanceMm": 54.258,
+      "meaning": "Proximity evidence only; label remains provisional"
+    },
+    {
+      "title": "RASIS",
+      "sourceNodeId": 8201775,
+      "nodeIsInRetainedBoneSurface": false,
+      "nearestExportedMeshId": "8101-R-髂骨",
+      "nearestComponentVertexDistanceMm": 6.551,
+      "nextComponentVertexDistanceMm": 53.499,
+      "meaning": "Proximity evidence only; label remains provisional"
+    },
+    {
+      "title": "RPSIS",
+      "sourceNodeId": 8201819,
+      "nodeIsInRetainedBoneSurface": false,
+      "nearestExportedMeshId": "8101-R-髂骨",
+      "nearestComponentVertexDistanceMm": 6.456,
+      "nextComponentVertexDistanceMm": 53.159,
+      "meaning": "Proximity evidence only; label remains provisional"
+    }
+  ],
+  "namedInventory": [
+    {
+      "name": "额骨",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": "整体颅骨材料层不等于已逐骨分割；外形是否包含该骨需标注复核"
+    },
+    {
+      "name": "枕骨",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": "整体颅骨材料层不等于已逐骨分割；外形是否包含该骨需标注复核"
+    },
+    {
+      "name": "蝶骨",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": "整体颅骨材料层不等于已逐骨分割；外形是否包含该骨需标注复核"
+    },
+    {
+      "name": "筛骨",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": "整体颅骨材料层不等于已逐骨分割；外形是否包含该骨需标注复核"
+    },
+    {
+      "name": "下颌骨",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": "整体颅骨材料层不等于已逐骨分割；外形是否包含该骨需标注复核"
+    },
+    {
+      "name": "犁骨",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": "整体颅骨材料层不等于已逐骨分割；外形是否包含该骨需标注复核"
+    },
+    {
+      "name": "顶骨（左）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "颞骨（左）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "上颌骨（左）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "颧骨（左）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "鼻骨（左）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "泪骨（左）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "腭骨（左）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "下鼻甲（左）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "锤骨（左）",
+      "region": "skull",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "没有独立来源或网格证据，不推断一定存在/缺失"
+    },
+    {
+      "name": "砧骨（左）",
+      "region": "skull",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "没有独立来源或网格证据，不推断一定存在/缺失"
+    },
+    {
+      "name": "镫骨（左）",
+      "region": "skull",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "没有独立来源或网格证据，不推断一定存在/缺失"
+    },
+    {
+      "name": "顶骨（右）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "颞骨（右）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "上颌骨（右）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "颧骨（右）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "鼻骨（右）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "泪骨（右）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "腭骨（右）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "下鼻甲（右）",
+      "region": "skull",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "1100",
+        "1110",
+        "1120"
+      ],
+      "note": ""
+    },
+    {
+      "name": "锤骨（右）",
+      "region": "skull",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "没有独立来源或网格证据，不推断一定存在/缺失"
+    },
+    {
+      "name": "砧骨（右）",
+      "region": "skull",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "没有独立来源或网格证据，不推断一定存在/缺失"
+    },
+    {
+      "name": "镫骨（右）",
+      "region": "skull",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "没有独立来源或网格证据，不推断一定存在/缺失"
+    },
+    {
+      "name": "舌骨",
+      "region": "neck",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "源文件中的 Hyoid Upper/Lower 为肌肉名称，不是舌骨几何证据"
+    },
+    {
+      "name": "C1椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "2101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "C2椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "2102"
+      ],
+      "note": ""
+    },
+    {
+      "name": "C3椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "2103"
+      ],
+      "note": ""
+    },
+    {
+      "name": "C4椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "2104"
+      ],
+      "note": ""
+    },
+    {
+      "name": "C5椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "2105"
+      ],
+      "note": ""
+    },
+    {
+      "name": "C6椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "2106"
+      ],
+      "note": ""
+    },
+    {
+      "name": "C7椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "2107"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T1椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "2108"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T2椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4146"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T3椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4147"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T4椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4148"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T5椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4149"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T6椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4150"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T7椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4151"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T8椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4152"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T9椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4153"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T10椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4154"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T11椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4155"
+      ],
+      "note": ""
+    },
+    {
+      "name": "T12椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4156"
+      ],
+      "note": ""
+    },
+    {
+      "name": "L1椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "6105"
+      ],
+      "note": ""
+    },
+    {
+      "name": "L2椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "6106"
+      ],
+      "note": ""
+    },
+    {
+      "name": "L3椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "6107"
+      ],
+      "note": ""
+    },
+    {
+      "name": "L4椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "6108"
+      ],
+      "note": ""
+    },
+    {
+      "name": "L5椎骨",
+      "region": "spine",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "6109"
+      ],
+      "note": ""
+    },
+    {
+      "name": "骶骨",
+      "region": "pelvis",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "8110"
+      ],
+      "note": "仅核查来源命名，不假设儿童各骶椎融合状态"
+    },
+    {
+      "name": "尾骨",
+      "region": "pelvis",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "未见独立命名；不能因骨盆中有几何就认定包含"
+    },
+    {
+      "name": "第1肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L1"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L2"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L3"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L4"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L5"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第6肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L6"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第7肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L7"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第8肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L8"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第9肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L9"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第10肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L10"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第11肋骨（左）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-L11"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第12肋骨（左）",
+      "region": "thorax",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "第12肋未独立标识不等于已证明该源个体异常"
+    },
+    {
+      "name": "第1肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R1"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R2"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R3"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R4"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R5"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第6肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R6"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第7肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R7"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第8肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R8"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第9肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R9"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第10肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R10"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第11肋骨（右）",
+      "region": "thorax",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "4158-R11"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第12肋骨（右）",
+      "region": "thorax",
+      "status": "not_individually_identified",
+      "meshIds": [],
+      "note": "第12肋未独立标识不等于已证明该源个体异常"
+    },
+    {
+      "name": "胸骨",
+      "region": "thorax",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4157"
+      ],
+      "note": "不根据整体胸骨网格推断儿童骨化节与融合状态"
+    },
+    {
+      "name": "锁骨（左）",
+      "region": "left-arm",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4143"
+      ],
+      "note": ""
+    },
+    {
+      "name": "肩胛骨（左）",
+      "region": "left-arm",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4141"
+      ],
+      "note": ""
+    },
+    {
+      "name": "肱骨（左）",
+      "region": "left-arm",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "3102",
+        "3104",
+        "3105"
+      ],
+      "note": ""
+    },
+    {
+      "name": "桡骨（左）",
+      "region": "left-arm",
+      "status": "source_landmark_supported_requires_medical_review",
+      "meshIds": [
+        "3100-Radius"
+      ],
+      "note": ""
+    },
+    {
+      "name": "尺骨（左）",
+      "region": "left-arm",
+      "status": "source_landmark_supported_requires_medical_review",
+      "meshIds": [
+        "3100-Ulna"
+      ],
+      "note": ""
+    },
+    {
+      "name": "舟骨（左手）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "月骨（左手）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "三角骨（左手）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "豌豆骨（左手）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "大多角骨（左手）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "小多角骨（左手）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "头状骨（左手）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "钩骨（左手）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "第1掌骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2掌骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3掌骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4掌骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5掌骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第1指近节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第1指远节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2指近节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2指中节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2指远节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3指近节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3指中节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3指远节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4指近节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4指中节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4指远节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5指近节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5指中节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5指远节指骨（左）",
+      "region": "left-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "3101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "髂骨（左）",
+      "region": "pelvis",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "8101-L-髂骨"
+      ],
+      "note": ""
+    },
+    {
+      "name": "坐骨（左）",
+      "region": "pelvis",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "8101-L-坐骨"
+      ],
+      "note": ""
+    },
+    {
+      "name": "耻骨（左）",
+      "region": "pelvis",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "8101-L-耻骨"
+      ],
+      "note": ""
+    },
+    {
+      "name": "股骨（左）",
+      "region": "left-leg",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "7101",
+        "7102",
+        "7103",
+        "7104",
+        "7105"
+      ],
+      "note": ""
+    },
+    {
+      "name": "髌骨（左）",
+      "region": "left-leg",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "7111"
+      ],
+      "note": ""
+    },
+    {
+      "name": "胫骨（左）",
+      "region": "left-leg",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "7121",
+        "7122",
+        "7123",
+        "7125"
+      ],
+      "note": ""
+    },
+    {
+      "name": "腓骨（左）",
+      "region": "left-leg",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "7131",
+        "7133",
+        "7135"
+      ],
+      "note": ""
+    },
+    {
+      "name": "距骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "跟骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "足舟骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "骰骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "内侧楔骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "中间楔骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "外侧楔骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "第1跖骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2跖骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3跖骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4跖骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5跖骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第1趾近节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第1趾远节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2趾近节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2趾中节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2趾远节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3趾近节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3趾中节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3趾远节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4趾近节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4趾中节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4趾远节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5趾近节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5趾中节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5趾远节趾骨（左）",
+      "region": "left-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "7170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "锁骨（右）",
+      "region": "right-arm",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4144"
+      ],
+      "note": ""
+    },
+    {
+      "name": "肩胛骨（右）",
+      "region": "right-arm",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "4142"
+      ],
+      "note": ""
+    },
+    {
+      "name": "肱骨（右）",
+      "region": "right-arm",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "5102",
+        "5104",
+        "5105"
+      ],
+      "note": ""
+    },
+    {
+      "name": "桡骨（右）",
+      "region": "right-arm",
+      "status": "source_landmark_supported_requires_medical_review",
+      "meshIds": [
+        "5100-Radius"
+      ],
+      "note": ""
+    },
+    {
+      "name": "尺骨（右）",
+      "region": "right-arm",
+      "status": "source_landmark_supported_requires_medical_review",
+      "meshIds": [
+        "5100-Ulna"
+      ],
+      "note": ""
+    },
+    {
+      "name": "舟骨（右手）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "月骨（右手）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "三角骨（右手）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "豌豆骨（右手）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "大多角骨（右手）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "小多角骨（右手）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "头状骨（右手）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "钩骨（右手）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": "儿童骨化时序需单独审核，连通分量不等于骨头数"
+    },
+    {
+      "name": "第1掌骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2掌骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3掌骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4掌骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5掌骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第1指近节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第1指远节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2指近节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2指中节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2指远节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3指近节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3指中节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3指远节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4指近节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4指中节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4指远节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5指近节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5指中节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5指远节指骨（右）",
+      "region": "right-hand",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "5101"
+      ],
+      "note": ""
+    },
+    {
+      "name": "髂骨（右）",
+      "region": "pelvis",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "8101-R-髂骨"
+      ],
+      "note": ""
+    },
+    {
+      "name": "坐骨（右）",
+      "region": "pelvis",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "8101-R-坐骨"
+      ],
+      "note": ""
+    },
+    {
+      "name": "耻骨（右）",
+      "region": "pelvis",
+      "status": "derived_label_requires_review",
+      "meshIds": [
+        "8101-R-耻骨"
+      ],
+      "note": ""
+    },
+    {
+      "name": "股骨（右）",
+      "region": "right-leg",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "9101",
+        "9102",
+        "9103",
+        "9104",
+        "9105"
+      ],
+      "note": ""
+    },
+    {
+      "name": "髌骨（右）",
+      "region": "right-leg",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "9111"
+      ],
+      "note": ""
+    },
+    {
+      "name": "胫骨（右）",
+      "region": "right-leg",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "9121",
+        "9122",
+        "9123",
+        "9125"
+      ],
+      "note": ""
+    },
+    {
+      "name": "腓骨（右）",
+      "region": "right-leg",
+      "status": "source_named_requires_medical_review",
+      "meshIds": [
+        "9131",
+        "9133",
+        "9135"
+      ],
+      "note": ""
+    },
+    {
+      "name": "距骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "跟骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "足舟骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "骰骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "内侧楔骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "中间楔骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "外侧楔骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": "合并网格需专业分割，不能仅按连通块自动命名"
+    },
+    {
+      "name": "第1跖骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2跖骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3跖骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4跖骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5跖骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第1趾近节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第1趾远节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2趾近节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2趾中节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第2趾远节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3趾近节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3趾中节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第3趾远节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4趾近节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4趾中节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第4趾远节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5趾近节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5趾中节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    },
+    {
+      "name": "第5趾远节趾骨（右）",
+      "region": "right-foot",
+      "status": "merged_unresolved",
+      "meshIds": [
+        "9170"
+      ],
+      "note": ""
+    }
+  ],
+  "inventorySummary": {
+    "merged_unresolved": 128,
+    "not_individually_identified": 10,
+    "source_named_requires_medical_review": 40,
+    "derived_label_requires_review": 28,
+    "source_landmark_supported_requires_medical_review": 4
+  }
+}
