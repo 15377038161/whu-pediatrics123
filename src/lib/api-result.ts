@@ -24,6 +24,15 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('ATTEMPT_CLOSED')) return { code: 'ATTEMPT_CLOSED', message: '本次练习已结束，请返回题库列表重新开始。', retryable: false };
   if (message.includes('AI_GENERATION_INVALID')) return { code: 'AI_GENERATION_INVALID', message: 'AI 生成结果未通过校验，本次生成已丢弃；请调整主题描述后重试。', retryable: true };
   if (message.includes('INVALID_VISIBILITY')) return { code: 'INVALID_VISIBILITY', message: '可见范围设置无效。', retryable: false };
+  if (message.includes('RESOURCE_NOT_FOUND')) return { code: 'RESOURCE_NOT_FOUND', message: '未找到该学习资源（或不在你的可见范围内）。', retryable: false };
+  if (message.includes('FILE_UNAVAILABLE')) return { code: 'FILE_UNAVAILABLE', message: '资源文件暂时无法访问，请稍后重试。', retryable: true };
+  if (message.includes('FILE_REQUIRED')) return { code: 'FILE_REQUIRED', message: '该资源尚未绑定文件，请先在管理端补充文件后再发布。', retryable: false };
+  if (message.includes('VISIBILITY_REQUIRED')) return { code: 'VISIBILITY_REQUIRED', message: '发布前请至少为本班授予一个可见班级。', retryable: false };
+  if (message.includes('OWNER_PROTECTED')) return { code: 'OWNER_PROTECTED', message: '资源维护者不可变更。', retryable: false };
+  if (message.includes('SCOPE_PROTECTED')) return { code: 'SCOPE_PROTECTED', message: '全平台可见范围仅项目管理员可设置。', retryable: false };
+  if (message.includes('INVALID_STATUS_TRANSITION')) return { code: 'INVALID_STATUS_TRANSITION', message: '资源状态变更不合法（草稿→发布→下架→重新编辑）。', retryable: false };
+  if (message.includes('RESOURCE_LIST_FAILED') || message.includes('RESOURCE_GET_FAILED') || message.includes('RESOURCE_PROGRESS_FAILED') || message.includes('RESOURCE_SAVE_FAILED')) return { code: 'RPC_UNAVAILABLE', message: '学习资源服务暂时不可用，请稍后重试。', retryable: true };
+  if (message.includes('DELETE_DRAFT_ONLY')) return { code: 'DELETE_DRAFT_ONLY', message: '仅草稿可删除；已发布或下架过的资源保留学生进度历史，请使用下架。', retryable: false };
   if (message.includes('INVALID_REQUEST')) return { code: 'INVALID_REQUEST', message: '请求参数无效。', retryable: false };
   if (message.includes('ONLY_CURRENT_CASE')) return { code: 'ONLY_CURRENT_CASE', message: '目前只有当前病例可用，可以选择重新训练。', retryable: false };
   if (message.includes('CREATION_REQUEST_CONFLICT')) return { code: 'CREATION_REQUEST_CONFLICT', message: '创建请求已用于其他操作，请重新进入接诊页面。', retryable: false };
