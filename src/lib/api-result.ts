@@ -21,6 +21,7 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('AUTH_REQUIRED')) return { code: 'AUTH_REQUIRED', message: '请先登录。', retryable: false };
   if (message.includes('FORBIDDEN')) return { code: 'FORBIDDEN', message: '你无权访问这条记录。', retryable: false };
   if (message.includes('SESSION_NOT_FOUND')) return { code: 'SESSION_NOT_FOUND', message: '未找到训练记录。', retryable: false };
+  if (message.includes('STUDENT_NOT_FOUND')) return { code: 'STUDENT_NOT_FOUND', message: '未找到该学生档案（或不在你的授权范围内）。', retryable: false };
   if (message.includes('REPORT_NOT_FOUND')) return { code: 'REPORT_NOT_FOUND', message: '未找到报告记录。', retryable: false };
   if (message.includes('CASE_SOURCE_INVALID')) return { code: 'CASE_SOURCE_INVALID', message: '病例资料格式异常，请重新生成教学病例数据。', retryable: false };
   if (message.includes('CASE_NOT_FOUND')) return { code: 'CASE_NOT_FOUND', message: '未找到该病例。', retryable: false };

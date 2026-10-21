@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import { POST as document } from '../src/app/api/teacher/case-drafts/document/route';
 import { GET as drafts } from '../src/app/api/teacher/case-drafts/route';
 
-test('病例工作室真实路由 + 合成Auth上游：匿名/学生/白名单失败拒绝，教师上传与详情允许', async () => {
+test('病例工作室真实路由 + 合成Auth上游：匿名/学生/白名单失败拒绝，导入类 action 已收口返回 410', async () => {
   const keys = [
     'CODER_SUPABASE_URL',
     'CODER_SUPABASE_ANON_KEY',
@@ -70,13 +70,10 @@ test('病例工作室真实路由 + 合成Auth上游：匿名/学生/白名单�
     assert.equal(dbReads, 0);
     whitelist = true;
     const response = await document(upload());
-    assert.equal(response.status, 200);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
-    const data = (await response.json()).data;
-    assert.equal(data.payload.sex, '女');
-    assert.equal(data.payload.age, '3岁');
-    assert.equal(data.payload.complaint, '发热2天');
-    assert.equal(dbReads, 0, '预览不得写入或查询草稿正文');
+    assert.equal(response.status, 410, 'D08 收口：导入类 action 返回废弃响应');
+    const body = (await response.json()) as { error?: { code?: string } };
+    assert.equal(body.error?.code, 'CASE_IMPORT_DEPRECATED');
+    assert.equal(dbReads, 0, '废弃响应不得写入或查询草稿正文');
     assert.equal((await drafts(detail())).status, 404);
     assert.equal(dbReads, 1);
     const bad = new NextRequest(

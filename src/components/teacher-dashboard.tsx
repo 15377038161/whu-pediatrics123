@@ -1,19 +1,23 @@
 'use client';
 
-import { Activity, ArrowRight, Award, Eye, Search, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { Activity, ArrowRight, Award, Eye, FileUser, Search, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { formatDate } from '@/lib/format-date';
-import type { TeacherStudentSummary } from '@/lib/repository';
+import type { TeacherStudentsWorkspace } from '@/lib/repository';
 import type { TeacherCaseCatalogItem } from '@/domain/teacher-case-catalog';
 
-export function TeacherDashboard({ students, referenceTime, caseCatalog }: { students: TeacherStudentSummary[]; referenceTime: string; caseCatalog: TeacherCaseCatalogItem[] }) {
+export function TeacherDashboard({ workspace, referenceTime, caseCatalog }: { workspace: TeacherStudentsWorkspace; referenceTime: string; caseCatalog: TeacherCaseCatalogItem[] }) {
+  const students = workspace.students;
   const [query, setQuery] = useState('');
   const [riskOnly, setRiskOnly] = useState(false);
+  const [cohortFilter, setCohortFilter] = useState<string>('');
   const scored = students.filter((student) => student.latestScore !== null && student.latestScoreBasis !== 'process');
   const average = scored.length ? Math.round(scored.reduce((sum, student) => sum + (student.latestScore ?? 0), 0) / scored.length) : null;
   const needsAttention = students.filter((student) => student.latestScoreBasis !== 'process' && student.latestScore !== null && student.latestScore < 80).length;
   const activeThisWeek = students.filter((student) => student.lastActiveAt && Date.parse(referenceTime) - Date.parse(student.lastActiveAt) < 7 * 86_400_000).length;
-  const filtered = useMemo(() => students.filter((student) => `${student.displayName}${student.studentNo ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()) && (!riskOnly || (student.latestScoreBasis !== 'process' && student.latestScore !== null && student.latestScore < 80))), [query, riskOnly, students]);
+  const filtered = useMemo(() => students.filter((student) => `${student.displayName}${student.studentNo ?? ''}`.toLowerCase().includes(query.trim().toLowerCase())
+    && (!riskOnly || (student.latestScoreBasis !== 'process' && student.latestScore !== null && student.latestScore < 80))
+    && (cohortFilter === '' ? true : cohortFilter === 'none' ? student.cohortId === null : student.cohortId === cohortFilter)), [query, riskOnly, cohortFilter, students]);
   return (
     <>
       <section className="teacher-banner">
@@ -32,18 +36,25 @@ export function TeacherDashboard({ students, referenceTime, caseCatalog }: { stu
       <div className="student-filter">
         <label className="sr-only" htmlFor="student-search">按姓名或学号搜索</label>
         <div style={{ position: 'relative' }}><Search size={17} style={{ position: 'absolute', left: 13, top: 14, color: '#697b78' }} /><input id="student-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="按姓名或学号搜索" style={{ paddingLeft: 40 }} /></div>
-        <div className="teacher-filter-actions"><button type="button" className="filter-chip" data-active={!riskOnly} onClick={() => setRiskOnly(false)}>全部学生</button><button type="button" className="filter-chip" data-active={riskOnly} onClick={() => setRiskOnly(true)}>建议关注 {needsAttention}</button><span className="readonly-badge"><ShieldCheck size={14} /> 仅限授权课程群组</span></div>
+        <div className="teacher-filter-actions">
+          <button type="button" className="filter-chip" data-active={cohortFilter === ''} onClick={() => setCohortFilter('')}>全部班级</button>
+          {workspace.classes.map((cohort) => <button type="button" key={cohort.id} className="filter-chip" data-active={cohortFilter === cohort.id} onClick={() => setCohortFilter(cohort.id)}>{cohort.name}</button>)}
+          <button type="button" className="filter-chip" data-active={cohortFilter === 'none'} onClick={() => setCohortFilter('none')}>未归属当前班级</button>
+          <button type="button" className="filter-chip" data-active={!riskOnly} onClick={() => setRiskOnly(false)}>全部学生</button>
+          <button type="button" className="filter-chip" data-active={riskOnly} onClick={() => setRiskOnly(true)}>建议关注 {needsAttention}</button>
+          <span className="readonly-badge"><ShieldCheck size={14} /> 按归属期间可见</span>
+        </div>
       </div>
       <div className="student-table-wrap">
         <table className="student-table">
           <thead><tr><th>学生</th><th>最近训练</th><th>最近得分</th><th>报告数</th><th>最近活跃</th><th>操作</th></tr></thead>
           <tbody>{filtered.map((student) => <tr key={student.id}>
-            <td data-label="学生">{student.avatarUrl ? <img className="student-avatar" src={student.avatarUrl} alt="" width={34} height={34} loading="lazy" title="头像：按登录同步的超星号构造（用户可改资料，仅展示参考）" /> : null}<strong>{student.displayName}</strong><br/><small>{student.studentNo ? `学号 ${student.studentNo}` : '学号未提供'}{student.chaoxingUid ? ` · 超星号 ${student.chaoxingUid}（用户提供）` : ''}</small></td>
+            <td data-label="学生">{student.avatarUrl ? <img className="student-avatar" src={student.avatarUrl} alt="" width={34} height={34} loading="lazy" title="头像：按登录同步的超星号构造（用户可改资料，仅展示参考）" /> : null}<strong>{student.displayName}</strong><br/><small>{student.studentNo ? `学号 ${student.studentNo}` : '学号未提供'}{student.chaoxingUid ? ` · 超星号 ${student.chaoxingUid}（用户提供）` : ''}{student.cohortName ? ` · ${student.cohortName}` : ' · 未归属当前班级'}</small></td>
             <td data-label="最近训练">{student.latestMode === 'osce' ? 'OSCE 模拟站' : student.latestMode === 'practice' ? '专项训练' : '模拟病例'}</td>
             <td data-label="最近得分"><span className="score-tag" data-level={student.latestScore === null ? 'empty' : student.latestScore >= 85 ? 'strong' : student.latestScore >= 80 ? 'steady' : 'attention'}>{student.latestScoreBasis === 'process' ? `过程 ${student.latestScore ?? '—'}` : student.latestScore ?? '—'}</span></td>
             <td data-label="报告数">{student.reportCount}</td>
             <td data-label="最近活跃">{student.lastActiveAt ? formatDate(student.lastActiveAt) : '—'}</td>
-            <td data-label="过程记录">{student.latestSessionId ? <a className="text-link" href={`/teacher/sessions/${student.latestSessionId}`}>查看全过程 <ArrowRight size={13} /></a> : <span style={{ color: '#7d8c89' }}>暂无证据</span>}</td>
+            <td data-label="过程记录"><div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}><a className="text-link" href={`/teacher/students/${student.id}`}><FileUser size={13} style={{ verticalAlign: -3 }} /> 学生档案</a>{student.latestSessionId ? <a className="text-link" href={`/teacher/sessions/${student.latestSessionId}`}>查看全过程 <ArrowRight size={13} /></a> : <span style={{ color: '#7d8c89' }}>暂无最新证据</span>}</div></td>
           </tr>)}</tbody>
         </table>
       </div>

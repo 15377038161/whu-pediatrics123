@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { requireAuth } from '@/lib/request-auth';
 import { isDatabaseConfigured } from '@/lib/supabase-client';
-import { isTeacherByWhitelist, normalizeDraftVersion, parseDraftPayload, precheckDraft, saveDraft } from '@/lib/case-draft-import';
+import { isTeacherByWhitelist } from '@/lib/case-draft-import';
 
 export const dynamic = 'force-dynamic';
 function privateResult<T>(value: T) {
@@ -11,13 +11,24 @@ function privateResult<T>(value: T) {
   return response;
 }
 
+/** D08 收口：病例创建/导入已废弃，导入类 action 统一返回 410 废弃响应。 */
+function caseImportDeprecated() {
+  return fail(
+    {
+      code: 'CASE_IMPORT_DEPRECATED',
+      message: '病例创建与导入入口已收口，现行病例目录由平台统一维护；历史草稿保留只读，资料问题请联系项目管理员登记处理。',
+      retryable: false,
+    },
+    undefined,
+    410,
+  );
+}
+
 /**
- * 教师病例草稿导入 API（仅教师）：
- * - GET  /api/teacher/case-drafts            草稿列表
- * - POST /api/teacher/case-drafts            预校验或保存
- *   body: { action: 'precheck' | 'save', draftVersion?: string,
- *           desensitized?: boolean, mediaReviewed?: boolean, payload: {...} }
- * 草稿与运行中事实快照隔离：本路由只读写 case_draft_imports，不触碰 case_snapshot_*。
+ * 教师病例草稿 API（D08 收口后）：
+ * - GET  /api/teacher/case-drafts            历史草稿列表（只读）/ 草稿详情（只读）
+ * - POST /api/teacher/case-drafts            已废弃：任何导入类 action（precheck/save）返回 410
+ * 草稿与运行中事实快照隔离：本路由只读 case_draft_imports，不触碰 case_snapshot_*。
  * 授权与数据库 RLS 使用同一谓词（app_is_teacher 白名单 RPC），应用层与数据层判定一致；
  * 数据库侧教师 RLS 兜底，匿名/学生直接 Data API 读写均被 RLS 拒绝。
  */
@@ -48,34 +59,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // 严格交集：应用层教师角色（requireAuth 'teacher'）AND 数据库白名单（app_is_teacher），非 OR、非仅白名单。
+    // 门控与 GET 同一谓词：匿名/学生/非白名单教师先按 401/403 拒绝，白名单教师得到明确废弃响应。
     const user = await requireAuth(request, 'teacher');
     if (!user.accessToken) return fail({ code: 'AUTH_REQUIRED', message: '缺少访问令牌', retryable: false }, undefined, 401);
     if (!isDatabaseConfigured()) return fail({ code: 'DATABASE_NOT_CONFIGURED', message: '数据库未配置', retryable: false }, undefined, 503);
     if (!(await isTeacherByWhitelist(user.accessToken))) {
-      return fail({ code: 'FORBIDDEN', message: '仅教师可导入病例草稿', retryable: false }, undefined, 403);
+      return fail({ code: 'FORBIDDEN', message: '仅教师可访问病例草稿', retryable: false }, undefined, 403);
     }
-    const body = (await request.json()) as Record<string, unknown>;
-    const action = body.action === 'save' ? 'save' : 'precheck';
-    const payload = parseDraftPayload(body.payload);
-    const draftVersion = normalizeDraftVersion(body.draftVersion);
-    const options = {
-      desensitized: body.desensitized === true,
-      mediaReviewed: body.mediaReviewed === true,
-      sourceName: typeof body.sourceName === 'string' && body.sourceName.trim() ? body.sourceName.trim() : undefined,
-    };
-    if (action === 'precheck') {
-      const precheck = await precheckDraft(user.accessToken, payload, draftVersion, options);
-      return privateResult({ action, draftVersion, precheck });
-    }
-    const saved = await saveDraft(user.accessToken, payload, draftVersion, options);
-    return privateResult({ action, draftVersion, ...saved });
+    return caseImportDeprecated();
   } catch (error) {
-    if (error instanceof SyntaxError || (error instanceof Error && ['CASE_ID_REQUIRED', 'INVALID_DRAFT_PAYLOAD', 'INVALID_DRAFT_VERSION'].includes(error.message))) {
-      return fail({ code: 'INVALID_DRAFT', message: '病例资料格式无效，请重新打开草稿后重试。', retryable: false }, undefined, 400);
-    }
     const detail = errorFromUnknown(error);
-    const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : 500;
-    return fail(detail, undefined, status);
+    return fail(detail, undefined, detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : 500);
   }
 }

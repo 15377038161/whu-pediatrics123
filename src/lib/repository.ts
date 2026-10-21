@@ -20,6 +20,9 @@ export interface TeacherStudentSummary {
   /** 超星号（登录身份同步；来源为用户可修改的 user_metadata.cxid 时仅作展示参考，不作学号） */
   chaoxingUid: string | null;
   avatarUrl: string | null;
+  /** 学生当前归属班级（仅教师管理的班级范围；换班离开后为 null，历史训练仍按归属期间可见） */
+  cohortId: string | null;
+  cohortName: string | null;
   latestScore: number | null;
   latestScoreBasis?: 'clinical' | 'process';
   latestMode: SessionMode | null;
@@ -27,6 +30,42 @@ export interface TeacherStudentSummary {
   latestReportId: string | null;
   latestSessionId: string | null;
   lastActiveAt: string | null;
+}
+
+/** 教师学情首页工作区：班级清单（筛选用）+ 学生学情列表（含当前归属映射） */
+export interface TeacherStudentsWorkspace {
+  classes: TeacherClassBrief[];
+  students: TeacherStudentSummary[];
+}
+
+export interface TeacherClassBrief {
+  id: string;
+  name: string;
+  memberCount: number;
+}
+
+/** 学生档案页：授权范围内的训练会话与单次证据索引（行可见性由 RLS 决定） */
+export interface TeacherStudentProfileEntry {
+  sessionId: string;
+  mode: SessionMode | null;
+  startedAt: string;
+  updatedAt: string;
+  reportId: string | null;
+  totalScore: number | null;
+  scoreBasis: 'clinical' | 'process';
+}
+
+export interface TeacherStudentProfile {
+  student: {
+    id: string;
+    displayName: string;
+    studentNo: string | null;
+    chaoxingUid: string | null;
+    avatarUrl: string | null;
+    cohortId: string | null;
+    cohortName: string | null;
+  };
+  sessions: TeacherStudentProfileEntry[];
 }
 
 export interface TeacherSessionDetail {
@@ -440,36 +479,42 @@ export class AgentRepository {
     return (data ?? []).map((row) => row.data as TrainingReport);
   }
 
-  async listTeacherStudents(): Promise<TeacherStudentSummary[]> {
+  async listTeacherStudents(): Promise<TeacherStudentsWorkspace> {
     if (this.actor.role !== 'teacher') throw new Error('FORBIDDEN');
     if (this.isPreview()) {
       const store = memoryStore();
       previewSeedUsers(store);
-      return [...store.users.values()].filter((user) => user.role === 'student').map((user, index) => {
-        const reports = [...store.reports.values()].filter((report) => report.userId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-        const latest = reports[0];
-        const latestSession = latest ? store.sessions.get(latest.sessionId) : null;
-        return {
-          id: user.id,
-          displayName: user.displayName,
-          studentNo: user.studentNo,
-          chaoxingUid: null,
-          avatarUrl: null,
-          // C-观察与报告-04：最近一份报告若全部计分项均不可评价（未评分），latestScore 记 null
-          // （总分 0 不代表能力 0 分），教师端平均分/建议关注统计不以 0 分计入。
-          latestScore: latest ? (isUnscoredReport(latest) ? null : latest.totalScore) : ([86, 78, 92][index] ?? null),
-          latestScoreBasis: latest?.scoreBasis ?? 'clinical',
-          latestMode: latest?.mode ?? 'osce',
-          reportCount: reports.length || 1,
-          latestReportId: latest?.id ?? null,
-          latestSessionId: latestSession?.id ?? null,
-          lastActiveAt: latestSession?.updatedAt ?? new Date(Date.now() - index * 86_400_000).toISOString(),
-        };
-      });
+      return {
+        classes: [],
+        students: [...store.users.values()].filter((user) => user.role === 'student').map((user, index) => {
+          const reports = [...store.reports.values()].filter((report) => report.userId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          const latest = reports[0];
+          const latestSession = latest ? store.sessions.get(latest.sessionId) : null;
+          return {
+            id: user.id,
+            displayName: user.displayName,
+            studentNo: user.studentNo,
+            chaoxingUid: null,
+            avatarUrl: null,
+            cohortId: null,
+            cohortName: null,
+            // C-观察与报告-04：最近一份报告若全部计分项均不可评价（未评分），latestScore 记 null
+            // （总分 0 不代表能力 0 分），教师端平均分/建议关注统计不以 0 分计入。
+            latestScore: latest ? (isUnscoredReport(latest) ? null : latest.totalScore) : ([86, 78, 92][index] ?? null),
+            latestScoreBasis: latest?.scoreBasis ?? 'clinical',
+            latestMode: latest?.mode ?? 'osce',
+            reportCount: reports.length || 1,
+            latestReportId: latest?.id ?? null,
+            latestSessionId: latestSession?.id ?? null,
+            lastActiveAt: latestSession?.updatedAt ?? new Date(Date.now() - index * 86_400_000).toISOString(),
+          };
+        }),
+      };
     }
     const db = this.db();
-    // 教师可见范围由 RLS 放行（training_sessions/training_reports 的 teacher_select，基于 teacher_emails 白名单）
-    const [{ data: reports }, { data: sessions }] = await Promise.all([
+    // 教师可见范围由 RLS 放行（训练行的 teacher 读取策略 + class_period_* 归属期间 restrictive 策略）；
+    // 班级清单与学生当前归属映射经受控聚合 RPC（自建班级的 cohort_members 直读受旧策略限制）。
+    const [{ data: reports }, { data: sessions }, { data: index, error: indexError }] = await Promise.all([
       withDatabaseRetry(async () => {
         const result = await db.from('training_reports').select('id,session_id,user_id,total_score,mode,created_at,data').order('created_at', { ascending: false });
         if (result.error) throw result.error;
@@ -480,35 +525,130 @@ export class AgentRepository {
         if (result.error) throw result.error;
         return result;
       }),
+      withDatabaseRetry(async () => {
+        const result = await db.rpc('teacher_student_index');
+        if (result.error) throw result.error;
+        return result;
+      }),
     ]);
+    if (indexError) throw indexError;
+    const indexData = (index ?? {}) as { classes?: TeacherClassBrief[]; studentClasses?: Record<string, { cohortId: string; cohortName: string }> };
+    const classes = indexData.classes ?? [];
+    const studentClasses = indexData.studentClasses ?? {};
     const ids = [...new Set([
       ...(reports ?? []).map((row) => row.user_id as string),
       ...(sessions ?? []).map((row) => row.user_id as string),
     ])];
-    if (ids.length === 0) return [];
+    if (ids.length === 0) return { classes, students: [] };
     const { data: profiles, error: profileError } = await db.from('profiles').select('id,display_name,student_no,chaoxing_uid').in('id', ids);
     if (profileError) throw profileError;
-    return (profiles ?? []).map((profile) => {
-      const own = (reports ?? []).filter((report) => report.user_id === profile.id);
-      const latest = own[0];
-      const lastSession = (sessions ?? []).find((row) => row.user_id === profile.id) ?? null;
+    return {
+      classes,
+      students: (profiles ?? []).map((profile) => {
+        const own = (reports ?? []).filter((report) => report.user_id === profile.id);
+        const latest = own[0];
+        const lastSession = (sessions ?? []).find((row) => row.user_id === profile.id) ?? null;
+        const cohort = studentClasses[profile.id] ?? null;
+        return {
+          id: profile.id,
+          displayName: profile.display_name,
+          studentNo: profile.student_no,
+          chaoxingUid: profile.chaoxing_uid ?? null,
+          avatarUrl: chaoxingAvatarUrl(profile.chaoxing_uid),
+          cohortId: cohort?.cohortId ?? null,
+          cohortName: cohort?.cohortName ?? null,
+          // C-观察与报告-04：最近一份报告若全部计分项均不可评价（未评分），latestScore 记 null
+          // （总分 0 不代表能力 0 分），教师端平均分/建议关注统计不以 0 分计入。
+          latestScore: latest ? (isUnscoredReport(latest.data as TrainingReport) ? null : latest.total_score) : null,
+          latestScoreBasis: (latest?.data as TrainingReport | undefined)?.scoreBasis ?? 'clinical',
+          latestMode: (latest?.mode as SessionMode | undefined) ?? null,
+          reportCount: own.length,
+          latestReportId: latest?.id ?? null,
+          latestSessionId: latest?.session_id ?? null,
+          lastActiveAt: lastSession?.updated_at ?? latest?.created_at ?? null,
+        };
+      }),
+    };
+  }
+
+  async getStudentProfile(userId: string): Promise<TeacherStudentProfile> {
+    if (this.actor.role !== 'teacher') throw new Error('FORBIDDEN');
+    if (this.isPreview()) {
+      const store = memoryStore();
+      previewSeedUsers(store);
+      const user = [...store.users.values()].find((item) => item.id === userId && item.role === 'student') ?? null;
+      if (!user) throw new Error('STUDENT_NOT_FOUND');
+      const sessions = [...store.sessions.values()].filter((session) => session.userId === userId).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
       return {
+        student: { id: user.id, displayName: user.displayName, studentNo: user.studentNo, chaoxingUid: null, avatarUrl: null, cohortId: null, cohortName: null },
+        sessions: sessions.map((session) => {
+          const report = [...store.reports.values()].find((item) => item.sessionId === session.id) ?? null;
+          return {
+            sessionId: session.id,
+            mode: session.mode,
+            startedAt: session.startedAt,
+            updatedAt: session.updatedAt,
+            reportId: report?.id ?? null,
+            totalScore: report ? (isUnscoredReport(report) ? null : report.totalScore) : null,
+            scoreBasis: report?.scoreBasis ?? 'clinical',
+          };
+        }),
+      };
+    }
+    const db = this.db();
+    // 行级可见性由 RLS 决定：profiles（app_can_view_student，含历史归属）、
+    // training_sessions/training_reports（teacher 读取策略 + class_period_* 归属期间 restrictive）。
+    const [{ data: profile }, { data: sessionRows }, { data: reportRows }, { data: index, error: indexError }] = await Promise.all([
+      withDatabaseRetry(async () => {
+        const result = await db.from('profiles').select('id,display_name,student_no,chaoxing_uid').eq('id', userId).maybeSingle();
+        if (result.error) throw result.error;
+        return result;
+      }),
+      withDatabaseRetry(async () => {
+        const result = await db.from('training_sessions').select('id,mode,started_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false });
+        if (result.error) throw result.error;
+        return result;
+      }),
+      withDatabaseRetry(async () => {
+        const result = await db.from('training_reports').select('id,session_id,total_score,data').eq('user_id', userId);
+        if (result.error) throw result.error;
+        return result;
+      }),
+      withDatabaseRetry(async () => {
+        const result = await db.rpc('teacher_student_index');
+        if (result.error) throw result.error;
+        return result;
+      }),
+    ]);
+    if (indexError) throw indexError;
+    // 不可见或不存在的档案（RLS 拦截后与不存在同口径）统一按 404 返回
+    if (!profile) throw new Error('STUDENT_NOT_FOUND');
+    const indexData = (index ?? {}) as { studentClasses?: Record<string, { cohortId: string; cohortName: string }> };
+    const cohort = (indexData.studentClasses ?? {})[userId] ?? null;
+    return {
+      student: {
         id: profile.id,
         displayName: profile.display_name,
         studentNo: profile.student_no,
         chaoxingUid: profile.chaoxing_uid ?? null,
         avatarUrl: chaoxingAvatarUrl(profile.chaoxing_uid),
-        // C-观察与报告-04：最近一份报告若全部计分项均不可评价（未评分），latestScore 记 null
-        // （总分 0 不代表能力 0 分），教师端平均分/建议关注统计不以 0 分计入。
-        latestScore: latest ? (isUnscoredReport(latest.data as TrainingReport) ? null : latest.total_score) : null,
-        latestScoreBasis: (latest?.data as TrainingReport | undefined)?.scoreBasis ?? 'clinical',
-        latestMode: (latest?.mode as SessionMode | undefined) ?? null,
-        reportCount: own.length,
-        latestReportId: latest?.id ?? null,
-        latestSessionId: latest?.session_id ?? null,
-        lastActiveAt: lastSession?.updated_at ?? latest?.created_at ?? null,
-      };
-    });
+        cohortId: cohort?.cohortId ?? null,
+        cohortName: cohort?.cohortName ?? null,
+      },
+      sessions: (sessionRows ?? []).map((row) => {
+        const report = (reportRows ?? []).find((item) => item.session_id === row.id) ?? null;
+        const reportData = report?.data as TrainingReport | undefined;
+        return {
+          sessionId: row.id as string,
+          mode: (row.mode as SessionMode | null) ?? null,
+          startedAt: (row.started_at as string) ?? (row.updated_at as string),
+          updatedAt: row.updated_at as string,
+          reportId: report?.id ?? null,
+          totalScore: report ? (isUnscoredReport(reportData as TrainingReport) ? null : (report.total_score as number)) : null,
+          scoreBasis: reportData?.scoreBasis ?? 'clinical',
+        };
+      }),
+    };
   }
 
   async listOwnSessions(): Promise<SessionState[]> {

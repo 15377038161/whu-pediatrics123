@@ -2,89 +2,39 @@ import { NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/request-auth';
 import { isTeacherByWhitelist } from '@/lib/case-draft-import';
 import { isDatabaseConfigured } from '@/lib/supabase-client';
-import { ok, fail, errorFromUnknown } from '@/lib/api-result';
-import {
-  CaseDocumentError,
-  extractCaseDocument,
-  MAX_CASE_FILE_BYTES,
-  prepareCaseDocument,
-} from '@/lib/case-document';
+import { fail, errorFromUnknown } from '@/lib/api-result';
 
 export const runtime = 'nodejs';
+
+/**
+ * 病例文档解析预览（D08 收口后已废弃）：
+ * 创建/导入入口收口，本路由不再接收文档上传；门控语义与收口前一致
+ * （匿名 401 / 学生与非白名单教师 403 / 白名单教师 410 废弃响应），
+ * 不读取请求体、不解析文档、不触碰草稿存储。
+ */
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request, 'teacher');
     if (!user.accessToken) throw new Error('AUTH_REQUIRED');
-    if (!isDatabaseConfigured())
-      return fail(
-        {
-          code: 'DATABASE_NOT_CONFIGURED',
-          message: '数据库暂不可用，请稍后重试。',
-          retryable: true,
-        },
-        undefined,
-        503,
-      );
-    if (!(await isTeacherByWhitelist(user.accessToken)))
-      throw new Error('FORBIDDEN');
-    const length = Number(request.headers.get('content-length'));
-    if (length > MAX_CASE_FILE_BYTES + 64 * 1024)
-      throw new CaseDocumentError('上传内容超过 10 MB，请拆分为单个病例。');
-    if (
-      !request.headers.get('content-type')?.startsWith('multipart/form-data;')
-    )
-      throw new CaseDocumentError('请选择文件后重新上传。');
-    // Bound chunked requests too, before the multipart parser allocates the entire body.
-    const reader = request.body?.getReader();
-    if (!reader) throw new CaseDocumentError('上传内容为空。');
-    const chunks: Uint8Array[] = [];
-    let received = 0;
-    while (true) {
-      const chunk = await reader.read();
-      if (chunk.done) break;
-      received += chunk.value.byteLength;
-      if (received > MAX_CASE_FILE_BYTES + 64 * 1024) {
-        await reader.cancel();
-        throw new CaseDocumentError('上传内容超过 10 MB。');
-      }
-      chunks.push(chunk.value);
+    if (!isDatabaseConfigured()) {
+      return fail({ code: 'DATABASE_NOT_CONFIGURED', message: '数据库暂不可用，请稍后重试。', retryable: true }, undefined, 503);
     }
-    let form: FormData;
-    try {
-      form = await new Response(Buffer.concat(chunks), {
-        headers: { 'content-type': request.headers.get('content-type')! },
-      }).formData();
-    } catch {
-      throw new CaseDocumentError('上传未完成，请重新选择文件。');
-    }
-    const file = form.get('file');
-    if (!(file instanceof File))
-      throw new CaseDocumentError('请选择一份病例文档。');
-    if (file.size > MAX_CASE_FILE_BYTES)
-      throw new CaseDocumentError('文件超过 10 MB，请拆分后上传。');
-    const text = await extractCaseDocument(
-      file.name,
-      new Uint8Array(await file.arrayBuffer()),
+    if (!(await isTeacherByWhitelist(user.accessToken))) throw new Error('FORBIDDEN');
+    return fail(
+      {
+        code: 'CASE_IMPORT_DEPRECATED',
+        message: '病例创建与导入入口已收口，不再接收文档上传；历史草稿保留只读，资料问题请联系项目管理员登记处理。',
+        retryable: false,
+      },
+      undefined,
+      410,
     );
-    const response = ok(prepareCaseDocument(text, file.name));
-    response.headers.set('Cache-Control', 'no-store');
-    return response;
   } catch (error) {
-    if (error instanceof CaseDocumentError)
-      return fail(
-        { code: 'INVALID_DOCUMENT', message: error.message, retryable: false },
-        undefined,
-        400,
-      );
     const detail = errorFromUnknown(error);
     return fail(
       detail,
       undefined,
-      detail.code === 'AUTH_REQUIRED'
-        ? 401
-        : detail.code === 'FORBIDDEN'
-          ? 403
-          : 500,
+      detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : 500,
     );
   }
 }
