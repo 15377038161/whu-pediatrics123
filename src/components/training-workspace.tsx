@@ -2,6 +2,8 @@
 
 import { teachingHints } from '@/domain/teaching-copy';
 import { allowedPostures, patientAppearance } from '@/domain/patient-appearance';
+import { resolveCommunicationProfile, speechCapabilityLabel } from '@/domain/communication-profile';
+import { ageBandLabel, bindingGapNote, patientAssetByKey, sexPresentationLabel } from '@/domain/patient-assets';
 
 import {
   Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home,
@@ -81,6 +83,11 @@ type ExamObservation = {
 
 function PatientFigure({ patient, posture, hotspots, selectedTool, onExamine, onReplayObservation, observation, busy, interactive }: { patient: Omit<PublicCaseProfile, 'sex'> & { sex: string }; posture: 'standing' | 'supine'; hotspots: Array<[string, string]>; selectedTool: string | null; onExamine: (part: string) => void; onReplayObservation: (observation: ExamObservation) => void; observation: ExamObservation | null; busy: boolean; interactive: boolean }) {
   const appearance=patientAppearance(patient.sex,posture,patient.id,patient.age);
+  // 人物背景（方案 9.1/9.2 与 17.2 V09 人物匹配）：角色能力经 communicationProfile 派生，
+  // 素材信息经资产清单；未知不猜、未审核不伪装（derivation 如实展示）。
+  const profile = resolveCommunicationProfile(patient.id, patient.age);
+  const asset = patientAssetByKey(appearance.key);
+  const assetGap = bindingGapNote(profile.ageBand);
   return (
     <div className="patient-stage" data-posture={posture} data-avatar={appearance.key}>
       <div className="patient-figure" aria-label="仿真虚拟患儿交互模型">
@@ -101,6 +108,18 @@ function PatientFigure({ patient, posture, hotspots, selectedTool, onExamine, on
         <p className="exam-observation-detail">{observation.detail}</p>
         <small className="exam-observation-note">{observation.toolId === 'stethoscope' && observation.status === 'success' ? <>真实儿科听诊录音节选 · <a href="https://github.com/SJTU-YONGFU-RESEARCH-GRP/SPRSound" target="_blank" rel="noreferrer">SPRSound / CC BY 4.0</a></> : '标准化患儿教学反馈 · 文字结果来自病例规则'}</small>
       </div>}
+      <details className="patient-background">
+        <summary>人物背景</summary>
+        <dl>
+          <div><dt>年龄</dt><dd>{ageBandLabel(profile.ageBand)}（病例原文：{patient.age || '未记录'}）</dd></div>
+          <div><dt>性别</dt><dd>{sexPresentationLabel(patient.sex)}</dd></div>
+          <div><dt>语言表达</dt><dd>{speechCapabilityLabel(profile)}</dd></div>
+          <div><dt>病史陈述</dt><dd>{profile.primaryHistorian === 'child' ? '患儿本人可答主观感受' : '照护者代述'}</dd></div>
+          <div><dt>照护者</dt><dd>{profile.caregiverGender === 'unknown' ? `${profile.caregiverRelation}（性别未定，不默认妈妈/爸爸）` : `${profile.caregiverRelation}（${profile.caregiverGender === 'female' ? '女性' : '男性'}）`}</dd></div>
+          <div><dt>示教素材</dt><dd>{asset ? `${asset.note}${assetGap ? `；${assetGap}` : ''}` : '未指定素材（性别未注明，不猜）'}</dd></div>
+          <div><dt>审核状态</dt><dd>{profile.derivation === 'case_override' ? '已逐例审核覆盖' : '年龄默认档（未逐例医学审核）'}</dd></div>
+        </dl>
+      </details>
       <p className="patient-disclosure" title="通用示教角色，外观不代表病例年龄或实际体征">虚拟标准化患儿 · 非真实病例影像</p>
     </div>
   );

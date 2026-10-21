@@ -9,7 +9,7 @@
     "main_Trunk_UpperEx.k",
     "mesh_PIPER_Body.k"
   ],
-  "manifestSha256": "2b574e8db469e9e859ada4c4f7c62fe77b3f2ef0f86d95041742d4f870713563",
+  "manifestSha256": "e1f921d1af65297fb9c8ec6ad6cb93f24e298e017c4d22181ff13ecbd2072fec",
   "glbSha256": "07556cea2e4d329eee9348cc75715db61ccda6c20e4fbb5f99ddca1d7aafbec4",
   "auditMeaning": "Technical/source inventory, NOT medical approval or a six-year-old bone count",
   "geometryFidelityPassed": true,

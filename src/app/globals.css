@@ -392,6 +392,16 @@ textarea { resize: vertical; }
 .exam-auscultation[data-sound="wheeze"] span { border-radius: 999px; animation-duration: 1.7s; animation-timing-function: ease-in-out; }
 .exam-auscultation[data-sound="wheeze"] span:nth-of-type(2), .exam-auscultation[data-sound="wheeze"] span:nth-of-type(4) { height: 23px; }
 .patient-disclosure { position: absolute; right: 18px; top: 18px; margin: 0; padding: 5px 8px; border-radius: 999px; background: rgba(23,60,60,.78); color: white; font-size: 10px; letter-spacing: .02em; }
+/* 人物背景面板（方案 9.1/9.2 与 17.2 V09）：默认折叠小徽标，展开后 dl 网格展示，风格与 patient-caption 一致 */
+.patient-background { position: absolute; left: 14px; top: 16px; z-index: 2; max-width: min(300px, 72%); }
+.patient-background > summary { display: inline-flex; align-items: center; gap: 4px; margin: 0; padding: 5px 10px; border-radius: 999px; background: rgba(255,253,248,.92); color: var(--ink); font-size: 11px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(23,60,60,.14); list-style: none; }
+.patient-background > summary::-webkit-details-marker { display: none; }
+.patient-background[open] > summary::after { content: '✕'; margin-left: 4px; font-size: 10px; opacity: .6; }
+.patient-background dl { margin: 6px 0 0; padding: 10px 12px; border-radius: 11px; background: rgba(255,253,248,.94); backdrop-filter: blur(10px); box-shadow: 0 4px 14px rgba(23,60,60,.16); display: grid; gap: 6px; font-size: 11px; color: var(--ink); }
+.patient-background dl div { display: grid; grid-template-columns: 56px 1fr; gap: 6px; align-items: baseline; }
+.patient-background dt { color: #5c7a6e; font-weight: 700; white-space: nowrap; }
+.patient-background dd { margin: 0; line-height: 1.5; }
+@media (max-width: 767px) { .patient-background { max-width: 66%; } .patient-background dl { font-size: 10px; } }
 .emotion-pill { color: var(--brick); font-weight: 800; }
 .tool-rack { display: flex; gap: 8px; overflow-x: auto; padding: 10px; background: #f3f7f4; }
 .tool { position: relative; flex: 0 0 82px; min-height: 86px; border: 1px solid transparent; border-radius: 13px; background: var(--white); color: var(--ink); display: grid; place-items: center; align-content: center; gap: 3px; font-size: 11px; }

@@ -9,7 +9,7 @@
 - 已逐例核对：18/53 独立来源
 - 确缺待医学审核（pending_review，仅 guided）：17 条目
 - 下架（published=false）：3
-- 角色能力（communicationProfile）：未建（阶段 B）；评分量表：未审定
+- 角色能力（communicationProfile）：域已建（B 批次：年龄默认档推导 live、人物背景 UI 与人物资产清单已接线），逐例专业审核未做；评分量表：未审定
 
 ## 逐条目
 

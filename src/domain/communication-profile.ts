@@ -67,7 +67,9 @@ export interface CommunicationProfile {
 export function parseAgeToDays(ageKnown: string): number | null {
   let days = 0;
   let matched = false;
-  const re = /(\d+)\s*(岁|月|天|日|小时|分钟)/g;
+  // "N个月"（含"个"字）为病例数据实测格式（如 '8个月'、'3岁2个月'）——原正则不认"个"导致解析失败，
+  // 婴儿病例按 unknown 走学龄前站立素材（C01 同类缺陷，B-1 测试捕获）。
+  const re = /(\d+)\s*(?:个)?\s*(岁|月|天|日|小时|分钟)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(ageKnown)) !== null) {
     matched = true;
@@ -103,7 +105,7 @@ export const COMMUNICATION_PROFILE_OVERRIDES: Record<string, Partial<Communicati
 function deriveDefaultProfile(ageKnown: string): CommunicationProfile {
   const days = parseAgeToDays(ageKnown);
   const band = toAgeBand(days);
-  const primary = ageKnown.match(/(\d+)\s*(岁|月|天|日|小时|分钟)/);
+  const primary = ageKnown.match(/(\d+)\s*(?:个)?\s*(岁|月|天|日|小时|分钟)/);
   const speechCapability: SpeechCapability =
     band === 'unknown'
       ? 'unknown'
@@ -155,4 +157,23 @@ export function childPersonaStyle(profile: CommunicationProfile): ChildPersonaSt
   if (!canChildSpeak(profile)) return 'none';
   if (profile.speechCapability === 'limited') return 'toddler_speak';
   return profile.ageBand === 'adolescent' || profile.ageBand === 'school' ? 'age_appropriate' : 'simple';
+}
+
+/**
+ * 患儿语言表达能力的中文标签（人物背景 UI 展示用，未知不猜口径）。
+ * 与 canChildSpeak 同源：nonverbal/impaired/unknown 均明确「家长代述」，不输出患儿语义台词。
+ */
+export function speechCapabilityLabel(profile: CommunicationProfile): string {
+  switch (profile.speechCapability) {
+    case 'nonverbal':
+      return '不能语言表达 · 由家长代述';
+    case 'limited':
+      return '表达有限 · 短句应答，家长补充';
+    case 'conversational':
+      return '可正常交流 · 患儿可答主观感受';
+    case 'impaired':
+      return '交流受限（逐例审核覆盖）· 由家长代述';
+    default:
+      return '年龄未解析 · 按不可语言表达处理（安全默认）';
+  }
 }

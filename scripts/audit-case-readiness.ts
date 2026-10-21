@@ -13,10 +13,11 @@
  * 原则：未知不伪装已完成——
  *   - 未逐例核对的病例维度标 unaudited，不标 ready；
  *   - sourceHash 保持 null（53 例原件尚未回传沙箱，无法重算指纹）；
- *   - communicationProfile / rubric 未建，communicationReady / speechRoleReady / rubricReady 如实 false；
+ *   - communicationProfile 域已建（B 批次：年龄默认档推导 live、人物背景 UI 与人物资产清单已接线），
+ *     但逐例角色能力专业审核未做，communicationReady / speechRoleReady 仍如实 false；
  *   - 不编造医学内容；教师待办从台账标记与核对 findings 原样带入 blockers。
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
@@ -87,7 +88,7 @@ const CURRENT_VERSION_OVERRIDE: Record<string, string> = {
 function parseAgeDays(ageText: string): number | null {
   let days = 0;
   let matched = false;
-  const re = /(\d+)\s*(岁|月|天|日|小时|分钟)/g;
+  const re = /(\d+)\s*(?:个)?\s*(岁|月|天|日|小时|分钟)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(ageText)) !== null) {
     matched = true;
@@ -146,8 +147,14 @@ function parseLedgerMarkdown(md: string): Map<string, LedgerRow> {
 }
 
 function main(): void {
-  const auditLedger: AuditEntry[] = JSON.parse(readFileSync(path.join(DOCS, 'case-audit-ledger.json'), 'utf8'));
-  const ledgerMd = readFileSync(path.join(DOCS, '病例台账.md'), 'utf8');
+  // 输入台账丢失回退（沙箱重置会丢失未跟踪文件）：case-audit-ledger.json /《病例台账》md 缺失时
+  // 不重算逐例行，复用已跟踪上次生成结果（docs/case-readiness-register.json），_meta 如实标注 degraded；
+  // 台账原件回传沙箱后重跑本脚本即恢复全量核对（方案 7.4 受控脚本原则不变）。
+  const ledgerPath = path.join(DOCS, 'case-audit-ledger.json');
+  const ledgerMdPath = path.join(DOCS, '病例台账.md');
+  const degraded = !existsSync(ledgerPath) || !existsSync(ledgerMdPath);
+  const auditLedger: AuditEntry[] = degraded ? [] : (JSON.parse(readFileSync(ledgerPath, 'utf8')) as AuditEntry[]);
+  const ledgerMd = degraded ? '' : readFileSync(ledgerMdPath, 'utf8');
   const snapshot = JSON.parse(readFileSync(path.join(DOCS, 'case-snapshot-versions.json'), 'utf8')) as {
     versions: { caseId: string; version: string }[];
     publication: { caseId: string; published: boolean; updatedAt: string }[];
@@ -167,7 +174,17 @@ function main(): void {
   for (const p of snapshot.publication) publicationByCase.set(p.caseId, p.published);
 
   const rows: RegisterRow[] = [];
+  let priorAuditedSources = 0;
 
+  if (degraded) {
+    // 沙箱重置丢失台账输入：逐例行复用已跟踪上次生成结果（不重算、不丢失核对轨迹）。
+    const prior = JSON.parse(readFileSync(path.join(DOCS, 'case-readiness-register.json'), 'utf8')) as {
+      rows: RegisterRow[];
+      summary: { auditedSources: number };
+    };
+    priorAuditedSources = prior.summary.auditedSources;
+    rows.push(...prior.rows);
+  } else {
   for (const item of TEACHER_CASE_CATALOG) {
     const link = TEACHER_CASE_LINKS[item.id];
     const relation: Relation = link ? link.relation : item.folder ? 'independent' : 'no_source';
@@ -248,6 +265,7 @@ function main(): void {
       e2eResult,
     });
   }
+  }
 
   // 汇总计数（与《病例台账》口径对账）。
   const byRelation = rows.reduce<Record<string, number>>((acc, r) => {
@@ -255,13 +273,19 @@ function main(): void {
     return acc;
   }, {});
   // 已核对独立源数按核对台账唯一 sourceId 计（别名/亚型行继承源结果，不重复计数）。
-  const auditedSources = auditBySource.size;
+  const auditedSources = degraded ? priorAuditedSources : auditBySource.size;
   const pendingReviewCount = rows.filter((r) => r.readiness.history === 'pending_review').length;
 
   const register = {
     _meta: {
       generatedAt: new Date().toISOString(),
       generator: 'scripts/audit-case-readiness.ts（阶段 A / W01，方案 7.1/7.4）',
+      ...(degraded
+        ? {
+            dataSourcesDegraded:
+              'case-audit-ledger.json 与《病例台账》md（未跟踪文件）已随沙箱重置丢失：本版逐例行复用上次生成结果（docs/case-readiness-register.json），未重算；台账原件回传沙箱后重跑本脚本恢复全量核对',
+          }
+        : {}),
       dataSources: [
         'src/domain/teacher-case-catalog.ts（教师目录 70 条目）',
         'src/domain/teacher-case-links.ts（别名/亚型映射）',
@@ -272,7 +296,7 @@ function main(): void {
       knownGaps: [
         'sourceHash=null：53 例原件尚未回传沙箱（knowledge/teaching-cases 为空），原件回传后经核对脚本重算补记',
         'unaudited：35 例未逐例核对，维度不标 ready（继续 3–5 例一批）',
-        'communicationReady/speechRoleReady=false：communicationProfile 未建（阶段 B）',
+        'communicationReady/speechRoleReady=false：communicationProfile 域已建（年龄默认档推导 live、人物背景 UI 与人物资产清单已接线，B 批次），但逐例角色能力专业审核未做，不标 ready',
         'rubricReady=false：评分量表未审定（方案 4.5 讨论稿待教师确认）',
         'reviewer=null：逐例核对为脚本+台账核对，医学审核人待教师审核时补记',
         '内置 fixture（peds-respiratory-001/peds-wheeze-002）与教师来源分离，不在本账本统计',
@@ -323,7 +347,7 @@ function main(): void {
   lines.push(`- 已逐例核对：${auditedSources}/53 独立来源`);
   lines.push(`- 确缺待医学审核（pending_review，仅 guided）：${pendingReviewCount} 条目`);
   lines.push(`- 下架（published=false）：${register.summary.publishedFalse}`);
-  lines.push(`- 角色能力（communicationProfile）：未建（阶段 B）；评分量表：未审定`);
+  lines.push('- 角色能力（communicationProfile）：域已建（B 批次：年龄默认档推导 live、人物背景 UI 与人物资产清单已接线），逐例专业审核未做；评分量表：未审定');
   lines.push('');
   lines.push('## 逐条目');
   lines.push('');

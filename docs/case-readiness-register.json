@@ -1,7 +1,8 @@
 {
   "_meta": {
-    "generatedAt": "2026-10-20T13:18:54.055Z",
+    "generatedAt": "2026-10-21T15:27:32.487Z",
     "generator": "scripts/audit-case-readiness.ts（阶段 A / W01，方案 7.1/7.4）",
+    "dataSourcesDegraded": "case-audit-ledger.json 与《病例台账》md（未跟踪文件）已随沙箱重置丢失：本版逐例行复用上次生成结果（docs/case-readiness-register.json），未重算；台账原件回传沙箱后重跑本脚本恢复全量核对",
     "dataSources": [
       "src/domain/teacher-case-catalog.ts（教师目录 70 条目）",
       "src/domain/teacher-case-links.ts（别名/亚型映射）",
@@ -12,7 +13,7 @@
     "knownGaps": [
       "sourceHash=null：53 例原件尚未回传沙箱（knowledge/teaching-cases 为空），原件回传后经核对脚本重算补记",
       "unaudited：35 例未逐例核对，维度不标 ready（继续 3–5 例一批）",
-      "communicationReady/speechRoleReady=false：communicationProfile 未建（阶段 B）",
+      "communicationReady/speechRoleReady=false：communicationProfile 域已建（年龄默认档推导 live、人物背景 UI 与人物资产清单已接线，B 批次），但逐例角色能力专业审核未做，不标 ready",
       "rubricReady=false：评分量表未审定（方案 4.5 讨论稿待教师确认）",
       "reviewer=null：逐例核对为脚本+台账核对，医学审核人待教师审核时补记",
       "内置 fixture（peds-respiratory-001/peds-wheeze-002）与教师来源分离，不在本账本统计"
