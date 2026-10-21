@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { patientAppearance } from '../src/domain/patient-appearance';
+import { patientAppearance, allowedPostures } from '../src/domain/patient-appearance';
+import { parseAgeToDays, toAgeBand } from '../src/domain/communication-profile';
+import summaries from '../src/domain/admission-summaries.json';
+import { getPublicCase } from '../src/domain/case-catalog';
+
 test('病例性别决定虚拟角色，两姿势固定同一个人且所有资源可部署', () => {
   const seen=new Set<string>();
   for (let i=0;i<20;i++) for (const sex of ['男','女']) {
@@ -22,4 +26,101 @@ test('性别缺失不猜男孩，不从患者姓名或病种推断性别', () =>
     assert.equal(patientAppearance(value,'supine','case-boy-name').src,null);
   }
   assert.ok(patientAppearance(' 女 ','standing','case').key.startsWith('girl-'));
+});
+
+/**
+ * C01 修复回归：真实病例读入（admission-summaries.json）→ 目录投影（getPublicCase）
+ * → 人物素材（patientAppearance）全链验证。新生儿与婴儿（≤1 岁）必须是同性别卧位
+ * 婴儿形象，禁止站立儿童图与哈希兜底；未知年龄保持通用虚拟儿童（不虚构分档）。
+ */
+const NEWBORN_GIRL = '/media/clinical/virtual-newborn-girl-supine-v1.png';
+const NEWBORN_BOY = '/media/clinical/virtual-newborn-boy-supine-v1.png';
+/** 用户报告的原病例：出生 1 天女婴（皮肤黄染 1 天），真实存在于病例库。 */
+const REPORTED_CASE_ID = 'case-e750c5ff-d229-43a6-8314-2e633cacdc32';
+
+test('C01 真实病例链（用户报告原病例）：出生 1 天女婴投影为同性别卧位新生儿，非站立学龄前女孩', () => {
+  const summary = (summaries as Record<string, { age: string; sex: string }>)[REPORTED_CASE_ID];
+  assert.equal(summary.age, '1天');
+  assert.equal(summary.sex, '女');
+  // 目录投影（读入→投影）
+  const profile = getPublicCase(REPORTED_CASE_ID);
+  assert.equal(profile.patientImage, NEWBORN_GIRL);
+  assert.ok(!profile.patientImage.includes('standing'));
+  // 人物组件链（投影→素材）：站立体位请求也返回卧位形象，与目录投影同一素材
+  const standing = patientAppearance('女', 'standing', REPORTED_CASE_ID, '1天');
+  const supine = patientAppearance('女', 'supine', REPORTED_CASE_ID, '1天');
+  assert.equal(standing.src, NEWBORN_GIRL);
+  assert.equal(supine.src, NEWBORN_GIRL);
+  assert.equal(standing.src, profile.patientImage);
+  assert.ok(existsSync(`public${NEWBORN_GIRL}`));
+});
+
+test('C01 真实病例链：22 天男婴落新生儿卧位、6 岁女童保持通用虚拟儿童素材', () => {
+  const newborn = getPublicCase('case-05779155-1092-4607-a3d2-966ffc0fc718');
+  assert.equal((summaries as Record<string, { age: string }>)['case-05779155-1092-4607-a3d2-966ffc0fc718'].age, '22天');
+  assert.equal(newborn.patientImage, NEWBORN_BOY);
+  assert.ok(existsSync(`public${NEWBORN_BOY}`));
+  const child = getPublicCase('case-5a51b3c9-ea4a-4c1b-96f8-20a9b59e44b7');
+  assert.ok(child.patientImage.includes('virtual-child'));
+  assert.notEqual(child.patientImage, NEWBORN_GIRL);
+});
+
+test('C01 全病例扫描：所有 ≤1 岁真实病例均为同性别卧位婴儿形象，无一使用站立儿童图', () => {
+  const entries = Object.entries(summaries as Record<string, { age: string; sex: string }>);
+  let youngInfantCount = 0;
+  for (const [id, { age, sex }] of entries) {
+    if (sex !== '男' && sex !== '女') continue;
+    const band = toAgeBand(parseAgeToDays(age));
+    const appearance = patientAppearance(sex, 'standing', id, age);
+    if (band === 'newborn' || band === 'infant') {
+      youngInfantCount += 1;
+      assert.equal(appearance.src, sex === '女' ? NEWBORN_GIRL : NEWBORN_BOY, `${id}（${age}）应使用同性别卧位婴儿形象`);
+      assert.ok(!appearance.src.includes('standing'), `${id}（${age}）不得使用站立儿童图`);
+      // 新生儿/婴儿不参与哈希：同一病例重复解析稳定
+      assert.equal(patientAppearance(sex, 'supine', id, age).key, appearance.key);
+    } else {
+      assert.ok(appearance.src === null || appearance.src.includes('virtual-child'), `${id}（${age}）应保持通用虚拟儿童素材`);
+      assert.notEqual(appearance.src, NEWBORN_GIRL);
+      assert.notEqual(appearance.src, NEWBORN_BOY);
+    }
+  }
+  // 覆盖面自检：病例库确实存在足量 ≤1 岁真实病例（含天/小时/分钟/月多单位年龄表述）
+  assert.ok(youngInfantCount >= 10, `≤1 岁病例数应 ≥ 10，实际 ${youngInfantCount}`);
+});
+
+test('C01 边界分档：1 天/28 天新生儿含边界，29 天起婴儿档，1 月/7 月婴儿均卧位，儿童站立体位正常', () => {
+  assert.equal(patientAppearance('女', 'standing', 'x', '1天').src, NEWBORN_GIRL);
+  assert.equal(patientAppearance('男', 'standing', 'x', '1天').src, NEWBORN_BOY);
+  assert.equal(patientAppearance('女', 'standing', 'x', '28天').src, NEWBORN_GIRL);
+  assert.equal(patientAppearance('男', 'standing', 'x', '29天').src, NEWBORN_BOY);
+  assert.equal(patientAppearance('女', 'standing', 'x', '1月13天').src, NEWBORN_GIRL);
+  assert.equal(patientAppearance('男', 'standing', 'x', '7月4天').src, NEWBORN_BOY);
+  // 儿童档：站立请求返回站立图（通用虚拟儿童，哈希选择稳定）
+  const childStanding = patientAppearance('女', 'standing', 'x', '8岁27天');
+  assert.ok(childStanding.src !== null && /virtual-child/.test(childStanding.src));
+  assert.ok(!childStanding.src.includes('newborn'));
+  assert.equal(patientAppearance('女', 'standing', 'x', '8岁27天').key, childStanding.key);
+});
+
+test('C01 未知年龄：不虚构分档，保持通用虚拟儿童素材与两态体位（不按新生儿处理）', () => {
+  const unknownAge = patientAppearance('女', 'standing', 'x', '待核验');
+  assert.ok(unknownAge.src !== null && /virtual-child/.test(unknownAge.src));
+  assert.notEqual(unknownAge.src, NEWBORN_GIRL);
+  const noAge = patientAppearance('男', 'standing', 'x');
+  assert.ok(noAge.src !== null && /virtual-child/.test(noAge.src));
+  assert.deepEqual(allowedPostures('待核验'), ['standing', 'supine']);
+  assert.deepEqual(allowedPostures(undefined), ['standing', 'supine']);
+  assert.deepEqual(allowedPostures(''), ['standing', 'supine']);
+});
+
+test('C01 allowedPostures：新生儿/婴儿（含 1 小时、10 分钟等窒息复苏病例年龄表述）仅仰卧', () => {
+  assert.deepEqual(allowedPostures('1天'), ['supine']);
+  assert.deepEqual(allowedPostures('28天'), ['supine']);
+  assert.deepEqual(allowedPostures('29天'), ['supine']);
+  assert.deepEqual(allowedPostures('1月13天'), ['supine']);
+  assert.deepEqual(allowedPostures('7月4天'), ['supine']);
+  assert.deepEqual(allowedPostures('1小时'), ['supine']);
+  assert.deepEqual(allowedPostures('10分钟'), ['supine']);
+  assert.deepEqual(allowedPostures('8岁27天'), ['standing', 'supine']);
+  assert.deepEqual(allowedPostures('6岁'), ['standing', 'supine']);
 });

@@ -12,7 +12,8 @@
  *  - 不自动连录（状态机由组件按 VOICE_TURN_TRANSITIONS 驱动）。
  */
 
-import { authedFetch } from '@/lib/authed-api';
+import { authedFetch, AuthedApiError } from '@/lib/authed-api';
+import { ASR_SAMPLE_RATE, MAX_ASR_BASE64_LENGTH, concatPcmChunks, encodeWavBytes, resamplePcm } from '@/lib/audio-pcm';
 import type { SpeechCapabilities } from '@/domain/speech-contract';
 import { UNAVAILABLE_SPEECH_CAPABILITIES, isSpeechCapabilities } from '@/domain/speech-contract';
 
@@ -100,7 +101,10 @@ export async function startWavRecording(maxDurationMs: number = MAX_RECORDING_MS
         const sampleRate = context.sampleRate;
         void context.close();
         stream.getTracks().forEach((track) => track.stop());
-        resolve(encodeWav(chunks, totalSamples, sampleRate));
+        // 上传前统一降采样到 16kHz 单声道（V01）：120s 录音的 base64 体从 ~15MB（48kHz）
+        // 降到 ~5MB，避免大体 POST 被网关拒绝/超时；durationMs 仍按原始采样率计。
+        const pcm = resamplePcm(concatPcmChunks(chunks, totalSamples), sampleRate, ASR_SAMPLE_RATE);
+        resolve(new Blob([encodeWavBytes(pcm, ASR_SAMPLE_RATE)], { type: 'audio/wav' }));
       }),
   };
   processor.onaudioprocess = (event) => {
@@ -124,36 +128,7 @@ export async function startWavRecording(maxDurationMs: number = MAX_RECORDING_MS
   return recorder;
 }
 
-/** Float32 块序列 → 16bit PCM 单声道 WAV Blob。 */
-function encodeWav(chunks: Float32Array[], totalSamples: number, sampleRate: number): Blob {
-  const buffer = new ArrayBuffer(44 + totalSamples * 2);
-  const view = new DataView(buffer);
-  const writeString = (offset: number, text: string) => {
-    for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i));
-  };
-  writeString(0, 'RIFF');
-  view.setUint32(4, 36 + totalSamples * 2, true);
-  writeString(8, 'WAVE');
-  writeString(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // PCM
-  view.setUint16(22, 1, true); // 单声道
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true); // 字节率 = sampleRate * 声道 * 位深/8
-  view.setUint16(32, 2, true); // 块对齐
-  view.setUint16(34, 16, true); // 位深
-  writeString(36, 'data');
-  view.setUint32(40, totalSamples * 2, true);
-  let offset = 44;
-  for (const chunk of chunks) {
-    for (let i = 0; i < chunk.length; i += 1) {
-      const sample = Math.max(-1, Math.min(1, chunk[i]));
-      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
-      offset += 2;
-    }
-  }
-  return new Blob([view], { type: 'audio/wav' });
-}
+/** Float32 块 → WAV 的编码与 16kHz 降采样已抽至 src/lib/audio-pcm.ts（纯函数，可单测）。 */
 
 /** Blob → base64（不加 data: 前缀，服务端 ASRClient 直收 base64Data）。 */
 export function blobToBase64(blob: Blob): Promise<string> {
@@ -172,14 +147,38 @@ export function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-/** ASR 转写：上传 WAV → 返回待确认转写文本（未确认前不作为答）。失败抛 AuthedApiError。 */
+/**
+ * ASR 失败统一映射为可恢复的友好提示（V01）：网关/代理层返回非 JSON 响应（如 503）时
+ * authedFetch 抛 INVALID_RESPONSE（message 形如 "HTTP 503"）——绝不把裸状态码透给前台，
+ * 统一改为「可重试或改用文字输入」的提示；服务端 JSON 信封内的 message 本身已是友好文案，原样保留。
+ */
+function friendlyAsrError(cause: unknown): Error {
+  if (cause instanceof AuthedApiError) {
+    if (cause.code === 'AUTH_REQUIRED') return cause;
+    if (/^HTTP \d+$/.test(cause.message)) {
+      return new Error('语音服务暂时不可用，请稍后重试，或改用文字输入。');
+    }
+    return new Error(cause.message);
+  }
+  return new Error('语音上传失败，请检查网络后重试，或改用文字输入。');
+}
+
+/** ASR 转写：上传 WAV（16kHz 降采样后）→ 返回待确认转写文本（未确认前不作为答）。
+ *  上传前预检 base64 上限（与服务端同一公式），超限直接友好失败，不上传必败请求。 */
 export async function requestTranscription(audio: Blob): Promise<string> {
   const base64Data = await blobToBase64(audio);
-  const data = await authedFetch<{ text: string }>('/api/speech/asr', {
-    method: 'POST',
-    body: JSON.stringify({ base64Data, format: 'wav' }),
-  });
-  return data.text;
+  if (base64Data.length > MAX_ASR_BASE64_LENGTH) {
+    throw new Error('录音过长（超过 10MB），请缩短后重新录音，或改用文字输入。');
+  }
+  try {
+    const data = await authedFetch<{ text: string }>('/api/speech/asr', {
+      method: 'POST',
+      body: JSON.stringify({ base64Data, format: 'wav' }),
+    });
+    return data.text;
+  } catch (cause) {
+    throw friendlyAsrError(cause);
+  }
 }
 
 /** 角色消息 TTS：按 messageId 取已校验消息的签名音频 URL。

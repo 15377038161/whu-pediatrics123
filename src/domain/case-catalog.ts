@@ -164,7 +164,7 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
     difficulty: item.contentStatus === 'teacher-catalog-only' && item.sourceRelation === null ? '病种自主研习' : '真实案例学习',
     expectedMinutes: 0,
     patientName: '小朋友',
-    patientImage: patientAppearance(summaries[item.id]?.sex ?? '待核验','standing',item.id).src ?? '/media/clinical/virtual-child-unclassified.svg',
+    patientImage: patientAppearance(summaries[item.id]?.sex ?? '待核验','standing',item.id,summaries[item.id]?.age).src ?? '/media/clinical/virtual-child-unclassified.svg',
     patientAlt: '用于检查部位定位的教学示意模型，不代表原病例患儿外貌',
     contentStatus: item.contentStatus,
     sourceRelation: item.sourceRelation,
