@@ -249,7 +249,10 @@ textarea { resize: vertical; }
 .resource-more { margin: 9px 2px 0; color: var(--muted); font-size: 11px; }
 
 
-.training-shell { width: min(100%, 1500px); margin: 0 auto; padding: 0 0 92px; min-height: 100svh; background: var(--paper); }
+/* B01：训练工作台整体背景——儿科病房全景图（public/ward-bg.png，虚拟场景非真实病区）
+   置于纸色高不透明度渐变遮罩之下：面板均为实底白卡，遮罩保证间隙区文字可读；
+   图片加载失败时回退纯纸色（background-color），不影响训练流程。 */
+.training-shell { width: min(100%, 1500px); margin: 0 auto; padding: 0 0 92px; min-height: 100svh; background-color: var(--paper); background-image: linear-gradient(rgba(247,251,248,.9), rgba(247,251,248,.93)), url('/ward-bg.png'); background-size: cover; background-position: center; background-repeat: no-repeat; }
 .training-head { position: sticky; top: 0; z-index: 45; background: rgba(250,253,251,.96); border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); }
 .training-toolbar { height: 62px; padding: 0 12px; display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 8px; }
 .training-title { min-width: 0; text-align: center; }
