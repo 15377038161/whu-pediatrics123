@@ -1,0 +1,38 @@
+.workspace { display: grid; gap: 24px; max-width: 1100px; }
+.heading h1 { margin-bottom: 8px; }
+.create { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.create label { flex: 1; min-width: min(220px, 100%); }
+.workspace label { display: grid; gap: 8px; font-size: 14px; font-weight: 600; }
+.workspace input, .workspace textarea, .workspace select { width: 100%; min-height: 44px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: white; color: var(--ink); font: inherit; }
+.workspace textarea { min-height: 88px; }
+.workspace input:focus-visible, .workspace textarea:focus-visible, .workspace select:focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 16px; }
+.card { padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: white; display: grid; gap: 16px; min-width: 0; }
+.card h2, .card h3, .card p { margin: 0; }
+.card p, .card small { color: var(--muted); font-size: 13px; }
+.bankCard { padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: white; display: grid; gap: 10px; text-align: left; color: var(--ink); cursor: pointer; font: inherit; min-width: 0; }
+.bankCard[aria-pressed='true'] { border-color: var(--pine); box-shadow: 0 0 0 1px var(--pine); }
+.bankCard small, .bankCard span { color: var(--muted); }
+.bankCard strong { overflow-wrap: anywhere; }
+.badge { display: inline-flex; align-self: start; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--line); }
+.badge[data-status='draft'] { color: var(--muted); }
+.badge[data-status='ready_for_review'] { color: #8a6d1f; border-color: #d9c58a; background: #fdf6e0; }
+.badge[data-status='published'] { color: var(--pine); border-color: var(--pine); background: var(--mint); }
+.badge[data-status='retired'] { color: #a4442f; border-color: #dcc3bc; background: #faf0ed; }
+.feedback { padding: 16px; background: var(--mint); border-radius: 12px; overflow-wrap: anywhere; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.metaGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 12px; }
+.item { display: grid; gap: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; }
+.item[aria-pressed='true'] { border-color: var(--pine); box-shadow: 0 0 0 1px var(--pine); }
+.item h3 { font-size: 15px; }
+.itemMeta { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.options { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.options li { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
+.options li[data-answer='true'] { border-color: var(--pine); background: var(--mint); font-weight: 600; }
+.itemList { display: grid; gap: 12px; }
+.editForm { display: grid; gap: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.table { overflow: auto; max-height: 320px; }
+.table table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+.table td, .table th { padding: 10px 8px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.gap { display: grid; gap: 10px; }
+@media (max-width: 599px) { .card, .bankCard { padding: 18px; } .create > button { width: 100%; } }

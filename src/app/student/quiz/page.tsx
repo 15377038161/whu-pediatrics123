@@ -1,8 +1,16 @@
 'use client';
 
+/**
+ * 学生题库页（阶段 F / AI 题库闭环）：
+ * - 题集练习（默认）：教师发布题集 → attempt 重练/续答/错题复盘（QuizBankPractice）；
+ * - 单题速练（legacy）：既有 43 题随机分发链路原样保留，与题集体系互不影响；
+ * - 两模式共用页面入口，学生可自由切换。
+ */
+
 import { useCallback, useEffect, useState } from 'react';
 import { BookOpenCheck, CircleCheck, CircleX, ListChecks, RefreshCw } from 'lucide-react';
 import { authedFetch } from '@/lib/authed-api';
+import { QuizBankPractice } from '@/components/quiz-bank-practice';
 
 interface QuizQuestion {
   id: string;
@@ -28,11 +36,13 @@ interface ReviewItem extends QuizQuestion {
   explanation: string | null;
 }
 
+type Mode = 'banks' | 'classic';
 type Phase = 'loading' | 'answering' | 'reviewing' | 'error';
 
 const DIFFICULTY_LABEL: Record<QuizQuestion['difficulty'], string> = { easy: '易', medium: '中', hard: '难' };
 
-export default function QuizPage() {
+/** 单题速练（legacy 43 题）：取题/判分/复盘链路原样保留。 */
+function QuizQuickPractice() {
   const [phase, setPhase] = useState<Phase>('loading');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [poolExhausted, setPoolExhausted] = useState(false);
@@ -44,7 +54,6 @@ export default function QuizPage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadQuestions = useCallback(async () => {
-    // 注：同步 setState 移至异步段（fetch 返回后），避免 effect 内同步置位触发级联渲染。
     try {
       const data = await authedFetch<{ questions: QuizQuestion[]; poolExhausted: boolean }>('/api/quiz/questions?count=5');
       setResult(null);
@@ -70,8 +79,8 @@ export default function QuizPage() {
     }
   }, []);
 
-  // 初始取题：与外部系统（服务端 API）同步属 effect 合法用途；
-  // loadQuestions 内所有 setState 均在 await 之后（异步段），无同步级联渲染。
+  // 初始取题：与外部系统（服务端 API）同步属 effect 合法用途；loadQuestions 内所有
+  // setState 均在 await 之后（异步段），无同步级联渲染（与旧版题库页同模式）。
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadQuestions(); }, [loadQuestions]);
 
@@ -107,10 +116,6 @@ export default function QuizPage() {
 
   return (
     <>
-      <p className="eyebrow">题库训练</p>
-      <h1 className="page-title">儿科单题速练</h1>
-      <p className="page-lead">题目随机分发、作答即判分；首次提交结果即锁定，解析在作答后展开，可在「错题复盘」中回顾历史记录。</p>
-
       <div className="quiz-toolbar">
         <button className="btn btn-secondary" type="button" onClick={() => void loadQuestions()}><RefreshCw size={14} /> 换一批题</button>
         <button className="btn btn-quiet" type="button" onClick={() => void loadReview()}><ListChecks size={14} /> 错题复盘{answeredCount > 0 ? `（${answeredCount} 已答 / ${wrongCount} 错）` : ''}</button>
@@ -123,7 +128,7 @@ export default function QuizPage() {
       )}
 
       {phase === 'answering' && poolExhausted && questions.length === 0 && (
-        <div className="empty-state"><BookOpenCheck /><p>题池已取完：你已完成当前全部可用题目。可进入「错题复盘」巩固，或等待教师扩充题库。</p></div>
+        <div className="empty-state"><BookOpenCheck /><p>题池已取完：你已完成当前全部可用题目。可回到「题集练习」继续，或在「错题复盘」中巩固。</p></div>
       )}
 
       {phase === 'answering' && question && (
@@ -187,6 +192,47 @@ export default function QuizPage() {
           <button className="btn btn-primary" type="button" onClick={() => void loadQuestions()}>继续答题</button>
         </section>
       )}
+    </>
+  );
+}
+
+export default function QuizPage() {
+  const [mode, setMode] = useState<Mode>('banks');
+
+  return (
+    <>
+      <p className="eyebrow">题库训练</p>
+      <h1 className="page-title">儿科题库练习</h1>
+      <p className="page-lead">
+        {mode === 'banks'
+          ? '练习老师发布的题集：按冻结版本作答，首次提交结果即锁定，解析在作答后展开；支持中断续答、重练与错题复盘。'
+          : '经典单题速练：题目随机分发、作答即判分；首次提交结果即锁定，解析在作答后展开。'}
+      </p>
+
+      <div className="quiz-toolbar" role="tablist" aria-label="练习模式">
+        <button
+          type="button"
+          className="btn btn-secondary"
+          role="tab"
+          aria-selected={mode === 'banks'}
+          data-active={mode === 'banks' || undefined}
+          onClick={() => setMode('banks')}
+        >
+          <BookOpenCheck size={14} /> 题集练习
+        </button>
+        <button
+          type="button"
+          className="btn btn-quiet"
+          role="tab"
+          aria-selected={mode === 'classic'}
+          data-active={mode === 'classic' || undefined}
+          onClick={() => setMode('classic')}
+        >
+          <ListChecks size={14} /> 单题速练
+        </button>
+      </div>
+
+      {mode === 'banks' ? <QuizBankPractice /> : <QuizQuickPractice />}
     </>
   );
 }

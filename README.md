@@ -60,6 +60,7 @@
 - 真实 API 链路修复（2026-10-12 第二轮）：53 病例纯内存引擎验收后，真实 DB 链路下 finish 500 的两个根因已修复——① `ability_profiles`/`sync_outbox` 无学生直写策略（RLS 42501，此前预览内存模式掩盖），新增受控 RPC `report_side_effects_save`（迁移 `20261012100000`，校验登录+会话归属+完成态+报告已合法写入，不放宽 RLS）；② 新注册学生无 `profiles` 行导致外键失败，RPC 升级签名自动补建（迁移 `20261012110000`，幂等、角色固定 student、不触碰教师白名单）；废弃 4 参数旧重载已清理（迁移 `20261012120000`）。真实学生 A/B 账号全 HTTP 栈验收 `pnpm tsx scripts/verify-case53-real-api.ts` **17/17 通过**（7 代表病例全链路+隔离+恢复）；重启持久化 `scripts/verify-restart-persistence.ts` 两阶段两进程验证 **PERSISTENCE_PASS**。详见 `验收记录.md`。
 - 缺口收口与角色 LLM 真实链路验收（2026-10-16，授权收口阶段，不发布不 push 不新账号不扩权）：①迁移顺序收口（aa081eb）——新增 `20261016000000` 重申四个辅助检查 RPC 安全版（时间戳 > `20261015100000`，防从零按时间戳重放时旧版 get_facts 覆盖修复回到泄露形态），静态重放测试 7/7 + 线上函数/权限实证（get_facts 无条件剥离 tests、get_test 已下单验证、record 幂等、白名单 label；anon/public=false、authenticated=true）；②503 路径注入失败修复（f7b7b9f）——record 成功后 get 返回 null（守卫竞态/数据异常）不再落入「资料未提供」（抛 TEST_RESULT_UNAVAILABLE 503 可重试，不伪记资料缺失/不解锁评分），重试幂等（orderedTests 去重），预览内存模式语义保留，注入测试 7/7；③shouldUseModel 对齐（52507d0）——role-agent 模型路径判定复用 coze-ai 统一凭据链 `hasAICredentials()`（COZE_AI_* 覆盖 > 平台 CODER_CODING_* > 旧 COZE_WORKLOAD_*），修复平台凭据漏检恒走 deterministic，fixture 关闭与 model_fallback 降级保留，对齐测试 7/7；④角色 LLM 真实链路（7d72fc5）——默认模型名对齐平台可用列表（`doubao-seed-1-8-251228`，旧名 doubao-seed-2-0-pro-260215 平台不存在探针实证 400）；问诊/干预 stage 仅前进不回退（plan 后继续问诊 409 修复，4 处无条件 stage='history' 改 advanceToHistoryStage）；真实验收 22/22（问哪答哪 4/4、不复述/不讲课/年龄匹配违规 0、单聊天流 4/4、计划后问诊不误切沟通、落库 `execution={model:5}` 无 deterministic——角色回复真实走平台 LLM）。详见 `验收记录.md`。
 - 沙箱代理跳转说明：重定向 Location 必须是对外 `https` 绝对 URL（`getRealOrigin` 优先读平台注入的 `CODER_PROJECTS_DOMAIN`），自定义 server 会在出口统一补全相对 Location。禁止回退到网关→容器内部链路的 `x-forwarded-proto`（http），否则浏览器从 https 跟随 http 跳转会触发网关代理前缀双层拼接导致 404。
+- AI 题库闭环（2026-10-22，阶段 F / D09）：教师 AI 按主题生成题集草稿→逐题审核编辑→发布（own_class 默认 / platform 需项目管理员；发布原子冻结版本快照，教师后续编辑不影响既有批次）→学生题集练习（续答优先+同一题集一次进行中、首次提交终局幂等判分、作答前不返回答案解析）→错题复盘→练习批次并入统一报告列表（非临床评分分区）。五张新表+六个受控 RPC；同步收紧既有宽泛教师写策略（quiz_questions/quiz_assignments 改教师只读，legacy 43 题由项目管理员维护）；legacy 单题速练链路原样保留。使用指南与 API 见 [QUESTION_BANK.md](docs/QUESTION_BANK.md)，验收状态见 `验收记录.md` 第三十节。
 
 ## 本地运行
 
@@ -147,3 +148,7 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 ### 班级与教师权限
 
 教师端新增“班级管理”，支持创建班级、Excel 复制粘贴／CSV 名单预览导入和入班审核；学生首页新增“我的班级”。管理员可核对具体账号后按 cxid 开通教师，普通教师仅可见本班学情。首次管理员需通过平台管理通道设置。部署迁移、接口、可信编号自动分班边界与验收方法见 [CLASSROOM_MANAGEMENT.md](docs/CLASSROOM_MANAGEMENT.md)。
+
+### AI 题库闭环（2026-10-22）
+
+教师端新增「AI 题库」（`/teacher/question-banks`）：AI 按主题生成题集草稿（一律 draft 态，不跳过审核），教师逐题审核编辑后发布——发布原子冻结版本快照（教师后续编辑不影响既有批次），可见范围默认本班、全平台需项目管理员。学生端 `/student/quiz` 双模式：题集练习（续答优先、同一题集一次进行中、首次提交终局幂等判分、作答前不返回答案解析）+ 错题复盘；练习批次并入 `/student/reports` 统一报告列表（非临床评分分区）。既有 43 题单题速练保留；同步收紧教师对 legacy 题库的直写权限。迁移、RPC、API 与验收边界见 [QUESTION_BANK.md](docs/QUESTION_BANK.md)。
