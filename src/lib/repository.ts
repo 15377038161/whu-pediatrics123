@@ -1,4 +1,5 @@
 import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, SessionState, SyncEventV1, TrainingReport, UserContext } from '@/domain/agent';
+import { isUnscoredReport } from '@/domain/training-rubric';
 import { createInitialSession, refreshSourceSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
 import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client';
@@ -454,7 +455,9 @@ export class AgentRepository {
           studentNo: user.studentNo,
           chaoxingUid: null,
           avatarUrl: null,
-          latestScore: latest?.totalScore ?? [86, 78, 92][index] ?? null,
+          // C-观察与报告-04：最近一份报告若全部计分项均不可评价（未评分），latestScore 记 null
+          // （总分 0 不代表能力 0 分），教师端平均分/建议关注统计不以 0 分计入。
+          latestScore: latest ? (isUnscoredReport(latest) ? null : latest.totalScore) : ([86, 78, 92][index] ?? null),
           latestScoreBasis: latest?.scoreBasis ?? 'clinical',
           latestMode: latest?.mode ?? 'osce',
           reportCount: reports.length || 1,
@@ -495,7 +498,9 @@ export class AgentRepository {
         studentNo: profile.student_no,
         chaoxingUid: profile.chaoxing_uid ?? null,
         avatarUrl: chaoxingAvatarUrl(profile.chaoxing_uid),
-        latestScore: latest?.total_score ?? null,
+        // C-观察与报告-04：最近一份报告若全部计分项均不可评价（未评分），latestScore 记 null
+        // （总分 0 不代表能力 0 分），教师端平均分/建议关注统计不以 0 分计入。
+        latestScore: latest ? (isUnscoredReport(latest.data as TrainingReport) ? null : latest.total_score) : null,
         latestScoreBasis: (latest?.data as TrainingReport | undefined)?.scoreBasis ?? 'clinical',
         latestMode: (latest?.mode as SessionMode | undefined) ?? null,
         reportCount: own.length,

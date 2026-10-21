@@ -25,6 +25,8 @@ function snapshotSubmissions(session: SessionState): NonNullable<TrainingReport[
     plan: session.plan ? { ...session.plan } : null,
     communication: session.communication ?? null,
     historySummary: session.historySummary ?? null,
+    // C-观察与报告-04：查体专项观察/解释提交原文随快照冻结（历史报告无此字段按未提交展示）。
+    examObservation: session.examObservation ? { ...session.examObservation } : null,
   };
 }
 
@@ -317,15 +319,23 @@ function evaluateFocusedItem(session: SessionState, item: RubricItem): ItemEvalu
       };
     }
     case 'EX_FINDINGS': {
-      // C-评分补验-03（量表 v4）：删除直改 decision 的核对计分支路——查体专项生产路径无
-      // 观察/推理提交通道（allowedActions 仅 EXAM_ACTION/NAVIGATE_STAGE，服务端 validateEventStage
-      // 门控 SUBMIT_DECISION 拒绝），该支路仅测试直改数据可触达，保留等于「绕过门控反而可得分」
-      // 的伪业务通过路径。按真实门控本项恒记无法评价（0 分）、不进适用满分；
-      // 观察/解释提交通道与可靠核对判据缺失记为 C 待办，待教师结合查体记录复核。
+      // C-观察与报告-04（量表 v5）：观察/解释提交通道已开放（SUBMIT_EXAM_OBSERVATION，服务端
+      // 校验归属/版本/已解锁查体证据后保存），但结果识别仍无专业审核判据——机器无法可靠判定
+      // 学生观察与病例真实所见是否一致（表述真实性/长距离否定不可区分），本项恒记无法评价（0 分）、
+      // 不进适用满分；提交原文冻结在报告快照并记过程反馈（EX_OBSERVATION 事件可回放），
+      // 待教师结合查体记录与提交原文复核。不设关键词命中计分或打折分支路。
+      if (session.examObservation) {
+        return {
+          status: 'not_assessable',
+          score: 0,
+          detail: `已收到查体观察/解释提交（${session.examObservation.interpretation ? '含观察解释' : '未见观察解释'}，原文保留在提交快照）：结果识别缺少专业审核判据，本项记无法评价不计分，待教师结合查体记录与提交原文复核。`,
+          evidenceCodes: ['EX_OBSERVATION'],
+        };
+      }
       return {
         status: 'not_assessable',
         score: 0,
-        detail: '查体专项未开放观察/推理提交入口（服务端事件门控），查体操作点击仅为过程证据，结果识别恒无法评价、不计入适用满分；观察/解释提交通道与可靠核对判据缺失为已知待办，待教师结合查体记录复核。',
+        detail: '查体专项未提交观察/解释（提交通道已开放，服务端校验已解锁查体证据后保存），结果识别缺少可评价提交与专业审核判据，本项记无法评价不计分，待教师结合查体记录复核。',
         evidenceCodes: [],
       };
     }
@@ -420,7 +430,16 @@ function buildRubricReport(session: SessionState, reportId: string, rubric: Rubr
   }
   const totalScore = Object.values(abilities).reduce((total, value) => total + value, 0);
   const assessableStatuses = ['achieved', 'partial', 'missing', 'incorrect'] as const;
-  const notAssessableCount = rubric.items.filter((_, index) => !assessableStatuses.includes(evidence[index].status as (typeof assessableStatuses)[number])).length;
+  const isAssessable = (status: RubricItemStatus | undefined): boolean => status !== undefined && assessableStatuses.includes(status as (typeof assessableStatuses)[number]);
+  const notAssessableCount = rubric.items.filter((_, index) => !isAssessable(evidence[index].status)).length;
+  // C-观察与报告-04：可评价满分按适用计分项满分之和持久化（与前端展示同源）；
+  // 全部计分项均无法评价（not_assessable/not_applicable）时报告记「未评分」——总分 0 不代表
+  // 能力 0 分，不得进入平均分/最好成绩等趋势统计；原因随快照持久化，旧报告不重算。
+  const assessableMaxScore = rubric.items.reduce((sum, item, index) => sum + (isAssessable(evidence[index].status) ? item.maxScore : 0), 0);
+  const unscored = rubric.items.every((_, index) => !isAssessable(evidence[index].status));
+  const unscoredReason = unscored
+    ? `「${rubric.name}」全部评分项均无法机器可靠评价（缺少可评价判据），本报告记「未评分」，总分 0 不代表能力 0 分，不计入平均分/最好成绩等趋势统计，待教师结合提交原文复核。`
+    : undefined;
   const strengths = rubric.items.filter((_, index) => evidence[index].status === 'achieved').slice(0, 3).map((item) => item.label);
   // C-评分补验-01：无法评价/不适用项缺证据不等于待改进，不列为「重点改进」，在推荐语中说明待复核。
   const improvements = rubric.items
@@ -462,6 +481,8 @@ function buildRubricReport(session: SessionState, reportId: string, rubric: Rubr
     rubricId: rubric.id,
     rubricVersion: rubric.version,
     evaluationBasis: 'clinical_rubric',
+    assessableMaxScore,
+    ...(unscored ? { unscored, unscoredReason } : {}),
     studentSubmissions: snapshotSubmissions(session),
     createdAt: new Date().toISOString(),
   };
@@ -494,6 +515,8 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
     scoreBasis: 'process',
     ...(session.practiceFocus ? { practiceFocus: session.practiceFocus } : {}),
     evaluationBasis: 'process_completion',
+    // C-观察与报告-04：过程分报告按六环节满分之和持久化可评价满分（与前端展示同源）。
+    assessableMaxScore: checks.reduce((sum, check) => sum + check.max, 0),
     studentSubmissions: snapshotSubmissions(session),
     status: 'pending_review', createdAt: new Date().toISOString() };
 }

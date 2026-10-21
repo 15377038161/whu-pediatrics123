@@ -23,7 +23,7 @@ export function TeacherDashboard({ students, referenceTime, caseCatalog }: { stu
       </section>
       <section className="teacher-metrics" aria-label="班级概览">
         <div><span className="metric-icon"><Users /></span><p>授权学生</p><strong>{students.length}</strong><small>当前课程群组</small></div>
-        <div><span className="metric-icon"><Award /></span><p>最近平均分</p><strong>{average ?? '—'}</strong><small>{scored.length} 人已有报告</small></div>
+        <div><span className="metric-icon"><Award /></span><p>最近平均分</p><strong>{average ?? '—'}</strong><small>{scored.length} 人已有评分报告（未评分报告不计入）</small></div>
         <div><span className="metric-icon"><Activity /></span><p>近 7 日活跃</p><strong>{activeThisWeek}</strong><small>有训练记录</small></div>
         <div data-alert={needsAttention > 0}><span className="metric-icon"><TriangleAlert /></span><p>建议关注</p><strong>{needsAttention}</strong><small>最近得分低于 80</small></div>
       </section>

@@ -55,6 +55,9 @@ export const agentTurnSchema = z.object({
     }),
     z.object({ type: z.literal('SUBMIT_DECISION'), data: z.object({ diagnosis: z.string().trim().min(2).max(200), summary: z.string().trim().min(10).max(1500), diagnosisBasis: z.string().trim().min(10).max(1500), differentials: z.string().trim().max(800) }) }),
     z.object({ type: z.literal('SUBMIT_HISTORY_SUMMARY'), data: z.object({ summary: z.string().trim().min(10).max(1500) }) }),
+    // 查体专项观察/解释提交（C-观察与报告-04）：观察所见必填（服务端另校验已解锁查体证据与
+    // 配置版本），解释可选；strict 防字段混用，客户端不自报得分或解锁事实。
+    z.object({ type: z.literal('SUBMIT_EXAM_OBSERVATION'), data: z.object({ findings: z.string().trim().min(10).max(1500), interpretation: z.string().trim().max(1500).optional() }).strict() }),
     z.object({ type: z.literal('SUBMIT_PLAN'), data: z.object({ priority: z.string().trim().min(2).max(300), detail: z.string().trim().min(5).max(1500) }) }),
     z.object({ type: z.literal('SEND_COMMUNICATION'), data: z.object({ text: z.string().trim().min(2).max(1000), speech: eventSpeechMetaSchema.optional() }).strict() }),
     z.object({ type: z.literal('NAVIGATE_STAGE'), data: z.object({ stage }) }),

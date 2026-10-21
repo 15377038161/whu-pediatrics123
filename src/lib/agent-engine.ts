@@ -241,6 +241,8 @@ function validateEventStage(session: SessionState, event: AgentEvent): boolean {
       return currentIndex >= order.indexOf('plan');
     case 'SUBMIT_HISTORY_SUMMARY':
       return false; // 病史采集专项专用事件：OSCE 模拟站不开放，服务端拒绝
+    case 'SUBMIT_EXAM_OBSERVATION':
+      return false; // 查体专项专用事件：OSCE 模拟站不开放，服务端拒绝
     case 'NAVIGATE_STAGE':
     case 'FINISH_SESSION':
       return true; // NAVIGATE_STAGE 由 validateStageNavigation 单独校验；FINISH 走完成门控
@@ -655,6 +657,34 @@ function handleHistorySummary(session: SessionState, summary: string, clientEven
   };
 }
 
+/** 查体专项观察/解释提交（C-观察与报告-04）：服务端校验专项归属、已解锁查体证据与配置版本后
+ *  保存真实提交——客户端不自报得分或解锁事实；无专业审核判据时不做结果识别评分，仅保存原文
+ *  并记过程反馈（EX_FINDINGS 恒无法评价，待教师结合查体记录复核）。可重复提交修订（每次新
+ *  幂等键覆盖 examObservation，事件链保留全部提交记录供报告回放）。 */
+function handleExamObservation(session: SessionState, data: Extract<AgentEvent, { type: 'SUBMIT_EXAM_OBSERVATION' }>['data'], clientEventId: string): AgentTurnResult {
+  // 归属门控（纵深防御）：仅查体专项 practice 会话可提交；跨专项/OSCE 已在 validateEventStage
+  // 按 allowedActions 白名单拒绝，此处再核一次防直调引擎绕过门控。
+  if (session.mode !== 'practice' || session.practiceFocus !== 'exam') throw new Error('EXAM_OBSERVATION_FORBIDDEN');
+  const scenario = getPracticeScenario('exam');
+  if (!scenario) throw new Error('EXAM_OBSERVATION_FORBIDDEN');
+  // 配置版本核对：会话创建时冻结的 scenarioVersion 与当前配置不一致（旧配置会话）时拒绝——
+  // 旧配置未开放本提交通道，不借新配置解释旧会话（错误版本负例）。
+  if (session.scenarioVersion !== undefined && session.scenarioVersion !== scenario.configVersion) throw new Error('SCENARIO_VERSION_MISMATCH');
+  // 已解锁查体证据核对：观察提交必须锚定本会话真实解锁的查体结果（EX_ 前缀且非 provided），
+  // 未完成任何有效查体操作时拒绝（防止凭空提交观察；EX_PREP 属解锁证据亦计入）。
+  const unlockedExamEvidence = session.unlockedEvidence.filter((code) => code.startsWith('EX_') && code !== 'EX_PROVIDED');
+  if (unlockedExamEvidence.length === 0) throw new Error('EXAM_EVIDENCE_REQUIRED');
+  session.examObservation = { findings: data.findings, interpretation: data.interpretation?.trim() ? data.interpretation.trim() : null, submittedAt: now() };
+  session.events.push(clinicalEvent(clientEventId, 'SUBMIT_EXAM_OBSERVATION', 'exam', `提交查体观察与解释（锚定 ${unlockedExamEvidence.length} 项已解锁查体证据）`, null, ['EX_OBSERVATION']));
+  session.updatedAt = now();
+  return {
+    session,
+    newMessages: [],
+    feedback: feedbackFor(session, '观察与解释已保存，可修订重交。结果识别不做机器计分，提交原文将保留在报告快照，待教师结合查体记录复核。'),
+    trace: [trace('病例状态', '保存查体观察/解释提交（专项过程证据，不做机器计分）')],
+  };
+}
+
 function handlePlan(session: SessionState, data: Extract<AgentEvent, { type: 'SUBMIT_PLAN' }>['data'], clientEventId: string): AgentTurnResult {
   session.plan = data;
   if (getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts !== undefined) {
@@ -741,6 +771,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
     case 'ORDER_TEST': return handleTest(session, event.data, clientEventId, options?.accessToken);
     case 'SUBMIT_DECISION': return handleDecision(session, event.data, clientEventId);
     case 'SUBMIT_HISTORY_SUMMARY': return handleHistorySummary(session, event.data.summary, clientEventId);
+    case 'SUBMIT_EXAM_OBSERVATION': return handleExamObservation(session, event.data, clientEventId);
     case 'SUBMIT_PLAN': return handlePlan(session, event.data, clientEventId);
     case 'SEND_COMMUNICATION': return handleCommunication(session, event.data.text, clientEventId, event.data.speech);
     case 'NAVIGATE_STAGE': {

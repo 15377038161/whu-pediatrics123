@@ -93,6 +93,9 @@ export interface SessionState {
   providedEvidence?: string[];
   /** 病史采集专项的最终提交（方案 5.1 结束条件）：报告快照保留原始提交文本。 */
   historySummary?: string | null;
+  /** 查体专项的观察/解释提交（C-观察与报告-04）：服务端校验专项归属、已解锁查体证据与
+   *  配置版本后写入，客户端不自报得分或解锁事实；可重复提交修订，报告快照保留最终提交原文。 */
+  examObservation?: { findings: string; interpretation: string | null; submittedAt: string } | null;
   stage: Stage;
   /** 回看展示阶段（非 OSCE 专用）：查看已完成阶段/返回会话中心时记录 UI 展示阶段，
    *  不修改业务阶段 stage（DB 防回退触发器语义保持）；前进导航时清除。 */
@@ -169,6 +172,7 @@ export type AgentEvent =
   | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
   | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string } }
   | { type: 'SUBMIT_HISTORY_SUMMARY'; data: { summary: string } }
+  | { type: 'SUBMIT_EXAM_OBSERVATION'; data: { findings: string; interpretation?: string } }
   | { type: 'SUBMIT_PLAN'; data: { priority: string; detail: string } }
   | { type: 'SEND_COMMUNICATION'; data: { text: string; speech?: EventSpeechMeta } }
   | { type: 'NAVIGATE_STAGE'; data: { stage: Stage } }
@@ -251,12 +255,23 @@ export interface TrainingReport {
   /** 成绩口径（方案 4.3）：clinical_rubric/process_completion/quiz_accuracy/unscored，
    *  与旧 scoreBasis 有迁移映射（clinical→clinical_rubric，process→process_completion）。 */
   evaluationBasis?: 'clinical_rubric' | 'process_completion' | 'quiz_accuracy' | 'unscored';
+  /** 可评价满分（C-观察与报告-04）：生成时按适用计分项满分之和持久化（与前端展示同源），
+   *  无法评价/不适用项不计入；历史报告无此字段时前端按量表快照推导展示。 */
+  assessableMaxScore?: number;
+  /** 未评分标识（C-观察与报告-04）：全部计分项均无法机器评价（not_assessable/not_applicable）
+   *  时为 true——总分 0 不代表能力 0 分，不得进入平均分/最好成绩等趋势统计；
+   *  历史报告无此字段时由 isUnscoredReport 按快照 evidence 状态推导（不重算分数）。 */
+  unscored?: boolean;
+  /** 未评分原因（C-观察与报告-04）：缺少判据的具体说明，随报告快照持久化。 */
+  unscoredReason?: string;
   /** 原始提交快照（方案 4.6）：生成时冻结学生的全部最终提交原文，不追溯重写历史报告。 */
   studentSubmissions?: {
     decision: SessionState['decision'];
     plan: SessionState['plan'];
     communication: string | null;
     historySummary: string | null;
+    /** 查体专项观察/解释提交（C-观察与报告-04）：历史报告无此字段时显示未提交。 */
+    examObservation: SessionState['examObservation'];
   };
   createdAt: string;
 }

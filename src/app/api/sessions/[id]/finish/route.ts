@@ -5,6 +5,7 @@ import { runAgentTurn } from '@/lib/agent-engine';
 import { AgentRepository } from '@/lib/repository';
 import { requireAuth } from '@/lib/request-auth';
 import { buildReport } from '@/lib/scoring';
+import { isUnscoredReport } from '@/domain/training-rubric';
 import { restoreCaseSnapshotReference } from '@/lib/case-snapshot';
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -36,7 +37,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       case: { caseId: session.caseId, caseVersion: session.caseVersion, sessionId: session.id, mode: session.mode, stage: 'report' },
       studentInput: session.decision?.summary ?? null,
       agentFeedback: report.recommendation,
-      score: report.totalScore,
+      // C-观察与报告-04：全部计分项均不可评价的报告记「未评分」，同步事件 score 记 null
+      // （总分 0 不代表能力 0 分，下游统计不得以 0 分计入）。
+      score: isUnscoredReport(report) ? null : report.totalScore,
       evidenceSummary: report.evidence.map((item) => `${item.label}:${item.score}/${item.maxScore}`).join('；'),
       finalReport: JSON.stringify(report),
       submittedAt: report.createdAt,

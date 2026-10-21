@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createInitialSession, runAgentTurn } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
-import { findRubricForReport } from '@/domain/training-rubric';
+import { findRubricForReport, isUnscoredReport, unscoredReasonForDisplay } from '@/domain/training-rubric';
+import { agentTurnSchema } from '@/lib/validation';
 
 test('报告总分严格由六维证据分项相加得到', () => {
   const session = createInitialSession('student-1', 'guided');
@@ -23,6 +24,10 @@ test('报告总分严格由六维证据分项相加得到', () => {
   assert.equal(communication?.score, 0, '下一步表述仅过程反馈，不伪装能力分');
   assert.equal(report.abilities.communication, 0, '沟通维度不得能力分');
   assert.ok(communication?.detail.includes('过程反馈'), '过程反馈写入说明待教师复核');
+  // C-观察与报告-04：可评价满分持久化（与前端展示同源）——沟通项排除出计分与适用满分
+  assert.equal(report.assessableMaxScore, 90, '可评价满分=适用计分项满分之和（排除无法评价的沟通项 10 分）');
+  assert.equal(report.unscored, undefined, '未评分标记仅在记未评分时持久化');
+  assert.equal(isUnscoredReport(report), false, '存在可评价项不记未评分');
 });
 
 test('缺少真实查体证据时不得获得肺部查体和低氧分', () => {
@@ -81,16 +86,19 @@ test('查体专项负例：仅操作点击不足以评价结果识别，EX_FINDI
   session.unlockedEvidence = ['EX_PREP', 'EX_RESP', 'EX_SPO2', 'EX_TEMP', 'EX_MOUTH'];
   const report = buildReport(session, 'report-exam-clicks');
   assert.equal(report.rubricId, 'rubric-focused-exam');
-  assert.equal(report.rubricVersion, 4);
+  // C-观察与报告-04（量表 v5）：提交通道已开放但未提交时，点击仅为过程证据，结果识别无法评价
+  assert.equal(report.rubricVersion, 5, '查体专项量表升级 v5');
   const findings = report.evidence.find((item) => item.code === 'RUBRIC_EX_FINDINGS');
-  assert.equal(findings?.status, 'not_assessable', '查体专项未开放观察提交入口，点击仅为过程证据，结果识别无法评价');
+  assert.equal(findings?.status, 'not_assessable', '未提交观察时结果识别记无法评价（提交通道已开放，无专业审核判据）');
   assert.equal(findings?.score, 0);
+  assert.equal(report.assessableMaxScore, 80, '可评价满分排除无法评价的结果识别项（20 分）');
   assert.equal(report.totalScore, Object.values(report.abilities).reduce((sum, value) => sum + value, 0), '总分=分项之和（不含无法评价项分）');
 });
 
 test('查体专项提交入口实证：SUBMIT_DECISION 不在 allowedActions，服务端拒绝', async () => {
-  // 评分层 EX_FINDINGS「恒不可评价」的前提实证：查体专项无观察/诊断提交通道，
-  // 学生不能经 API 直接提交 decision（服务端事件门控，不依赖前端隐藏）。
+  // 评分层 EX_FINDINGS「恒不可评价」的前提实证（v5）：查体专项已开放观察/解释提交
+  // （SUBMIT_EXAM_OBSERVATION，见下方正例链），但诊断通道仍关闭——学生不能经 API 直接
+  // 提交 decision（服务端事件门控，不依赖前端隐藏）；观察提交不做结果识别计分。
   const session = createInitialSession('student-1', 'practice', undefined, 'exam');
   await assert.rejects(
     () => runAgentTurn(session, { type: 'SUBMIT_DECISION', data: { diagnosis: '肺炎', summary: '发热咳嗽伴气促', diagnosisBasis: '听诊呼吸音粗', differentials: '' } }, 'exam-decision-rejected'),
@@ -103,8 +111,8 @@ test('查体专项负例：直改 decision（异常路径）也不得分，EX_FI
   // C-评分补验-03：删除直改 decision 的核对计分支路（原「一致 achieved / 否定 incorrect」
   // 三分支测试为伪业务通过路径——生产路径无观察/推理提交通道，服务端门控见上方实证测试，
   // 该支路仅测试直改数据可触达，保留等于「绕过门控反而可得分」）。按真实门控，
-  // 无论会话是否存在 decision，本项恒记无法评价；观察/解释提交通道与可靠核对判据
-  // 缺失记为 C 待办，待教师结合查体记录复核。
+  // 无论会话是否存在 decision 或观察提交，本项恒记无法评价；观察/解释提交已开放（v5）
+  // 但缺少专业审核判据，机器不对提交文本做结果识别计分，待教师结合查体记录与提交原文复核。
   const tampered = createInitialSession('student-1', 'practice', undefined, 'exam');
   tampered.unlockedEvidence = ['EX_PREP', 'EX_RESP', 'EX_SPO2'];
   tampered.events.push({
@@ -204,11 +212,164 @@ test('历史量表版本冻结注册表：按 id+version 精确匹配，不回�
   const v3Findings = findRubricForReport({ rubricId: 'rubric-focused-exam', rubricVersion: 3 })?.items.find((item) => item.itemId === 'EX_FINDINGS');
   assert.ok(v3Findings?.evidenceRule.includes('可靠核对'), 'exam v3 冻结文本保留防御核对规则原文');
   assert.equal(findRubricForReport({ rubricId: 'rubric-focused-communication', rubricVersion: 4 })?.version, 4, '沟通专项 v4 当前版本精确命中');
-  assert.equal(findRubricForReport({ rubricId: 'rubric-focused-exam', rubricVersion: 4 })?.version, 4, '查体专项 v4 当前版本精确命中');
+  assert.equal(findRubricForReport({ rubricId: 'rubric-focused-exam', rubricVersion: 5 })?.version, 5, '查体专项 v5 当前版本精确命中');
+  const v4Findings = findRubricForReport({ rubricId: 'rubric-focused-exam', rubricVersion: 4 })?.items.find((item) => item.itemId === 'EX_FINDINGS');
+  assert.ok(v4Findings?.evidenceRule.includes('未开放观察/推理提交入口'), 'exam v4 冻结文本不套用 v5 提交已开口径');
   const v2Findings = findRubricForReport({ rubricId: 'rubric-focused-exam', rubricVersion: 2 })?.items.find((item) => item.itemId === 'EX_FINDINGS');
   assert.ok(v2Findings?.evidenceRule.includes('≥2 项'), 'exam v2 规则文本冻结，不套用新解释');
   assert.equal(findRubricForReport({ rubricId: 'rubric-focused-communication', rubricVersion: 1 })?.version, 1);
   assert.equal(findRubricForReport({ rubricId: 'rubric-focused-communication', rubricVersion: 2 })?.version, 2);
   assert.equal(findRubricForReport({ rubricId: 'rubric-clinical-flagship', rubricVersion: 99 }), undefined, '未存档版本明确缺失，不回退当前量表');
   assert.equal(findRubricForReport({}), undefined, '无量表元数据的历史报告返回 undefined（展示层降级）');
+});
+
+// C-观察与报告-04 回归：查体专项观察/解释提交链（真实引擎事件入口，客户端不自报得分或解锁事实）。
+test('查体观察提交正例：真实引擎入口解锁查体证据后保存提交，修订/幂等与快照回放', async () => {
+  const session = createInitialSession('student-1', 'practice', undefined, 'exam');
+  assert.equal(session.scenarioVersion, 5, '会话创建时冻结配置版本');
+  // 真实事件解锁查体证据（不直改 unlockedEvidence）
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'obs-prep');
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'obs-lung');
+  assert.ok(session.unlockedEvidence.includes('EX_PREP'));
+  assert.ok(session.unlockedEvidence.includes('EX_RESP'));
+  const submitted = await runAgentTurn(
+    session,
+    { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '双肺呼吸音对称，右下肺可闻及细湿啰音。', interpretation: '局部湿啰音提示肺实质病变可能。' } },
+    'obs-submit-1',
+  );
+  assert.equal(submitted.session.examObservation?.findings, '双肺呼吸音对称，右下肺可闻及细湿啰音。');
+  assert.equal(submitted.session.examObservation?.interpretation, '局部湿啰音提示肺实质病变可能。');
+  assert.ok(submitted.session.examObservation?.submittedAt, '提交时间随快照保存');
+  assert.equal(submitted.session.events.filter((event) => event.type === 'SUBMIT_EXAM_OBSERVATION').length, 1, '提交事件入事件链');
+  // 修订重交：新幂等键覆盖 examObservation，事件链保留全部提交记录
+  const revised = await runAgentTurn(
+    submitted.session,
+    { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '修订：右下肺细湿啰音，双肺呼吸音对称，无哮鸣音。' } },
+    'obs-submit-2',
+  );
+  assert.equal(revised.session.examObservation?.findings, '修订：右下肺细湿啰音，双肺呼吸音对称，无哮鸣音。');
+  assert.equal(revised.session.examObservation?.interpretation, null, '重交未带解释时保存为空');
+  assert.equal(revised.session.events.filter((event) => event.type === 'SUBMIT_EXAM_OBSERVATION').length, 2, '事件链保留全部提交记录');
+  // 幂等：重复幂等键忽略，不覆盖已保存提交
+  const duplicate = await runAgentTurn(
+    revised.session,
+    { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '重复事件不得覆盖已保存提交。' } },
+    'obs-submit-2',
+  );
+  assert.equal(duplicate.session.examObservation?.findings, '修订：右下肺细湿啰音，双肺呼吸音对称，无哮鸣音。');
+  assert.equal(duplicate.session.events.filter((event) => event.type === 'SUBMIT_EXAM_OBSERVATION').length, 2, '幂等键重复不加事件');
+  // 报告回放：最终提交冻结进快照，EX_FINDINGS 恒无法评价但证据可回放
+  const report = buildReport(revised.session, 'report-exam-observation');
+  assert.equal(report.rubricVersion, 5);
+  assert.equal(report.studentSubmissions?.examObservation?.findings, '修订：右下肺细湿啰音，双肺呼吸音对称，无哮鸣音。');
+  const findings = report.evidence.find((item) => item.code === 'RUBRIC_EX_FINDINGS');
+  assert.equal(findings?.status, 'not_assessable', '无专业审核判据，已提交仍恒无法评价');
+  assert.equal(findings?.score, 0);
+  assert.ok(findings?.detail.includes('已收到查体观察/解释提交'), '提交事实写入过程反馈');
+  assert.ok((findings?.eventIds.length ?? 0) >= 1, 'EX_FINDINGS 关联提交事件可回放');
+  assert.ok(!report.improvements.includes('结果识别'), '无法评价项不列为重点改进');
+  assert.equal(report.assessableMaxScore, 80, 'EX_FINDINGS 排除出可评价满分');
+  assert.equal(report.unscored, undefined, '未评分标记仅在记未评分时持久化');
+  assert.equal(isUnscoredReport(report), false, '存在可评价项不记未评分');
+});
+
+test('查体观察提交负例：未完成任何查体操作时拒绝（EXAM_EVIDENCE_REQUIRED）', async () => {
+  const session = createInitialSession('student-1', 'practice', undefined, 'exam');
+  // provided 病史不算已解锁查体证据：凭空观察提交被服务端拒绝
+  assert.ok(!session.unlockedEvidence.some((code) => code.startsWith('EX_')));
+  await assert.rejects(
+    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '未做任何查体就编造观察结果。' } }, 'obs-no-evidence'),
+    /EXAM_EVIDENCE_REQUIRED/,
+  );
+  assert.ok(!session.examObservation, '拒绝后不保存观察提交');
+  assert.ok(!session.events.some((event) => event.type === 'SUBMIT_EXAM_OBSERVATION'), '拒绝后无提交事件');
+});
+
+test('查体观察提交负例：旧配置会话（scenarioVersion 不一致）拒绝（SCENARIO_VERSION_MISMATCH）', async () => {
+  const session = createInitialSession('student-1', 'practice', undefined, 'exam');
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'ver-prep');
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'ver-lung');
+  session.scenarioVersion = 4; // 旧配置会话（v4 未开放提交通道）：不借新配置解释旧会话
+  await assert.rejects(
+    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '旧配置会话提交观察内容。' } }, 'ver-submit'),
+    /SCENARIO_VERSION_MISMATCH/,
+  );
+  assert.ok(!session.examObservation, '版本不符拒绝后不保存提交');
+});
+
+test('查体观察提交负例：跨专项/OSCE/引导模式均拒绝（服务端门控）', async () => {
+  const history = createInitialSession('student-1', 'practice', undefined, 'history');
+  await assert.rejects(
+    () => runAgentTurn(history, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '病史采集专项不允许查体提交。' } }, 'x-history'),
+    /PRACTICE_EVENT_FORBIDDEN/,
+  );
+  assert.ok(!history.examObservation);
+  const osce = createInitialSession('student-1', 'osce');
+  await assert.rejects(
+    () => runAgentTurn(osce, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: 'OSCE 模拟站不开放专项提交。' } }, 'x-osce'),
+    /OSCE_EVENT_STAGE_FORBIDDEN/,
+  );
+  // 引导模式事件-阶段门控不拦截（自由探索），由引擎归属门控纵深防御拒绝
+  const guided = createInitialSession('student-1', 'guided');
+  await assert.rejects(
+    () => runAgentTurn(guided, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '引导模式同样不允许提交。' } }, 'x-guided'),
+    /EXAM_OBSERVATION_FORBIDDEN/,
+  );
+  assert.ok(!guided.examObservation, '拒绝后不保存提交');
+});
+
+test('查体观察提交 schema：过短观察与自报得分/解锁字段拒绝，合法提交通过', () => {
+  const payload = (data: unknown) => ({
+    sessionId: '11111111-1111-4111-8111-111111111111',
+    clientEventId: 'obs-schema-check',
+    event: { type: 'SUBMIT_EXAM_OBSERVATION', data },
+  });
+  assert.ok(!agentTurnSchema.safeParse(payload({ findings: '太短' })).success, '观察少于 10 字拒绝');
+  assert.ok(!agentTurnSchema.safeParse(payload({ findings: '合格的观察文本长度。', score: 20 })).success, 'strict：客户端不得自报得分字段');
+  assert.ok(!agentTurnSchema.safeParse(payload({ findings: '合格的观察文本长度。', unlockedEvidence: ['EX_RESP'] })).success, 'strict：客户端不得自报解锁事实');
+  assert.ok(agentTurnSchema.safeParse(payload({ findings: '双肺呼吸音对称，右下肺闻及细湿啰音。', interpretation: '提示肺实质病变。' })).success, '合法提交通过');
+});
+
+// C-观察与报告-04 回归：未评分口径——全部计分项无法评价的报告不得以 0 分进入趋势统计。
+test('未评分口径：全部计分项无法评价时持久化未评分与原因，同步事件记 null', () => {
+  const session = createInitialSession('student-1', 'practice', undefined, 'communication');
+  const report = buildReport(session, 'report-unscored-communication');
+  assert.equal(report.unscored, true, '沟通专项全项不可评价 → 报告记未评分');
+  assert.ok(report.unscoredReason?.includes('未评分'), '未评分原因持久化');
+  assert.ok(report.unscoredReason?.includes('不代表能力 0 分'), '明确总分 0 不代表能力 0 分');
+  assert.equal(report.assessableMaxScore, 0, '可评价满分 0');
+  assert.equal(report.totalScore, 0);
+  assert.equal(isUnscoredReport(report), true, '未评分判定与持久化字段同源');
+  // finish 路由同步事件口径：未评分报告 score 记 null（isUnscoredReport 为唯一判定源）
+  assert.equal(isUnscoredReport(report) ? null : report.totalScore, null, '同步事件 score null');
+  assert.equal(unscoredReasonForDisplay(report), report.unscoredReason, '展示原因读持久化字段，不重算');
+});
+
+test('未评分口径：历史报告无 unscored 字段时按快照推导，仅分类展示不重算', () => {
+  const unscored = buildReport(createInitialSession('student-1', 'practice', undefined, 'communication'), 'r-legacy-unscored');
+  // 模拟本口径之前生成的历史报告：无 unscored/unscoredReason 字段，evidence 带状态快照
+  const legacyUnscored = { evidence: unscored.evidence };
+  assert.equal(isUnscoredReport(legacyUnscored), true, '全不可评价快照推导为未评分（不进趋势统计）');
+  assert.ok(unscoredReasonForDisplay(legacyUnscored).includes('无法评价'), '推导原因说明缺少判据');
+  // 方案 4.4 之前的报告 evidence 无 status 字段：undefined 不满足全不可评价，按可计分处理
+  const legacyNoStatus = { evidence: [{ code: 'RUBRIC_SAFETY', label: '安全', achieved: true, score: 15, maxScore: 15, detail: '', eventIds: [] }] };
+  assert.equal(isUnscoredReport(legacyNoStatus), false, '无状态历史报告不误标未评分');
+  assert.equal(isUnscoredReport({ evidence: [] }), false, '空 evidence（过程分）不标未评分');
+});
+
+test('趋势隔离：未评分报告不进平均分/最好成绩统计', () => {
+  const scoredSession = createInitialSession('student-1', 'practice', undefined, 'exam');
+  scoredSession.unlockedEvidence = ['EX_PREP', 'EX_RESP', 'EX_SPO2'];
+  const scored = buildReport(scoredSession, 'report-trend-scored');
+  const unscored = buildReport(createInitialSession('student-1', 'practice', undefined, 'communication'), 'report-trend-unscored');
+  assert.ok(scored.totalScore > 0);
+  // 报告列表页/教师端趋势共用 isUnscoredReport 过滤口径（评分快照与前端展示同源）
+  const reports = [scored, unscored];
+  const scoredReports = reports.filter((item) => !isUnscoredReport(item));
+  assert.equal(scoredReports.length, 1, '未评分报告排除出趋势统计');
+  const average = scoredReports.reduce((sum, item) => sum + item.totalScore, 0) / scoredReports.length;
+  const naiveAverage = reports.reduce((sum, item) => sum + item.totalScore, 0) / reports.length;
+  assert.notEqual(average, naiveAverage, '未评分 0 分若混入将拉低平均分');
+  assert.equal(average, scored.totalScore, '平均分只按可评分报告计算');
+  assert.equal(Math.max(...scoredReports.map((item) => item.totalScore)), scored.totalScore, '最好成绩不受未评分 0 分影响');
 });

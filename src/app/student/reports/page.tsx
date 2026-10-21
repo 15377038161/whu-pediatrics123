@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, FileText, Sparkles, TrendingUp } from 'lucide-react';
 import { findPublicCase } from '@/domain/case-catalog';
 import { formatDateTime } from '@/lib/format-date';
+import { isUnscoredReport, unscoredReasonForDisplay } from '@/domain/training-rubric';
 import type { TrainingReport } from '@/domain/agent';
 import { authedFetch } from '@/lib/authed-api';
 
@@ -36,15 +37,19 @@ export default function ReportsPage() {
     return <div className="empty-state" role="status"><p>正在读取学情档案…</p></div>;
   }
 
-  const average = reports.length ? Math.round(reports.reduce((sum, report) => sum + report.totalScore, 0) / reports.length) : null;
-  const best = reports.length ? Math.max(...reports.map((report) => report.totalScore)) : null;
-  const change = reports.length > 1 ? reports[0].totalScore - reports[1].totalScore : null;
+  // C-观察与报告-04：全部计分项均不可评价的报告记「未评分」——总分 0 不代表能力 0 分，
+  // 不进入平均分/最好成绩/最近变化等趋势统计；训练次数仍计入全部报告。
+  const scoredReports = reports.filter((report) => !isUnscoredReport(report));
+  const unscoredCount = reports.length - scoredReports.length;
+  const average = scoredReports.length ? Math.round(scoredReports.reduce((sum, report) => sum + report.totalScore, 0) / scoredReports.length) : null;
+  const best = scoredReports.length ? Math.max(...scoredReports.map((report) => report.totalScore)) : null;
+  const change = scoredReports.length > 1 ? scoredReports[0].totalScore - scoredReports[1].totalScore : null;
   return (
     <>
       <p className="eyebrow">个人学情档案</p><h1 className="page-title">看见每一次临床成长</h1><p className="page-lead">每个分数都能回到原始问答和操作证据；先看趋势，再选择最值得补练的一项。</p>
-      {reports.length > 0 && <section className="report-summary"><div><span>训练次数</span><strong>{reports.length}</strong></div><div><span>平均分</span><strong>{average}</strong></div><div><span>最好成绩</span><strong>{best}</strong></div><div><span>最近变化</span><strong className={(change ?? 0) >= 0 ? 'positive' : ''}>{change === null ? '首轮' : `${change >= 0 ? '+' : ''}${change}`}</strong></div></section>}
+      {reports.length > 0 && <section className="report-summary"><div><span>训练次数</span><strong>{reports.length}</strong></div><div><span>平均分{unscoredCount > 0 ? `（已排除 ${unscoredCount} 次未评分）` : ''}</span><strong>{average === null ? '待评分' : average}</strong></div><div><span>最好成绩{unscoredCount > 0 ? `（已排除 ${unscoredCount} 次未评分）` : ''}</span><strong>{best === null ? '待评分' : best}</strong></div><div><span>最近变化</span><strong className={(change ?? 0) >= 0 ? 'positive' : ''}>{change === null ? (scoredReports.length === 1 ? '首轮' : '待评分') : `${change >= 0 ? '+' : ''}${change}`}</strong></div></section>}
       {reports.length === 0 ? <div className="empty-state"><FileText /><h2>还没有训练报告</h2><p>完成一轮模拟病例或 OSCE 后，报告会出现在这里。</p><a className="btn btn-primary" href="/student/training?mode=guided">开始首轮训练</a></div> : (
-        <><div className="section-head"><h2 className="section-title"><TrendingUp size={18} /> 最近记录</h2><span className="eyebrow"><Sparkles size={13} /> 证据可回放</span></div><div className="report-card-list">{reports.map((report) => { const caseProfile = findPublicCase(report.caseId); const caseTitle = report.caseTitle ?? caseProfile?.title ?? `病例 ${report.caseId}`; return <a className="report-card-link" key={report.id} href={`/student/reports/${report.id}`}><span className="report-card-score">{report.totalScore}<small>分</small></span><div><span className="report-mode">{report.mode === 'osce' ? 'OSCE 模拟站' : report.mode === 'practice' ? '专项训练' : '引导训练'}</span><strong>{caseTitle}</strong><small>{formatDateTime(report.createdAt)} · 查看证据与补练建议</small></div><ArrowRight size={17} /></a> })}</div></>
+        <><div className="section-head"><h2 className="section-title"><TrendingUp size={18} /> 最近记录</h2><span className="eyebrow"><Sparkles size={13} /> 证据可回放</span></div><div className="report-card-list">{reports.map((report) => { const caseProfile = findPublicCase(report.caseId); const caseTitle = report.caseTitle ?? caseProfile?.title ?? `病例 ${report.caseId}`; const unscored = isUnscoredReport(report); return <a className="report-card-link" key={report.id} href={`/student/reports/${report.id}`}><span className="report-card-score" title={unscored ? unscoredReasonForDisplay(report) : undefined}>{unscored ? <small>未评分</small> : <>{report.totalScore}<small>分</small></>}</span><div><span className="report-mode">{report.mode === 'osce' ? 'OSCE 模拟站' : report.mode === 'practice' ? '专项训练' : '引导训练'}</span><strong>{caseTitle}</strong><small>{formatDateTime(report.createdAt)} · {unscored ? '未评分：缺少可评价判据，待教师复核' : '查看证据与补练建议'}</small></div><ArrowRight size={17} /></a> })}</div></>
       )}
     </>
   );

@@ -2,7 +2,7 @@ import { ArrowRight, BookOpenCheck, CheckCircle2, CircleAlert, RotateCcw } from 
 import type { TrainingReport } from '@/domain/agent';
 import { findPublicCase } from '@/domain/case-catalog';
 import { RandomAdmission } from '@/components/random-admission';
-import { findRubricForReport, rubricStatusForDisplay, type RubricItem } from '@/domain/training-rubric';
+import { findRubricForReport, isUnscoredReport, rubricStatusForDisplay, unscoredReasonForDisplay, type RubricItem } from '@/domain/training-rubric';
 import { practiceScenarios } from '@/domain/practice-scenarios';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
@@ -39,15 +39,20 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
   };
   const evaluationBasis = report.evaluationBasis ?? (processReport ? 'process_completion' : 'clinical_rubric');
   const focusScenario = report.practiceFocus ? practiceScenarios[report.practiceFocus] : null;
+  // C-观察与报告-04：全部计分项均不可评价的报告记「未评分」——总分 0 不代表能力 0 分，
+  // 分数环不显示 0 分而显示「未评分」与缺少判据的原因（历史报告按快照推导，不重算）。
+  const unscored = isUnscoredReport(report);
+  const unscoredReason = unscored ? unscoredReasonForDisplay(report) : null;
   return (
     <div>
       <section className="report-hero">
-        <div className="score-ring" aria-label={`总分 ${report.totalScore} 分`}><strong>{report.totalScore}</strong></div>
+        <div className="score-ring" aria-label={unscored ? '未评分' : `总分 ${report.totalScore} 分`}><strong>{unscored ? '未评分' : report.totalScore}</strong></div>
         <div>
           <p className="eyebrow">{mode}{focusScenario ? ` · ${focusScenario.title}` : ''} · {readonly ? '只读报告' : '训练完成'}</p>
           <h1>{caseTitle}</h1>
           <p>{processReport ? '分数表示训练过程完成度。原病例诊断与诊疗经过用于对照，诊断和处置的正确性由教师复核。' : report.mode === 'osce' ? '模拟站参考评分依据实际问答、器材操作、临床决策与沟通原文生成，不构成正式考试成绩。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
-          <p style={{ fontSize: 13, opacity: 0.75 }}>评分量表：{rubric ? `${rubric.name}（v${report.rubricVersion}）` : `版本 v${report.rubricVersion ?? '未记录'} 的历史量表定义未存档，按报告快照展示`} · 成绩口径：{evaluationBasisLabels[evaluationBasis]}</p>
+          <p style={{ fontSize: 13, opacity: 0.75 }}>评分量表：{rubric ? `${rubric.name}（v${report.rubricVersion}）` : `版本 v${report.rubricVersion ?? '未记录'} 的历史量表定义未存档，按报告快照展示`} · 成绩口径：{evaluationBasisLabels[evaluationBasis]}{report.assessableMaxScore !== undefined && !unscored ? ` · 可评价满分：${report.assessableMaxScore} 分（无法评价/不适用项不计入）` : ''}</p>
+          {unscoredReason && <p style={{ fontSize: 13, opacity: 0.75 }} role="note">未评分说明：{unscoredReason}</p>}
         </div>
       </section>
       <div className="report-grid">
@@ -110,6 +115,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           <p className="preserve-lines"><strong>处置计划：</strong>{report.studentSubmissions.plan?.detail || '未提交'}</p>
           {report.studentSubmissions.communication && <p className="preserve-lines"><strong>家长沟通原文：</strong>{report.studentSubmissions.communication}</p>}
           {report.studentSubmissions.historySummary && <p className="preserve-lines"><strong>病史摘要：</strong>{report.studentSubmissions.historySummary}</p>}
+          {report.studentSubmissions.examObservation && <p className="preserve-lines"><strong>查体观察记录：</strong>{report.studentSubmissions.examObservation.findings}{report.studentSubmissions.examObservation.interpretation && <>；<strong>观察解释：</strong>{report.studentSubmissions.examObservation.interpretation}</>}</p>}
         </section>
       )}
     </div>

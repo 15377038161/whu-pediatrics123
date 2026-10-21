@@ -3,6 +3,7 @@ import test from 'node:test';
 import { createInitialSession, runAgentTurn } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
 import { getOsceStation } from '@/domain/osce-stations';
+import { isUnscoredReport } from '@/domain/training-rubric';
 import type { TrainingReport } from '@/domain/agent';
 
 /**
@@ -35,7 +36,8 @@ test('专项链：practice 会话按 focus 选专项量表，不因未开放环�
   session.unlockedEvidence = ['EX_PREP', 'EX_RESP', 'EX_SPO2', 'EX_TEMP'];
   const report = buildReport(session, 'report-exam');
   assert.equal(report.rubricId, 'rubric-focused-exam');
-  assert.equal(report.rubricVersion, 4);
+  // C-观察与报告-04：查体专项量表升级 v5（观察/解释提交已开放，EX_FINDINGS 无专业审核判据仍恒无法评价）
+  assert.equal(report.rubricVersion, 5);
   assert.equal(report.practiceFocus, 'exam');
   assert.equal(report.evaluationBasis, 'clinical_rubric');
   // 专项量表只含查体维度项：未提交诊断/处置/沟通不计负分，总分=查体专项得分
@@ -43,11 +45,14 @@ test('专项链：practice 会话按 focus 选专项量表，不因未开放环�
   assert.equal(report.abilities.history, 0, '专项量表不含问诊维度项');
   assert.equal(report.totalScore, report.abilities.examination);
   assert.equal(report.evidence.reduce((sum, item) => sum + item.maxScore, 0), 100, '专项量表满分 100');
+  assert.equal(report.assessableMaxScore, 80, '可评价满分排除无法评价的结果识别项');
+  assert.equal(isUnscoredReport(report), false, '存在可评价项不记未评分');
   assert.ok(report.studentSubmissions);
   assert.equal(report.studentSubmissions?.decision, null, '未提交诊断保留为空快照');
-  // C-评分补验-01：仅操作点击不足以评价结果识别，EX_FINDINGS 记无法评价，不列为重点改进
+  assert.equal(report.studentSubmissions?.examObservation, null, '未提交观察保留为空快照');
+  // C-观察与报告-04（量表 v5）：未提交观察时结果识别记无法评价（提交通道已开放、无专业审核判据），不列为重点改进
   const findings = report.evidence.find((item) => item.code === 'RUBRIC_EX_FINDINGS');
-  assert.equal(findings?.status, 'not_assessable', '无观察提交时结果识别记无法评价');
+  assert.equal(findings?.status, 'not_assessable', '未提交观察时结果识别记无法评价');
   assert.equal(findings?.score, 0);
   assert.ok(!report.improvements.includes('结果识别'), '无法评价项不列为重点改进');
   assert.ok(report.recommendation.includes('无法评价'), '推荐语说明待复核项');

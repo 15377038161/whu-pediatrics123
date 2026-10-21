@@ -137,6 +137,10 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [requestedTests, setRequestedTests] = useState('');
   const [testReason, setTestReason] = useState('');
   const [historySummaryText, setHistorySummaryText] = useState('');
+  // 查体专项观察/解释提交草稿（C-观察与报告-04）：提交/修订走 SUBMIT_EXAM_OBSERVATION，
+  // 服务端校验已解锁查体证据与配置版本；客户端不自报得分或解锁事实。
+  const [examFindingsText, setExamFindingsText] = useState('');
+  const [examInterpretationText, setExamInterpretationText] = useState('');
   const [remaining, setRemaining] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<'task' | 'patient' | 'record'>('task');
   const [hintIndex, setHintIndex] = useState(0);
@@ -175,6 +179,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     setPriority(next.plan?.priority ?? '');
     setPlanDetail(next.plan?.detail ?? '');
     setHistorySummaryText(next.historySummary ?? '');
+    setExamFindingsText(next.examObservation?.findings ?? '');
+    setExamInterpretationText(next.examObservation?.interpretation ?? '');
     setPosture(next.examPosture ?? 'standing');
   }, []);
 
@@ -232,6 +238,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
 
   const hasUnsavedDraft = Boolean(question.trim() || requestedTests.trim() || testReason.trim() ||
     (historySummaryText.trim() && historySummaryText !== (session?.historySummary ?? '')) ||
+    (examFindingsText.trim() && (examFindingsText !== (session?.examObservation?.findings ?? '') || examInterpretationText !== (session?.examObservation?.interpretation ?? ''))) ||
     (session && (diagnosis !== (session.decision?.diagnosis ?? '') || summary !== (session.decision?.summary ?? '') ||
     diagnosisBasis !== (session.decision?.diagnosisBasis ?? '') || differentials !== (session.decision?.differentials ?? '') ||
     priority !== (session.plan?.priority ?? '') || planDetail !== (session.plan?.detail ?? ''))));
@@ -438,7 +445,15 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         </div>
         <div className="exam-route" aria-label="后续操作"><span>2</span><p><strong>点击患儿检查部位</strong><small>{examEvidenceCount > 0 ? `实时病例记录已新增 ${examEvidenceCount} 项证据` : '有效结果会自动写入右侧病例记录'}</small></p></div>
         {session.caseOptions && <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'exam').map((event) => <p key={event.id}>{event.summary}</p>)}</div>}
-        <div className="form-actions">{practiceCompletion === 'exam_observation' ? <button className="btn btn-primary" type="button" disabled={busy || examEvidenceCount === 0} onClick={finish}>{examEvidenceCount > 0 ? '完成查体，生成专项报告' : '完成至少一项查体操作后可结束'} <ChevronRight size={16} /></button> : <><button className="btn btn-primary exam-open-patient" onClick={() => setMobileView('patient')}><UserRound size={16} /> 打开患儿模型</button><button className="btn btn-secondary" onClick={() => navigate('tests')}>完成查体，选择辅助检查 <ChevronRight size={16} /></button></>}</div>
+        {practiceCompletion === 'exam_observation' && (
+          <form className="clinical-form practice-summary-form" onSubmit={async (event) => { event.preventDefault(); if (examFindingsText.trim().length < 10) return; await sendEvent({ type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: examFindingsText.trim(), interpretation: examInterpretationText.trim() || undefined } }); }}>
+            <div className="form-field"><label htmlFor="exam-findings">查体观察记录（专项结束条件）</label><textarea id="exam-findings" required minLength={10} rows={3} value={examFindingsText} onChange={(e) => setExamFindingsText(e.target.value)} placeholder="你实际观察到的查体所见：阳性体征、重要阴性发现…（不要求答中评分点，可修订重交）" /></div>
+            <div className="form-field"><label htmlFor="exam-interpretation">观察解释（可选）</label><textarea id="exam-interpretation" rows={2} value={examInterpretationText} onChange={(e) => setExamInterpretationText(e.target.value)} placeholder="这些所见提示什么？与病史如何联系？（原文保留在报告快照待教师复核，不做机器计分）" /></div>
+            <button className="btn btn-secondary" type="submit" disabled={busy || examEvidenceCount === 0 || examFindingsText.trim().length < 10}>{session.examObservation ? '修订重交观察与解释' : '提交查体观察与解释'}</button>
+            {examEvidenceCount === 0 && <p className="form-hint" role="note">完成至少一项有效查体操作后才能提交观察（服务端校验本会话已解锁查体证据）。</p>}
+          </form>
+        )}
+        <div className="form-actions">{practiceCompletion === 'exam_observation' ? <button className="btn btn-primary" type="button" disabled={busy || !session.examObservation} onClick={finish}>{session.examObservation ? '完成查体，生成专项报告' : '提交观察与解释后可结束'} <ChevronRight size={16} /></button> : <><button className="btn btn-primary exam-open-patient" onClick={() => setMobileView('patient')}><UserRound size={16} /> 打开患儿模型</button><button className="btn btn-secondary" onClick={() => navigate('tests')}>完成查体，选择辅助检查 <ChevronRight size={16} /></button></>}</div>
       </>;
       case 'tests': return <>
         <div className="stage-intro"><p className="eyebrow">临床适宜性</p><h2>申请辅助检查</h2><p>像真实接诊一样自主输入需要申请的检查名称，可一次申请多项（用逗号或换行分隔）。系统只返回本病例资料已有的结果；资料未提供的项目会明确说明，不会编造。</p></div>

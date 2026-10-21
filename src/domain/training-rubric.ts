@@ -1,4 +1,4 @@
-import type { AbilityScores, PracticeFocus } from '@/domain/agent';
+import type { AbilityScores, PracticeFocus, TrainingReport } from '@/domain/agent';
 
 /**
  * 已审核量表定义域（方案 4.4/4.5）：量表定义保存在此，`src/lib/scoring.ts` 只执行规则。
@@ -104,7 +104,7 @@ export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
   },
   exam: {
     id: 'rubric-focused-exam',
-    version: 4,
+    version: 5,
     name: '肺部规范查体专项量表',
     scope: 'focused',
     focus: 'exam',
@@ -114,7 +114,7 @@ export const focusedRubrics: Record<PracticeFocus, RubricDefinition> = {
       { itemId: 'EX_LUNG_AUSCULTATION', dimension: 'examination', label: '肺部听诊', maxScore: 20, applicability: '规范查体专项', evidenceRule: '听诊器×胸部获得肺部听诊证据', partialCredit: null, feedback: '未完成肺部听诊。', reference: '肺部听诊规范' },
       { itemId: 'EX_OXIMETRY', dimension: 'examination', label: '血氧监测', maxScore: 15, applicability: '规范查体专项', evidenceRule: '血氧仪获得静息血氧结果', partialCredit: null, feedback: '未完成血氧监测。', reference: '脉搏血氧监测' },
       { itemId: 'EX_SEQUENCE', dimension: 'examination', label: '顺序与安全', maxScore: 25, applicability: '规范查体专项', evidenceRule: '手卫生先于任何接触性检查 15；未出现未备即查的深层检查 10', partialCredit: '备后补序 12 分', feedback: '查体顺序不合规（未先手卫生或存在未备即查）。', reference: '查体顺序规范' },
-      { itemId: 'EX_FINDINGS', dimension: 'examination', label: '结果识别', maxScore: 20, applicability: '规范查体专项（查体操作点击仅为过程证据）', evidenceRule: '本专项未开放观察/推理提交入口（服务端事件门控 SUBMIT_DECISION 拒绝），操作点击仅为过程证据，本项恒记无法评价不计分；观察/解释提交通道与可靠核对判据缺失为已知 C 待办，待教师结合查体记录复核', partialCredit: null, feedback: '缺少可评价结果识别的观察/推理提交。', reference: '查体所见识别' },
+      { itemId: 'EX_FINDINGS', dimension: 'examination', label: '结果识别', maxScore: 20, applicability: '规范查体专项（观察/解释提交已开放：结果识别无专业审核判据，恒记无法评价不计分）', evidenceRule: '观察/解释提交通道已开放（服务端事件门控 SUBMIT_EXAM_OBSERVATION 校验专项归属、已解锁查体证据与配置版本）：提交原文保留在报告快照并记过程反馈，结果识别缺少专业审核判据，本项恒记无法评价不计分，待教师结合查体记录与提交原文复核', partialCredit: null, feedback: '缺少可评价结果识别的专业审核判据（提交原文已保留，待教师复核）。', reference: '查体所见识别' },
     ],
   },
   safety: {
@@ -162,6 +162,27 @@ export function rubricStatusForDisplay(status: RubricItemStatus): string {
   return ({ achieved: '达成', partial: '部分达成', missing: '未达成', incorrect: '错误做法', not_applicable: '不适用', not_assessable: '无法评价' } as const)[status];
 }
 
+/** 未评分判定（C-观察与报告-04）：全部计分项均无法机器评价时报告记「未评分」——
+ *  总分 0 不代表能力 0 分，不得进入平均分/最好成绩/最近变化等趋势统计。
+ *  新报告读生成时持久化的 unscored 字段（口径单一来源）；历史报告无该字段时按快照
+ *  evidence 状态推导（仅分类展示，不重算分数、不改历史数据）：
+ *  - 方案 4.4 之前的报告 evidence 无 status 字段（undefined 不满足全不可评价），按可计分快照处理；
+ *  - 过程分报告（process）与带有效分 status 的报告按可计分处理。 */
+export function isUnscoredReport(report: Pick<TrainingReport, 'unscored' | 'evidence'>): boolean {
+  if (report.unscored !== undefined) return report.unscored;
+  const scoredItems = report.evidence.filter((item) => item.maxScore > 0);
+  if (scoredItems.length === 0) return false;
+  return scoredItems.every((item) => item.status === 'not_assessable' || item.status === 'not_applicable');
+}
+
+/** 未评分原因（C-观察与报告-04）：优先读报告持久化的 unscoredReason（生成时写入）；
+ *  历史报告无该字段时按快照推导统一文案，不重算、不引用新版本量表解释旧分。 */
+export function unscoredReasonForDisplay(report: Pick<TrainingReport, 'unscoredReason' | 'evidence'>): string {
+  if (report.unscoredReason) return report.unscoredReason;
+  const first = report.evidence.find((item) => item.maxScore > 0 && (item.status === 'not_assessable' || item.status === 'not_applicable'));
+  return `全部评分项均缺少可机器评价的判据${first ? `（${first.label}等记无法评价）` : ''}，本报告记「未评分」，不计入平均分/最好成绩等趋势统计，待教师结合提交原文复核。`;
+}
+
 /** 历史量表版本冻结注册表（C-评分补验-02/-03）：仅收录已停用版本的冻结副本，
  *  供历史报告展示精确匹配（id+version），不参与新会话评分（scoring 恒用上方当前版本），
  *  不随当前版本规则更新而改写——旧报告的量表名称与规则说明以其生成时版本为准，旧分不重算。
@@ -206,6 +227,23 @@ export const legacyRubrics: RubricDefinition[] = [
       { itemId: 'EX_OXIMETRY', dimension: 'examination', label: '血氧监测', maxScore: 15, applicability: '规范查体专项', evidenceRule: '血氧仪获得静息血氧结果', partialCredit: null, feedback: '未完成血氧监测。', reference: '脉搏血氧监测' },
       { itemId: 'EX_SEQUENCE', dimension: 'examination', label: '顺序与安全', maxScore: 25, applicability: '规范查体专项', evidenceRule: '手卫生先于任何接触性检查 15；未出现未备即查的深层检查 10', partialCredit: '备后补序 12 分', feedback: '查体顺序不合规（未先手卫生或存在未备即查）。', reference: '查体顺序规范' },
       { itemId: 'EX_FINDINGS', dimension: 'examination', label: '结果识别', maxScore: 20, applicability: '规范查体专项（查体操作点击仅为过程证据）', evidenceRule: '本专项未开放观察/推理提交入口，仅有操作点击记无法评价；如存在提交文本（异常路径），须与本会话已解锁病例查体所见可靠核对一致方可评价，否定病例所见计错误做法', partialCredit: null, feedback: '缺少可评价结果识别的观察/推理提交。', reference: '查体所见识别' },
+    ],
+  },
+  {
+    // C-观察与报告-04 冻结：rubric-focused-exam v4（C-评分补验-03 定稿原文——EX_FINDINGS 恒无法评价、
+    // 无观察提交入口口径），仅供 v4 历史报告展示；v5 起观察/解释提交已开放但仍无专业审核判据。
+    id: 'rubric-focused-exam',
+    version: 4,
+    name: '肺部规范查体专项量表',
+    scope: 'focused',
+    focus: 'exam',
+    evaluationBasis: 'clinical_rubric',
+    items: [
+      { itemId: 'EX_PREPARATION', dimension: 'examination', label: '准备与说明', maxScore: 20, applicability: '规范查体专项', evidenceRule: '完成手卫生与检查说明', partialCredit: null, feedback: '未完成手卫生与检查说明。', reference: '标准预防' },
+      { itemId: 'EX_LUNG_AUSCULTATION', dimension: 'examination', label: '肺部听诊', maxScore: 20, applicability: '规范查体专项', evidenceRule: '听诊器×胸部获得肺部听诊证据', partialCredit: null, feedback: '未完成肺部听诊。', reference: '肺部听诊规范' },
+      { itemId: 'EX_OXIMETRY', dimension: 'examination', label: '血氧监测', maxScore: 15, applicability: '规范查体专项', evidenceRule: '血氧仪获得静息血氧结果', partialCredit: null, feedback: '未完成血氧监测。', reference: '脉搏血氧监测' },
+      { itemId: 'EX_SEQUENCE', dimension: 'examination', label: '顺序与安全', maxScore: 25, applicability: '规范查体专项', evidenceRule: '手卫生先于任何接触性检查 15；未出现未备即查的深层检查 10', partialCredit: '备后补序 12 分', feedback: '查体顺序不合规（未先手卫生或存在未备即查）。', reference: '查体顺序规范' },
+      { itemId: 'EX_FINDINGS', dimension: 'examination', label: '结果识别', maxScore: 20, applicability: '规范查体专项（查体操作点击仅为过程证据）', evidenceRule: '本专项未开放观察/推理提交入口（服务端事件门控 SUBMIT_DECISION 拒绝），操作点击仅为过程证据，本项恒记无法评价不计分；观察/解释提交通道与可靠核对判据缺失为已知 C 待办，待教师结合查体记录复核', partialCredit: null, feedback: '缺少可评价结果识别的观察/推理提交。', reference: '查体所见识别' },
     ],
   },
   {
