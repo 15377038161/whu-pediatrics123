@@ -25,16 +25,17 @@
 ## 权限与可信边界
 
 - 教师仅能管理**自己创建**的题集（owner_id 归属校验在应用层与 RLS 双层强制）；跨教师访问返回拒绝，不以空结果冒充授权成功。
+- 题集与条目 owner 写策略均带 `app_is_teacher()` 门控（学生即使持自属历史行也只有只读面，更新/删除被策略静默拒绝）；发布字段（status/visibility/current_version_id/owner_id）由数据库触发器 `question_banks_publish_guard` 守卫——教师 INSERT 强制缺省发布态（draft/own_class/无版本），教师 UPDATE 仅允许元信息与白名单状态迁移（draft↔ready_for_review、published→retired、retired→draft），`published` 与可见性/版本指针只能经 `quiz_bank_publish` 原子发布或项目管理员路径变更。
 - 平台级发布（`visibility = 'platform'`）与既有 43 题维护（`quiz_questions` 写权限）收敛到项目管理员；本批同步**收紧既有宽泛教师写策略**（经用户授权）：
   - `quiz_questions`：教师 for-all 写 → 教师只读 + 项目管理员写；
   - `quiz_assignments`：教师 for-all 写 → 教师只读（分配/判分只能经既有受控 RPC）。
 - 学生不可直读 `bank_items`（答案列）与 `question_bank_versions`（快照内答案）；取题、判分、批次详情全部经 SECURITY DEFINER RPC 投影，作答前不返回 answer/explanation。
-- 作答归属与幂等在 RPC 内强制：非本人批次拒绝、关闭批次拒绝（`ATTEMPT_CLOSED`）、重复提交幂等返回首答结果。
+- 作答归属与幂等在 RPC 内强制：非本人批次拒绝；重复提交幂等返回首答结果（首答终局不刷分），**批次完成后/废弃后同题重试同样返回首答结果与准确 `completed` 状态，不误报 `ATTEMPT_CLOSED`**；仅对已完成/已放弃批次上的未作答新题拒绝（`ATTEMPT_CLOSED`）。同批次作答经 `FOR UPDATE` 行锁串行化（先锁后核归属/状态/重复）。
 - AI 生成结果仅为草稿素材，医学正确性由教师审核把关；系统不把 AI 输出自动标记为已审核，不假造审核标记。
 
 ## 数据与权限
 
-迁移 `20261022000000_question_banks.sql`、`20261022000100_quiz_attempt_list_mine.sql`（均已在租户执行成功）：
+迁移 `20261022000000_question_banks.sql`、`20261022000100_quiz_attempt_list_mine.sql`、`20261022000200_question_bank_write_guard.sql`（均已在租户执行成功）：
 
 - `question_banks`：题集（owner、标题、主题、status：draft/ready_for_review/published/retired，visibility：own_class/platform）。
 - `bank_items`：题目条目，含 answer/explanation（学生不可直读）；review_status：draft/approved/rejected。
@@ -42,6 +43,7 @@
 - `quiz_attempts`：练习批次（in_progress/completed/abandoned）；唯一约束保证同一学生对同一题集至多一个进行中批次。
 - `attempt_answers`：批次作答记录，首次提交终局，`is_correct` 由服务端判分写入。
 - 受控 RPC：`quiz_bank_list_student`（学生可见题集摘要）/ `quiz_attempt_start`（续答优先 + 一次进行中）/ `quiz_attempt_answer`（归属 + 幂等判分 + 完成迁移）/ `quiz_attempt_state`（本人批次详情投影）/ `quiz_bank_publish`（审核校验 + 版本冻结原子发布）/ `quiz_attempt_list_mine`（本人批次列表，统一报告数据源）。
+- 补验迁移 `20261022000200_question_bank_write_guard.sql`（F-题库补验-02）：owner 策略四拆分均带教师门控；`bank_items_owner` 加门控；发布字段触发器守卫；`quiz_attempt_start` 补版本归属守卫（current_version_id 必须属于该题集，跨题集引用拒绝）；`quiz_attempt_answer` 重写为行锁先行 + 首次终局幂等（完成后同题重试返回首答结果）；`question_bank_versions`/`quiz_attempts`/`attempt_answers` 对 `authenticated` 显式 REVOKE 写授权（租户 ACL 直查确认仅剩 SELECT，写入只能经受控 RPC）。
 - 不改历史迁移、不动既有 43 题与已答数据（legacy 链保持原样可用）、不删既有 restrictive 策略。
 
 ## API
@@ -58,13 +60,13 @@
 | GET /api/quiz/banks | 学生可见题集列表 | 已登录学生 |
 | GET/POST /api/quiz/attempts | 批次列表 / 开始或续答（bankId，fresh 可选） | 已登录学生，仅本人 |
 | GET /api/quiz/attempts/:id | 批次详情（作答前不返回 answer/explanation） | 已登录学生，仅本人 |
-| POST /api/quiz/attempts/:id/answer | 提交单题（itemId, answer；首次提交终局幂等） | 已登录学生，仅本人 |
+| POST /api/quiz/attempts/:id/answer | 提交单题（itemId, answer；首次提交终局幂等，批次完成后同题重试同样返回首答结果） | 已登录学生，仅本人 |
 
 既有 legacy 接口（`/api/quiz/questions`、`/api/quiz/answer`、`/api/quiz/review`）与 43 题数据不变，继续服务「单题速练」页签。
 
 ## 部署与验收
 
-1. 迁移已执行：`20261022000000_question_banks.sql`、`20261022000100_quiz_attempt_list_mine.sql`；不要修改历史迁移。
-2. `pnpm validate`（含 `tests/question-bank.test.ts` 11 项）、`pnpm build`。
+1. 迁移已执行：`20261022000000_question_banks.sql`、`20261022000100_quiz_attempt_list_mine.sql`、`20261022000200_question_bank_write_guard.sql`；不要修改历史迁移。
+2. `pnpm validate`（含 `tests/question-bank.test.ts` 11 项应用层 + `tests/question-bank-database.test.ts` 数据库级 2 变体）、`pnpm build`；补验批次实测 VALIDATE_EXIT=0（344 项：340 PASS / 0 FAIL / 4 skipped）、BUILD_EXIT=0。
 3. 已完成的无凭据冒烟：匿名访问教师题库接口与学生批次接口均 401 `AUTH_REQUIRED`；未登录访问 `/teacher/question-banks` 页面 307 回登录。
-4. 待真实凭据验收（如实保留）：真实教师账号下的生成→审核→发布正向流、真实学生从取题到错题复盘的浏览器级交互、班级范围可见性跨班负测、平台发布的管理员路径。本轮无凭据未假冒身份执行上述正测。
+4. 待真实凭据验收（如实保留）：真实教师账号下的生成→审核→发布正向流、真实学生从取题到错题复盘的浏览器级交互、班级范围可见性跨班负测、平台发布的管理员路径、真实多身份（教师/学生/管理员）经 PostgREST 的权限行为与真实网络并发重试。本轮无凭据未假冒身份执行上述正测；数据库级语义以 PGlite 隔离夹具验证真实 SQL/RLS（合成账号，非平台登录），租户侧以只读直查确认迁移/策略/触发器/ACL 在位。
