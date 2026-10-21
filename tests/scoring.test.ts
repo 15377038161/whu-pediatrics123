@@ -224,27 +224,40 @@ test('历史量表版本冻结注册表：按 id+version 精确匹配，不回�
 });
 
 // C-观察与报告-04 回归：查体专项观察/解释提交链（真实引擎事件入口，客户端不自报得分或解锁事实）。
-test('查体观察提交正例：真实引擎入口解锁查体证据后保存提交，修订/幂等与快照回放', async () => {
+test('查体观察提交正例：真实引擎入口解锁查体证据后保存提交与关联定位符，修订/幂等与快照回放', async () => {
   const session = createInitialSession('student-1', 'practice', undefined, 'exam');
-  assert.equal(session.scenarioVersion, 5, '会话创建时冻结配置版本');
+  assert.equal(session.scenarioVersion, 6, '会话创建时冻结配置版本（C-关联与验收-05 升级 v6）');
   // 真实事件解锁查体证据（不直改 unlockedEvidence）
   await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'obs-prep');
-  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'obs-lung');
+  const lung = await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'obs-lung');
   assert.ok(session.unlockedEvidence.includes('EX_PREP'));
   assert.ok(session.unlockedEvidence.includes('EX_RESP'));
+  const lungEvent = lung.session.events.filter((event) => event.type === 'EXAM_ACTION').at(-1);
+  assert.ok(lungEvent, '肺部听诊事件入事件链');
   const submitted = await runAgentTurn(
     session,
-    { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '双肺呼吸音对称，右下肺可闻及细湿啰音。', interpretation: '局部湿啰音提示肺实质病变可能。' } },
+    { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '双肺呼吸音对称，右下肺可闻及细湿啰音。', interpretation: '局部湿啰音提示肺实质病变可能。', linkedEvidence: ['EX_RESP'] } },
     'obs-submit-1',
   );
   assert.equal(submitted.session.examObservation?.findings, '双肺呼吸音对称，右下肺可闻及细湿啰音。');
   assert.equal(submitted.session.examObservation?.interpretation, '局部湿啰音提示肺实质病变可能。');
+  // 关联定位符（服务端核验产物）：关联码去重、锚定本会话原查体事件 id、冻结病例绑定版本与提交时间
+  assert.deepEqual(submitted.session.examObservation?.linkedEvidence, ['EX_RESP'], '关联码按提交声明保存');
+  assert.ok(submitted.session.examObservation?.linkedEventIds.includes(lungEvent.id), '关联锚定本会话真实肺部听诊事件');
+  assert.equal(submitted.session.examObservation?.caseVersion, session.caseVersion, '病例版本取会话绑定版本');
   assert.ok(submitted.session.examObservation?.submittedAt, '提交时间随快照保存');
   assert.equal(submitted.session.events.filter((event) => event.type === 'SUBMIT_EXAM_OBSERVATION').length, 1, '提交事件入事件链');
-  // 修订重交：新幂等键覆盖 examObservation，事件链保留全部提交记录
+  assert.ok(submitted.session.events.filter((event) => event.type === 'SUBMIT_EXAM_OBSERVATION').every((event) => event.summary.includes('EX_RESP')), '事件摘要记录关联项定位符');
+  // 序列化保存恢复：examObservation 含关联定位符/事件锚定整体序列化，JSON 往返后字段一致
+  const restored = JSON.parse(JSON.stringify(submitted.session)) as typeof submitted.session;
+  assert.deepEqual(restored.examObservation?.linkedEvidence, ['EX_RESP'], '序列化往返关联码一致');
+  assert.deepEqual(restored.examObservation?.linkedEventIds, submitted.session.examObservation?.linkedEventIds, '序列化往返关联事件锚定一致');
+  assert.equal(restored.examObservation?.caseVersion, submitted.session.examObservation?.caseVersion, '序列化往返病例版本一致');
+  assert.equal(restored.examObservation?.findings, submitted.session.examObservation?.findings, '序列化往返原文一致');
+  // 修订重交：新幂等键覆盖 examObservation；事件链保留每次提交的发生与关联项记录（不存全文，最终原文冻结在快照）
   const revised = await runAgentTurn(
     submitted.session,
-    { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '修订：右下肺细湿啰音，双肺呼吸音对称，无哮鸣音。' } },
+    { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '修订：右下肺细湿啰音，双肺呼吸音对称，无哮鸣音。', linkedEvidence: ['EX_RESP'] } },
     'obs-submit-2',
   );
   assert.equal(revised.session.examObservation?.findings, '修订：右下肺细湿啰音，双肺呼吸音对称，无哮鸣音。');
@@ -253,15 +266,18 @@ test('查体观察提交正例：真实引擎入口解锁查体证据后保存�
   // 幂等：重复幂等键忽略，不覆盖已保存提交
   const duplicate = await runAgentTurn(
     revised.session,
-    { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '重复事件不得覆盖已保存提交。' } },
+    { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '重复事件不得覆盖已保存提交。', linkedEvidence: ['EX_RESP'] } },
     'obs-submit-2',
   );
   assert.equal(duplicate.session.examObservation?.findings, '修订：右下肺细湿啰音，双肺呼吸音对称，无哮鸣音。');
   assert.equal(duplicate.session.events.filter((event) => event.type === 'SUBMIT_EXAM_OBSERVATION').length, 2, '幂等键重复不加事件');
-  // 报告回放：最终提交冻结进快照，EX_FINDINGS 恒无法评价但证据可回放
+  // 报告回放：最终提交与关联定位符冻结进快照，EX_FINDINGS 恒无法评价但证据可回放
   const report = buildReport(revised.session, 'report-exam-observation');
   assert.equal(report.rubricVersion, 5);
   assert.equal(report.studentSubmissions?.examObservation?.findings, '修订：右下肺细湿啰音，双肺呼吸音对称，无哮鸣音。');
+  assert.deepEqual(report.studentSubmissions?.examObservation?.linkedEvidence, ['EX_RESP'], '报告快照回放关联定位符');
+  assert.ok(report.studentSubmissions?.examObservation?.linkedEventIds.includes(lungEvent.id), '报告快照回放原查体事件锚定');
+  assert.equal(report.studentSubmissions?.examObservation?.caseVersion, revised.session.caseVersion, '报告快照回放病例绑定版本');
   const findings = report.evidence.find((item) => item.code === 'RUBRIC_EX_FINDINGS');
   assert.equal(findings?.status, 'not_assessable', '无专业审核判据，已提交仍恒无法评价');
   assert.equal(findings?.score, 0);
@@ -275,50 +291,106 @@ test('查体观察提交正例：真实引擎入口解锁查体证据后保存�
 
 test('查体观察提交负例：未完成任何查体操作时拒绝（EXAM_EVIDENCE_REQUIRED）', async () => {
   const session = createInitialSession('student-1', 'practice', undefined, 'exam');
-  // provided 病史不算已解锁查体证据：凭空观察提交被服务端拒绝
+  // provided 病史不算已解锁查体证据：凭空观察提交（哪怕伪造关联码）被服务端拒绝
   assert.ok(!session.unlockedEvidence.some((code) => code.startsWith('EX_')));
   await assert.rejects(
-    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '未做任何查体就编造观察结果。' } }, 'obs-no-evidence'),
+    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '未做任何查体就编造观察结果。', linkedEvidence: ['EX_RESP'] } }, 'obs-no-evidence'),
     /EXAM_EVIDENCE_REQUIRED/,
   );
   assert.ok(!session.examObservation, '拒绝后不保存观察提交');
   assert.ok(!session.events.some((event) => event.type === 'SUBMIT_EXAM_OBSERVATION'), '拒绝后无提交事件');
 });
 
-test('查体观察提交负例：旧配置会话（scenarioVersion 不一致）拒绝（SCENARIO_VERSION_MISMATCH）', async () => {
+test('查体观察提交负例：仅完成准备动作（无结果项）拒绝（EXAM_EVIDENCE_REQUIRED）', async () => {
+  const session = createInitialSession('student-1', 'practice', undefined, 'exam');
+  // C-关联与验收-05 缺口修正回归：EX_PREP 属准备动作而非临床所见，仅手卫生不足以关联观察
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'prep-only-1');
+  assert.ok(session.unlockedEvidence.includes('EX_PREP'));
+  await assert.rejects(
+    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '仅完成手卫生就声称有观察所见。', linkedEvidence: ['EX_PREP'] } }, 'prep-only-submit'),
+    /EXAM_EVIDENCE_REQUIRED/,
+  );
+  assert.ok(!session.examObservation, '准备项不得作为观察关联锚点');
+});
+
+test('查体观察提交负例：关联定位符核验失败拒绝（伪造未获得/准备/系统提供项）', async () => {
+  const session = createInitialSession('student-1', 'practice', undefined, 'exam');
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'link-prep');
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'link-lung');
+  // 伪造未获得的查体项码：服务端按原查体事件与解锁结果核验，不信任客户端自报
+  await assert.rejects(
+    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '伪造关联未做过的口腔检查结果。', linkedEvidence: ['EX_MOUTH'] } }, 'link-forged'),
+    /EXAM_EVIDENCE_NOT_OBTAINED/,
+  );
+  // 准备项（EX_PREP）与系统提供项（EX_PROVIDED）非学生获得的临床所见，不得作为关联定位符
+  await assert.rejects(
+    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '把准备动作当临床所见锚定观察。', linkedEvidence: ['EX_PREP'] } }, 'link-prep-claim'),
+    /EXAM_EVIDENCE_NOT_OBTAINED/,
+  );
+  await assert.rejects(
+    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '把系统提供项当自己获得的所见锚定。', linkedEvidence: ['EX_PROVIDED'] } }, 'link-provided-claim'),
+    /EXAM_EVIDENCE_NOT_OBTAINED/,
+  );
+  assert.ok(!session.examObservation, '核验失败不保存提交');
+  assert.ok(!session.events.some((event) => event.type === 'SUBMIT_EXAM_OBSERVATION'), '核验失败无提交事件');
+});
+
+test('查体观察提交负例：关联定位符缺失或为空拒绝（EXAM_OBSERVATION_LINK_REQUIRED）', async () => {
+  const session = createInitialSession('student-1', 'practice', undefined, 'exam');
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'empty-link-prep');
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'empty-link-lung');
+  // schema 之外的引擎级第二道防线：直调引擎（空数组）同样拒绝无关联泛化提交
+  await assert.rejects(
+    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '不声明任何关联的泛化观察提交。', linkedEvidence: [] } }, 'empty-link-submit'),
+    /EXAM_OBSERVATION_LINK_REQUIRED/,
+  );
+  assert.ok(!session.examObservation, '无关联提交不保存');
+});
+
+test('查体观察提交负例：旧配置/未版本化会话拒绝（SCENARIO_VERSION_MISMATCH）', async () => {
   const session = createInitialSession('student-1', 'practice', undefined, 'exam');
   await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'ver-prep');
   await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'ver-lung');
-  session.scenarioVersion = 4; // 旧配置会话（v4 未开放提交通道）：不借新配置解释旧会话
+  session.scenarioVersion = 4; // 旧配置会话（v4 未定义关联契约）：不借新配置解释旧会话、不静默升级
   await assert.rejects(
-    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '旧配置会话提交观察内容。' } }, 'ver-submit'),
+    () => runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '旧配置会话提交观察内容。', linkedEvidence: ['EX_RESP'] } }, 'ver-submit'),
     /SCENARIO_VERSION_MISMATCH/,
   );
   assert.ok(!session.examObservation, '版本不符拒绝后不保存提交');
+  // C-关联与验收-05 缺口修正回归：scenarioVersion 缺失（早于版本化的历史会话）同样明确拒绝
+  const legacy = createInitialSession('student-1', 'practice', undefined, 'exam');
+  await runAgentTurn(legacy, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'ver-legacy-prep');
+  await runAgentTurn(legacy, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'ver-legacy-lung');
+  legacy.scenarioVersion = undefined;
+  await assert.rejects(
+    () => runAgentTurn(legacy, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '未版本化历史会话提交观察内容。', linkedEvidence: ['EX_RESP'] } }, 'ver-legacy-submit'),
+    /SCENARIO_VERSION_MISMATCH/,
+  );
+  assert.ok(!legacy.examObservation, '未版本化会话拒绝后不保存提交');
 });
 
 test('查体观察提交负例：跨专项/OSCE/引导模式均拒绝（服务端门控）', async () => {
   const history = createInitialSession('student-1', 'practice', undefined, 'history');
   await assert.rejects(
-    () => runAgentTurn(history, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '病史采集专项不允许查体提交。' } }, 'x-history'),
+    () => runAgentTurn(history, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '病史采集专项不允许查体提交。', linkedEvidence: ['EX_RESP'] } }, 'x-history'),
     /PRACTICE_EVENT_FORBIDDEN/,
   );
   assert.ok(!history.examObservation);
   const osce = createInitialSession('student-1', 'osce');
   await assert.rejects(
-    () => runAgentTurn(osce, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: 'OSCE 模拟站不开放专项提交。' } }, 'x-osce'),
+    () => runAgentTurn(osce, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: 'OSCE 模拟站不开放专项提交。', linkedEvidence: ['EX_RESP'] } }, 'x-osce'),
     /OSCE_EVENT_STAGE_FORBIDDEN/,
   );
   // 引导模式事件-阶段门控不拦截（自由探索），由引擎归属门控纵深防御拒绝
   const guided = createInitialSession('student-1', 'guided');
   await assert.rejects(
-    () => runAgentTurn(guided, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '引导模式同样不允许提交。' } }, 'x-guided'),
+    () => runAgentTurn(guided, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '引导模式同样不允许提交。', linkedEvidence: ['EX_RESP'] } }, 'x-guided'),
     /EXAM_OBSERVATION_FORBIDDEN/,
   );
   assert.ok(!guided.examObservation, '拒绝后不保存提交');
 });
 
-test('查体观察提交 schema：过短观察与自报得分/解锁字段拒绝，合法提交通过', () => {
+test('查体观察提交 schema：过短观察/缺失关联/自报得分或解锁字段拒绝，合法提交通过', () => {
   const payload = (data: unknown) => ({
     sessionId: '11111111-1111-4111-8111-111111111111',
     clientEventId: 'obs-schema-check',
@@ -327,7 +399,12 @@ test('查体观察提交 schema：过短观察与自报得分/解锁字段拒绝
   assert.ok(!agentTurnSchema.safeParse(payload({ findings: '太短' })).success, '观察少于 10 字拒绝');
   assert.ok(!agentTurnSchema.safeParse(payload({ findings: '合格的观察文本长度。', score: 20 })).success, 'strict：客户端不得自报得分字段');
   assert.ok(!agentTurnSchema.safeParse(payload({ findings: '合格的观察文本长度。', unlockedEvidence: ['EX_RESP'] })).success, 'strict：客户端不得自报解锁事实');
-  assert.ok(agentTurnSchema.safeParse(payload({ findings: '双肺呼吸音对称，右下肺闻及细湿啰音。', interpretation: '提示肺实质病变。' })).success, '合法提交通过');
+  // C-关联与验收-05：linkedEvidence 必填——缺失/空数组/非数组/空串元素均拒绝（语义核验在引擎层）
+  assert.ok(!agentTurnSchema.safeParse(payload({ findings: '合格的观察文本长度。' })).success, '缺失关联定位符拒绝');
+  assert.ok(!agentTurnSchema.safeParse(payload({ findings: '合格的观察文本长度。', linkedEvidence: [] })).success, '空关联数组拒绝');
+  assert.ok(!agentTurnSchema.safeParse(payload({ findings: '合格的观察文本长度。', linkedEvidence: 'EX_RESP' })).success, '关联定位符须为数组');
+  assert.ok(!agentTurnSchema.safeParse(payload({ findings: '合格的观察文本长度。', linkedEvidence: [''] })).success, '空串关联码拒绝');
+  assert.ok(agentTurnSchema.safeParse(payload({ findings: '双肺呼吸音对称，右下肺闻及细湿啰音。', interpretation: '提示肺实质病变。', linkedEvidence: ['EX_RESP'] })).success, '合法提交通过');
 });
 
 // C-观察与报告-04 回归：未评分口径——全部计分项无法评价的报告不得以 0 分进入趋势统计。
@@ -357,7 +434,9 @@ test('未评分口径：历史报告无 unscored 字段时按快照推导，仅�
   assert.equal(isUnscoredReport({ evidence: [] }), false, '空 evidence（过程分）不标未评分');
 });
 
-test('趋势隔离：未评分报告不进平均分/最好成绩统计', () => {
+test('趋势隔离：未评分报告不进平均分/最好成绩统计（函数层口径）', () => {
+  // C-关联与验收-05 口径标注：本测试仅覆盖函数层 isUnscoredReport 过滤（报告列表页/教师端趋势
+  // 共用该口径）；报告列表页与教师端真实 HTTP 展示属阶段 D 待验收范围，本测试不构成页面层证据。
   const scoredSession = createInitialSession('student-1', 'practice', undefined, 'exam');
   scoredSession.unlockedEvidence = ['EX_PREP', 'EX_RESP', 'EX_SPO2'];
   const scored = buildReport(scoredSession, 'report-trend-scored');

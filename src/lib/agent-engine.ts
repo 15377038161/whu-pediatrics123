@@ -657,31 +657,63 @@ function handleHistorySummary(session: SessionState, summary: string, clientEven
   };
 }
 
-/** 查体专项观察/解释提交（C-观察与报告-04）：服务端校验专项归属、已解锁查体证据与配置版本后
- *  保存真实提交——客户端不自报得分或解锁事实；无专业审核判据时不做结果识别评分，仅保存原文
- *  并记过程反馈（EX_FINDINGS 恒无法评价，待教师结合查体记录复核）。可重复提交修订（每次新
- *  幂等键覆盖 examObservation，事件链保留全部提交记录供报告回放）。 */
+/** 查体专项观察/解释提交（C-观察与报告-04 / C-关联与验收-05）：服务端按专项归属、绑定配置
+ *  版本、本会话原查体事件与解锁结果核验 linkedEvidence 关联定位符后保存真实提交——客户端不自
+ *  报得分或解锁事实；无专业审核判据时不做结果识别评分，仅保存原文并记过程反馈（EX_FINDINGS 恒
+ *  无法评价，待教师结合查体记录复核）。可重复提交修订（每次新幂等键覆盖 examObservation；事件链
+ *  保留每次提交的发生与关联项记录但不存全文，最终提交原文冻结在快照供恢复与报告回放）。 */
 function handleExamObservation(session: SessionState, data: Extract<AgentEvent, { type: 'SUBMIT_EXAM_OBSERVATION' }>['data'], clientEventId: string): AgentTurnResult {
   // 归属门控（纵深防御）：仅查体专项 practice 会话可提交；跨专项/OSCE 已在 validateEventStage
   // 按 allowedActions 白名单拒绝，此处再核一次防直调引擎绕过门控。
   if (session.mode !== 'practice' || session.practiceFocus !== 'exam') throw new Error('EXAM_OBSERVATION_FORBIDDEN');
   const scenario = getPracticeScenario('exam');
   if (!scenario) throw new Error('EXAM_OBSERVATION_FORBIDDEN');
-  // 配置版本核对：会话创建时冻结的 scenarioVersion 与当前配置不一致（旧配置会话）时拒绝——
-  // 旧配置未开放本提交通道，不借新配置解释旧会话（错误版本负例）。
-  if (session.scenarioVersion !== undefined && session.scenarioVersion !== scenario.configVersion) throw new Error('SCENARIO_VERSION_MISMATCH');
-  // 已解锁查体证据核对：观察提交必须锚定本会话真实解锁的查体结果（EX_ 前缀且非 provided），
-  // 未完成任何有效查体操作时拒绝（防止凭空提交观察；EX_PREP 属解锁证据亦计入）。
-  const unlockedExamEvidence = session.unlockedEvidence.filter((code) => code.startsWith('EX_') && code !== 'EX_PROVIDED');
-  if (unlockedExamEvidence.length === 0) throw new Error('EXAM_EVIDENCE_REQUIRED');
-  session.examObservation = { findings: data.findings, interpretation: data.interpretation?.trim() ? data.interpretation.trim() : null, submittedAt: now() };
-  session.events.push(clinicalEvent(clientEventId, 'SUBMIT_EXAM_OBSERVATION', 'exam', `提交查体观察与解释（锚定 ${unlockedExamEvidence.length} 项已解锁查体证据）`, null, ['EX_OBSERVATION']));
+  // 配置版本核对（C-关联与验收-05 收紧）：会话创建时冻结的 scenarioVersion 缺失（早于版本化
+  // 的历史会话）或与当前配置不一致（旧配置会话）时一律明确拒绝——本提交链含关联定位符核验，
+  // 旧配置未定义该契约，不借新配置解释/静默升级旧会话。
+  if (session.scenarioVersion === undefined || session.scenarioVersion !== scenario.configVersion) throw new Error('SCENARIO_VERSION_MISMATCH');
+  // 关联定位符必填（引擎级第二道防线，schema 之外直调引擎同样受约束）：学生必须声明本次观察
+  // 关联哪些查体项，不接受无关联的泛化提交。
+  const linkedEvidence = [...new Set(data.linkedEvidence ?? [])];
+  if (linkedEvidence.length === 0) throw new Error('EXAM_OBSERVATION_LINK_REQUIRED');
+  // 本会话已实际获得结果的查体项定位：以真实 EXAM_ACTION 成功事件为准（correct 非 false 且
+  // 携带结果项证据码；EX_PREP 属准备动作、EX_PROVIDED 属系统提供，均非学生获得的临床所见，
+  // 不计入可关联集合——防止把准备操作当临床所见锚定观察）。
+  const obtainedExamResults = new Map<string, string[]>();
+  for (const event of session.events) {
+    if (event.type !== 'EXAM_ACTION' || event.correct === false) continue;
+    for (const code of event.evidenceCodes) {
+      if (!code.startsWith('EX_') || code === 'EX_PREP' || code === 'EX_PROVIDED') continue;
+      obtainedExamResults.set(code, uniq([...(obtainedExamResults.get(code) ?? []), event.id]));
+    }
+  }
+  if (obtainedExamResults.size === 0) throw new Error('EXAM_EVIDENCE_REQUIRED');
+  // 关联定位符逐项核验（服务端按归属/原查体事件/解锁结果核验，不信任客户端自报）：每个关联码
+  // 必须同时满足——在本会话 unlockedEvidence 中（解锁事实）且由本会话真实成功查体事件获得
+  // （原事件锚定）。伪造码/未解锁码/准备或提供项/其他会话或来源码一律拒绝，不静默过滤。
+  for (const code of linkedEvidence) {
+    if (!session.unlockedEvidence.includes(code) || !obtainedExamResults.has(code)) {
+      throw new Error('EXAM_EVIDENCE_NOT_OBTAINED');
+    }
+  }
+  const linkedEventIds = uniq(linkedEvidence.flatMap((code) => obtainedExamResults.get(code) ?? []));
+  // 关联定位符/原事件 id/病例版本/提交原文均为服务端核验产物（caseVersion 取会话绑定版本，
+  // 不取客户端字段），随 examObservation 序列化保存（恢复与报告快照同源）。
+  session.examObservation = {
+    findings: data.findings,
+    interpretation: data.interpretation?.trim() ? data.interpretation.trim() : null,
+    linkedEvidence,
+    linkedEventIds,
+    caseVersion: session.caseVersion,
+    submittedAt: now(),
+  };
+  session.events.push(clinicalEvent(clientEventId, 'SUBMIT_EXAM_OBSERVATION', 'exam', `提交查体观察与解释（关联 ${linkedEvidence.join('、')}）`, null, ['EX_OBSERVATION']));
   session.updatedAt = now();
   return {
     session,
     newMessages: [],
-    feedback: feedbackFor(session, '观察与解释已保存，可修订重交。结果识别不做机器计分，提交原文将保留在报告快照，待教师结合查体记录复核。'),
-    trace: [trace('病例状态', '保存查体观察/解释提交（专项过程证据，不做机器计分）')],
+    feedback: feedbackFor(session, '观察与解释已保存（已关联本会话获得的查体结果），可修订重交。结果识别不做机器计分，最终提交原文将保留在报告快照，待教师结合查体记录复核。'),
+    trace: [trace('病例状态', `保存查体观察/解释提交（关联 ${linkedEvidence.length} 项已获得结果，病例版本 ${session.caseVersion}；专项过程证据，不做机器计分）`)],
   };
 }
 

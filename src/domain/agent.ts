@@ -93,9 +93,12 @@ export interface SessionState {
   providedEvidence?: string[];
   /** 病史采集专项的最终提交（方案 5.1 结束条件）：报告快照保留原始提交文本。 */
   historySummary?: string | null;
-  /** 查体专项的观察/解释提交（C-观察与报告-04）：服务端校验专项归属、已解锁查体证据与
-   *  配置版本后写入，客户端不自报得分或解锁事实；可重复提交修订，报告快照保留最终提交原文。 */
-  examObservation?: { findings: string; interpretation: string | null; submittedAt: string } | null;
+  /** 查体专项的观察/解释提交（C-观察与报告-04 / C-关联与验收-05）：服务端按专项归属、
+   *  绑定配置版本、本会话原查体事件与解锁结果核验 linkedEvidence 关联定位符后写入
+   *  （关联定位符/原事件 id/病例版本/提交原文均为服务端核验产物，客户端不自报得分或解锁事实）；
+   *  可重复提交修订（examObservation 保留最终提交原文，事件链保留每次提交的发生与关联项记录，
+   *  不含全文），报告快照冻结最终提交（含关联定位符与病例版本）。 */
+  examObservation?: { findings: string; interpretation: string | null; linkedEvidence: string[]; linkedEventIds: string[]; caseVersion: number; submittedAt: string } | null;
   stage: Stage;
   /** 回看展示阶段（非 OSCE 专用）：查看已完成阶段/返回会话中心时记录 UI 展示阶段，
    *  不修改业务阶段 stage（DB 防回退触发器语义保持）；前进导航时清除。 */
@@ -172,7 +175,7 @@ export type AgentEvent =
   | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
   | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string } }
   | { type: 'SUBMIT_HISTORY_SUMMARY'; data: { summary: string } }
-  | { type: 'SUBMIT_EXAM_OBSERVATION'; data: { findings: string; interpretation?: string } }
+  | { type: 'SUBMIT_EXAM_OBSERVATION'; data: { findings: string; interpretation?: string; linkedEvidence: string[] } }
   | { type: 'SUBMIT_PLAN'; data: { priority: string; detail: string } }
   | { type: 'SEND_COMMUNICATION'; data: { text: string; speech?: EventSpeechMeta } }
   | { type: 'NAVIGATE_STAGE'; data: { stage: Stage } }
