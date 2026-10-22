@@ -1,0 +1,6 @@
+SMOKE_PROBE 2026-10-22T02:14:29Z
+GET / -> 200
+GET /api/health/integrations -> 200 {app:ready, database:connected, caseKnowledge:{localFiles:missing, recall:configured, persisted:ready}, model:coze_runtime}
+GET /api/auth/me -> 401 (未登录拒绝，符合预期)
+GET /api/cases -> 401 (未登录拒绝，符合预期)
+PROBE_DONE 服务已关闭

@@ -1,0 +1,16 @@
+=== [watcher 2026-10-22T02:05:56Z] pid 1219 (validate: typecheck && lint && test) 已退出，TAP 汇总与尾部取证如下 ===
+  duration_ms: 410.150448
+  type: 'test'
+  ...
+1..343
+# tests 371
+# suites 4
+# pass 366
+# fail 1
+# cancelled 0
+# skipped 4
+# todo 0
+# duration_ms 107833.490428
+ ELIFECYCLE  Test failed. See above for more details.
+ ELIFECYCLE  Command failed with exit code 1.
+VALIDATE_EXIT=1
