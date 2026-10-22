@@ -1,7 +1,7 @@
 {
   "_meta": {
-    "provenance": "真实库只读查询（case_snapshot_facts / case_publication），2026-10-21 阶段A盘点",
-    "notes": "发布语义：无 case_publication 行 = 已发布（published=true 缺省开放）。NRDS 双版本：当前 8d5321f1154d2841（完整），历史 85ef9072fd59c67b（查体/检查/诊断/处置全空，待教师确认后清理）。本文件由 scripts/audit-case-readiness.ts 消费；快照版本变化时以最新只读查询结果更新本文件，不手改 rows。"
+    "provenance": "真实库只读查询（case_snapshot_facts / case_publication），2026-10-21 阶段A盘点；2026-10-22 阶段1复核补齐新增版本行（只读查询，未写入库）",
+    "notes": "发布语义：无 case_publication 行 = 已发布（published=true 缺省开放）。NRDS 双版本：当前 8d5321f1154d2841（完整），历史 85ef9072fd59c67b（查体/检查/诊断/处置全空，待教师确认后清理）。2026-10-22 复核发现两例 2026-10-21 新增版本行（teacher-儿童-肥胖症 d5f9b92b9cdf5b63、teacher-心律失常-室上性心动过速 637b5db0183de8f0），按本文件规范以最新只读查询结果补齐；当前版本归属（多版本哪个为会话绑定版本）以运行验收实测为准，不在本文件判定。本文件由 scripts/audit-case-readiness.ts 消费；快照版本变化时以最新只读查询结果更新本文件，不手改 rows。"
   },
   "versions": [
     { "caseId": "teacher-1型糖尿病伴有酮症酸中毒", "version": "04b58216f1700203" },
@@ -10,6 +10,7 @@
     { "caseId": "teacher-中枢神经系统脱髓鞘病", "version": "384c043e5c538028" },
     { "caseId": "teacher-传染性单核细胞增多症", "version": "10e83a645846eff2" },
     { "caseId": "teacher-儿童-肥胖症", "version": "18b825c3bfd5434f" },
+    { "caseId": "teacher-儿童-肥胖症", "version": "d5f9b92b9cdf5b63" },
     { "caseId": "teacher-先天性肌无力", "version": "9c3c5dd47b9d027e" },
     { "caseId": "teacher-先天性肾上腺皮质增生症", "version": "8d1ea7d227b17979" },
     { "caseId": "teacher-再生障碍性贫血", "version": "ee465e1ff5f76fa8" },
@@ -21,6 +22,7 @@
     { "caseId": "teacher-川崎病", "version": "8cd8a5ccd5bdf5a2" },
     { "caseId": "teacher-异物吸入性窒息", "version": "b57d983b82200002" },
     { "caseId": "teacher-心律失常-室上性心动过速", "version": "9fa788c10d325939" },
+    { "caseId": "teacher-心律失常-室上性心动过速", "version": "637b5db0183de8f0" },
     { "caseId": "teacher-急性喉炎", "version": "add55543e88cae23" },
     { "caseId": "teacher-急性喘息性支气管炎", "version": "4ddec398e66a6213" },
     { "caseId": "teacher-急性毛细支气管炎", "version": "937f381d7c89b16c" },
