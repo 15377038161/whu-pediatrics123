@@ -57,6 +57,8 @@ interface RegisterRow {
   sourcePath: string | null;
   published: boolean;
   publishedVersion: string | null;
+  /** degraded 专用：台账丢失前 audit.version 绑定值（当时本地内容指纹，非库版本）；仅当与重算后 publishedVersion 不同时保留作证据。 */
+  auditBoundVersion: string | null;
   historicalVersions: string[];
   sourceHash: null;
   ageKnown: string | null;
@@ -177,13 +179,86 @@ function main(): void {
   let priorAuditedSources = 0;
 
   if (degraded) {
-    // 沙箱重置丢失台账输入：逐例行复用已跟踪上次生成结果（不重算、不丢失核对轨迹）。
+    // 沙箱重置丢失台账输入：台账/核对来源列（audit/readiness/e2eResult/supportedModes/ageKnown/ageBand/
+    // sexKnown/dimensionChars/avatarReady/ledgerMarker/reviewer/reviewedAt）复用上次生成结果，不丢失核对轨迹；
+    // 代码目录与快照来源列（relation/sourceCaseId/catalogStatus/sourcePath/published/publishedVersion/
+    // historicalVersions/blockers）按当前代码与快照重算，修复 degraded 复用导致的漂移
+    // （2026-10-22 第四十三节对账实证：17 行 catalogStatus 漂移 + 21 行 publishedVersion 漂移）。
     const prior = JSON.parse(readFileSync(path.join(DOCS, 'case-readiness-register.json'), 'utf8')) as {
       rows: RegisterRow[];
       summary: { auditedSources: number };
     };
     priorAuditedSources = prior.summary.auditedSources;
-    rows.push(...prior.rows);
+    const priorByCase = new Map(prior.rows.map((r) => [r.publicCaseId, r]));
+    for (const item of TEACHER_CASE_CATALOG) {
+      const priorRow = priorByCase.get(item.id) ?? null;
+      const link = TEACHER_CASE_LINKS[item.id];
+      const relation: Relation = link ? link.relation : item.folder ? 'independent' : 'no_source';
+      const sourceCaseId = link ? link.sourceId : relation === 'independent' ? item.id : null;
+      const ledgerKey = sourceCaseId ?? item.id;
+      const versions = versionsByCase.get(ledgerKey) ?? [];
+      const hasOverride = ledgerKey in CURRENT_VERSION_OVERRIDE;
+      const currentVersion = hasOverride ? CURRENT_VERSION_OVERRIDE[ledgerKey] : versions[0] ?? null;
+      const historicalVersions = versions.filter((v) => v !== currentVersion);
+      const published = publicationByCase.has(item.id) ? (publicationByCase.get(item.id) as boolean) : true;
+      const blockers: string[] = [];
+      if (priorRow?.ledgerMarker.includes('⚠')) blockers.push(priorRow.ledgerMarker);
+      if (relation === 'alias' || relation === 'subtype') blockers.push('别名/亚型入口：与源病例同步门控（同一患者不因别名绕过）');
+      if (historicalVersions.length > 0) {
+        blockers.push(hasOverride
+          ? `历史版本待教师清理：${historicalVersions.join('、')}`
+          : `多版本归属待运行实测核对：${historicalVersions.join('、')}`);
+      }
+      if (!priorRow) {
+        // 上次生成后新增的目录条目（当前对账无此情形，防御处理）：无台账行可复用，按未核对登记。
+        rows.push({
+          publicCaseId: item.id,
+          sourceCaseId,
+          relation,
+          catalogStatus: item.status,
+          sourcePath: item.folder,
+          published,
+          publishedVersion: currentVersion,
+          auditBoundVersion: null,
+          historicalVersions,
+          sourceHash: null,
+          ageKnown: null,
+          ageBand: 'unknown',
+          sexKnown: 'unknown',
+          dimensionChars: null,
+          audit: null,
+          readiness: relation === 'no_source'
+            ? { history: 'insufficient', exam: 'insufficient', tests: 'insufficient', reasoning: 'insufficient', plan: 'insufficient' }
+            : { history: 'unaudited', exam: 'unaudited', tests: 'unaudited', reasoning: 'unaudited', plan: 'unaudited' },
+          avatarReady: 'partial',
+          communicationReady: false,
+          speechRoleReady: false,
+          rubricReady: false,
+          supportedModes: relation === 'no_source' ? [] : ['guided', 'osce', 'immersive'],
+          blockers,
+          ledgerMarker: '',
+          reviewer: null,
+          reviewedAt: null,
+          e2eResult: null,
+        });
+        continue;
+      }
+      rows.push({
+        ...priorRow,
+        // 代码目录/快照来源列重算（修复 degraded 漂移）：
+        publicCaseId: item.id,
+        sourceCaseId,
+        relation,
+        catalogStatus: item.status,
+        sourcePath: item.folder,
+        published,
+        publishedVersion: currentVersion,
+        // 台账丢失前 audit.version 绑定值（当时本地内容指纹）：与重算当前版本不同时保留作漂移证据，供教师凭据导出按库版本执行。
+        auditBoundVersion: priorRow.audit && priorRow.publishedVersion && priorRow.publishedVersion !== currentVersion ? priorRow.publishedVersion : null,
+        historicalVersions,
+        blockers,
+      });
+    }
   } else {
   for (const item of TEACHER_CASE_CATALOG) {
     const link = TEACHER_CASE_LINKS[item.id];
@@ -230,7 +305,11 @@ function main(): void {
     const blockers: string[] = [];
     if (ledger && ledger.marker.includes('⚠')) blockers.push(ledger.marker);
     if (relation === 'alias' || relation === 'subtype') blockers.push('别名/亚型入口：与源病例同步门控（同一患者不因别名绕过）');
-    if (historicalVersions.length > 0) blockers.push(`历史版本待教师清理：${historicalVersions.join('、')}`);
+    if (historicalVersions.length > 0) {
+      blockers.push(ledgerKey in CURRENT_VERSION_OVERRIDE
+        ? `历史版本待教师清理：${historicalVersions.join('、')}`
+        : `多版本归属待运行实测核对：${historicalVersions.join('、')}`);
+    }
 
     const e2eResult: string | null =
       relation === 'no_source' ? null : isPendingReview ? 'gated-403（批次核验 14/14 门控拒绝）' : 'all-pass（批次核验 39/39 全链路 + 版本绑定）';
@@ -243,6 +322,7 @@ function main(): void {
       sourcePath: item.folder,
       published,
       publishedVersion: currentVersion,
+      auditBoundVersion: null,
       historicalVersions,
       sourceHash: null,
       ageKnown,
@@ -283,7 +363,7 @@ function main(): void {
       ...(degraded
         ? {
             dataSourcesDegraded:
-              'case-audit-ledger.json 与《病例台账》md（未跟踪文件）已随沙箱重置丢失：本版逐例行复用上次生成结果（docs/case-readiness-register.json），未重算；台账原件回传沙箱后重跑本脚本恢复全量核对',
+              'case-audit-ledger.json 与《病例台账》md（未跟踪文件）已随沙箱重置丢失：本版台账/核对来源列（audit、readiness、e2eResult、supportedModes、ageKnown、ageBand、sexKnown、dimensionChars、avatarReady、ledgerMarker、reviewer、reviewedAt）复用上次生成结果；代码目录与快照来源列（relation、sourceCaseId、catalogStatus、sourcePath、published、publishedVersion、historicalVersions、blockers）按当前代码与快照重算，修复 degraded 全量复用导致的漂移（第四十三节对账实证 17 行 status + 21 行 version）；auditBoundVersion 保留台账丢失前 audit.version 绑定值（当时本地内容指纹，非当前库版本），教师凭据全文导出按重算后的 publishedVersion（库版本）执行；台账原件回传沙箱后重跑本脚本恢复全量核对',
           }
         : {}),
       dataSources: [

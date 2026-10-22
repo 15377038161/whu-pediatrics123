@@ -32,7 +32,8 @@
 
 - 17 行 catalogStatus 漂移：账本记 `pending-review` 17 行，当前教师目录已无该分支（历史待审项已归档重分类：materials-indexed 27→37、catalog-only 14→17、folder-only 12→16、pending-review 17→0）。
 - 21 行 publishedVersion 漂移：账本记录的版本哈希不在真实库版本集中（如 `teacher-新生儿败血症` 账本 20e4658d… vs 库 ba6ff4f3…）；另发现同一版本哈希跨两病例复用 3 组（如 4390fa16… 同时记于两条目、0ed5b913… 两组、eb180d62… 两组），疑似 degraded 复用旧行的版本赋值缺陷，待台账原件回传后重算核实。
-- 结论：账本 70 行结构可继续作登记骨架，但 status/版本列对 17~21 行不可信；以本文件与 `outputs/.../scope.json` 的实测口径为准，不照抄账本旧值。
+- **修复处置（2026-10-22，R1-REG-01 可重算部分已闭环）**：`scripts/audit-case-readiness.ts` degraded 分支由「全量复用旧行」改为「合并重算」——代码目录与快照来源列（relation/sourceCaseId/catalogStatus/sourcePath/published/publishedVersion/historicalVersions/blockers）按当前代码与快照重算；台账/核对来源列（audit/readiness/e2eResult/supportedModes/ageKnown/ageBand/sexKnown/dimensionChars/avatarReady/ledgerMarker/reviewer/reviewedAt）复用旧值不丢失核对轨迹；新增 `auditBoundVersion` 字段保留台账丢失前 audit.version 绑定值（21 例，批 1-4 全部 audit 行，实证为当时本地内容指纹而非库版本）。修复后重跑：口径对账 PASS（70 行、53/8/6/3、已核对 18/53、pending_review 17、下架 3），复跑 scope 对账**行漂移 0 / 全局缺口 0**（catalogStatus 与当前目录一致 17/37/16，publishedVersion 全部为库版本）。教师凭据全文导出（export-case-review-package.ts）按重算后库版本执行，修复前 21 例按台账指纹导出将无法命中库行的问题同步消除。
+- 残留待办：3 组版本哈希跨病例复用的根因判定依赖丢失的台账原件；readiness 的 pending_review 17 行为 audit 时代状态（当时的目录 pending-review 已归档重分类），其现行内容未重新逐例核对，不以归档重分类冒充已复核；台账原件回传后重跑恢复全量核对。
 
 ### 2.3 真实库只读盘点（2026-10-22，未写入库）
 
@@ -64,9 +65,19 @@
 | 问题 ID | 标准编号 | 现象 | 状态 |
 |---|---|---|---|
 | R1-DB-01 | A05 | 心律失常-室上速新版本病史段末尾未闭合外链图片引用截断 | 已登记，待教师核实原始资料归属 |
-| R1-REG-01 | J01 | 账本 degraded：17 行 status、21 行版本与真实库不符；3 组版本哈希跨病例复用 | 已取证（scope.json discrepancies），待台账原件回传重算 |
+| R1-REG-01 | J01 | 账本 degraded：17 行 status、21 行版本与真实库不符；3 组版本哈希跨病例复用 | **可重算部分已修复（2026-10-22）**：合并重算后行漂移 0，auditBoundVersion 保留 21 例台账绑定值证据；跨病例复用根因判定与 readiness 17 行现行内容复核待台账原件回传重算 |
 | R1-MAT-01 | J01/J02 | 文件级材料总账无法建立（原件不在沙箱） | 阻断登记，待原件回传 |
 | R1-DOC-01 | — | 审核意见处理说明原件丢失 | 缺失登记占位已建，待重传 |
+
+## 6. 任务书第 13 节代码切入点静态复核（2026-10-22）
+
+静态复核仅确认代码存在性与任务书断言一致，**不代表全链路运行验收**（运行验证按第四阶段实测；版本漂移后需重新定位）。
+
+- 患者形象 `src/domain/patient-appearance.ts`（70 行）：`patientAppearance(sex, posture, caseId, ageKnown?)` 接收 ageKnown；`isYoungInfant`（≤1 岁新生儿/婴儿）只用同性别卧位素材、请求站立也按卧位返回（行 27-49）；`allowedPostures` 该月龄仅仰卧（行 39-43）；年龄缺失/解析失败走通用儿童素材（行 45-50）。任务书断言（2026-10-21 同步后）与当前代码一致。其他年龄段形象语义未审核（B02 待逐例人工复核）。
+- 阶段门控 `src/lib/agent-engine.ts`（839 行）：`validateStageNavigation`（行 197）、`validateEventStage`（行 213）、`NAVIGATE_STAGE` 分支（行 246、809-812）均在位；viewStage 回看不修改业务 stage（行 812 注释明确"stage 列单向不变，DB 防回退触发器语义保持"）。任务书第 4 节表述与当前代码一致。
+- 教师数据读取链 `src/lib/teacher-case-data.ts`（63 行）：`readTeacherCaseData` 读 `knowledge/teaching-cases/<sourceId>.json`——knowledge/ 缺失时本地同步读取链降级（与 R1-MAT-01 同根因）；版本指纹独立计算用于会话绑定一致性校验。
+- 导入与版本指纹 `src/lib/teacher-case-import.ts`（245 行）：`computeImportVersion`（行 55）内容指纹、DB 侧版本查询取最新（行 120-125）、upsert `ignoreDuplicates` 幂等不覆盖已装载版本（行 19）。指纹是否覆盖实际教学内容变化（任务书第 13 节提醒项）需运行验证，静态确认机制在位。
+- verify 脚本链 7 个全部在位：`verify-case-field-evidence.ts`、`verify-case-source-coverage.ts`、`verify-case-library.ts`、`verify-53-cases-e2e.ts`、`extract-case-drafts.py`、`prepare-teacher-cases.py`、`build-runtime-cases-from-handover.py`。旧脚本通过只证明其覆盖规则，不证明完整接诊体验达标（任务书第 13 节口径维持）。
 
 ## 5. 私有审核工作区结构（按实际可写目录登记）
 

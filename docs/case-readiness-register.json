@@ -1,8 +1,8 @@
 {
   "_meta": {
-    "generatedAt": "2026-10-21T15:27:32.487Z",
+    "generatedAt": "2026-10-22T03:21:10.095Z",
     "generator": "scripts/audit-case-readiness.ts（阶段 A / W01，方案 7.1/7.4）",
-    "dataSourcesDegraded": "case-audit-ledger.json 与《病例台账》md（未跟踪文件）已随沙箱重置丢失：本版逐例行复用上次生成结果（docs/case-readiness-register.json），未重算；台账原件回传沙箱后重跑本脚本恢复全量核对",
+    "dataSourcesDegraded": "case-audit-ledger.json 与《病例台账》md（未跟踪文件）已随沙箱重置丢失：本版台账/核对来源列（audit、readiness、e2eResult、supportedModes、ageKnown、ageBand、sexKnown、dimensionChars、avatarReady、ledgerMarker、reviewer、reviewedAt）复用上次生成结果；代码目录与快照来源列（relation、sourceCaseId、catalogStatus、sourcePath、published、publishedVersion、historicalVersions、blockers）按当前代码与快照重算，修复 degraded 全量复用导致的漂移（第四十三节对账实证 17 行 status + 21 行 version）；auditBoundVersion 保留台账丢失前 audit.version 绑定值（当时本地内容指纹，非当前库版本），教师凭据全文导出按重算后的 publishedVersion（库版本）执行；台账原件回传沙箱后重跑本脚本恢复全量核对",
     "dataSources": [
       "src/domain/teacher-case-catalog.ts（教师目录 70 条目）",
       "src/domain/teacher-case-links.ts（别名/亚型映射）",
@@ -45,7 +45,9 @@
       "sourcePath": null,
       "published": true,
       "publishedVersion": "18b825c3bfd5434f",
-      "historicalVersions": [],
+      "historicalVersions": [
+        "d5f9b92b9cdf5b63"
+      ],
       "sourceHash": null,
       "ageKnown": "6岁",
       "ageBand": "preschool",
@@ -75,12 +77,14 @@
         "immersive"
       ],
       "blockers": [
-        "别名/亚型入口：与源病例同步门控（同一患者不因别名绕过）"
+        "别名/亚型入口：与源病例同步门控（同一患者不因别名绕过）",
+        "多版本归属待运行实测核对：d5f9b92b9cdf5b63"
       ],
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-新生儿呼吸窘迫综合征",
@@ -128,7 +132,8 @@
       "ledgerMarker": "⚠历史缺陷版本 85ef9072 待清理；新生儿形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-新生儿败血症",
@@ -137,10 +142,8 @@
       "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/新生儿疾病/新生儿败血症",
       "published": true,
-      "publishedVersion": "20e4658d06d72824",
-      "historicalVersions": [
-        "ba6ff4f30655d524"
-      ],
+      "publishedVersion": "ba6ff4f30655d524",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "1天",
       "ageBand": "newborn",
@@ -178,13 +181,12 @@
         "osce",
         "immersive"
       ],
-      "blockers": [
-        "历史版本待教师清理：ba6ff4f30655d524"
-      ],
+      "blockers": [],
       "ledgerMarker": "新生儿形象",
       "reviewer": null,
       "reviewedAt": "2026-10-20T04:56:16.727Z",
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": "20e4658d06d72824"
     },
     {
       "publicCaseId": "teacher-新生儿高胆红素血症",
@@ -227,7 +229,8 @@
       "ledgerMarker": "新生儿形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-新生儿abo溶血性黄疸",
@@ -270,7 +273,8 @@
       "ledgerMarker": "新生儿形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-新生儿rh溶血性黄疸",
@@ -313,7 +317,8 @@
       "ledgerMarker": "新生儿形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-新生儿肺炎",
@@ -322,10 +327,8 @@
       "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/新生儿疾病/新生儿肺炎",
       "published": true,
-      "publishedVersion": "a98d8c7a1671d1d3",
-      "historicalVersions": [
-        "648a7efc210d32dd"
-      ],
+      "publishedVersion": "648a7efc210d32dd",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "2天",
       "ageBand": "newborn",
@@ -360,13 +363,12 @@
         "osce",
         "immersive"
       ],
-      "blockers": [
-        "历史版本待教师清理：648a7efc210d32dd"
-      ],
+      "blockers": [],
       "ledgerMarker": "新生儿形象",
       "reviewer": null,
       "reviewedAt": "2026-10-20T07:05:20.769Z",
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": "a98d8c7a1671d1d3"
     },
     {
       "publicCaseId": "teacher-新生儿胎粪吸入肺炎",
@@ -411,7 +413,8 @@
       "ledgerMarker": "新生儿形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-新生儿化脓性脑膜炎",
@@ -456,19 +459,18 @@
       "ledgerMarker": "⚠诊断短；新生儿形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-新生儿重度窒息",
       "sourceCaseId": "teacher-新生儿重度窒息",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/新生儿疾病/新生儿重度窒息",
       "published": true,
-      "publishedVersion": "fe0762eac61f2676",
-      "historicalVersions": [
-        "d347ceb4969d7c4a"
-      ],
+      "publishedVersion": "d347ceb4969d7c4a",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "10分钟",
       "ageBand": "newborn",
@@ -505,13 +507,13 @@
         "guided"
       ],
       "blockers": [
-        "⚠处置薄；新生儿形象",
-        "历史版本待教师清理：d347ceb4969d7c4a"
+        "⚠处置薄；新生儿形象"
       ],
       "ledgerMarker": "⚠处置薄；新生儿形象",
       "reviewer": null,
       "reviewedAt": "2026-10-20T04:56:16.727Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "fe0762eac61f2676"
     },
     {
       "publicCaseId": "teacher-新生儿脑梗死",
@@ -544,7 +546,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": null
+      "e2eResult": null,
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-先天性肾上腺皮质增生症",
@@ -587,7 +590,8 @@
       "ledgerMarker": "诊断短；新生儿形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-新生儿缺血缺氧性脑病",
@@ -630,7 +634,8 @@
       "ledgerMarker": "新生儿形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-风湿热",
@@ -673,7 +678,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-过敏性紫癜",
@@ -716,7 +722,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-川崎病",
@@ -725,10 +732,8 @@
       "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/免疫系统疾病/川崎病",
       "published": true,
-      "publishedVersion": "525495d4f805994a",
-      "historicalVersions": [
-        "8cd8a5ccd5bdf5a2"
-      ],
+      "publishedVersion": "8cd8a5ccd5bdf5a2",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "5岁",
       "ageBand": "preschool",
@@ -765,13 +770,12 @@
         "osce",
         "immersive"
       ],
-      "blockers": [
-        "历史版本待教师清理：8cd8a5ccd5bdf5a2"
-      ],
+      "blockers": [],
       "ledgerMarker": "主诉以黄染首发（源文事实）",
       "reviewer": null,
       "reviewedAt": "2026-10-20T07:05:20.769Z",
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": "525495d4f805994a"
     },
     {
       "publicCaseId": "teacher-传染行单核细胞增多症",
@@ -816,7 +820,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-轮状病毒性肠炎",
@@ -859,19 +864,18 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-细菌性肠炎",
       "sourceCaseId": "teacher-细菌性肠炎",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/消化系统疾病/细菌性肠炎",
       "published": true,
-      "publishedVersion": "1218280b60feada6",
-      "historicalVersions": [
-        "7c286b5da4f91057"
-      ],
+      "publishedVersion": "7c286b5da4f91057",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "9岁",
       "ageBand": "school",
@@ -908,13 +912,13 @@
         "guided"
       ],
       "blockers": [
-        "⚠诊断短",
-        "历史版本待教师清理：7c286b5da4f91057"
+        "⚠诊断短"
       ],
       "ledgerMarker": "⚠诊断短",
       "reviewer": null,
       "reviewedAt": "2026-10-20T02:47:02.209Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "1218280b60feada6"
     },
     {
       "publicCaseId": "teacher-婴儿胆汁淤积症-巨细胞病毒",
@@ -959,7 +963,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-急性喉炎",
@@ -1004,19 +1009,18 @@
       "ledgerMarker": "⚠年龄表述异常（源文如此）",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-异物吸入性窒息",
       "sourceCaseId": "teacher-异物吸入性窒息",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/呼吸系统疾病/异物吸入性窒息",
       "published": true,
-      "publishedVersion": "6e397a61cbd651c3",
-      "historicalVersions": [
-        "b57d983b82200002"
-      ],
+      "publishedVersion": "b57d983b82200002",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "4岁",
       "ageBand": "preschool",
@@ -1053,13 +1057,13 @@
         "guided"
       ],
       "blockers": [
-        "⚠处置薄",
-        "历史版本待教师清理：b57d983b82200002"
+        "⚠处置薄"
       ],
       "ledgerMarker": "⚠处置薄",
       "reviewer": null,
       "reviewedAt": "2026-10-20T06:41:05.736Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "6e397a61cbd651c3"
     },
     {
       "publicCaseId": "teacher-急性喘息性支气管炎",
@@ -1102,19 +1106,18 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-毛细支气管炎",
       "sourceCaseId": "teacher-急性毛细支气管炎",
       "relation": "subtype",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "catalog-only",
       "sourcePath": null,
       "published": true,
-      "publishedVersion": "0ed5b913086fc73e",
-      "historicalVersions": [
-        "937f381d7c89b16c"
-      ],
+      "publishedVersion": "937f381d7c89b16c",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "7月4天",
       "ageBand": "infant",
@@ -1152,13 +1155,13 @@
       ],
       "blockers": [
         "⚠处置薄",
-        "别名/亚型入口：与源病例同步门控（同一患者不因别名绕过）",
-        "历史版本待教师清理：937f381d7c89b16c"
+        "别名/亚型入口：与源病例同步门控（同一患者不因别名绕过）"
       ],
       "ledgerMarker": "⚠处置薄",
       "reviewer": null,
       "reviewedAt": "2026-10-20T02:47:02.209Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "0ed5b913086fc73e"
     },
     {
       "publicCaseId": "teacher-支气管哮喘",
@@ -1201,7 +1204,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-支气管肺炎",
@@ -1234,7 +1238,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": null
+      "e2eResult": null,
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-大叶性肺炎",
@@ -1279,7 +1284,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-肺炎支原体性肺炎",
@@ -1324,18 +1330,19 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-心律失常-阵发性室上性心动过速",
       "sourceCaseId": "teacher-心律失常-室上性心动过速",
       "relation": "subtype",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "catalog-only",
       "sourcePath": null,
       "published": true,
-      "publishedVersion": "eb180d62f8f1a47a",
+      "publishedVersion": "9fa788c10d325939",
       "historicalVersions": [
-        "9fa788c10d325939"
+        "637b5db0183de8f0"
       ],
       "sourceHash": null,
       "ageKnown": "6岁",
@@ -1375,12 +1382,13 @@
       ],
       "blockers": [
         "别名/亚型入口：与源病例同步门控（同一患者不因别名绕过）",
-        "历史版本待教师清理：9fa788c10d325939"
+        "多版本归属待运行实测核对：637b5db0183de8f0"
       ],
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": "2026-10-20T06:41:05.736Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "eb180d62f8f1a47a"
     },
     {
       "publicCaseId": "teacher-暴发性心肌炎",
@@ -1423,19 +1431,18 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-急性肾小球肾炎",
       "sourceCaseId": "teacher-急性肾小球肾炎",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/泌尿系统疾病/急性肾小球肾炎",
       "published": true,
-      "publishedVersion": "f98f0bec00d664a9",
-      "historicalVersions": [
-        "0db76fcf293fe441"
-      ],
+      "publishedVersion": "0db76fcf293fe441",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "11岁",
       "ageBand": "school",
@@ -1472,25 +1479,23 @@
         "guided"
       ],
       "blockers": [
-        "⚠处置薄",
-        "历史版本待教师清理：0db76fcf293fe441"
+        "⚠处置薄"
       ],
       "ledgerMarker": "⚠处置薄",
       "reviewer": null,
       "reviewedAt": "2026-10-20T04:56:16.727Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "f98f0bec00d664a9"
     },
     {
       "publicCaseId": "teacher-肾病综合征",
       "sourceCaseId": "teacher-肾病综合征",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/泌尿系统疾病/肾病综合征",
       "published": true,
-      "publishedVersion": "ac3af2f55656d4fc",
-      "historicalVersions": [
-        "e8fa77f3bc669e86"
-      ],
+      "publishedVersion": "e8fa77f3bc669e86",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "12岁",
       "ageBand": "adolescent",
@@ -1526,25 +1531,23 @@
         "guided"
       ],
       "blockers": [
-        "⚠处置薄",
-        "历史版本待教师清理：e8fa77f3bc669e86"
+        "⚠处置薄"
       ],
       "ledgerMarker": "⚠处置薄",
       "reviewer": null,
       "reviewedAt": "2026-10-20T06:41:05.736Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "ac3af2f55656d4fc"
     },
     {
       "publicCaseId": "teacher-泌尿道感染",
       "sourceCaseId": "teacher-泌尿道感染",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/泌尿系统疾病/泌尿道感染",
       "published": true,
-      "publishedVersion": "692d50dd37bd74f6",
-      "historicalVersions": [
-        "812f3c5b37549719"
-      ],
+      "publishedVersion": "812f3c5b37549719",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "2月5天",
       "ageBand": "infant",
@@ -1581,13 +1584,13 @@
         "guided"
       ],
       "blockers": [
-        "⚠处置薄",
-        "历史版本待教师清理：812f3c5b37549719"
+        "⚠处置薄"
       ],
       "ledgerMarker": "⚠处置薄",
       "reviewer": null,
       "reviewedAt": "2026-10-20T02:47:02.209Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "692d50dd37bd74f6"
     },
     {
       "publicCaseId": "teacher-急性肾衰竭",
@@ -1596,10 +1599,8 @@
       "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/泌尿系统疾病/急性肾衰竭",
       "published": true,
-      "publishedVersion": "d14766665c62f1c3",
-      "historicalVersions": [
-        "badc42df6709443c"
-      ],
+      "publishedVersion": "badc42df6709443c",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "13岁",
       "ageBand": "adolescent",
@@ -1638,13 +1639,13 @@
         "immersive"
       ],
       "blockers": [
-        "⚠与急性百草枯中毒同主诉/年龄/性别，疑似同源待教师核实",
-        "历史版本待教师清理：badc42df6709443c"
+        "⚠与急性百草枯中毒同主诉/年龄/性别，疑似同源待教师核实"
       ],
       "ledgerMarker": "⚠与急性百草枯中毒同主诉/年龄/性别，疑似同源待教师核实",
       "reviewer": null,
       "reviewedAt": "2026-10-20T02:47:02.209Z",
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": "d14766665c62f1c3"
     },
     {
       "publicCaseId": "teacher-再生障碍性贫血",
@@ -1687,7 +1688,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-蚕豆病",
@@ -1730,7 +1732,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-特发性血小板减少性紫癜",
@@ -1773,7 +1776,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-急性白血病",
@@ -1818,19 +1822,18 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-噬血细胞综合征",
       "sourceCaseId": "teacher-噬血细胞综合征",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/血液系统疾病/噬血细胞综合征",
       "published": true,
-      "publishedVersion": "fa81a91c1b37787f",
-      "historicalVersions": [
-        "a40eb0e54c531107"
-      ],
+      "publishedVersion": "a40eb0e54c531107",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "12岁",
       "ageBand": "adolescent",
@@ -1866,25 +1869,22 @@
       "supportedModes": [
         "guided"
       ],
-      "blockers": [
-        "历史版本待教师清理：a40eb0e54c531107"
-      ],
+      "blockers": [],
       "ledgerMarker": "病史最短（薄）",
       "reviewer": null,
       "reviewedAt": "2026-10-20T04:56:16.727Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "fa81a91c1b37787f"
     },
     {
       "publicCaseId": "teacher-发热性惊厥",
       "sourceCaseId": "teacher-发热性惊厥",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/神经系统疾病/发热性惊厥",
       "published": true,
-      "publishedVersion": "a456e1cdae39ecd9",
-      "historicalVersions": [
-        "2614d5ea1c95bb0c"
-      ],
+      "publishedVersion": "2614d5ea1c95bb0c",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "1岁3月",
       "ageBand": "toddler",
@@ -1920,13 +1920,12 @@
       "supportedModes": [
         "guided"
       ],
-      "blockers": [
-        "历史版本待教师清理：2614d5ea1c95bb0c"
-      ],
+      "blockers": [],
       "ledgerMarker": "显式发布行",
       "reviewer": null,
       "reviewedAt": "2026-10-20T04:56:16.727Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "a456e1cdae39ecd9"
     },
     {
       "publicCaseId": "teacher-癫痫",
@@ -1971,7 +1970,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-病毒性脑炎",
@@ -2014,7 +2014,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-化脓性脑膜炎",
@@ -2057,7 +2058,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-结核性脑炎",
@@ -2102,7 +2104,8 @@
       "ledgerMarker": "⚠检查薄、处置超长",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-格林巴利综合征",
@@ -2135,7 +2138,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": null
+      "e2eResult": null,
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-先天性肌无力综合征",
@@ -2181,19 +2185,18 @@
       "ledgerMarker": "⚠病史/检查超长分段待核；新生儿用学龄形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-生长激素缺乏症-矮小症",
       "sourceCaseId": "teacher-矮小症",
       "relation": "subtype",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "catalog-only",
       "sourcePath": null,
       "published": true,
-      "publishedVersion": "4390fa1612f5d806",
-      "historicalVersions": [
-        "cb4a4521eebc47af"
-      ],
+      "publishedVersion": "cb4a4521eebc47af",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "9岁",
       "ageBand": "school",
@@ -2231,13 +2234,13 @@
       ],
       "blockers": [
         "⚠处置薄",
-        "别名/亚型入口：与源病例同步门控（同一患者不因别名绕过）",
-        "历史版本待教师清理：cb4a4521eebc47af"
+        "别名/亚型入口：与源病例同步门控（同一患者不因别名绕过）"
       ],
       "ledgerMarker": "⚠处置薄",
       "reviewer": null,
       "reviewedAt": "2026-10-20T02:47:02.209Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "4390fa1612f5d806"
     },
     {
       "publicCaseId": "teacher-中枢性尿崩症",
@@ -2280,19 +2283,18 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-外周性性早熟",
       "sourceCaseId": "teacher-外周性性早熟",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/内分泌系统/外周性性早熟",
       "published": true,
-      "publishedVersion": "d90cf0fb82e5e57d",
-      "historicalVersions": [
-        "13517aacdc8cabe3"
-      ],
+      "publishedVersion": "13517aacdc8cabe3",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "2岁11月",
       "ageBand": "toddler",
@@ -2329,13 +2331,13 @@
         "guided"
       ],
       "blockers": [
-        "⚠处置薄",
-        "历史版本待教师清理：13517aacdc8cabe3"
+        "⚠处置薄"
       ],
       "ledgerMarker": "⚠处置薄",
       "reviewer": null,
       "reviewedAt": "2026-10-20T06:41:05.736Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "d90cf0fb82e5e57d"
     },
     {
       "publicCaseId": "teacher-中枢性性早熟",
@@ -2378,7 +2380,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-i型糖尿病伴有酮症酸中毒",
@@ -2423,19 +2426,18 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-肝豆状核变性",
       "sourceCaseId": "teacher-肝豆状核变性",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "materials-indexed",
       "sourcePath": "knowledge/儿科常见病/遗传性疾病/肝豆状核变性",
       "published": true,
-      "publishedVersion": "65dba709cdc5ea66",
-      "historicalVersions": [
-        "7342c7f700e41153"
-      ],
+      "publishedVersion": "7342c7f700e41153",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "6岁",
       "ageBand": "preschool",
@@ -2476,13 +2478,13 @@
         "guided"
       ],
       "blockers": [
-        "⚠性别未记录（必要缺项→第一批候选）；诊断短",
-        "历史版本待教师清理：7342c7f700e41153"
+        "⚠性别未记录（必要缺项→第一批候选）；诊断短"
       ],
       "ledgerMarker": "⚠性别未记录（必要缺项→第一批候选）；诊断短",
       "reviewer": null,
       "reviewedAt": "2026-10-20T07:05:20.769Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "65dba709cdc5ea66"
     },
     {
       "publicCaseId": "teacher-糖原贮积病",
@@ -2528,7 +2530,8 @@
       "ledgerMarker": "⚠诊断短",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-急性百草枯中毒",
@@ -2573,7 +2576,8 @@
       "ledgerMarker": "⚠与急性肾衰竭主诉完全相同，疑似同源",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-1型糖尿病伴有酮症酸中毒",
@@ -2616,19 +2620,18 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-矮小症",
       "sourceCaseId": "teacher-矮小症",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "folder-only",
       "sourcePath": "knowledge/儿科常见病/内分泌系统/矮小症",
       "published": true,
-      "publishedVersion": "4390fa1612f5d806",
-      "historicalVersions": [
-        "cb4a4521eebc47af"
-      ],
+      "publishedVersion": "cb4a4521eebc47af",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "9岁",
       "ageBand": "school",
@@ -2665,25 +2668,23 @@
         "guided"
       ],
       "blockers": [
-        "⚠处置薄",
-        "历史版本待教师清理：cb4a4521eebc47af"
+        "⚠处置薄"
       ],
       "ledgerMarker": "⚠处置薄",
       "reviewer": null,
       "reviewedAt": "2026-10-20T02:47:02.209Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "4390fa1612f5d806"
     },
     {
       "publicCaseId": "teacher-急性毛细支气管炎",
       "sourceCaseId": "teacher-急性毛细支气管炎",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "folder-only",
       "sourcePath": "knowledge/儿科常见病/呼吸系统疾病/急性毛细支气管炎",
       "published": true,
-      "publishedVersion": "0ed5b913086fc73e",
-      "historicalVersions": [
-        "937f381d7c89b16c"
-      ],
+      "publishedVersion": "937f381d7c89b16c",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "7月4天",
       "ageBand": "infant",
@@ -2720,13 +2721,13 @@
         "guided"
       ],
       "blockers": [
-        "⚠处置薄",
-        "历史版本待教师清理：937f381d7c89b16c"
+        "⚠处置薄"
       ],
       "ledgerMarker": "⚠处置薄",
       "reviewer": null,
       "reviewedAt": "2026-10-20T02:47:02.209Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "0ed5b913086fc73e"
     },
     {
       "publicCaseId": "teacher-肺不张",
@@ -2769,7 +2770,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-肺炎支原体肺炎",
@@ -2812,19 +2814,18 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-重症肺炎",
       "sourceCaseId": "teacher-重症肺炎",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "folder-only",
       "sourcePath": "knowledge/儿科常见病/呼吸系统疾病/重症肺炎",
       "published": true,
-      "publishedVersion": "80c38de40850b79d",
-      "historicalVersions": [
-        "ee7096e365194f5e"
-      ],
+      "publishedVersion": "ee7096e365194f5e",
+      "historicalVersions": [],
       "sourceHash": null,
       "ageKnown": "1岁8月",
       "ageBand": "toddler",
@@ -2859,24 +2860,23 @@
       "supportedModes": [
         "guided"
       ],
-      "blockers": [
-        "历史版本待教师清理：ee7096e365194f5e"
-      ],
+      "blockers": [],
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": "2026-10-20T06:41:05.736Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "80c38de40850b79d"
     },
     {
       "publicCaseId": "teacher-心律失常-室上性心动过速",
       "sourceCaseId": "teacher-心律失常-室上性心动过速",
       "relation": "independent",
-      "catalogStatus": "pending-review",
+      "catalogStatus": "folder-only",
       "sourcePath": "knowledge/儿科常见病/心血管系统/心律失常 室上性心动过速",
       "published": true,
-      "publishedVersion": "eb180d62f8f1a47a",
+      "publishedVersion": "9fa788c10d325939",
       "historicalVersions": [
-        "9fa788c10d325939"
+        "637b5db0183de8f0"
       ],
       "sourceHash": null,
       "ageKnown": "6岁",
@@ -2915,12 +2915,13 @@
         "guided"
       ],
       "blockers": [
-        "历史版本待教师清理：9fa788c10d325939"
+        "多版本归属待运行实测核对：637b5db0183de8f0"
       ],
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": "2026-10-20T06:41:05.736Z",
-      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）"
+      "e2eResult": "gated-403（批次核验 14/14 门控拒绝）",
+      "auditBoundVersion": "eb180d62f8f1a47a"
     },
     {
       "publicCaseId": "teacher-传染性单核细胞增多症",
@@ -2963,7 +2964,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-新生儿胎粪吸入性肺炎",
@@ -3006,7 +3008,8 @@
       "ledgerMarker": "新生儿形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-婴儿胆汁淤积症-巨细胞病毒感染",
@@ -3049,7 +3052,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-中枢神经系统脱髓鞘病",
@@ -3092,7 +3096,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-先天性肌无力",
@@ -3137,7 +3142,8 @@
       "ledgerMarker": "⚠病史/检查超长分段待核；新生儿用学龄形象",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-癫痫全面性发作阵挛性发作",
@@ -3180,7 +3186,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-儿童-肥胖症",
@@ -3190,7 +3197,9 @@
       "sourcePath": "knowledge/儿科常见病/营养性疾病/儿童 肥胖症",
       "published": true,
       "publishedVersion": "18b825c3bfd5434f",
-      "historicalVersions": [],
+      "historicalVersions": [
+        "d5f9b92b9cdf5b63"
+      ],
       "sourceHash": null,
       "ageKnown": "6岁",
       "ageBand": "preschool",
@@ -3219,11 +3228,14 @@
         "osce",
         "immersive"
       ],
-      "blockers": [],
+      "blockers": [
+        "多版本归属待运行实测核对：d5f9b92b9cdf5b63"
+      ],
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-急性白血病-急性淋巴细胞白血病",
@@ -3266,7 +3278,8 @@
       "ledgerMarker": "",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     },
     {
       "publicCaseId": "teacher-糖原贮积病iv型",
@@ -3311,7 +3324,8 @@
       "ledgerMarker": "⚠诊断短",
       "reviewer": null,
       "reviewedAt": null,
-      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）"
+      "e2eResult": "all-pass（批次核验 39/39 全链路 + 版本绑定）",
+      "auditBoundVersion": null
     }
   ]
 }
