@@ -1,6 +1,7 @@
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
 import { postureAllows, type ExamPosture } from '@/domain/exam-methods';
+import { stageReached } from '@/domain/agent';
 import type {
   AgentEvent,
   AgentMessage,
@@ -298,6 +299,9 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
     return handleSourceQuestion(session, text, clientEventId, forwardHeaders, speech);
   }
   const intents = identifyHistoryIntents(session.caseId, text, session.sourceSnapshotVersion, session.id);
+  // 分时点事实释放（补充单 §5）：命中但事实设定了更晚的释放阶段时，该事实现阶段不可告知——
+  // 不泄露内容、不解锁证据、不计入已问意图（区分于「资料未提供」与「问题宽泛」）。
+  const releasable = intents.filter((intent) => !intent.availableFromStage || stageReached(session.stage, intent.availableFromStage));
   if (spokenIntervention && intents.length === 0) return handleIntervention(session, spokenIntervention, clientEventId, text, speech);
   if (spokenIntervention) applyInterventionState(session, spokenIntervention);
   const studentMessage = message('student', text, speechOptions(speech));
@@ -321,11 +325,24 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
     return { session, newMessages, feedback: feedbackFor(session, '问题较宽泛，可围绕起病时间、危险症状或一般状态进一步追问。'), trace: traces };
   }
 
-  const preferredActor = intents.every((intent) => intent.preferredActor === 'parent')
+  if (releasable.length === 0) {
+    // 分时点释放门控：问题命中了尚未到释放时点的事实——现阶段回应「说不好」，不泄露事实内容。
+    newMessages.push(
+      ...(childCapable ? [message('child', '我不知道……', { emotion: session.childEmotion })] : []),
+      message('parent', '这个现在还说不好，得等检查了才知道。', { emotion: 'anxious' }),
+    );
+    session.events.push(clinicalEvent(clientEventId, 'ASK_QUESTION', 'history', '所问病史事实尚未到可告知时点，未解锁', null, []));
+    session.messages.push(...newMessages);
+    advanceToHistoryStage(session);
+    session.updatedAt = now();
+    return { session, newMessages, feedback: feedbackFor(session, '该情况需在后续阶段结合检查进一步明确。'), trace: traces };
+  }
+
+  const preferredActor = releasable.every((intent) => intent.preferredActor === 'parent')
     ? 'parent'
-    : intents.every((intent) => intent.preferredActor === 'child') ? 'child' : 'mixed';
-  const childFact = intents.map((intent) => intent.childAnswer).join(' ');
-  const parentFact = intents.map((intent) => intent.parentAnswer).join(' ');
+    : releasable.every((intent) => intent.preferredActor === 'child') ? 'child' : 'mixed';
+  const childFact = releasable.map((intent) => intent.childAnswer).join(' ');
+  const parentFact = releasable.map((intent) => intent.parentAnswer).join(' ');
   const roleResult = await renderRoleReply({
     childAge: pediatricCase.age,
     childSex: pediatricCase.sex,
@@ -363,12 +380,12 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
     }
   }
 
-  session.askedIntents = uniq([...session.askedIntents, ...intents.map((intent) => intent.id)]);
-  session.unlockedEvidence = uniq([...session.unlockedEvidence, ...intents.map((intent) => intent.evidenceCode)]);
-  if (intents.some((intent) => intent.id === 'exposure')) session.behavior.hiddenExposureRevealed = true;
+  session.askedIntents = uniq([...session.askedIntents, ...releasable.map((intent) => intent.id)]);
+  session.unlockedEvidence = uniq([...session.unlockedEvidence, ...releasable.map((intent) => intent.evidenceCode)]);
+  if (releasable.some((intent) => intent.id === 'exposure')) session.behavior.hiddenExposureRevealed = true;
   session.behavior.childResponseStyle = session.childEmotion === 'calm' ? 'cooperative' : 'brief';
-  const labels = intents.map((intent) => intent.label).join('、');
-  const evidenceCodes = intents.map((intent) => intent.evidenceCode);
+  const labels = releasable.map((intent) => intent.label).join('、');
+  const evidenceCodes = releasable.map((intent) => intent.evidenceCode);
   if (spokenIntervention) evidenceCodes.push('COMM_INTERVENTION');
   session.events.push(clinicalEvent(clientEventId, 'ASK_QUESTION', 'history', `完成${labels}问诊${spokenIntervention ? '并完成沟通干预' : ''}`, true, evidenceCodes));
   session.messages.push(...newMessages);
@@ -509,6 +526,13 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
     session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, feedbackText), trace: traceItems };
   }
+  // 分时点事实释放（补充单 §5）：查体项目设定了更晚的可执行阶段时阻止执行，不解锁体征证据。
+  if (rule.availableFromStage && !stageReached(session.stage, rule.availableFromStage)) {
+    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}：当前阶段暂不可执行，未解锁`, false, []));
+    advanceStageTo(session, 'exam');
+    session.updatedAt = now();
+    return { session, newMessages: [], feedback: feedbackFor(session, `${rule.label}需在后续阶段进行，当前阶段暂不可执行。`), trace: traceItems };
+  }
   const missing = rule.requires.filter((code) => !session.unlockedEvidence.includes(code));
   if (missing.length > 0) {
     session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}缺少必要准备动作`, false, []));
@@ -575,6 +599,23 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     processedIds.add(test.id);
     if (session.orderedTests.includes(test.id) && session.unlockedEvidence.includes(test.evidenceCode)) {
       feedbackParts.push(`${test.label}已申请，结果保留在本次记录中。`);
+      continue;
+    }
+    // 分时点事实释放（补充单 §5）：检查设定了更晚的回报阶段——记录开单（教师目录项经 RPC 幂等持久化），
+    // 但不取结果、不解锁证据；到达回报阶段后再次开单即可得真实结果（外送/分时段回报场景，如 NK 细胞活性次日回报）。
+    if (test.availableFromStage && !stageReached(session.stage, test.availableFromStage)) {
+      if (!test.result && accessToken && session.sourceSnapshotVersion) {
+        const recorded = await testOrderRpc.record(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, test.id);
+        if (recorded === null) throw new Error('TEST_ORDER_REJECTED');
+      }
+      session.orderedTests = uniq([...session.orderedTests, test.id]);
+      const note = test.resultDelayNote ?? '标本已送检，结果待回报。';
+      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：已开单送检，结果待回报`, null, []));
+      const pendingMessage = message('system', `${test.label}已开出。${note}`, { kind: 'navigation' });
+      session.messages.push(pendingMessage);
+      newMessages.push(pendingMessage);
+      feedbackParts.push(`${test.label}已开单送检，结果待回报。`);
+      traceItems.push(trace('病例状态', '分时点释放：结果待回报，暂不解锁证据'));
       continue;
     }
     // 目录项（恢复态投影剥离，result 为空）：先经 record_test_order 幂等持久化下单（DB 先落

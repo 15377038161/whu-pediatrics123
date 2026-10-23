@@ -11,6 +11,17 @@ export type Stage =
   | 'communication'
   | 'report';
 
+/** 业务阶段固定顺序（8 阶段，与 case.stages 一致）：分时点事实释放（availableFromStage）的门控依据。 */
+export const STAGE_ORDER: readonly Stage[] = ['triage', 'history', 'exam', 'tests', 'assessment', 'plan', 'communication', 'report'];
+
+/** current 是否已达到 required 阶段（含本阶段）；任一阶段未知时 indexOf 为 -1，按 fail-closed 处理。 */
+export function stageReached(current: Stage, required: Stage): boolean {
+  const currentIndex = STAGE_ORDER.indexOf(current);
+  const requiredIndex = STAGE_ORDER.indexOf(required);
+  if (currentIndex === -1 || requiredIndex === -1) return false;
+  return currentIndex >= requiredIndex;
+}
+
 export type Actor = 'student' | 'child' | 'parent' | 'tutor' | 'system';
 export type Emotion = 'nervous' | 'calm' | 'low' | 'resistant' | 'anxious' | 'neutral';
 export type ImmersiveScene = 'arrival' | 'history' | 'exam' | 'tests' | 'assessment' | 'plan' | 'communication' | 'debrief';

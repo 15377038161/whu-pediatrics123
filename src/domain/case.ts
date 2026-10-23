@@ -15,6 +15,8 @@ export interface HistoryIntent {
   preferredActor: 'child' | 'parent' | 'mixed';
   score: number;
   evidenceCode: string;
+  /** 分时点事实释放：该病史事实可告知学生的最早阶段；缺省不限制（任何阶段可问出，向后兼容）。 */
+  availableFromStage?: Stage;
 }
 
 export interface ExamRule {
@@ -26,6 +28,8 @@ export interface ExamRule {
   evidenceCode: string;
   requires: string[];
   risk: 'normal' | 'attention' | 'critical';
+  /** 分时点事实释放：该查体项目可执行的最早阶段；缺省不限制（查体阶段即可执行，向后兼容）。 */
+  availableFromStage?: Stage;
 }
 
 export interface AuxiliaryTest {
@@ -35,6 +39,10 @@ export interface AuxiliaryTest {
   result: string;
   evidenceCode: string;
   appropriate: boolean | null;
+  /** 分时点事实释放：该检查可回报结果的最早阶段（如外送检查到后续阶段才回报）；缺省不限制（开单即回报，向后兼容）。 */
+  availableFromStage?: Stage;
+  /** 延迟回报说明（如「标本外送，24 小时后回报」）；仅在未到回报时点时向学生展示，不替代真实结果。 */
+  resultDelayNote?: string;
 }
 
 export interface FlagshipCase {
@@ -247,9 +255,19 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   // 目录/结果分离：label 走白名单最长前缀匹配（trustedTestLabel，与 SQL 迁移 20261011160000 同规则）——
   // 冒号前缀不保证无答案（「降钙素原 0.58 ng/mL：明显升高」会把数值带入目录），
   // 未匹配行用「检查记录 N」，目录不透出检查数值与阳性结论（不以目录泄露答案）。
+  // 分时点事实释放元数据（可选，按 testId 应用）：外送/分时段回报检查在到达回报阶段前只记单不回报，
+  // 缺省不限制（开单即回报，向后兼容）。元数据来自教师病例 JSON 的 testRelease 字段（knowledge/ 私有，不入 Git）。
+  const releaseByTestId = new Map((source?.testRelease ?? []).map((item) => [item.testId, item]));
+  const applyRelease = (test: AuxiliaryTest): AuxiliaryTest => {
+    const release = releaseByTestId.get(test.id);
+    if (!release) return test;
+    if (release.availableFromStage) test.availableFromStage = release.availableFromStage;
+    if (release.resultDelayNote) test.resultDelayNote = release.resultDelayNote;
+    return test;
+  };
   const tests = testLines.map((line, index): AuxiliaryTest => {
     const label = trustedTestLabel(line, index);
-    return { id: `source-test-${index}`, label, indication: '选择后查看本病例提供的检查结果', result: line, evidenceCode: `SOURCE_TEST_${index}`, appropriate: null };
+    return applyRelease({ id: `source-test-${index}`, label, indication: '选择后查看本病例提供的检查结果', result: line, evidenceCode: `SOURCE_TEST_${index}`, appropriate: null });
   });
   // 恢复态投影剥离（未开单 sections.tests 为空串）时，目录来自会话作用域目录缓存
   // （case_snapshot_list_tests 注入，无答案仅 id/label）：保证学生可见可下单目录（死锁修复）。
@@ -259,7 +277,7 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   if (catalog && tests.length === 0) {
     for (const item of catalog) {
       const index = Number(item.id.replace(/^source-test-/, ''));
-      tests.push({ id: item.id, label: item.label, indication: '选择后查看本病例提供的检查结果', result: '', evidenceCode: Number.isFinite(index) ? `SOURCE_TEST_${index}` : `SOURCE_TEST_${item.id}`, appropriate: null });
+      tests.push(applyRelease({ id: item.id, label: item.label, indication: '选择后查看本病例提供的检查结果', result: '', evidenceCode: Number.isFinite(index) ? `SOURCE_TEST_${index}` : `SOURCE_TEST_${item.id}`, appropriate: null }));
     }
   }
   return {

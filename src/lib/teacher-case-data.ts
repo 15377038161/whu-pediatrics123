@@ -12,6 +12,13 @@ export const recordSchema = z.object({
   sections: z.object({ history: z.string(), exam: z.string(), tests: z.string(), diagnosis: z.string(), plan: z.string() }),
   vitals: z.object({ temperature: z.number().nullable(), heartRate: z.number().nullable(), respiratoryRate: z.number().nullable(), spo2: z.number().nullable() }),
   documents: z.array(z.object({ source: z.string(), text: z.string(), sha256: z.string() })),
+  /** 分时点事实释放元数据（可选）：按 testId（source-test-N）声明该检查结果的最早回报阶段与延迟说明；
+   *  缺省不限制（开单即回报，向后兼容既有教师病例 JSON）。用于外送/分时段回报类检查（如 NK 细胞活性外送次日回报）。 */
+  testRelease: z.array(z.object({
+    testId: z.string(),
+    availableFromStage: z.enum(['triage', 'history', 'exam', 'tests', 'assessment', 'plan', 'communication', 'report']).optional(),
+    resultDelayNote: z.string().optional(),
+  })).optional(),
 });
 export type TeacherCaseData = z.infer<typeof recordSchema>;
 
