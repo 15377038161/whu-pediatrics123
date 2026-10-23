@@ -4,7 +4,7 @@
  *
  * 场景模型（与生产修订链路同构）：
  * 1) 教师病例本地 V1（tests/fixtures 合成夹具原样）曾导入 DB（facts+answers 双行）；
- * 2) 本地修订为 V2（年龄/病史/分片指纹变化）并再次导入，DB 同时保有 V1/V2 两版本行；
+ * 2) 本地修订为 V2（只改年龄/病史，原文与其哈希不变）并再次导入，DB 保有旧原件指纹V1/内容指纹V2；
  * 3) 旧会话绑定 V1：本地已是 V2、进程重启（子进程 spawn=空缓存）后，
  *    旧会话必须按 V1 绑定版本从 DB 恢复 facts/answers，不换成 V2 患者；
  * 4) 新会话必须绑定当前已发布版本（本地存在=V2；本地缺失=冷启动绑 DB 最新版本）；
@@ -28,6 +28,7 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { computeCaseDataVersion } from '../src/lib/case-data-version';
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CASE_ID = 'teacher-肾病综合征';
@@ -39,10 +40,9 @@ const SESSION_PROJ = '44444444-4444-4444-4444-444444444444'; // 阶段化投影�
 const SESSION_A_FULL = '55555555-5555-5555-5555-555555555555'; // 双会话交叉污染：已解锁会话 A（RPC 返回完整投影）
 const FOREIGN_SESSION = '22222222-2222-2222-2222-222222222222'; // 不存在/非本人会话：必须拒绝
 
-/** 与 teacher-case-import computeImportVersion 同算法：documents sha256 聚合哈希截 16 位。 */
+/** Shared content contract; unchanged source documents must not conceal field edits. */
 function computeVersion(record: CaseRecord): string {
-  const shas = record.documents.map((doc) => doc.sha256).sort();
-  return createHash('sha256').update(shas.join('\n')).digest('hex').slice(0, 16);
+  return computeCaseDataVersion(record);
 }
 
 /** 与 buildFactsPayloadForInit 同形态的教学事实子集（不含诊断/原文/媒体）。 */
@@ -77,7 +77,7 @@ interface FactsPayload {
 
 const fixturePath = path.join(PROJECT_ROOT, 'tests/fixtures/knowledge/teaching-cases/teacher-肾病综合征.json');
 const v1 = JSON.parse(readFileSync(fixturePath, 'utf8')) as CaseRecord;
-// V2 修订：年龄、主诉、现病史变化 + 首分片文本与指纹变化（版本指纹必然不同）
+// V2 only changes fixed facts; the original documents intentionally stay unchanged.
 const v2: CaseRecord = {
   ...v1,
   age: '7岁',
@@ -86,11 +86,10 @@ const v2: CaseRecord = {
     ...v1.sections,
     history: v1.sections.history.replace('6岁', '7岁').replace('5天', '6天'),
   },
-  documents: v1.documents.map((doc, index) => (
-    index === 0 ? { ...doc, sha256: doc.sha256.replace(/^a{8}/, 'bbbbbbbb'), text: `${doc.text}（V2修订）` } : doc
-  )),
+  documents: v1.documents,
 };
-const V1 = computeVersion(v1);
+// Historical sessions keep their legacy document-only key; no alias to local v2.
+const V1 = createHash('sha256').update(v1.documents.map(doc => doc.sha256).sort().join('\n')).digest('hex').slice(0, 16);
 const V2 = computeVersion(v2);
 const V1_DIAG_SHA = createHash('sha256').update(v1.sections.diagnosis).digest('hex').slice(0, 12);
 

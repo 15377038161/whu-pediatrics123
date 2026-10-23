@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -8,6 +7,8 @@ import { getCase } from '@/domain/case';
 import { getTeacherSourceId } from '@/lib/teacher-case-data';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
+import { computeCaseDataVersion } from '@/lib/case-data-version';
+import { recordSchema } from '@/lib/teacher-case-data';
 
 /**
  * 教师病例会话版本选择注入式单测（resolveTeacherCaseVersion 依赖注入，不触真实 DB/召回）：
@@ -21,16 +22,14 @@ import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
  * knowledge/ 目录，且传入从注入式测试复制的假指纹 'localfull0000000001'——永远不等于
  * 本地文件真实 sha256 指纹，导致 sourceFacts 恒为 null 而失败（夹具错误，非业务版本漂移）。
  * 现指向 tests/fixtures/knowledge（纯合成教学数据，无患者内容），并用与
- * computeLocalVersion 相同算法计算夹具真实指纹作为绑定版本。
+ * computeCaseDataVersion 相同算法计算夹具真实指纹作为绑定版本。
  */
 process.env.PEDIATRICS_KNOWLEDGE_ROOT = path.resolve(process.cwd(), 'tests', 'fixtures', 'knowledge');
 const FIXTURE_FILE = path.join(process.env.PEDIATRICS_KNOWLEDGE_ROOT, 'teaching-cases', 'teacher-肾病综合征.json');
 
-/** 与 src/lib/teacher-case-data.ts computeLocalVersion 同算法：documents sha256 聚合哈希截 16 位。 */
+/** Use the production version contract, not a duplicate legacy document-only hash. */
 function computeFixtureVersion(): string {
-  const record = JSON.parse(readFileSync(FIXTURE_FILE, 'utf8')) as { documents: Array<{ sha256: string }> };
-  const shas = record.documents.map((doc) => doc.sha256).sort();
-  return createHash('sha256').update(shas.join('\n')).digest('hex').slice(0, 16);
+  return computeCaseDataVersion(recordSchema.parse(JSON.parse(readFileSync(FIXTURE_FILE, 'utf8'))));
 }
 
 interface DepState {
@@ -133,7 +132,7 @@ test('预览身份不查询 DB 版本（预览走进程内存，不触碰数据�
 });
 
 test('旧会话固定版本：getCase 按绑定版本取事实，版本不一致返回资料不足形态', () => {
-  // 夹具真实指纹（与 computeLocalVersion 同算法计算）作为"本地权威版本一致"的绑定版本
+  // 夹具真实内容指纹作为"本地权威版本一致"的绑定版本
   const FIXTURE_VERSION = computeFixtureVersion();
   const withVersion = getCase(CASE_ID, FIXTURE_VERSION);
   assert.ok(withVersion.sourceFacts, '绑定版本与本地权威版本一致时 sourceFacts 完整');

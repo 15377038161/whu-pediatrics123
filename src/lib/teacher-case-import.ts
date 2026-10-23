@@ -1,9 +1,9 @@
-import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { getSupabaseUserClient, isDatabaseConfigured } from '@/lib/supabase-client';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { recordSchema, getKnowledgeRoot, type TeacherCaseData } from '@/lib/teacher-case-data';
+import { computeCaseDataVersion } from '@/lib/case-data-version';
 
 /**
  * 教师病例导入：将本地受控交接产物的运行时教学事实（knowledge/teaching-cases/*.json）
@@ -14,8 +14,8 @@ import { recordSchema, getKnowledgeRoot, type TeacherCaseData } from '@/lib/teac
  * - 写库走教师身份（getSupabaseUserClient(accessToken)），行级权限由 RLS
  *   （app_is_teacher）判定，匿名/学生调用被数据库拒绝——应用层双校验之外
  *   数据库侧兜底；
- * - 版本指纹：与 case-snapshot 召回快照同一算法（documents sha256 聚合哈希，
- *   截 16 位）。导入版本与会话绑定/恢复链路完全兼容；
+ * - 版本指纹：与本地读取/召回快照共用完整病例内容指纹（算法 v2，16 位）。
+ *   固定事实或文档内容改变即换版，原件哈希不变不再掩盖字段修订；
  * - upsert ignoreDuplicates：同 (case_id, version) 幂等，不覆盖已装载版本，
  *   不替换完整事实；版本不同则新增行，互不干扰；
  * - 不修改原件、不上传原文到第三方、不创建新表/新权限；
@@ -47,14 +47,9 @@ export interface ImportSummary {
   results: ImportCaseResult[];
 }
 
-function sha256(text: string): string {
-  return createHash('sha256').update(text).digest('hex');
-}
-
-/** 与 case-snapshot buildSnapshot 一致的版本算法：documents sha256 聚合哈希截 16 位。 */
+/** Opaque version key shared with the local reader and recall snapshot builder. */
 export function computeImportVersion(record: TeacherCaseData): string {
-  const shas = record.documents.map((doc) => doc.sha256).sort();
-  return sha256(shas.join('\n')).slice(0, 16);
+  return computeCaseDataVersion(record);
 }
 
 /** 本地完整审核版本：读本地受控产物 JSON 并计算内容哈希（完整审核来源的权威稳定版本）。

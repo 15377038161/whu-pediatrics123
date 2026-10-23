@@ -1,6 +1,7 @@
 'use client';
 
 import { teachingHints } from '@/domain/teaching-copy';
+import { isExamResultEvidence } from '@/domain/exam-evidence';
 import { allowedPostures, patientAppearance } from '@/domain/patient-appearance';
 import { resolveCommunicationProfile, speechCapabilityLabel } from '@/domain/communication-profile';
 import { ageBandLabel, bindingGapNote, patientAssetByKey, sexPresentationLabel } from '@/domain/patient-assets';
@@ -51,9 +52,9 @@ const sourceExamTools = [
 const baseExamHotspots: Array<[string, string]> = [
   ['forehead', '头面'], ['mouth', '口咽'], ['chest', '胸部'], ['upper-arm', '上臂'], ['finger', '手指'], ['hands', '双手'],
 ];
-/** 来源病例查体规则涉及的额外部位（皮肤/腹部/四肢，与 createSourceCase 的规则部位一致）。 */
+/** 来源病例查体规则涉及的额外部位（皮肤/颈部/腹部/四肢，与 createSourceCase 的规则部位一致）。 */
 const sourceExamHotspots: Array<[string, string]> = [
-  ['skin', '皮肤'], ['abdomen', '腹部'], ['limbs', '四肢'],
+  ['neck', '颈部'], ['skin', '皮肤'], ['abdomen', '腹部'], ['limbs', '四肢'],
 ];
 
 const focusLabels: Record<PracticeFocus, string> = {
@@ -338,7 +339,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     return Boolean(result);
   }
   async function examine(part: string, toolOverride?: string) {
-    const partLabel = ({ forehead: '头面', mouth: '口咽', chest: '胸部', 'upper-arm': '上臂', finger: '手指', hands: '双手', skin: '皮肤', abdomen: '腹部', limbs: '四肢' } as Record<string,string>)[part] ?? part;
+    const partLabel = ({ forehead: '头面', mouth: '口咽', chest: '胸部', 'upper-arm': '上臂', finger: '手指', hands: '双手', neck: '颈部', skin: '皮肤', abdomen: '腹部', limbs: '四肢' } as Record<string,string>)[part] ?? part;
     const activeTool = toolOverride ?? selectedTool;
     if (!activeTool) {
       const detail = '请先选择检查方法或器材，再点击患儿对应部位。';
@@ -390,7 +391,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const obtainedExamResultItems = [...new Map((session?.events ?? [])
     .filter((event) => event.type === 'EXAM_ACTION' && event.correct !== false)
     .flatMap((event) => event.evidenceCodes
-      .filter((code) => code.startsWith('EX_') && code !== 'EX_PREP' && code !== 'EX_PROVIDED')
+      .filter(isExamResultEvidence)
       .map((code) => [code, event.summary] as const)),
   )].map(([code, summary]) => ({ code, summary }));
 

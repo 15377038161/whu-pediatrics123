@@ -1,4 +1,5 @@
 import { verifiedComplaint } from '@/lib/admission-complaint';
+import { isExamResultEvidence } from '@/domain/exam-evidence';
 import { postureAllows, type ExamPosture } from '@/domain/exam-methods';
 import type {
   AgentEvent,
@@ -683,7 +684,7 @@ function handleExamObservation(session: SessionState, data: Extract<AgentEvent, 
   for (const event of session.events) {
     if (event.type !== 'EXAM_ACTION' || event.correct === false) continue;
     for (const code of event.evidenceCodes) {
-      if (!code.startsWith('EX_') || code === 'EX_PREP' || code === 'EX_PROVIDED') continue;
+      if (!isExamResultEvidence(code)) continue;
       obtainedExamResults.set(code, uniq([...(obtainedExamResults.get(code) ?? []), event.id]));
     }
   }

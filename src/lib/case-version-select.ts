@@ -3,7 +3,7 @@ import { getSnapshotVersion, getDatabaseSnapshotVersion, restoreCaseSnapshotFact
 
 /**
  * 教师病例会话版本选择（权威稳定序，防止完整本地材料被绑定零散召回指纹）：
- * 1) local：本地完整审核内容哈希（受控 53 JSON 的 documents sha256 聚合指纹）——权威版本；
+ * 1) local：本地固定事实与原文的完整内容指纹（case-data-version，算法v2）——权威版本；
  * 2) db：教师导入通道写入 case_snapshot_facts 的最新完整版本（冷启动场景）；
  * 3) recall：知识库召回快照指纹（可能不完整）——仅兜底。
  * 旧会话不受影响：getSession 按会话已绑定版本恢复，保持不漂移。
