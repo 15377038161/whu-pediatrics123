@@ -7,6 +7,7 @@ import type {
   AgentMessage,
   AgentTraceItem,
   AgentTurnResult,
+  CaseMedia,
   ClinicalEvent,
   EventSpeechMeta,
   PracticeFocus,
@@ -68,8 +69,9 @@ function clinicalEvent(
   summary: string,
   correct: boolean | null,
   evidenceCodes: string[],
+  media?: CaseMedia[],
 ): ClinicalEvent {
-  return { id: crypto.randomUUID(), clientEventId, type, stage, summary, correct, evidenceCodes, createdAt: now() };
+  return { id: crypto.randomUUID(), clientEventId, type, stage, summary, correct, evidenceCodes, ...(media && media.length > 0 ? { media } : {}), createdAt: now() };
 }
 
 export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id, practiceFocus?: PracticeFocus, sourceSnapshotVersion?: string | null, sessionId?: string | null): SessionState {
@@ -543,7 +545,8 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   session.unlockedEvidence = uniq([...session.unlockedEvidence, rule.evidenceCode]);
   if (rule.id === 'prep-hygiene') session.preparationActions = uniq([...session.preparationActions, rule.id]);
   if (rule.evidenceCode === 'EX_SPO2' && getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts === undefined) session.vitals.spo2 = 92;
-  session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}：${rule.result}`, true, [rule.evidenceCode]));
+  // 结果释放：随事件挂载该查体项绑定的病例媒体（如有；仅图核通过媒体可登记进病例配置）
+  session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}：${rule.result}`, true, [rule.evidenceCode], rule.media));
   advanceStageTo(session, 'exam');
   session.updatedAt = now();
   const resultMessage = message('system', rule.result, { kind: 'navigation' });  session.messages.push(resultMessage);
@@ -650,7 +653,8 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     }
     session.orderedTests = uniq([...session.orderedTests, test.id]);
     session.unlockedEvidence = uniq([...session.unlockedEvidence, test.evidenceCode]);
-    session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：${test.result}`, test.appropriate, [test.evidenceCode]));
+    // 结果释放：随事件挂载该检查绑定的病例媒体（如有；仅图核通过媒体可登记进病例配置）
+    session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：${test.result}`, test.appropriate, [test.evidenceCode], test.media));
     const resultMessage = message('system', test.result, { kind: 'navigation' });
     session.messages.push(resultMessage);
     newMessages.push(resultMessage);

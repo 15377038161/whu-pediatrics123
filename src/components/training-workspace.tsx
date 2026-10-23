@@ -5,6 +5,7 @@ import { isExamResultEvidence } from '@/domain/exam-evidence';
 import { allowedPostures, patientAppearance } from '@/domain/patient-appearance';
 import { resolveCommunicationProfile, speechCapabilityLabel } from '@/domain/communication-profile';
 import { ageBandLabel, bindingGapNote, patientAssetByKey, sexPresentationLabel } from '@/domain/patient-assets';
+import { CaseMediaGallery } from '@/components/case-media-gallery';
 
 import {
   Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home,
@@ -480,7 +481,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
           <ToolRack tools={examTools} selectedTool={selectedTool} onSelect={(toolId) => { void selectExamTool(toolId); }} busy={busy} hygieneCompleted={hygieneCompleted} />
         </div>
         <div className="exam-route" aria-label="后续操作"><span>2</span><p><strong>点击患儿检查部位</strong><small>{examEvidenceCount > 0 ? `实时病例记录已新增 ${examEvidenceCount} 项证据` : '有效结果会自动写入右侧病例记录'}</small></p></div>
-        {session.caseOptions && <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'exam').map((event) => <p key={event.id}>{event.summary}</p>)}</div>}
+        {session.caseOptions && <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'exam').map((event) => <div key={event.id} className="source-result-item"><p>{event.summary}</p>{event.media && event.media.length > 0 ? <CaseMediaGallery sessionId={session.id} media={event.media} /> : null}</div>)}</div>}
         {practiceCompletion === 'exam_observation' && (
           <form className="clinical-form practice-summary-form" onSubmit={async (event) => { event.preventDefault(); if (examFindingsText.trim().length < 10 || examLinkedEvidence.length === 0) return; await sendEvent({ type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: examFindingsText.trim(), interpretation: examInterpretationText.trim() || undefined, linkedEvidence: examLinkedEvidence } }); }}>
             <div className="form-field"><label>关联的查体结果（必选，本次观察所依据）</label>{obtainedExamResultItems.map((item) => <label key={item.code} className="checkbox-row"><input type="checkbox" checked={examLinkedEvidence.includes(item.code)} onChange={(e) => { setExamLinkedEvidence(e.target.checked ? [...new Set([...examLinkedEvidence, item.code])] : examLinkedEvidence.filter((code) => code !== item.code)); }} disabled={busy} /> <span>{item.summary}</span></label>)}<small>选项来自本会话已实际获得结果的查体项（手卫生等准备操作不计入）；服务端按本会话原查体事件与解锁结果核验关联。</small></div>
@@ -499,7 +500,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
           <div className="form-field"><label htmlFor="test-reason">申请理由（可选）</label><input id="test-reason" value={testReason} onChange={(e) => setTestReason(e.target.value)} placeholder="这项检查要回答什么临床问题？" /></div>
           <button className="btn btn-primary btn-block" disabled={busy || !requestedTests.trim()}>提交检查申请</button>
         </form>
-        <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'tests').length === 0 && <p>尚无检查记录：提交申请后，结果会在此逐项显示。</p>}{evidenceEvents.filter((event) => event.stage === 'tests').map((event) => <p key={event.id}>{event.summary}</p>)}</div>
+        <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'tests').length === 0 && <p>尚无检查记录：提交申请后，结果会在此逐项显示。</p>}{evidenceEvents.filter((event) => event.stage === 'tests').map((event) => <div key={event.id} className="source-result-item"><p>{event.summary}</p>{event.media && event.media.length > 0 ? <CaseMediaGallery sessionId={session.id} media={event.media} /> : null}</div>)}</div>
         <div className="form-actions"><button className="btn btn-secondary" type="button" onClick={() => navigate('assessment')}>形成病情摘要与诊断 <ChevronRight size={16} /></button></div>
       </>;
       case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, diagnosisBasis, differentials } }); if (result) await navigate('plan'); }}>

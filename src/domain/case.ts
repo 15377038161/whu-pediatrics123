@@ -1,7 +1,7 @@
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { patientAppearance } from '@/domain/patient-appearance';
 import { sourceExamDefinitions } from '@/domain/exam-methods';
-import type { Emotion, Stage, VitalSigns } from '@/domain/agent';
+import type { CaseMedia, Emotion, Stage, VitalSigns } from '@/domain/agent';
 import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
 import { getSessionTestsCatalog } from '@/lib/case-snapshot';
 import { readTeacherCaseData, type TeacherCaseData } from '@/lib/teacher-case-data';
@@ -30,6 +30,8 @@ export interface ExamRule {
   risk: 'normal' | 'attention' | 'critical';
   /** 分时点事实释放：该查体项目可执行的最早阶段；缺省不限制（查体阶段即可执行，向后兼容）。 */
   availableFromStage?: Stage;
+  /** 查体结果释放时随事件挂载的病例媒体（如体征照片）；缺省无媒体。 */
+  media?: CaseMedia[];
 }
 
 export interface AuxiliaryTest {
@@ -43,6 +45,8 @@ export interface AuxiliaryTest {
   availableFromStage?: Stage;
   /** 延迟回报说明（如「标本外送，24 小时后回报」）；仅在未到回报时点时向学生展示，不替代真实结果。 */
   resultDelayNote?: string;
+  /** 检查结果释放时随事件挂载的病例媒体（如该检查的报告图片）；缺省无媒体。 */
+  media?: CaseMedia[];
 }
 
 export interface FlagshipCase {
@@ -248,8 +252,13 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   const examText = source?.sections.exam ?? '';
   const definitions = sourceExamDefinitions(examText);
   const exams: ExamRule[] = [{ id: 'prep-hygiene', toolId: 'hand-hygiene', bodyPartId: 'hands', label: '手卫生与检查说明', result: '已完成手卫生，并向患儿及家长说明检查。', evidenceCode: 'EX_PREP', requires: [], risk: 'normal' }];
+  // 查体媒体绑定（可选，按 examId 应用）：查体结果释放时随事件挂载（如体征照片），缺省无媒体。
+  const mediaByExamId = new Map((source?.examMedia ?? []).map((item) => [item.examId, item.media]));
   definitions.forEach(([toolId, bodyPartId, label, result]) => {
-    if (result) exams.push({ id: `source-exam-${toolId}-${bodyPartId}`, toolId, bodyPartId, label, result: `病例记录：${result}。`, evidenceCode: `SOURCE_EX_${toolId}_${bodyPartId}`, requires: ['EX_PREP'], risk: 'normal' });
+    if (!result) return;
+    const id = `source-exam-${toolId}-${bodyPartId}`;
+    const media = mediaByExamId.get(id);
+    exams.push({ id, toolId, bodyPartId, label, result: `病例记录：${result}。`, evidenceCode: `SOURCE_EX_${toolId}_${bodyPartId}`, requires: ['EX_PREP'], risk: 'normal', ...(media && media.length > 0 ? { media } : {}) });
   });
   const testLines = source?.sections.tests.split('\n').filter((line) => line.trim() && !/^(?:辅助检查|辅检|入院后辅检)[：:]?$/.test(line.trim())) ?? [];
   // 目录/结果分离：label 走白名单最长前缀匹配（trustedTestLabel，与 SQL 迁移 20261011160000 同规则）——
@@ -258,16 +267,22 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   // 分时点事实释放元数据（可选，按 testId 应用）：外送/分时段回报检查在到达回报阶段前只记单不回报，
   // 缺省不限制（开单即回报，向后兼容）。元数据来自教师病例 JSON 的 testRelease 字段（knowledge/ 私有，不入 Git）。
   const releaseByTestId = new Map((source?.testRelease ?? []).map((item) => [item.testId, item]));
-  const applyRelease = (test: AuxiliaryTest): AuxiliaryTest => {
+  // 检查媒体绑定（可选，按 testId 应用）：结果释放时随事件挂载报告图片，缺省无媒体。
+  // 元数据来自教师病例 JSON 的 testMedia 字段（knowledge/ 私有，不入 Git）。
+  const mediaByTestId = new Map((source?.testMedia ?? []).map((item) => [item.testId, item.media]));
+  const applyTestMetadata = (test: AuxiliaryTest): AuxiliaryTest => {
     const release = releaseByTestId.get(test.id);
-    if (!release) return test;
-    if (release.availableFromStage) test.availableFromStage = release.availableFromStage;
-    if (release.resultDelayNote) test.resultDelayNote = release.resultDelayNote;
+    if (release) {
+      if (release.availableFromStage) test.availableFromStage = release.availableFromStage;
+      if (release.resultDelayNote) test.resultDelayNote = release.resultDelayNote;
+    }
+    const media = mediaByTestId.get(test.id);
+    if (media && media.length > 0) test.media = media;
     return test;
   };
   const tests = testLines.map((line, index): AuxiliaryTest => {
     const label = trustedTestLabel(line, index);
-    return applyRelease({ id: `source-test-${index}`, label, indication: '选择后查看本病例提供的检查结果', result: line, evidenceCode: `SOURCE_TEST_${index}`, appropriate: null });
+    return applyTestMetadata({ id: `source-test-${index}`, label, indication: '选择后查看本病例提供的检查结果', result: line, evidenceCode: `SOURCE_TEST_${index}`, appropriate: null });
   });
   // 恢复态投影剥离（未开单 sections.tests 为空串）时，目录来自会话作用域目录缓存
   // （case_snapshot_list_tests 注入，无答案仅 id/label）：保证学生可见可下单目录（死锁修复）。
@@ -277,7 +292,7 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   if (catalog && tests.length === 0) {
     for (const item of catalog) {
       const index = Number(item.id.replace(/^source-test-/, ''));
-      tests.push(applyRelease({ id: item.id, label: item.label, indication: '选择后查看本病例提供的检查结果', result: '', evidenceCode: Number.isFinite(index) ? `SOURCE_TEST_${index}` : `SOURCE_TEST_${item.id}`, appropriate: null }));
+      tests.push(applyTestMetadata({ id: item.id, label: item.label, indication: '选择后查看本病例提供的检查结果', result: '', evidenceCode: Number.isFinite(index) ? `SOURCE_TEST_${index}` : `SOURCE_TEST_${item.id}`, appropriate: null }));
     }
   }
   return {

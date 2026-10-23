@@ -19,6 +19,18 @@ export const recordSchema = z.object({
     availableFromStage: z.enum(['triage', 'history', 'exam', 'tests', 'assessment', 'plan', 'communication', 'report']).optional(),
     resultDelayNote: z.string().optional(),
   })).optional(),
+  /** 病例媒体绑定元数据（可选）：按 testId（source-test-N）/examId（source-exam-<toolId>-<bodyPartId>）声明
+   *  结果释放时随事件挂载的媒体图；fileId 为对象存储登记标识（URL 仅经服务端签名链接解析，不入库不持久化）。
+   *  仅图核通过（无身份标识、数值与病例一致，adoptable_after_binding）的媒体可登记；
+   *  含未掩码身份信息的媒体（blocked_until_redacted）禁止登记进病例配置（隐私硬门槛）。 */
+  testMedia: z.array(z.object({
+    testId: z.string(),
+    media: z.array(z.object({ fileId: z.string(), kind: z.literal('image'), caption: z.string() })),
+  })).optional(),
+  examMedia: z.array(z.object({
+    examId: z.string(),
+    media: z.array(z.object({ fileId: z.string(), kind: z.literal('image'), caption: z.string() })),
+  })).optional(),
 });
 export type TeacherCaseData = z.infer<typeof recordSchema>;
 

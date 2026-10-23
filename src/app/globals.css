@@ -750,6 +750,11 @@ textarea { resize: vertical; }
 .resource-pagination button { border: 1px solid var(--line); background: white; padding: 9px 14px; border-radius: 9px; min-height: 40px; }
 .resource-pagination button:disabled { opacity: .4; }
 .source-result-list p { white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; background: #f0f7f3; border-radius: 10px; margin: 12px 0; font-size: 14px; }
+.case-media-gallery { display: grid; gap: 10px; margin: 8px 0 12px; }
+.case-media-item { margin: 0; padding: 10px; background: #f0f7f3; border-radius: 10px; }
+.case-media-item img { display: block; max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #d8e6de; background: #fff; }
+.case-media-item figcaption { font-size: 12px; color: #5a6b62; margin-top: 6px; }
+.case-media-state { font-size: 13px; color: #5a6b62; margin: 8px 0; }
 .evidence-table td { white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 699px) {
   .case-library-filter label { flex-basis: 100%; }

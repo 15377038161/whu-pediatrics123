@@ -380,7 +380,7 @@ export class AgentRepository {
         client_event_id: item.clientEventId,
         event_type: item.type,
         stage: item.stage,
-        payload: { summary: item.summary },
+        payload: { summary: item.summary, media: item.media ?? null },
         result: { correct: item.correct, evidenceCodes: item.evidenceCodes },
         created_at: item.createdAt,
       })), { onConflict: 'session_id,client_event_id' });

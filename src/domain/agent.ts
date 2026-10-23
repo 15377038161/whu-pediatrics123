@@ -72,6 +72,20 @@ export interface AgentMessage {
   transcriptEdited?: boolean;
 }
 
+/**
+ * 病例媒体（检查影像/报告图片；补充单：媒体按检查/操作触发绑定）：
+ * - fileId 为对象存储登记标识（不接受客户端传入 URL），仅经服务端签名链接解析展示；
+ * - 仅图核通过（无身份标识、数值与病例一致）的媒体可登记进病例配置；
+ *   含未掩码身份信息的媒体禁止进入病例配置与学生端（隐私硬门槛，blocked_until_redacted）。
+ */
+export interface CaseMedia {
+  /** 对象存储 fileId（病例配置登记；解析走 /api/sessions/[id]/media 签名链接，不持久化 URL）。 */
+  fileId: string;
+  kind: 'image';
+  /** 展示说明（如「血常规+网织红细胞报告」），同时用作图片 alt 文本。 */
+  caption: string;
+}
+
 export interface ClinicalEvent {
   id: string;
   clientEventId: string;
@@ -80,6 +94,8 @@ export interface ClinicalEvent {
   summary: string;
   correct: boolean | null;
   evidenceCodes: string[];
+  /** 本次操作随结果释放的病例媒体（如该检查对应的报告图片）；仅在结果实际释放时挂载，缺省无媒体。 */
+  media?: CaseMedia[];
   createdAt: string;
 }
 
