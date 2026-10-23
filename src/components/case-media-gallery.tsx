@@ -19,10 +19,9 @@ interface CaseMediaLink {
 function CaseMediaImage({ sessionId, item }: { sessionId: string; item: CaseMedia }) {
   const [link, setLink] = useState<CaseMediaLink | null>(null);
   const [failed, setFailed] = useState(false);
+  // 父组件以 fileId 为 key：fileId 变更即重挂载获得全新 state，无需在 effect 内同步重置
   useEffect(() => {
     let cancelled = false;
-    setLink(null);
-    setFailed(false);
     authedFetch<CaseMediaLink>(`/api/sessions/${sessionId}/media?fileId=${encodeURIComponent(item.fileId)}`)
       .then((result) => { if (!cancelled) setLink(result); })
       .catch(() => { if (!cancelled) setFailed(true); });
