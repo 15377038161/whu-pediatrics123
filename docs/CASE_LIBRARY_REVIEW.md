@@ -132,3 +132,14 @@ outputs/case-library-review/20261021/
 ```
 
 历史私有断点（2026-10-21 前的 cases/、evidence/、teacher-feedback/）随沙箱重置丢失，未恢复；后续阶段按任务书第 12 节结构增量重建，不另开第二套台账。
+
+## 9. merge dc3048f 落地核验与 R1-VER-01 / R1-DOC-01 解除登记（2026-10-23，第四十八节）
+
+基线 HEAD=`361a2ec`（工作树干净）→ `git fetch origin` 新增 1 提交 `dc3048f`（fix(cases): preserve source versions and unblock teacher-case exam observations）→ merge 执行 exit 0 无冲突，merge commit **`f51d9b4`**（双亲 `361a2ec` + `dc3048f`）。第 8 节（第四十六节）复核记录保持原样，本节仅追加落地后的更新登记。
+
+- **R1-VER-01 解除**：第 8 节登记的「三层无实证」（本地全历史/远端全部引用/沙箱工作树均无 `case-data-version.ts`）已由用户侧推送解除——算法 v2 文件随 merge 到达（49 行纯函数，显式字段顺序 + CRLF 规范化 + 媒体绑定参与），且 `teacher-case-data.ts` 已删除任务书第 18 节指出的 v1 缺陷算法 `computeLocalVersion`（documents sha256 聚合哈希截 16 位）改调共享 `computeCaseDataVersion`；本地读取/教师导入/召回快照三链统一经源码与 diff 双重核实（非仅任务书声称）。第 8 节关于「不擅自按任务书描述重建算法」的处置承诺已兑现：等待到达后核验，未自行重建。
+- **三项修复核验**：①SOURCE_EX_ 来源查体证据判定统一为 `src/domain/exam-evidence.ts` 的 `isExamResultEvidence`，引擎观察提交（`agent-engine.ts`）与前端勾选（`training-workspace.tsx`）共用同一函数，来源病例查体专项可关联已取得结果，伪造/未解锁来源证据两道校验保留；②观察关联 `linkedEvidence` 上限 10→32（`validation.ts`），逐项原查体事件与解锁结果服务端核验未放宽；③沟通专项简报不再向所有病例预设肺部感染/低氧/已氧疗，改为严格使用本会话已提供资料，configVersion 3→4。
+- **R1-DOC-01 解除**：《审核意见处理说明》原件（18 条逐条处理表）随 dc3048f 到达 `docs/实施方案/20261021_审核意见处理说明.md`（与本地根目录缺失登记占位不同路径，两副本共存），与任务书 v1.1 引用（建议脚本名声明、teacher_approved/medical_verified 不混同）交叉印证一致；根目录占位已更新为「原件到达登记」并保留 2026-10-22 历史缺失登记全文。逐条闭环核对的内容工作自本登记起具备执行前提，核对结果另节登记，不因原件到达自动视为已完成。
+- **沙箱验证真实退出码**：`tsc --noEmit` exit 0；lint 项目口径（`eslint . --quiet`）exit 0（另跑严格口径 `--max-warnings=0` exit 1：77 条 warnings 全部位于 `scripts/` 工具脚本，为既有代码风格项，未为跑绿改动任何脚本）；全量测试 385 项 = 381 通过 / 0 失败 / 4 跳过（135.6s；4 项跳过均为 `AI_LIVE_TEST=1` 门槛 live 集成测试；语音路由测试在本沙箱因注入密钥环境变量真实通过，与用户本地无密钥 1 失败记录为不同环境如实记录，均未改密钥或跳过伪造）；`pnpm build` exit 0（Next.js + tsup 服务端打包）。全量路由复验（504=72×7）沙箱侧已跑完，真实退出码 1：49 通过 / 390 缺料仅引导过程 / 3 OSCE 预期拒绝 / 62 项 OSCE create 失败（均为教师来源病例）。根因判定为环境差异——沙箱无 `knowledge/` 源材料，同一 commit `dc3048f` 在用户侧有材料环境实测 0 失败（483/18/3/0，为用户侧证据文件验收依据）；沙箱结果不作为内容通过/失败依据。观察项：源材料缺失时 OSCE create 走失败路径而非「资料不足」预期拒绝（3 个已知缺料 guard 正确），缺料下 OSCE create 拒绝路径是否加固留待教师试用阶段评估，本批不改动代码。
+- **阻断如实登记（新增 R1-MAT-02）**：本会话两份上传原件（嗜血细胞综合征.docx、蚕豆病.docx）云盘 objectId 失效、解析 taskId 不合法，原件不可达；ITP（特发性血小板减少性紫癜）原件用户 2026-10-23 表示已补传，但该次上传的文件引用未到达本沙箱会话上下文（会话存档无对应条目），下载与 SHA256 核实（9e7a3a19…）仍不可执行，待重新送达可访问引用后补验。SHA256 核实（00104f83…/93ed1dde…/9e7a3a19…）与三病例附件审查重建在本沙箱会话不可执行；`knowledge/` 不在沙箱（私有隔离，预期），无源 JSON 可增量合并。用户侧证据文件（CASE_LIBRARY_LOCAL_EVIDENCE.md 2026-10-23 节）记录其私有环境已完成三份标准化表接入——沙箱侧不重复、不伪造，待原件重新上传后补验 SHA256 并继续接入审查。
+- **边界**：本轮无数据库写入、无发布、无 RLS/权限改动、未部署真实学生、未创建账号、原件与私有材料未入 Git；commit 不 push。
