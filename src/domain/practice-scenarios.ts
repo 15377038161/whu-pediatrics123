@@ -96,11 +96,11 @@ export const practiceScenarios: Record<PracticeFocus, PracticeScenario> = {
   },
   communication: {
     focus: 'communication',
-    configVersion: 3,
+    configVersion: 4,
     title: '家长焦虑沟通',
     goal: '向焦虑家长解释病情、风险与后续安排',
     briefing: [
-      '情境设定：患儿因发热咳嗽伴气促就诊，初步考虑肺部感染伴低氧风险，已开始氧疗与监测。',
+      '情境设定：以本次会话已提供的病史、检查、诊断和处置记录为依据；没有提供的内容应说明待核实。',
       '家长明确表达焦虑，希望了解孩子的病情、风险和接下来要做什么。',
       '请向家长说明目前情况、可能的风险和下一步安排，回应其顾虑并确认理解。',
       '沟通完成后结束会话即可；未覆盖的目标保留为反馈，不影响结束。',

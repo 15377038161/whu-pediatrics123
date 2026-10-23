@@ -5,6 +5,39 @@ import { buildReport } from '@/lib/scoring';
 import { findRubricForReport, isUnscoredReport, unscoredReasonForDisplay } from '@/domain/training-rubric';
 import { agentTurnSchema } from '@/lib/validation';
 
+test('沟通专项不向所有病例添加肺部感染、低氧和已经氧疗的既定事实', () => {
+  const session = createInitialSession('student-neutral-briefing', 'practice', undefined, 'communication');
+  const briefing = session.messages.filter(message => message.actor === 'system').map(message => message.content).join('\n');
+  assert.ok(briefing.includes('没有提供的内容应说明待核实'));
+  assert.ok(!briefing.includes('初步考虑肺部感染伴低氧风险，已开始氧疗'));
+  assert.equal(session.scenarioVersion, 4);
+});
+
+test('查体观察可提交十项以上的结果关联，仍限制请求规模', () => {
+  const request = (count: number) => ({ sessionId: '11111111-1111-4111-8111-111111111111', clientEventId: 'source-links',
+    event: { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '本次完整查体结果的观察记录', linkedEvidence: Array.from({ length: count }, (_, i) => `SOURCE_EX_${i}`) } } });
+  assert.equal(agentTurnSchema.safeParse(request(18)).success, true);
+  assert.equal(agentTurnSchema.safeParse(request(33)).success, false);
+});
+
+test('来源病例查体证据可关联观察，仍拒绝无原事件或未解锁的来源证据', async () => {
+  const session = createInitialSession('student-source-observation', 'practice', undefined, 'exam');
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'hand-hygiene', bodyPartId: 'hands' } }, 'source-prep');
+  await runAgentTurn(session, { type: 'EXAM_ACTION', data: { toolId: 'stethoscope', bodyPartId: 'chest' } }, 'source-exam');
+  // Controlled event fixture reproduces the actual teacher-case code namespace.
+  const original = session.events.find(event => event.clientEventId === 'source-exam');
+  assert.ok(original?.correct && original.evidenceCodes.length);
+  const previousCode = original.evidenceCodes[0];
+  original.evidenceCodes = ['SOURCE_EX_CHEST'];
+  session.unlockedEvidence = session.unlockedEvidence.map(code => code === previousCode ? 'SOURCE_EX_CHEST' : code);
+  await runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '记录本次获得的查体结果', linkedEvidence: ['SOURCE_EX_CHEST'] } }, 'source-observation');
+  assert.deepEqual(session.examObservation?.linkedEventIds, [original.id]);
+  session.unlockedEvidence.push('SOURCE_EX_FORGED');
+  await assert.rejects(runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '伪造关联', linkedEvidence: ['SOURCE_EX_FORGED'] } }, 'source-forged'), /EXAM_EVIDENCE_NOT_OBTAINED/);
+  session.unlockedEvidence = session.unlockedEvidence.filter(code => code !== 'SOURCE_EX_CHEST');
+  await assert.rejects(runAgentTurn(session, { type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: '未解锁关联', linkedEvidence: ['SOURCE_EX_CHEST'] } }, 'source-locked'), /EXAM_EVIDENCE_NOT_OBTAINED/);
+});
+
 test('报告总分严格由六维证据分项相加得到', () => {
   const session = createInitialSession('student-1', 'guided');
   session.askedIntents = ['onset', 'fever', 'danger', 'general', 'exposure', 'vaccination'];

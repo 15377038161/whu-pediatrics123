@@ -3,6 +3,7 @@ import { KnowledgeClient, Config } from 'coder-coding-dev-sdk';
 import { getSupabaseUserClient, isDatabaseConfigured } from '@/lib/supabase-client';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
+import { computeCaseDataVersion } from '@/lib/case-data-version';
 
 /**
  * 结构化病例快照（来源：平台知识库召回）
@@ -57,7 +58,7 @@ export interface CaseSnapshotMeta {
   builtAt: string;
   chunkCount: number;
   mediaCount: number;
-  /** 快照版本：召回分片 sha256 集合的指纹。同版本=同事实，用于会话绑定与数据库恢复。 */
+  /** 固定事实、原文与媒体绑定的内容指纹（算法v2），用于会话绑定与数据库恢复。 */
   version: string;
 }
 
@@ -155,18 +156,23 @@ function matchInlineHeader(line: string, normalized: string): keyof SnapshotCase
   return null;
 }
 
-function sections(text: string): SnapshotCaseData['sections'] {
+export function splitSnapshotSections(text: string): SnapshotCaseData['sections'] {
   const buckets: Record<keyof SnapshotCaseData['sections'], string[]> = { history: [], exam: [], tests: [], diagnosis: [], plan: [] };
   let current: keyof typeof buckets = 'history';
   for (const rawLine of text.split('\n')) {
     const line = rawLine.trim();
     if (!line || isMediaNoise(line)) continue;
     const normalized = line.replace(/^[一二三四五六七八九十\d、.．（）()\s]+/, '');
-    const matched = SECTION_HEADERS.find((item) => item.pattern.test(normalized) || /^[一二三四五六七八九十]+[、.．]\s*诊断/.test(line));
-    if (matched) current = matched.key;
+    const explicitTests = /^(?:辅助检查|辅检|相关检查|实验室检查|检查结果|入院检查)\s*(?:[:：]|$)/.test(normalized)
+      || /^【(?:辅助检查|辅检|检查)】/.test(line);
+    const matched = SECTION_HEADERS.find(item => item.pattern.test(normalized)
+      && !(current === 'plan' && item.key === 'tests' && !explicitTests));
+    // A numbered diagnosis is a diagnosis, not a match for the first exam rule.
+    if (/^[一二三四五六七八九十]+[、.．]\s*诊断/.test(line)) current = 'diagnosis';
+    else if (matched) current = matched.key;
     else {
       const inline = matchInlineHeader(line, normalized);
-      if (inline) current = inline;
+      if (inline && !(current === 'plan' && inline === 'tests' && !explicitTests)) current = inline;
     }
     buckets[current].push(line);
   }
@@ -226,19 +232,16 @@ function textOnlyLength(text: string): number {
 
 function buildSnapshot(caseId: string, caseName: string, chunks: Array<{ text: string; sha: string }>, media: CaseSnapshotMedia[]): SnapshotResult {
   const cleaned = chunks.map((chunk) => ({ ...chunk, text: clean(chunk.text) })).filter((chunk) => chunk.text);
-  // 版本指纹：全部召回分片 sha256 的聚合哈希。同版本=同事实集合，用于会话绑定与数据库恢复。
-  const version = sha256(cleaned.map((chunk) => chunk.sha).sort().join('\n')).slice(0, 16);
   // 纯影像册分片（剥离图片后无有效正文）不进入教学正文分段，媒体 URL 已单独提取。
   const textChunks = cleaned.filter((chunk) => textOnlyLength(chunk.text) >= 80);
   const fullText = textChunks.map((chunk) => chunk.text).join('\n');
-  const facts = sections(fullText);
+  const facts = splitSnapshotSections(fullText);
   const historyHead = facts.history.slice(0, 500);
   const age = /(\d+(?:\.\d+)?\s*(?:岁(?:\s*\d+\s*(?:个)?月)?(?:\s*\d+\s*天)?|个?月(?:\s*\d+\s*天)?|天|小时|分钟))/.exec(historyHead);
   const sex = /(?:性别\s*[:：]?\s*|患儿[，,\s]*)(男|女)/.exec(historyHead);
   const chief = /(?:主诉\s*[:：]|^\s*2[.．、])\s*([^\n]+)/m.exec(facts.history);
   const complaint = chief ? chief[1].replace(/^主诉\s*[:：]\s*/, '').replace(/[；;。]+$/, '') : '请向家长了解本次就诊的主要不适。';
-  return {
-    data: {
+  const data: SnapshotCaseData = {
       caseId,
       sourceName: caseName,
       sourceDocument: `知识库召回（${KB_DOC_ID}，${cleaned.length} 个分片）`,
@@ -253,7 +256,9 @@ function buildSnapshot(caseId: string, caseName: string, chunks: Array<{ text: s
         spo2: extractNumber(facts.exam, /(?:SpO[₂2]|血氧饱和度|氧饱和度)\s*[:：]?\s*(\d{2,3})\s*%/i),
       },
       documents: cleaned.map((chunk) => ({ source: `knowledge-recall://${KB_DOC_ID}/${chunk.sha.slice(0, 12)}`, text: chunk.text, sha256: chunk.sha })),
-    },
+  };
+  return {
+    data,
     media,
     meta: {
       caseId,
@@ -262,7 +267,7 @@ function buildSnapshot(caseId: string, caseName: string, chunks: Array<{ text: s
       builtAt: new Date().toISOString(),
       chunkCount: cleaned.length,
       mediaCount: media.length,
-      version,
+      version: computeCaseDataVersion(data, media),
     },
   };
 }
