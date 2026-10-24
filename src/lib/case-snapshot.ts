@@ -230,6 +230,28 @@ function textOnlyLength(text: string): number {
   return stripped.length;
 }
 
+const AGE_PATTERN = String.raw`(\d+(?:\.\d+)?\s*(?:岁(?:\s*\d+\s*(?:个)?月)?(?:\s*\d+\s*天)?|个?月(?:\s*\d+\s*天)?|天|小时|分钟))`;
+
+/**
+ * 从病史首段提取年龄/性别，按证据强度分优先级：
+ *  1. 人口学句「患儿/患者，男，6岁」——年龄与性别同源，且不会被主诉病程时长（"发热3天"）抢先；
+ *  2. 显式声明「性别：男」「年龄：6岁」（"性别：性别未记录"占位不匹配）；
+ *  3. 内联性别「患儿，男」、最左年龄模式（历史兜底，可能取到病程时长，仅在前两级缺失时使用）。
+ * 性别兼容「患者」句式（肝豆状核变性来源文本）；性别字后允许 性/婴（男性、男婴）或分隔符，
+ * 拒绝"患者女儿"类误命中（女后跟随儿不匹配）。
+ */
+export function extractSnapshotDemographics(historyHead: string): { age?: string; sex?: string } {
+  const demo = new RegExp(`(?:患儿|患者)[，,\\s]*(男|女)?[性婴]?\\s*[，,]?\\s*${AGE_PATTERN}`).exec(historyHead);
+  const sexDecl = /性别\s*[:：]?\s*(男|女)(?=[，,。；;、\s\d性婴]|$)/.exec(historyHead);
+  const ageDecl = new RegExp(`年龄\\s*[:：]?\\s*${AGE_PATTERN}`).exec(historyHead);
+  const sexInline = /(?:患儿|患者)[，,\s]*(男|女)(?=[，,。；;、\s\d性婴]|$)/.exec(historyHead);
+  const ageAny = new RegExp(AGE_PATTERN).exec(historyHead);
+  return {
+    age: (demo?.[2] ?? ageDecl?.[1] ?? ageAny?.[1])?.replace(/\s/g, ''),
+    sex: demo?.[1] ?? sexDecl?.[1] ?? sexInline?.[1],
+  };
+}
+
 function buildSnapshot(caseId: string, caseName: string, chunks: Array<{ text: string; sha: string }>, media: CaseSnapshotMedia[]): SnapshotResult {
   const cleaned = chunks.map((chunk) => ({ ...chunk, text: clean(chunk.text) })).filter((chunk) => chunk.text);
   // 纯影像册分片（剥离图片后无有效正文）不进入教学正文分段，媒体 URL 已单独提取。
@@ -237,16 +259,15 @@ function buildSnapshot(caseId: string, caseName: string, chunks: Array<{ text: s
   const fullText = textChunks.map((chunk) => chunk.text).join('\n');
   const facts = splitSnapshotSections(fullText);
   const historyHead = facts.history.slice(0, 500);
-  const age = /(\d+(?:\.\d+)?\s*(?:岁(?:\s*\d+\s*(?:个)?月)?(?:\s*\d+\s*天)?|个?月(?:\s*\d+\s*天)?|天|小时|分钟))/.exec(historyHead);
-  const sex = /(?:性别\s*[:：]?\s*|患儿[，,\s]*)(男|女)/.exec(historyHead);
+  const { age, sex } = extractSnapshotDemographics(historyHead);
   const chief = /(?:主诉\s*[:：]|^\s*2[.．、])\s*([^\n]+)/m.exec(facts.history);
   const complaint = chief ? chief[1].replace(/^主诉\s*[:：]\s*/, '').replace(/[；;。]+$/, '') : '请向家长了解本次就诊的主要不适。';
   const data: SnapshotCaseData = {
       caseId,
       sourceName: caseName,
       sourceDocument: `知识库召回（${KB_DOC_ID}，${cleaned.length} 个分片）`,
-      age: age ? age[1].replace(/\s/g, '') : '年龄未记录',
-      sex: sex ? sex[1] : '性别未记录',
+      age: age ?? '年龄未记录',
+      sex: sex ?? '性别未记录',
       complaint,
       sections: facts,
       vitals: {

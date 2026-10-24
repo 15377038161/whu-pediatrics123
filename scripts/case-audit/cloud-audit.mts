@@ -60,7 +60,8 @@ function auditSnapshot(caseId: string, data: SnapshotData, meta: SnapshotMeta): 
     ? { status: 'pass', evidence: `快照版本指纹 v=${meta.version.slice(0, 12)}（分片 ${meta.chunkCount}）；caseId 一致` }
     : { status: 'flag', evidence: `版本或 caseId 异常：v=${meta?.version ?? 'null'} inner=${rec.caseId}` };
 
-  const hm = /患儿[，,]?\s*(男|女)\s*[，,]\s*([^；;，,。\n]{1,20})/.exec(rec.sections?.history ?? '');
+  // 与运行时 extractSnapshotDemographics 同口径：兼容"患儿/患者"句式
+  const hm = /(?:患儿|患者)[，,]?\s*(男|女)\s*[，,]\s*([^；;，,。\n]{1,20})/.exec(rec.sections?.history ?? '');
   const sexOk = hm ? hm[1] === rec.sex : false;
   const ageOk = hm ? hm[2].replace(/\s/g, '') === String(rec.age).replace(/\s/g, '') : false;
   r.A02 = hm && sexOk && ageOk
