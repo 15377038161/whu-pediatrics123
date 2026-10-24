@@ -19,7 +19,8 @@ import { FLAGSHIP_CASE, findExamRule, findTest, getCase, identifyHistoryIntents,
 import { retrieveKnowledge } from '@/domain/knowledge';
 import { getCaseTestResult, recordCaseTestOrder, refreshProjectedFacts } from '@/lib/case-snapshot';
 import { matchRequestedTest, splitRequestedTests } from '@/lib/test-name-matcher';
-import { canChildSpeak, resolveCommunicationProfile } from '@/domain/communication-profile';
+import { canChildSpeak } from '@/domain/communication-profile';
+import { resolveAuditedCommunicationProfile } from '@/lib/communication-profile-overrides';
 import { getPracticeScenario, PROVIDED_HISTORY_INTENT_IDS } from '@/domain/practice-scenarios';
 import { DEFAULT_OSCE_TIME_LIMIT_SECONDS, getOsceStation } from '@/domain/osce-stations';
 import { renderRoleReply } from '@/lib/role-agent';
@@ -311,7 +312,7 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   const traces = [trace('角色调度', '按患儿年龄、问题意图和家长插话状态选择回答者')];
   if (spokenIntervention) traces.push(trace('病例状态', '从学生原话识别沟通干预并更新应答状态'));
   // 发言计划（方案 8.2）：角色能力决定患儿能否输出语义台词；不能言语一律家长代答。
-  const profile = resolveCommunicationProfile(session.caseId, pediatricCase.age);
+  const profile = resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age);
   const childCapable = canChildSpeak(profile);
 
   if (intents.length === 0) {
@@ -432,7 +433,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
   }
   const fact = matches.map((item) => item.fact).join('。');
   // 发言计划（方案 8.2/8.4）：先按病例角色能力决定说话者，再渲染角色回复。
-  const profile = resolveCommunicationProfile(session.caseId, pediatricCase.age);
+  const profile = resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age);
   const childCapable = canChildSpeak(profile);
   const parentPaused = session.parentInterruption === 'paused';
   const roleResult = fact ? await renderRoleReply({ childAge: pediatricCase.age, childSex: pediatricCase.sex,
@@ -476,7 +477,7 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
   applyInterventionState(session, action);
   // 发言计划（方案 8.2）：不能言语患儿的干预不机械执行固定台词；
   // 安抚只影响情绪与配合，不改变语言能力；"让孩子自己说"按能力给出合理场景回应。
-  const childCapable = canChildSpeak(resolveCommunicationProfile(session.caseId, pediatricCase.age));
+  const childCapable = canChildSpeak(resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age));
   if (action === 'pause_parent') {
     response = childCapable
       ? message('parent', '好的，我等孩子说完再补充。', { emotion: 'neutral' })

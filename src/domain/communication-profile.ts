@@ -95,9 +95,11 @@ export function toAgeBand(days: number | null): AgeBand {
 }
 
 /**
- * 逐例审核覆盖表：key 为病例 ID（如 'teacher-新生儿呼吸窘迫综合征'）。
- * 仅接受经专业审核确认的字段覆盖（如意识受损 → speechCapability:'impaired'）；
- * 空对象是当前真实状态——没有任何病例完成角色能力专项审核，未知不伪装已审核。
+ * 客户端安全的语言能力注入点（测试/通用覆盖）。
+ * 本文件会被打包进客户端 bundle——**禁止**在此登记含病种名的逐例审核内容（泄题面）；
+ * 逐例审核覆盖（意识/痛苦/知情范围等，key 含病种名）在服务端私有模块
+ * `src/lib/communication-profile-overrides.ts`，经 `resolveAuditedCommunicationProfile` 叠加。
+ * 空对象是当前真实状态：客户端侧没有任何病例完成角色能力专项审核，未知不伪装已审核。
  */
 export const COMMUNICATION_PROFILE_OVERRIDES: Record<string, Partial<CommunicationProfile>> = {};
 

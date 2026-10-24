@@ -11,7 +11,8 @@
 import { ASRClient, AudioClient, AudioDefaults, Config, TTSClient } from 'coder-coding-dev-sdk';
 import type { VoiceInfo } from 'coder-coding-dev-sdk';
 import { getCase } from '@/domain/case';
-import { canChildSpeak, resolveCommunicationProfile } from '@/domain/communication-profile';
+import { canChildSpeak } from '@/domain/communication-profile';
+import { resolveAuditedCommunicationProfile } from '@/lib/communication-profile-overrides';
 import type { AgentMessage, SessionState } from '@/domain/agent';
 import type {
   AsrRequest,
@@ -203,7 +204,7 @@ async function resolveRoleVoice(
   if (message.actor === 'child') {
     preferred = pediatricCase.sex.includes('女') ? ROLE_VOICES.childFemale : ROLE_VOICES.childMale;
   } else if (message.actor === 'parent') {
-    const profile = resolveCommunicationProfile(session.caseId, pediatricCase.age);
+    const profile = resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age);
     if (profile.caregiverGender === 'unknown') {
       console.debug('[speech] 病例照护者性别未知，家长音色明确回退平台默认音色（不装作已知身份）');
     }
@@ -238,7 +239,7 @@ export async function synthesizeRoleAudio(
   }
   if (target.actor === 'child') {
     const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
-    if (!canChildSpeak(resolveCommunicationProfile(session.caseId, pediatricCase.age))) {
+    if (!canChildSpeak(resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age))) {
       return { ok: false, error: failure('NOT_SPEAKABLE', '该病例患儿不能言语，由家长代答，不播报患儿语音。', false) };
     }
   }

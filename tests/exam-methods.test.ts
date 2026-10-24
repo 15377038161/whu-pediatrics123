@@ -53,6 +53,33 @@ test('腹部视触叩听与反射分别取对应原文片段，不传播完整�
   assert.equal(result('reflex-hammer', 'limbs'), '膝反射存在');
   assert.ok(!result('palpation', 'abdomen').includes('肠鸣音'));
 });
+test('出血点/瘀点瘀斑归入皮肤视诊，牙龈出血归入口咽，不遗漏皮肤黏膜出血证据（ITP 实审驱动）', () => {
+  // ITP 原文形态：皮肤出血体征此前不命中任何查体关键词而整体丢失
+  const records = sourceExamDefinitions('全身可见散在针尖样出血点，颈部可见出血点融合成片，牙龈出血，咽充血，颈软。');
+  assert.equal(records.find(row => row[0] === 'inspection' && row[1] === 'skin')?.[3], '全身可见散在针尖样出血点，颈部可见出血点融合成片');
+  assert.equal(records.find(row => row[0] === 'tongue-depressor' && row[1] === 'mouth')?.[3], '牙龈出血，咽充血');
+  // “颈部可见出血点融合成片”是皮肤表现，不得被颈部淋巴结触诊抢走
+  assert.equal(records.find(row => row[0] === 'palpation' && row[1] === 'neck')?.[3] ?? '', '');
+});
+
+test('痰鸣音归入心肺听诊，呼吸稍促归入胸部视诊，震颤归入胸部触诊', () => {
+  const records = sourceExamDefinitions('呼吸稍促，可见轻度吸气三凹征，双肺呼吸音粗，可闻及痰鸣音，无震颤。');
+  assert.equal(records.find(row => row[0] === 'stethoscope' && row[1] === 'chest')?.[3], '双肺呼吸音粗，可闻及痰鸣音');
+  assert.equal(records.find(row => row[0] === 'inspection' && row[1] === 'chest')?.[3], '呼吸稍促，可见轻度吸气三凹征');
+  assert.equal(records.find(row => row[0] === 'palpation' && row[1] === 'chest')?.[3], '无震颤');
+  // 痰鸣音不得串入腹部听诊（肠鸣音仍归腹部）
+  const mixed = sourceExamDefinitions('可闻及痰鸣音，肠鸣音正常。');
+  assert.equal(mixed.find(row => row[0] === 'stethoscope' && row[1] === 'abdomen')?.[3], '肠鸣音正常');
+  assert.equal(mixed.find(row => row[0] === 'stethoscope' && row[1] === 'chest')?.[3], '可闻及痰鸣音');
+});
+
+test('神经系统阴性体征归入神经系统与反射检查，不丢失关键阴性（ITP 颅内出血警示评估）', () => {
+  const records = sourceExamDefinitions('神经系统查体无异常，四肢肌力肌张力正常，膝反射存在。');
+  assert.equal(records.find(row => row[0] === 'reflex-hammer')?.[3], '神经系统查体无异常，四肢肌力肌张力正常，膝反射存在');
+  // 肌张力不得同时混入四肢视诊
+  assert.equal(records.find(row => row[0] === 'inspection' && row[1] === 'limbs')?.[3] ?? '', '');
+});
+
 test('没有记录不补正常值；腹部新请求需仰卧，历史请求保留兼容', () => {
   assert.ok(sourceExamDefinitions('').every(row => !row[3]));
   assert.equal(postureAllows('abdomen', 'standing'), false);

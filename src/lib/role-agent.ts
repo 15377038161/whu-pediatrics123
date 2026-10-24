@@ -91,6 +91,18 @@ export function buildRoleSystemPrompt(input: RoleReplyInput): string {
     input.recentMessages?.length ? `最近对话仅用于保持语气连贯，不得从中新增事实：${JSON.stringify(input.recentMessages.slice(-6))}` : '',
     input.disclosedFacts?.length ? `已经被学生问出的事实编码：${input.disclosedFacts.join('、')}` : '目前尚未形成已披露事实清单。',
 
+    // 知情范围（独立项 D：逐例审核注入；unknown 不加约束，保持既有安全默认行为）
+    ...(profile?.childKnowledge === 'partial'
+      ? ['患儿知情范围仅限自身感受：只能回答自己感觉到的不舒服（如哪里痛、怕不怕）；对起病时间、用药、检查等病史细节一律说不知道或看向家长，不得替家长补充。']
+      : profile?.childKnowledge === 'none'
+        ? ['患儿不了解任何病情信息：不回答任何病史问题，病史一律由家长陈述。']
+        : []),
+    ...(profile?.caregiverKnowledge === 'full'
+      ? ['家长全程照护、了解孩子情况：可回答病史细节，但仍只能使用本轮提供的事实，不得超出。']
+      : profile?.caregiverKnowledge === 'partial'
+        ? ['家长只了解部分情况：对不了解的细节如实说不知道或记不清，不编造。']
+        : []),
+
     ...(childCanSpeak
       ? [
         '【患儿人设——必须严格遵守】',
