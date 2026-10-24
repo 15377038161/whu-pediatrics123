@@ -333,16 +333,30 @@ textarea { resize: vertical; }
 .patient-unspecified { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 28px; text-align: center; color: var(--muted); }
 .patient-stage[data-posture="supine"] .patient-figure { background: #edf3ef; }
 .patient-stage[data-posture="supine"] .patient-photo { object-fit: contain; }
-.patient-stage[data-posture="supine"] .hotspot-forehead { top: 12%; }
-.patient-stage[data-posture="supine"] .hotspot-mouth { top: 22%; }
-.patient-stage[data-posture="supine"] .hotspot-neck { top: 27%; }
-.patient-stage[data-posture="supine"] .hotspot-chest { top: 36%; }
-.patient-stage[data-posture="supine"] .hotspot-arm { top: 43%; }
-.patient-stage[data-posture="supine"] .hotspot-skin { top: 27%; }
-.patient-stage[data-posture="supine"] .hotspot-abdomen { top: 45%; }
-.patient-stage[data-posture="supine"] .hotspot-finger { top: 55%; }
-.patient-stage[data-posture="supine"] .hotspot-hands { top: 55%; }
-.patient-stage[data-posture="supine"] .hotspot-limbs { top: 70%; }
+.patient-stage[data-posture="supine"] .hotspot-forehead { top: var(--hs-supine-forehead, 12%); }
+.patient-stage[data-posture="supine"] .hotspot-mouth { top: var(--hs-supine-mouth, 22%); }
+.patient-stage[data-posture="supine"] .hotspot-neck { top: var(--hs-supine-neck, 27%); }
+.patient-stage[data-posture="supine"] .hotspot-chest { top: var(--hs-supine-chest, 36%); }
+.patient-stage[data-posture="supine"] .hotspot-arm { top: var(--hs-supine-arm, 43%); }
+.patient-stage[data-posture="supine"] .hotspot-skin { top: var(--hs-supine-skin, 27%); }
+.patient-stage[data-posture="supine"] .hotspot-abdomen { top: var(--hs-supine-abdomen, 45%); }
+.patient-stage[data-posture="supine"] .hotspot-finger { top: var(--hs-supine-finger, 55%); }
+.patient-stage[data-posture="supine"] .hotspot-hands { top: var(--hs-supine-hands, 55%); }
+.patient-stage[data-posture="supine"] .hotspot-limbs { top: var(--hs-supine-limbs, 70%); }
+/* 2026-10-23 独立项 C：幼儿/学龄/青少年分档素材为 832×1216（与既有学龄前 957×1644 不同），
+   按 data-avatar 覆盖容器比例，contain 下无 letterbox，热点容器百分比=图像百分比。 */
+.patient-stage[data-avatar="toddler-boy"] .patient-figure, .patient-stage[data-avatar="toddler-girl"] .patient-figure,
+.patient-stage[data-avatar="school-boy"] .patient-figure, .patient-stage[data-avatar="school-girl"] .patient-figure,
+.patient-stage[data-avatar="adolescent-boy"] .patient-figure, .patient-stage[data-avatar="adolescent-girl"] .patient-figure { aspect-ratio: 832/1216; }
+/* 分档素材热点按 read_image 实测解剖位置逐 avatar 标定（outputs/case-library-review/20261023/
+   asset-identity-check-20261023.md），同栏相邻按钮纵向间距 ≥5% 防重叠；--hs-* 为站姿，
+   --hs-supine-* 为仰卧。 */
+.patient-stage[data-avatar="toddler-boy"] { --hs-forehead: 21%; --hs-mouth: 28%; --hs-neck: 33%; --hs-chest: 40%; --hs-arm: 53%; --hs-skin: 33%; --hs-abdomen: 51%; --hs-finger: 59%; --hs-hands: 58%; --hs-limbs: 70%; --hs-supine-forehead: 19%; --hs-supine-mouth: 26%; --hs-supine-neck: 31%; --hs-supine-chest: 34%; --hs-supine-arm: 41%; --hs-supine-skin: 28%; --hs-supine-abdomen: 41%; --hs-supine-finger: 48%; --hs-supine-hands: 47%; --hs-supine-limbs: 59%; }
+.patient-stage[data-avatar="toddler-girl"] { --hs-forehead: 20%; --hs-mouth: 28%; --hs-neck: 33%; --hs-chest: 39%; --hs-arm: 55%; --hs-skin: 32%; --hs-abdomen: 51%; --hs-finger: 61%; --hs-hands: 60%; --hs-limbs: 73%; --hs-supine-forehead: 16%; --hs-supine-mouth: 24%; --hs-supine-neck: 29%; --hs-supine-chest: 33%; --hs-supine-arm: 46%; --hs-supine-skin: 27%; --hs-supine-abdomen: 41%; --hs-supine-finger: 54%; --hs-supine-hands: 52%; --hs-supine-limbs: 65%; }
+.patient-stage[data-avatar="school-boy"] { --hs-forehead: 10%; --hs-mouth: 16%; --hs-neck: 21%; --hs-chest: 28%; --hs-arm: 48%; --hs-skin: 22%; --hs-abdomen: 41%; --hs-finger: 55%; --hs-hands: 54%; --hs-limbs: 68%; --hs-supine-forehead: 17%; --hs-supine-mouth: 22%; --hs-supine-neck: 27%; --hs-supine-chest: 31%; --hs-supine-arm: 43%; --hs-supine-skin: 25%; --hs-supine-abdomen: 38%; --hs-supine-finger: 49%; --hs-supine-hands: 48%; --hs-supine-limbs: 60%; }
+.patient-stage[data-avatar="school-girl"] { --hs-forehead: 14%; --hs-mouth: 21%; --hs-neck: 26%; --hs-chest: 32%; --hs-arm: 50%; --hs-skin: 25%; --hs-abdomen: 43%; --hs-finger: 57%; --hs-hands: 56%; --hs-limbs: 67%; --hs-supine-forehead: 12%; --hs-supine-mouth: 18%; --hs-supine-neck: 23%; --hs-supine-chest: 27%; --hs-supine-arm: 43%; --hs-supine-skin: 21%; --hs-supine-abdomen: 34%; --hs-supine-finger: 50%; --hs-supine-hands: 48%; --hs-supine-limbs: 62%; }
+.patient-stage[data-avatar="adolescent-boy"] { --hs-forehead: 11%; --hs-mouth: 16%; --hs-neck: 21%; --hs-chest: 28%; --hs-arm: 50%; --hs-skin: 21%; --hs-abdomen: 42%; --hs-finger: 57%; --hs-hands: 56%; --hs-limbs: 69%; --hs-supine-forehead: 10%; --hs-supine-mouth: 15%; --hs-supine-neck: 20%; --hs-supine-chest: 23%; --hs-supine-arm: 38%; --hs-supine-skin: 17%; --hs-supine-abdomen: 30%; --hs-supine-finger: 45%; --hs-supine-hands: 44%; --hs-supine-limbs: 52%; }
+.patient-stage[data-avatar="adolescent-girl"] { --hs-forehead: 11%; --hs-mouth: 16%; --hs-neck: 21%; --hs-chest: 28%; --hs-arm: 49%; --hs-skin: 21%; --hs-abdomen: 42%; --hs-finger: 56%; --hs-hands: 55%; --hs-limbs: 68%; --hs-supine-forehead: 11%; --hs-supine-mouth: 16%; --hs-supine-neck: 21%; --hs-supine-chest: 26%; --hs-supine-arm: 41%; --hs-supine-skin: 20%; --hs-supine-abdomen: 35%; --hs-supine-finger: 48%; --hs-supine-hands: 46%; --hs-supine-limbs: 61%; }
 .posture-selector { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-block: 14px; }
 .posture-selector [aria-pressed="true"] { background: var(--ink); color: var(--paper, #fffdf8); }
 .posture-selector small { color: var(--muted); }
@@ -356,16 +370,16 @@ textarea { resize: vertical; }
 .hotspot[data-observed="blocked"] { color: #7d3930; border-color: #eba99e; background: #fff1ee; animation: observed-shake .34s ease-in-out; }
 .hotspot-forehead, .hotspot-mouth, .hotspot-neck, .hotspot-arm, .hotspot-hands { left: 3%; }
 .hotspot-chest, .hotspot-finger, .hotspot-skin, .hotspot-abdomen, .hotspot-limbs { right: 3%; }
-.hotspot-forehead { top: 12%; }
-.hotspot-mouth { top: 21%; }
-.hotspot-neck { top: 28%; }
-.hotspot-chest { top: 38%; }
-.hotspot-arm { top: 44%; }
-.hotspot-finger { top: 56%; }
-.hotspot-hands { top: 58%; }
-.hotspot-skin { top: 29%; }
-.hotspot-abdomen { top: 47%; }
-.hotspot-limbs { top: 66%; }
+.hotspot-forehead { top: var(--hs-forehead, 12%); }
+.hotspot-mouth { top: var(--hs-mouth, 21%); }
+.hotspot-neck { top: var(--hs-neck, 28%); }
+.hotspot-chest { top: var(--hs-chest, 38%); }
+.hotspot-arm { top: var(--hs-arm, 44%); }
+.hotspot-finger { top: var(--hs-finger, 56%); }
+.hotspot-hands { top: var(--hs-hands, 58%); }
+.hotspot-skin { top: var(--hs-skin, 29%); }
+.hotspot-abdomen { top: var(--hs-abdomen, 47%); }
+.hotspot-limbs { top: var(--hs-limbs, 66%); }
 .hotspot-forehead::after, .hotspot-mouth::after, .hotspot-neck::after, .hotspot-arm::after, .hotspot-hands::after { left: 100%; }
 .hotspot-chest::after, .hotspot-finger::after, .hotspot-skin::after, .hotspot-abdomen::after, .hotspot-limbs::after { right: 100%; }
 .patient-caption { position: absolute; bottom: 13px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 11px; background: rgba(255,253,248,.9); font-size: 12px; backdrop-filter: blur(10px); }

@@ -113,6 +113,47 @@ test('C01 未知年龄：不虚构分档，保持通用虚拟儿童素材与两�
   assert.deepEqual(allowedPostures(''), ['standing', 'supine']);
 });
 
+/**
+ * 2026-10-23 独立项 C：幼儿/学龄/青少年分档专属素材路由。
+ * 分档边界（communication-profile.toAgeBand）：toddler ≤3 岁、preschool ≤6 岁、
+ * school <12 岁、adolescent ≥12 岁。站姿 v1/仰卧 v2 同一可识别个体（逐对图核通过）。
+ */
+test('独立项 C 年龄分档路由：幼儿/学龄/青少年使用分档专属素材，站姿/仰卧同一个体且文件存在', () => {
+  const cases: Array<[string, '男' | '女', string, string]> = [
+    ['2岁', '男', 'toddler-boy', 'virtual-child-toddler-boy'],
+    ['2岁6个月', '女', 'toddler-girl', 'virtual-child-toddler-girl'],
+    ['3岁', '男', 'toddler-boy', 'virtual-child-toddler-boy'], // toddler 上边界（≤3 岁）
+    ['7岁', '女', 'school-girl', 'virtual-child-school-girl'],
+    ['9岁', '男', 'school-boy', 'virtual-child-school-boy'],
+    ['11岁', '女', 'school-girl', 'virtual-child-school-girl'], // school 上边界（<12 岁）
+    ['12岁', '男', 'adolescent-boy', 'virtual-child-adolescent-boy'],
+    ['14岁', '女', 'adolescent-girl', 'virtual-child-adolescent-girl'],
+  ];
+  for (const [age, sex, key, fragment] of cases) {
+    const standing = patientAppearance(sex, 'standing', `band-${age}-${sex}`, age);
+    const supine = patientAppearance(sex, 'supine', `band-${age}-${sex}`, age);
+    assert.equal(standing.key, key, `${age}${sex} 应路由到 ${key}，实际 ${standing.key}`);
+    assert.equal(supine.key, key, '站姿/仰卧须为同一虚拟个体');
+    assert.ok(standing.src?.includes(`${fragment}-standing-v1`), `${age} 站姿素材路径`);
+    assert.ok(supine.src?.includes(`${fragment}-supine-v2`), `${age} 仰卧素材路径（v2 竖构图）`);
+    for (const item of [standing, supine]) { assert.ok(item.src); assert.ok(existsSync(`public${item.src}`), `素材缺失：${item.src}`); }
+    assert.ok(!standing.src!.includes('newborn'), '分档素材不得与新生儿素材混淆');
+  }
+});
+
+test('独立项 C 边界保持：学龄前（4-6 岁）仍走哈希通用素材，新生儿/婴儿固定卧位不受影响', () => {
+  for (const age of ['4岁', '5岁', '6岁']) {
+    const appearance = patientAppearance('女', 'standing', `band-keep-${age}`, age);
+    assert.ok(/^(girl-a|girl-b)$/.test(appearance.key), `${age} 应保持学龄前哈希素材，实际 ${appearance.key}`);
+    const boy = patientAppearance('男', 'standing', `band-keep-${age}`, age);
+    assert.ok(/^(boy-a|boy-b)$/.test(boy.key), `${age} 应保持学龄前哈希素材，实际 ${boy.key}`);
+  }
+  assert.equal(patientAppearance('女', 'standing', 'band-keep-infant', '6个月').key, 'newborn-girl');
+  assert.equal(patientAppearance('男', 'supine', 'band-keep-newborn', '15天').key, 'newborn-boy');
+  // 年龄未知不虚构分档（保持哈希通用素材）
+  assert.ok(/^(girl-a|girl-b)$/.test(patientAppearance('女', 'standing', 'band-keep-x', '待核验').key));
+});
+
 test('C01 allowedPostures：新生儿/婴儿（含 1 小时、10 分钟等窒息复苏病例年龄表述）仅仰卧', () => {
   assert.deepEqual(allowedPostures('1天'), ['supine']);
   assert.deepEqual(allowedPostures('28天'), ['supine']);

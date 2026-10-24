@@ -9,9 +9,11 @@
  * - 未知不猜、不伪装审核：全部素材为项目自制虚拟示教插画（isSynthetic=true）；
  *   **没有任何素材完成医学/形象专业审核**——reviewStatus 一律 'unaudited'，
  *   许可条款待确认（license='project_internal_unreviewed'），不声称已审核可用。
- * - 年龄段诚实标注：现有素材仅覆盖新生儿/婴儿（卧位）与学龄前（通用虚拟儿童）；
- *   幼儿/学龄/青少年**没有同龄素材**，当前复用学龄前通用角色（patient-appearance
- *   既有行为），此为已登记缺口（bindingGapNote），不假装已匹配。
+ * - 年龄段诚实标注：新生儿/婴儿（卧位）、幼儿/学龄/青少年（2026-10-23 独立项 C 新增
+ *   分档专属素材，同性别一档一对站姿/仰卧，逐对图核同一可识别个体，见
+ *   outputs/case-library-review/20261023/asset-identity-check-20261023.md）与学龄前
+ *   （通用虚拟儿童，哈希选择）均已覆盖；**所有素材仍未完成医学/形象专业审核**
+ *   （reviewStatus 一律 'unaudited'），不假装已审核。
  * - 家长/照护者头像：当前**没有**任何照护者素材（方案 9.2 家长头像配置的前置），
  *   caregiverAssets 一律空数组，缺口如实登记。
  * - 图像只表达外观和场景，不能替代真实体征；alt 文案统一携带「虚拟示教角色，
@@ -140,6 +142,87 @@ export const PATIENT_ASSETS: readonly PatientAsset[] = [
     version: 'v1',
     note: '学龄前女孩虚拟示教角色 B（通用素材，跨病例复用），非病例本人',
   },
+  // —— 2026-10-23 独立项 C：幼儿/学龄/青少年分档专属素材 ——
+  // 同性别一档一对站姿（v1）/仰卧（v2 竖构图），逐对图核同一可识别个体；
+  // 仍未完成医学/形象专业审核（unaudited），不声称已审核。
+  {
+    assetId: 'toddler-boy',
+    ageBand: 'toddler',
+    sexPresentation: 'male',
+    postures: ['standing', 'supine'],
+    sources: { standing: '/media/clinical/virtual-child-toddler-boy-standing-v1.png', supine: '/media/clinical/virtual-child-toddler-boy-supine-v2.png' },
+    style: 'synthetic_illustration',
+    license: 'project_internal_unreviewed',
+    isSynthetic: true,
+    reviewStatus: 'unaudited',
+    version: 'v1',
+    note: '幼儿男孩虚拟示教角色（约 2 岁观感，站姿/仰卧同一虚拟个体），非病例本人，不代表病例体征',
+  },
+  {
+    assetId: 'toddler-girl',
+    ageBand: 'toddler',
+    sexPresentation: 'female',
+    postures: ['standing', 'supine'],
+    sources: { standing: '/media/clinical/virtual-child-toddler-girl-standing-v1.png', supine: '/media/clinical/virtual-child-toddler-girl-supine-v2.png' },
+    style: 'synthetic_illustration',
+    license: 'project_internal_unreviewed',
+    isSynthetic: true,
+    reviewStatus: 'unaudited',
+    version: 'v1',
+    note: '幼儿女孩虚拟示教角色（约 2 岁观感，站姿/仰卧同一虚拟个体），非病例本人，不代表病例体征',
+  },
+  {
+    assetId: 'school-boy',
+    ageBand: 'school',
+    sexPresentation: 'male',
+    postures: ['standing', 'supine'],
+    sources: { standing: '/media/clinical/virtual-child-school-boy-standing-v1.png', supine: '/media/clinical/virtual-child-school-boy-supine-v2.png' },
+    style: 'synthetic_illustration',
+    license: 'project_internal_unreviewed',
+    isSynthetic: true,
+    reviewStatus: 'unaudited',
+    version: 'v1',
+    note: '学龄男孩虚拟示教角色（约 9 岁观感，站姿/仰卧同一虚拟个体），非病例本人，不代表病例体征',
+  },
+  {
+    assetId: 'school-girl',
+    ageBand: 'school',
+    sexPresentation: 'female',
+    postures: ['standing', 'supine'],
+    sources: { standing: '/media/clinical/virtual-child-school-girl-standing-v1.png', supine: '/media/clinical/virtual-child-school-girl-supine-v2.png' },
+    style: 'synthetic_illustration',
+    license: 'project_internal_unreviewed',
+    isSynthetic: true,
+    reviewStatus: 'unaudited',
+    version: 'v1',
+    note: '学龄女孩虚拟示教角色（约 9 岁观感，站姿/仰卧同一虚拟个体），非病例本人，不代表病例体征',
+  },
+  {
+    assetId: 'adolescent-boy',
+    ageBand: 'adolescent',
+    sexPresentation: 'male',
+    postures: ['standing', 'supine'],
+    sources: { standing: '/media/clinical/virtual-child-adolescent-boy-standing-v1.png', supine: '/media/clinical/virtual-child-adolescent-boy-supine-v2.png' },
+    style: 'synthetic_illustration',
+    license: 'project_internal_unreviewed',
+    isSynthetic: true,
+    reviewStatus: 'unaudited',
+    version: 'v1',
+    note: '青少年男孩虚拟示教角色（约 14 岁观感，站姿/仰卧同一虚拟个体），非病例本人，不代表病例体征',
+  },
+  {
+    assetId: 'adolescent-girl',
+    ageBand: 'adolescent',
+    sexPresentation: 'female',
+    postures: ['standing', 'supine'],
+    sources: { standing: '/media/clinical/virtual-child-adolescent-girl-standing-v1.png', supine: '/media/clinical/virtual-child-adolescent-girl-supine-v2.png' },
+    style: 'synthetic_illustration',
+    license: 'project_internal_unreviewed',
+    isSynthetic: true,
+    reviewStatus: 'unaudited',
+    version: 'v1',
+    note: '青少年女孩虚拟示教角色（约 14 岁观感，站姿/仰卧同一虚拟个体），非病例本人，不代表病例体征',
+  },
 ];
 
 /** 照护者素材清单：当前为空（无任何家长/照护者头像素材，缺口如实登记）。 */
@@ -152,18 +235,13 @@ export function patientAssetByKey(key: string): PatientAsset | null {
 
 /**
  * 年龄段素材缺口说明（方案 9.2「优先复用现有合法适龄资产」的差距面如实登记）：
- * - 幼儿/学龄/青少年：无同龄素材，复用学龄前通用角色（素材年龄与病例年龄不一致时 UI 明示）。
+ * - 幼儿/学龄/青少年：2026-10-23 独立项 C 已补分档专属素材（逐对图核同一虚拟个体），
+ *   缺口关闭；素材仍未完成医学/形象专业审核（unaudited），该状态由清单与 UI 如实展示。
  * - 新生儿/婴儿素材仅卧位（该月龄不能站立）。
  * - 照护者素材缺失。
  */
 export function bindingGapNote(ageBand: string): string | null {
   switch (ageBand) {
-    case 'toddler':
-      return '暂无幼儿同龄素材：当前使用学龄前通用虚拟角色，与病例年龄段不完全一致';
-    case 'school':
-      return '暂无学龄同龄素材：当前使用学龄前通用虚拟角色，与病例年龄段不完全一致';
-    case 'adolescent':
-      return '暂无青少年同龄素材：当前使用学龄前通用虚拟角色，与病例年龄段不完全一致';
     case 'newborn':
     case 'infant':
       return '新生儿/婴儿素材仅提供仰卧体位（该月龄不能站立）';

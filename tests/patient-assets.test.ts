@@ -54,6 +54,22 @@ test('patient-appearance 渲染 key 与资产清单一一对齐（含新生儿/�
     assert.deepEqual(asset.postures, ['supine']);
     assert.ok(appearance.src === asset.sources.supine, '新生儿/婴儿渲染素材须与清单一致');
   }
+  // 幼儿/学龄/青少年（2026-10-23 独立项 C）：分档专属 key 与清单对齐，站姿/仰卧同一 key
+  for (const [sex, age, key] of [
+    ['男', '2岁', 'toddler-boy'], ['女', '3岁', 'toddler-girl'],
+    ['男', '9岁', 'school-boy'], ['女', '8岁', 'school-girl'],
+    ['男', '13岁', 'adolescent-boy'], ['女', '14岁', 'adolescent-girl'],
+  ] as const) {
+    const standing = patientAppearance(sex, 'standing', `align-${key}`, age);
+    const supine = patientAppearance(sex, 'supine', `align-${key}`, age);
+    assert.equal(standing.key, key, `${age}${sex} 应路由到 ${key}`);
+    assert.equal(supine.key, key, '站姿/仰卧须同一虚拟个体');
+    const asset = patientAssetByKey(key);
+    assert.ok(asset, `${key} 未登记到资产清单`);
+    assert.ok(asset.ageBand === 'toddler' || asset.ageBand === 'school' || asset.ageBand === 'adolescent');
+    assert.equal(asset.sexPresentation, sex === '女' ? 'female' : 'male');
+    assert.ok(standing.src === asset.sources.standing && supine.src === asset.sources.supine, `${key} 渲染素材须与清单一致`);
+  }
   // 性别未知：不绑定任何素材（不猜性别）
   for (const value of ['', '待核验', '性别未记录', '未知']) {
     const appearance = patientAppearance(value, 'standing', 'case-x');
@@ -62,16 +78,20 @@ test('patient-appearance 渲染 key 与资产清单一一对齐（含新生儿/�
   }
 });
 
-test('年龄段素材缺口如实登记：幼儿/学龄/青少年无同龄素材，不假装匹配', () => {
-  assert.ok(bindingGapNote('toddler')?.includes('学龄前通用虚拟角色'));
-  assert.ok(bindingGapNote('school')?.includes('学龄前通用虚拟角色'));
-  assert.ok(bindingGapNote('adolescent')?.includes('学龄前通用虚拟角色'));
+test('年龄段素材登记（2026-10-23 独立项 C）：幼儿/学龄/青少年分档素材已补、缺口关闭，未审核口径不变', () => {
+  for (const band of ['toddler', 'school', 'adolescent'] as const) {
+    const assets = PATIENT_ASSETS.filter((a) => a.ageBand === band);
+    assert.equal(assets.length, 2, `${band} 应有男女各一条分档素材`);
+    for (const asset of assets) {
+      assert.deepEqual(asset.postures, ['standing', 'supine'], `${asset.assetId} 双体位齐全`);
+      assert.equal(asset.reviewStatus, 'unaudited', '分档素材仍未完成专业审核，不伪装已审核');
+      assert.equal(asset.isSynthetic, true);
+    }
+    // 同龄素材缺口已补：bindingGapNote 不再登记「复用学龄前通用角色」缺口
+    assert.equal(bindingGapNote(band), null, `${band} 缺口已关闭`);
+  }
   assert.ok(bindingGapNote('newborn')?.includes('仰卧'));
   assert.ok(bindingGapNote('infant')?.includes('仰卧'));
-  // 清单中不存在 toddler/school/adolescent 素材（缺口登记与清单一致）
-  for (const band of ['toddler', 'school', 'adolescent'] as const) {
-    assert.equal(PATIENT_ASSETS.filter((a) => a.ageBand === band).length, 0, `不应登记 ${band} 素材（不存在）`);
-  }
 });
 
 test('照护者素材缺口如实登记：当前无任何家长/照护者头像', () => {
