@@ -103,9 +103,14 @@ function auditSnapshot(caseId: string, data: SnapshotData, meta: SnapshotMeta): 
   } else {
     r.B02 = { status: 'flag', evidence: `分档 ${band}（preschool/未知）走通用哈希素材 ${app.key}——学龄前无专属分档素材（已知缺口）` };
   }
-  r.B05 = app.alt.includes('非病例本人')
-    ? { status: 'pass', evidence: `alt 含"非病例本人"教学示意声明（${app.key}）` }
-    : { status: 'flag', evidence: `alt 缺少非本人声明：${app.alt}` };
+  // B05 口径（2026-10-24 修订）：性别缺失 → unspecified（src=null）时未展示任何人物照片，
+  // "非病例本人"声明不适用——判 pass 并注明性别缺失由 A02/B02 跟踪，避免把"无图可声明"
+  // 误报为声明缺失；src 非 null（确有展示人物素材）仍强制要求声明。
+  r.B05 = app.src === null
+    ? { status: 'pass', evidence: `未展示人物形象（${app.alt}）——无人物照片，非本人声明不适用；性别缺失由 A02/B02 跟踪` }
+    : app.alt.includes('非病例本人')
+      ? { status: 'pass', evidence: `alt 含"非病例本人"教学示意声明（${app.key}）` }
+      : { status: 'flag', evidence: `alt 缺少非本人声明：${app.alt}` };
 
   // ---------- C ----------
   const hist = rec.sections?.history ?? '';
