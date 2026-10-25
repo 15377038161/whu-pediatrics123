@@ -321,3 +321,25 @@ outputs/ 与 node_modules 第三次全丢（git、MEMORY.md、云盘、KB 云端
 - **四状态分别记录**：内容完整性=本例 66 项逐项实审完成（全库 3/70）；实际运行=未验证（25 项运行交互类维持 not_verified，依赖 dev server 恢复后冒烟）；教师试用=未交付；医学确认=未确认（G01 诊断一致性 pending-medical、H01 碳酸氢钠缺省适当性挂起）。
 - **边界**：私有 outputs/ + 云盘受控备份；不自动补造临床事实，缺口全部如实登记；不提前开放真实学生；commit 不 push。
 
+
+
+## 21. 用户指令升级与全库逐例核对批次 1（seq 2-6，review #4-#8）完成（2026-10-25，第六十节）
+
+
+
+用户指令升级：不再逐例等待授权，按 manifest 连续完成余下 66 项实质核对，每例落盘+云盘备份回查后才下一例；缺资料 fail-closed 记录并继续；重置前保存可恢复台账。
+
+- **第八次沙箱重置恢复（本轮前置）**：git 链幸存（HEAD `afe1602`），outputs//tmp/node_modules 全丢。8 文件云盘重下：pack ZIP（SHA256 `b7b8aeaf…d21d14` 逐位一致）+ 恢复包（`b7c44666…` 一致）+ 前三例 6 件记录（DKA 两件 SHA 精确匹配；嗜血/ITP 四件内容级 tally 匹配 16/26/24、15/31/20，全值指纹补登 memory）→ 6 件回填 outputs 并 `sha256sum -c` 全 OK。GBK 编码 ZIP 文件名经 CP437→GBK 转码重解压（268 条目、0 危险路径），53 候选 candidateSha256 核验 ok=53/fail=0。
+- **全库结构核查（70 例权威台账）**：manifest 53 候选为工作顺序主体；17 例仅有教师侧记录而无运行候选（pack 未导出且 repo 运行源 teacher-case-data 解析链不可得）——其中 13 例为别名/亚型对（i/1型糖尿病、行/性传单、先天性肌无力/综合征、单纯肥胖症/儿童-肥胖症、胆汁淤积症±感染、室上速±阵发性、急性白血病/ALL、胎粪吸入±性、毛细支气管炎±急性、GHD-矮小症/矮小症、癫痫/全面性阵挛、糖原贮积病/iv型、支原体性肺炎/支原体肺炎），4 例为独立病种（大叶性肺炎、支气管肺炎、新生儿脑梗死、格林巴利综合征，后三者路由 0/7 passed）。教师侧 findings 分布：7 例有裁定（嗜血9/ITP9/外周性性早熟7/川崎17/ALL20/肾病7/蚕豆9），63 例 66 全 nv。台账 progress-ledger.json 建立并云盘锚定（objectId `d1148cb78b1528d9c5c0961163aa096b` → 批次1后更新 `77730990e0187dc6bb249f6e47de13a5`）。
+- **取证引擎（digest-v1）**：projects/outputs/case-library-review/engine/（disease-config.json 53 例病种特异清单 + aliases.json 17 例别名映射 + digest.cjs/gen-standards.cjs/gen-report.cjs）；判定规则编码自前三例人工先例；病种清单按段作用域判定（hit=本段命中、elsewhere=他段命中备查），防止"plan 段缺失被他段提及掩盖"。引擎云盘备份 objectId `28507c8221812402148e2032c3393098`（tar.gz SHA256 `fd3073bb…`）。中枢性尿崩症整链验证：66 项 ids 逐位匹配、字段零缺失、tally 一致；加压素类/禁水试验经扩展同义词（抗利尿/ADH/垂体后叶等）复扫确认全段零命中=真缺口而非漏配。
+- **批次 1 判定（5 例，每例 digest.json+standards.json+report.md 三件套）**：
+  - #4 teacher-中枢性尿崩症 p13/f28/nv25：plan 仅 78 字——去氨加压素/补液饮水/尿量电解质监测/随访四项处置缺口（H01/H03）；禁水/加压素试验缺失（F02）；脱水征查体缺失（E2）；12岁女/adolescent 档位合理。
+  - #5 teacher-中枢性性早熟 p13/f28/nv25：GnRHa 治疗缺 plan 段；GnRH 激发试验/垂体 MRI 他段提及但 tests 段无结果（结构性缺口）。
+  - #6 teacher-中枢神经系统脱髓鞘病 p14/f27/nv25：诱发电位缺、视力/眼底与颅神经查体缺口；SpO2 有值。
+  - #7 teacher-传染性单核细胞增多症 p13/f28/nv25：肝功能/腹部超声 tests 段缺口（本病肝损害评估必需）；避免剧烈运动（脾破裂）健康宣教缺 plan 段。
+  - #8 teacher-儿童-肥胖症 p13/f28/nv25：饮食/运动/行为干预均缺 plan 段（本病唯一一线处置链断环）；黑棘皮查体缺口。
+  - 共性：vitals 均无血压/体重字段；教师侧 5 例全 nv；G01 均 pending-medical；K03 均 fail-closed（原件不可得）。
+- **产物与备份**：每例三件套落盘 outputs/.../20261025/review-records/<caseId>/；批次 1 云盘备份包 objectId `aee380ea28850dc56f61cec17755e078`（zip SHA256 `d8d0000a…`，15 文件+SHA256SUMS），回查重下整包 MATCH + 包内逐文件 `sha256sum -c` 全 OK；逐文件指纹登记台账。
+- **四状态分别记录**：内容完整性=批次 1 共 5 例完成（全库 8/70）；实际运行=未验证；教师试用=未交付；医学确认=未确认。
+- **边界**：引擎判定=前三例人工规则的编码化，证据全部来自真实候选/教师侧数据脱敏统计，未批量 schema 计数冒充实质；无患者原文入报告；commit 不 push。
+
