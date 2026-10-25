@@ -305,3 +305,19 @@ outputs/ 与 node_modules 第三次全丢（git、MEMORY.md、云盘、KB 云端
 - **本轮 commit**：d5a011d（第 18 节）后新增本节登记。
 - **边界**：扫描为只读取证；push 失败原因与排查过程全记录；凭据零接触零留存。
 
+
+
+## 20. 撤回后第 3 例逐项实质核对：teacher-1型糖尿病伴有酮症酸中毒 66 项（2026-10-25，第五十九节）
+
+
+
+全库进度 3/70。本例为 manifest 顺序第 1 位未完成病例，教师侧零内容裁定（66 项全 not_verified），核对主要依赖候选独立取证。
+
+- **第七次沙箱重置恢复（本轮前置）**：git 链幸存（HEAD `daffe75`，工作区干净），outputs/ 丢失。pack ZIP 云盘重下三向核对（SHA256 `b7b8aeaf…` 逐位一致、268 条目、0 危险路径、candidateSha256 核验 ok=53/fail=0）+ 嗜血/ITP 两例四件记录自云盘回填统计值逐位一致。
+- **方法与来源**：候选五段结构统计 + 临床要素布尔清单两轮脱敏取证（第二轮同义词精修，脚本 /tmp/dka-digest.cjs、/tmp/dka-digest2.cjs）↔ 教师侧基线（66 全 nv，7 路由本地 passed，girl-b preschool 未批准）↔ 教师侧运行核验记录摘要。全程脱敏摘要式：患者原文不进输出，仅引字数/行数/日期标记数/布尔命中/哈希锚点。
+- **判定**：pass 12 / reviewed_with_findings 29 / not_verified 25（66 项逐位与 standards.json 一致；JSON 结构校验通过：66 项、唯一 ID 与清单逐位一致、统计一致）。
+- **主要发现**：①DKA 三项关键查体缺口——脱水征/酮体味/循环灌注评估全部 false，且 vitals 无血压字段（E02/A02）；②既往糖尿病史或胰岛素使用史 false——新发 vs 已知 T1DM 分层不明，另出生/喂养/生长发育/家族史四项缺失（C01/C03，对照嗜血/ITP 教师侧已补）；③肾功能 false（脱水评估必需）+ 血常规/感染指标 false 而病史诱因=感染——证据链断环（F02）；④DKA 诊断三联（高糖/血酮/酸中毒）+ 糖化 + C 肽抗体齐备，处置主干（补液/小剂量胰岛素泵/补钾/脑水肿监测/液体量速度）齐全（G02/H01/H03 pass 基础）；⑤tests 全量压缩为 2 行（90+971 字）对照嗜血 92 行逐条——时点标记 13 个存在但逐项可读性弱（A03/F05）；⑥vitals 无体重字段——DKA 液体疗法与胰岛素剂量体重依赖，换算条件不具备（H02，同型缺口）；⑦血糖监测频次/休克扩容/碳酸氢钠指征 false——碳酸氢钠缺省可能适当（限重症指征）挂起医学确认而非直接缺口（H01）；⑧教师侧材料登记权威文件（scope.json/materials.jsonl）被引用但 pack 内缺失——fail-closed 登记（A05/J02）；⑨原件不可得（pack originals 仅 ITP）+ 无冲突登记——K03 fail-closed 记 not_verified；⑩脱敏实证零命中可疑 ID 模式但无显式掩码标记（对照嗜血例有显式标记）——声明与实证不一致登记（J05）；⑪候选 3 份材料（001.docx:24ce5776/002.pdf:63da36f9/003.pdf:bd780323）不在 pack originals（L05，同 ITP 例 001.doc 型问题）。
+- **产物与备份**：outputs/.../20261025/review-records/teacher-1型糖尿病伴有酮症酸中毒/{standards.json(26121B, SHA256 `760974fa…`), report.md(6121B, SHA256 `2581bc47…`)}；云盘 objectId `a407a1a25186082f3351dde03721ed04`（standards）/ `74a6218efc8b7e9baca61e3dd8ec9a44`（report）；回查验证：重新下载两文件 SHA256 与本地逐位一致（standards MATCH / report MATCH）。
+- **四状态分别记录**：内容完整性=本例 66 项逐项实审完成（全库 3/70）；实际运行=未验证（25 项运行交互类维持 not_verified，依赖 dev server 恢复后冒烟）；教师试用=未交付；医学确认=未确认（G01 诊断一致性 pending-medical、H01 碳酸氢钠缺省适当性挂起）。
+- **边界**：私有 outputs/ + 云盘受控备份；不自动补造临床事实，缺口全部如实登记；不提前开放真实学生；commit 不 push。
+
