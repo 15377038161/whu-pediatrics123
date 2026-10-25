@@ -237,14 +237,14 @@ const AGE_PATTERN = String.raw`(\d+(?:\.\d+)?\s*(?:岁(?:\s*\d+\s*(?:个)?月)?(
  *  1. 人口学句「患儿/患者，男，6岁」——年龄与性别同源，且不会被主诉病程时长（"发热3天"）抢先；
  *  2. 显式声明「性别：男」「年龄：6岁」（"性别：性别未记录"占位不匹配）；
  *  3. 内联性别「患儿，男」、最左年龄模式（历史兜底，可能取到病程时长，仅在前两级缺失时使用）。
- * 性别兼容「患者」句式（肝豆状核变性来源文本）；性别字后允许 性/婴（男性、男婴）或分隔符，
- * 拒绝"患者女儿"类误命中（女后跟随儿不匹配）。
+ * 性别兼容「患者」句式（肝豆状核变性来源文本）；性别字后允许 性/婴/童（男性、男婴、男童/女童）或分隔符，
+ * 拒绝"患者女儿"类误命中（女后跟随儿不匹配；儿不在允许集合内，童在集合内不影响该拒绝）。
  */
 export function extractSnapshotDemographics(historyHead: string): { age?: string; sex?: string } {
-  const demo = new RegExp(`(?:患儿|患者)[，,\\s]*(男|女)?[性婴]?\\s*[，,]?\\s*${AGE_PATTERN}`).exec(historyHead);
-  const sexDecl = /性别\s*[:：]?\s*(男|女)(?=[，,。；;、\s\d性婴]|$)/.exec(historyHead);
+  const demo = new RegExp(`(?:患儿|患者)[，,\\s]*(男|女)?[性婴童]?\\s*[，,]?\\s*${AGE_PATTERN}`).exec(historyHead);
+  const sexDecl = /性别\s*[:：]?\s*(男|女)(?=[，,。；;、\s\d性婴童]|$)/.exec(historyHead);
   const ageDecl = new RegExp(`年龄\\s*[:：]?\\s*${AGE_PATTERN}`).exec(historyHead);
-  const sexInline = /(?:患儿|患者)[，,\s]*(男|女)(?=[，,。；;、\s\d性婴]|$)/.exec(historyHead);
+  const sexInline = /(?:患儿|患者)[，,\s]*(男|女)(?=[，,。；;、\s\d性婴童]|$)/.exec(historyHead);
   const ageAny = new RegExp(AGE_PATTERN).exec(historyHead);
   return {
     age: (demo?.[2] ?? ageDecl?.[1] ?? ageAny?.[1])?.replace(/\s/g, ''),

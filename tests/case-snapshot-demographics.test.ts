@@ -29,3 +29,24 @@ test('人口学提取：拒绝"患者女儿"误命中与"性别：性别未记�
   assert.equal(extractSnapshotDemographics('患者女儿代诉：父亲发热3天').sex, undefined);
   assert.equal(extractSnapshotDemographics('性别：性别未记录\n主诉：合成').sex, undefined);
 });
+
+test('人口学提取：患儿句式"男童/女童"识别且年龄保留（Codex复现漏性别修复）', () => {
+  const girl = extractSnapshotDemographics('主诉：合成\n【病史】\n1.患儿，女童，5岁；\n2.合成病程；');
+  assert.equal(girl.sex, '女');
+  assert.equal(girl.age, '5岁');
+  const boy = extractSnapshotDemographics('主诉：合成\n【病史】\n1.患儿，男童，5岁；\n2.合成病程；');
+  assert.equal(boy.sex, '男');
+  assert.equal(boy.age, '5岁');
+});
+
+test('人口学提取：显式声明"性别：男童/女童"识别', () => {
+  assert.equal(extractSnapshotDemographics('性别：女童\n主诉：合成').sex, '女');
+  assert.equal(extractSnapshotDemographics('性别：男童\n主诉：合成').sex, '男');
+});
+
+test('人口学提取：照护者女性/患者女儿/性别未知仍不得推成患儿性别', () => {
+  assert.equal(extractSnapshotDemographics('照护者女性，患儿5岁').sex, undefined);
+  assert.equal(extractSnapshotDemographics('患者女儿代诉：父亲发热3天').sex, undefined);
+  assert.equal(extractSnapshotDemographics('性别未知\n主诉：合成').sex, undefined);
+  assert.equal(extractSnapshotDemographics('性别：未知\n主诉：合成').sex, undefined);
+});
