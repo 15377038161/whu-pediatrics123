@@ -292,3 +292,16 @@ outputs/ 与 node_modules 第三次全丢（git、MEMORY.md、云盘、KB 云端
 - **四状态分别记录**：内容完整性=本例 66 项逐项实审完成（全库 2/70）；实际运行=未验证；教师试用=未交付；医学确认=未确认（涂片缺失处理/IVIG 剂量合理性/眼距增宽时点挂起）。
 - **边界**：私有 outputs/ + 云盘受控备份；不提前开放真实学生；不伪造医学确认；commit 不 push。
 
+
+
+## 19. dev server 复核与敏感扫描通过、push 环境阻塞登记（2026-10-25，第五十八节）
+
+
+
+- **dev server 复核（第六次重置后）**：`curl :5173` 000、`ss` 无监听、无 `coder dev`/`next` 进程（仅 code-server 本体），延时复测仍 000——平台未自动重启。按纪律不手动启动 dev server，运行冒烟维持「登记待验」，与第四十九节以来口径一致。
+- **敏感扫描（全量未 push 区间 2e22c7f..d5a011d，实为 35 提交 164 文件，11,459 行新增）通过**：①非代码文件逐一核实——12 张 PNG 全为 `virtual-child-{toddler,school,adolescent}-{boy,girl}-*` 合成示教素材（非患者影像）；3 个 JSON 为审计台账（anatomy-audit/case-readiness-register/case-snapshot-versions）；10 个 py 为审核/导入脚本；smoke-probe-result.txt 仅探针状态码；无 outputs/、无 originals/、无临床 JSON 入库。②已知 PII 姓名（雷哲华/胡金香）全区间 git grep 零命中。③敏感模式扫描命中均为「脱敏描述文本/PII 检测正则/凭据读取代码」，无实际 PII 值。④`export-case-review-package.ts` loadCredentials 仅从 0600 权限凭据文件或 `PEDIATRICS_TEACHER_*` 环境变量读取，无硬编码。⑤3 JSON+10 py 定向 PII 复扫零命中。
+- **push 环境阻塞（如实登记，不冒充）**：`git push origin codex/immersive-pediatric-agent` 失败——`could not read Username for 'https://github.com'`。凭据排查：credential.helper=none、无 GITHUB_TOKEN/GH_TOKEN、无 gh CLI、无 ~/.git-credentials、~/.ssh 空、origin 为 HTTPS（github.com/15377038161/whu-pediatrics123.git）。历史轮 `git fetch` 成功为公开读取，push 需认证而沙箱无凭据属预期限制。35 提交保持本地待推。
+- **后续路径（用户侧二选一）**：①用户本地环境直接 `git push origin codex/immersive-pediatric-agent`（推送后本侧可 fetch 落地核验）；②平台侧为沙箱注入只读外受控的推送凭据机制后本侧重试。本侧不索取、不留存任何凭据。
+- **本轮 commit**：d5a011d（第 18 节）后新增本节登记。
+- **边界**：扫描为只读取证；push 失败原因与排查过程全记录；凭据零接触零留存。
+
