@@ -494,3 +494,21 @@ outputs/ 与 node_modules 第三次全丢（git、MEMORY.md、云盘、KB 云端
 - **四状态**：内容完整性=不变（本批非逐例核对）；实际运行=套件级证据已存档、真实 UI 未验证（阻断登记如上）；教师试用=未交付；医学确认=未确认。
 - **边界**：不 push、不部署、不收新凭据、不改 RLS、不启动并行服务；仅提交本批 3 文件（case-snapshot.ts、demographics.test.ts、本文件）；基线 HEAD=7ba6157。
 
+
+
+
+
+
+
+## 30. 性别修复实际来源链核验 + 合成工程边界测试 + 预览恢复与真实流程核验（fail-closed）+ Git 交接（2026-10-26，第六十九节）
+
+本批为用户授权的真实流程核验批（Codex 已重新下载官方源码独立 diff 确认仅 case-snapshot.ts/人口学测试/脱敏文档变化、童后缀补丁语义正确）。工作区证据（git-ignored）：`sex-patch-boundary-evidence.json`、`preview-restore-and-realflow-evidence.json`、`git-handover-evidence.json`。不含患者原文。
+
+- **实际来源链核验（运行时消费点）**：①版本权威序 `resolveTeacherCaseVersion` = local（getLocalImportVersion）> db（RPC case_snapshot_latest_version，coldStart）> recall（getSnapshotVersion 裸键最新指针）> null（资料不足）；旧会话按绑定版本恢复不回溯。②补丁后 sex 的四处真实消费点逐一核到代码：`createSourceCase`（case.ts，`sex: source?.sex ?? '性别未记录'`、`patientImage=patientAppearance(source?.sex,…)`）、`handleSourceQuestion` 年龄/性别问句事实组装（`孩子{age}，{sex}。`）、`renderRoleReply` 模型路径 `childSex`、确定性回退 `casualParentReply(fact)` 使用同一事实串——**新值在模型与确定性回退两条路径均真实生效**（限补丁后新版本快照背书的会话）。③公开首页投影（getPublicCase ← admission-summaries.json 本地摘要路径）不经补丁、本批不变。④本沙箱 knowledge/ 缺失（0 JSON），召回快照为教师病例实际生效路径。
+- **合成工程边界测试（全合成数据，未动原始病例）**：新增 3 块——患者句式「男童/女童/男婴/女婴」组合（4 断言含年龄保留）；冲突优先级（患儿/患者句式 > 性别声明 > sexInline，3 断言，声明无句式时仍生效不扩大语义）；母亲/女儿照护者性别不冒充患者（5 断言：母亲女不覆盖患儿男、患儿父亲代诉、患者女儿 12 岁、性别待核验、目录式「N岁女童」无前缀不猜）。真实退出码：人口学 11/11 exit=0；4 套件（人口学/分段/人物/引擎）40/40 exit=0。原始病例修复仍只能走来源可追溯流程，不静默改历史绑定。
+- **预览恢复（既有流程，真实证据）**：只读确认平台入口 `.coze [dev] run=scripts/run.sh`；`.preview` 为 gitignore 运行时文件（git 从未跟踪、沙箱重置缺失）；恢复前端口 5173/5000 均无监听、无并行 dev/生产进程（仅 code-server IDE）、归属清晰、9000 未触碰——满足既有流程恢复条件。按平台 `DEPLOY_RUN_PORT` 还原 `.preview expose_port=5173` 后 `bash scripts/run.sh` 后台启动：Next.js 16.1.1 (Turbopack) Ready，0.0.0.0:5173，未发生端口清理（无陈旧进程可杀）；日志见平台网关域名（sandbox-*.cxiagents.com）真实 GET / 200 请求。冒烟探针（2026-10-25T22:21:04Z，curl 全 exit=0）：GET / 200、/api/health/integrations 200（database:connected、caseKnowledge localFiles:missing/recall:configured/persisted:ready、ai.apiKeySource:platform_injected）、/api/auth/me 401、/api/cases 401——与 2026-10-22 历史探针口径一致。预览服务保持运行。
+- **真实流程核验（fail-closed，不冒充验收）**：既有授权身份核查=0（无凭据工件、无 CASE_REVIEW_* 环境变量、/api/auth/me 401）——登录→绑定病例→女童信息→问诊→检查图→结束报告→刷新恢复全链路**不可执行**，不新账号、不造 JWT/预览登录、不改 RLS。匿名范围实证边界：/login 404（登录在根路径）、/student 与 /teacher 200 仅 SPA 壳（25,898 字节零目录标记，真实目录数据经 /api/cases 401 门控）——壳 200 不构成内容级证据；认证门控按设计工作。**不声称已修复用户实际会话；48/70 登记不算真实流程通过**。解除条件（最小清单）：用户提供既有已授权身份（受控通道）→ 登录 → 进入 `teacher-肝豆状核变性` 会话 → 核会话内 sex/形象 → 年龄性别问句 → 检查图触发 → 结束报告 → 刷新恢复核对。
+- **Git 交接（只读核验 + 安全产物）**：共同基线 `4c844cecabac…` = origin tip = **Codex 本地 HEAD**——云端未推 46 条全部位于该基线直系下游（`4c844ce..072f505`，最老 1a2e8be → 最新 072f505），本地拉取后可快进/合并、不存在覆盖路径；Codex 本地两文件为补丁前基线，补丁随 072f505 自然合入（本地若有未提交改动按文本合并）。交接产物：全分支自包含 `git bundle`（94,585,072 字节，SHA256 `93e5d76d…`，`git bundle verify` OK、complete history），云盘 objectId `bdf4f14c6aa8897d0f37d281740313bd`，上传后重新下载 SHA256 回查 MATCH。整合路径：`git fetch <bundle> codex/immersive-pediatric-agent:refs/remotes/cloud/...` → 核对 46 条 → `--ff-only` 快进或常规 merge/rebase；禁止 force-push 覆盖云端 46 条；不使用历史聊天凭据、不扩权限、不直接 push、不以代码 ZIP 冒充 Git 历史。
+- **四状态**：内容完整性=不变（本批非逐例核对）；实际运行=预览已恢复且冒烟通过（真实端口/HTTP/退出码落盘），认证真实流程未验证（fail-closed 阻断登记）；教师试用=未交付；医学确认=未确认。
+- **边界**：不部署、不医学自审发布、不收新凭据；r2.1 残余证据过判另留待办（不并入本批）；仅提交本批 2 文件（demographics.test.ts、本文件）；基线 HEAD=072f505。
+
