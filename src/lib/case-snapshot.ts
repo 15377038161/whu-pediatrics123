@@ -392,9 +392,10 @@ export async function restoreCaseSnapshotFacts(caseId: string, version: string, 
     const db = getSupabaseUserClient(accessToken);
     let facts: ReturnType<typeof buildFactsPayload> | null = null;
     if (role === 'student' && sessionId) {
+      // 会话 RPC 传入口 ID；数据库先严格核绑定，再按可信映射查来源快照。
       // 学生：受控 RPC（会话归属+版本绑定+病例匹配，缺一返回 null）
       const { data: rpcData, error: rpcError } = await db.rpc('case_snapshot_get_facts', {
-        p_case_id: sourceId, p_version: version, p_session_id: sessionId,
+        p_case_id: decodeURIComponent(caseId), p_version: version, p_session_id: sessionId,
       });
       if (rpcError) throw rpcError;
       if (rpcData) facts = rpcData as ReturnType<typeof buildFactsPayload>;
@@ -501,7 +502,7 @@ export async function listCaseTests(caseId: string, version: string, sessionId: 
   if (!accessToken || !isDatabaseConfigured()) return null;
   try {
     const db = getSupabaseUserClient(accessToken);
-    const { data, error } = await db.rpc('case_snapshot_list_tests', { p_case_id: sourceId, p_version: version, p_session_id: sessionId });
+    const { data, error } = await db.rpc('case_snapshot_list_tests', { p_case_id: decodeURIComponent(caseId), p_version: version, p_session_id: sessionId });
     if (error) throw error;
     if (!Array.isArray(data)) return null;
     return data.filter((item): item is { id: string; label: string } => Boolean(item && typeof (item as { id?: unknown }).id === 'string' && typeof (item as { label?: unknown }).label === 'string'));
@@ -521,7 +522,7 @@ export async function recordCaseTestOrder(caseId: string, version: string, sessi
   if (!accessToken || !isDatabaseConfigured()) return null;
   try {
     const db = getSupabaseUserClient(accessToken);
-    const { data, error } = await db.rpc('case_snapshot_record_test_order', { p_case_id: sourceId, p_version: version, p_session_id: sessionId, p_test_id: testId });
+    const { data, error } = await db.rpc('case_snapshot_record_test_order', { p_case_id: decodeURIComponent(caseId), p_version: version, p_session_id: sessionId, p_test_id: testId });
     if (error) throw error;
     if (!Array.isArray(data)) return null;
     return data.filter((item): item is string => typeof item === 'string');
@@ -539,7 +540,7 @@ export async function getCaseTestResult(caseId: string, version: string, session
   if (!accessToken || !isDatabaseConfigured()) return null;
   try {
     const db = getSupabaseUserClient(accessToken);
-    const { data, error } = await db.rpc('case_snapshot_get_test', { p_case_id: sourceId, p_version: version, p_session_id: sessionId, p_test_id: testId });
+    const { data, error } = await db.rpc('case_snapshot_get_test', { p_case_id: decodeURIComponent(caseId), p_version: version, p_session_id: sessionId, p_test_id: testId });
     if (error) throw error;
     if (!data || typeof data !== 'object') return null;
     const item = data as { id?: unknown; label?: unknown; result?: unknown };
@@ -561,7 +562,7 @@ export async function restoreCaseSnapshotReference(caseId: string, version: stri
     const db = getSupabaseUserClient(accessToken);
     if (role === 'student') {
       const { data, error } = await db.rpc('case_snapshot_get_reference', {
-        p_case_id: sourceId, p_version: version, p_session_id: sessionId,
+        p_case_id: decodeURIComponent(caseId), p_version: version, p_session_id: sessionId,
       });
       if (error) throw error;
       if (data && typeof data === 'object') {
