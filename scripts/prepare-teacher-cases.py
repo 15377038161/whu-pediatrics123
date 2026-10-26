@@ -46,7 +46,7 @@ def main():
         text = clean(primary['text']) if primary else ''
         facts = sections(text)
         age = re.search(r'(\d+(?:\.\d+)?\s*(?:岁(?:\s*\d+\s*(?:个)?月)?(?:\s*\d+\s*天)?|个?月(?:\s*\d+\s*天)?|天|小时|分钟))', facts['history'][:500])
-        sex = re.search(r'(?:性别\s*[:：]?\s*|患儿[，,\s]*)(男|女)', facts['history'][:500])
+        sex = re.search(r'(?:性别\s*[:：]?\s*|(?:患儿|患者)[，,\s]*)(男|女)(?=[性婴童，,。；;\s\d]|$)', facts['history'][:500])
         chief = re.search(r'(?:主诉\s*[:：]|^\s*2[.．、])\s*([^\n]+)', facts['history'], re.M)
         complaint = re.sub(r'^主诉\s*[:：]\s*', '', chief.group(1)).strip('；;。') if chief else '请向家长了解本次就诊的主要不适。'
         exam = facts['exam']
