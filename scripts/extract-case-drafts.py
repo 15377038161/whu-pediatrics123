@@ -58,9 +58,43 @@ def read_pptx(file):
     return '\n\n'.join(pages), len(pages)
 
 
+
+def extract_embedded_media(file, source_sha, candidates):
+    """Private source candidates only; extraction never grants release or publication."""
+    extraction_sha = sha256(file.read_bytes()).hexdigest()
+
+    def save(data, locator, extension):
+        digest = sha256(data).hexdigest()
+        extension = extension.lower()
+        if extension not in {'.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.emf', '.wmf'}:
+            extension = '.bin'
+        target = OUTPUT / 'embedded-media' / source_sha / (digest + extension)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists() and sha256(target.read_bytes()).hexdigest() != digest:
+            raise ValueError('MEDIA_HASH_CONFLICT')
+        if not target.exists():
+            target.write_bytes(data)
+        candidates.append({'sha256': digest, 'bytes': len(data), 'localPath': str(target.resolve()),
+                           'sourceDocumentSha256': source_sha, 'extractionDocumentSha256': extraction_sha,
+                           'sourceLocator': locator, 'reviewStatus': 'unreviewed',
+                           'privacyReview': 'not_verified', 'bindingAllowed': False})
+
+    if file.suffix.lower() in {'.docx', '.pptx'}:
+        prefix = 'word/media/' if file.suffix.lower() == '.docx' else 'ppt/media/'
+        with zipfile.ZipFile(file) as archive:
+            for name in sorted(archive.namelist()):
+                if name.startswith(prefix) and not name.endswith('/'):
+                    save(archive.read(name), name, Path(name).suffix)
+    elif file.suffix.lower() == '.pdf':
+        for page_number, page in enumerate(PdfReader(str(file)).pages, start=1):
+            for image_number, image in enumerate(page.images, start=1):
+                save(image.data, f'page-{page_number}/image-{image_number}', Path(image.name).suffix)
+    return candidates
+
 def extract_file(file):
     relative = file.as_posix()
-    record = {'source': relative, 'sha256': sha256(file.read_bytes()).hexdigest(), 'status': 'unsupported', 'unitCount': 0, 'text': '', 'candidateHeadings': []}
+    record = {'source': relative, 'sha256': sha256(file.read_bytes()).hexdigest(), 'status': 'unsupported', 'unitCount': 0, 'text': '', 'candidateHeadings': [], 'embeddedMediaCandidates': [], 'mediaExtractionStatus': 'not_attempted'}
+    extraction_file = file
     try:
         if file.suffix.lower() == '.docx':
             record['text'], record['unitCount'] = read_docx(file)
@@ -82,6 +116,13 @@ def extract_file(file):
                 record['status'] = 'legacy-doc-needs-conversion'
                 return record
             record['text'], record['unitCount'] = read_docx(converted)
+            extraction_file = converted
+        try:
+            extract_embedded_media(extraction_file, record['sha256'], record['embeddedMediaCandidates'])
+            record['mediaExtractionStatus'] = 'extracted'
+        except Exception as error:
+            record['mediaExtractionStatus'] = 'partial-error' if record['embeddedMediaCandidates'] else 'extract-error'
+            record['mediaErrorType'] = type(error).__name__
         record['status'] = 'text-extracted' if record['text'].strip() else 'no-text-ocr-needed'
         record['candidateHeadings'] = [line[:80] for line in record['text'].splitlines() if SECTION_PATTERN.match(line.strip())][:40]
     except Exception as error:

@@ -172,3 +172,5 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 病例版本现覆盖持久化的检查/查体媒体绑定与结果释放规则；换图、触发ID或释放阶段均换版，历史绑定不自动迁移。逐例证据与未验项见 [病例复核记录](docs/CASE_LIBRARY_REVIEW.md)。
 
 本地原件准备链的人口学回归：`python -X utf8 -m unittest discover -s tests -p test_prepare_case_demographics.py`（需既有病例导入Python依赖），覆盖“患者/患儿/性别声明”及亲属误命中；不会读取真实病例或自动发布。
+
+病例本地抽取现在将DOCX/PDF/PPTX内嵌图保存到忽略的`output/case-drafts/embedded-media/`，在草稿文档中登记来源哈希、定位及默认禁止绑定状态；不自动进入运行病例或公开目录。原件不变，隐私/用途核查后仍需显式受控绑定。源准备与媒体回归：`python -X utf8 -m unittest discover -s tests -p "test_*case*.py"`（沿用现有python-docx/pypdf）。
