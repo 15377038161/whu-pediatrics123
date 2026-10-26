@@ -1,0 +1,147 @@
+{
+  "embedded": [
+    {
+      "sha256": "b0ed5f9560c77e359df3013d610b6f3d6d708dfdcf4ed1078faa1d40f01e9ee1",
+      "bytes": 3271,
+      "sourceDocumentSha256": "2727197f9c26b2c9b0f1159cd5777c5edf3bc3b9a995a59165c2993a422e1d3b",
+      "extractionDocumentSha256": "2727197f9c26b2c9b0f1159cd5777c5edf3bc3b9a995a59165c2993a422e1d3b",
+      "sourceLocator": "page-1/image-1",
+      "reviewStatus": "unreviewed",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false,
+      "width": 232,
+      "height": 108
+    },
+    {
+      "sha256": "b0ed5f9560c77e359df3013d610b6f3d6d708dfdcf4ed1078faa1d40f01e9ee1",
+      "bytes": 3271,
+      "sourceDocumentSha256": "a3781fcd521535a3ab58438d783c54b2ae175940ccf4f55796b6045910493bbe",
+      "extractionDocumentSha256": "a3781fcd521535a3ab58438d783c54b2ae175940ccf4f55796b6045910493bbe",
+      "sourceLocator": "page-1/image-1",
+      "reviewStatus": "unreviewed",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false,
+      "width": 232,
+      "height": 108
+    },
+    {
+      "sha256": "e23f61338deddf736b08b300ce4889682c1e129307fc2bbc79e58ce3833cd061",
+      "bytes": 25293,
+      "sourceDocumentSha256": "d9c0e847ec955c444671a8812eea8c626921fa329d9152285c0335493ab2bf62",
+      "extractionDocumentSha256": "d9c0e847ec955c444671a8812eea8c626921fa329d9152285c0335493ab2bf62",
+      "sourceLocator": "page-1/image-1",
+      "reviewStatus": "unreviewed",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false,
+      "width": 505,
+      "height": 193
+    },
+    {
+      "sha256": "8bf2766d954a1d5f53729d0d6b77a0ccf00f232dd05d85d1e114edf26720e7cc",
+      "bytes": 35271,
+      "sourceDocumentSha256": "bd32de6094739c8e4ca1ae16e603247448ea375200f3a4dcf25ce948c9ce595c",
+      "extractionDocumentSha256": "bd32de6094739c8e4ca1ae16e603247448ea375200f3a4dcf25ce948c9ce595c",
+      "sourceLocator": "page-1/image-1",
+      "reviewStatus": "unreviewed",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false,
+      "width": 412,
+      "height": 258
+    }
+  ],
+  "standalone": [
+    {
+      "sha256": "d4e316b0ee01992fea4088ae7f83e552f5615eceb501d1ca978b0e68ff7b5250",
+      "bytes": 242686,
+      "width": 719,
+      "height": 1048,
+      "format": "JPEG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "24a6d01be075277f6833a9de161cb9391ad861b4539c95c0fdf47aeb2e0e616d",
+      "bytes": 217208,
+      "width": 794,
+      "height": 1123,
+      "format": "JPEG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "caa11464751eec56056cc524e0bf3519904ced0e7e2043d3e7dbbbc352d83862",
+      "bytes": 347190,
+      "width": 719,
+      "height": 1048,
+      "format": "JPEG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "f6b0e542b6b325762b1c0ca67875a4964257937490d93489246f1ce454286ce2",
+      "bytes": 316201,
+      "width": 719,
+      "height": 1048,
+      "format": "JPEG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "32ff5b1d1bd2401a852811cbd502fd3d1b4f81a5c0fa464aea2b1c43d126fdc9",
+      "bytes": 346949,
+      "width": 719,
+      "height": 1048,
+      "format": "JPEG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "016b0a4874967225d8fd87a1640b76f22be3059a9026350c5bb28db2d510e8c5",
+      "bytes": 234136,
+      "width": 1533,
+      "height": 615,
+      "format": "PNG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "215b7bea389bba0dfeccb6d09aee99a4138c98ad1ae6862906613cc1316390ef",
+      "bytes": 235408,
+      "width": 1533,
+      "height": 615,
+      "format": "PNG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "e27303d629abd4584385045348cb8335b6e760c9f3ce76395731a944c5a2f163",
+      "bytes": 231539,
+      "width": 1533,
+      "height": 615,
+      "format": "PNG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "1c20acfca64915387930ee59ff1057af43f6b5082a9dde9ec00dae59c9d668f0",
+      "bytes": 180681,
+      "width": 1533,
+      "height": 615,
+      "format": "PNG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "9051edcb4cff56993f44eaca0dc84cf95e55ddf0629a8e0938b12a3b17b53e16",
+      "bytes": 314394,
+      "width": 794,
+      "height": 1123,
+      "format": "JPEG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    }
+  ],
+  "privacyCleared": 0,
+  "bindingAllowed": 0,
+  "runtimeDisplayVerified": false
+}

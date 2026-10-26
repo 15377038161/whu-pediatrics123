@@ -1,0 +1,13 @@
+{
+  "caseSeq": 52,
+  "correction": "report原称DOC转换件内嵌6次不准确，6是全部文档图片总计；旧包保留，本追加勘误不改变哈希清点结果",
+  "embeddedOccurrencesTotal": 6,
+  "embeddedFromLegacyDoc": 0,
+  "bySourceSHA256": {
+    "d33c70b69b706c1ce3ed7dd4615ef90df336c3d6a09d78bc8cb66be62f0b72b8": 2,
+    "f42a941770e1d372a080d4324afa2ce1add2df529fb9c590e1c308a784e144fb": 2,
+    "58475c8b0f390ae41dedf9bbdd426509edb26aef0ba2cf2503fc7d702347c420": 2
+  },
+  "fullFlowPassed": false,
+  "originalFilesChanged": false
+}

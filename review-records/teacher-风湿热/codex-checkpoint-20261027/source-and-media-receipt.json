@@ -1,0 +1,38 @@
+{
+  "caseSeq": 53,
+  "caseId": "teacher-风湿热",
+  "checkedAt": "2026-10-27T00:28:43+08:00",
+  "candidateSHA256": "327bf240c780a18cd9e60455731a4ff8bd1da583e8ddefe15db19fb8a635f812",
+  "ledgerCandidateMatch": true,
+  "rootRuntimeSHA256": "53b040ec3f3fec29fb4d65acff54865a0af7c1737d4c66387a210a99150cba77",
+  "candidateAndRootBytesEqual": false,
+  "candidateChangedTopFields": [
+    "sourceDocument",
+    "documents"
+  ],
+  "candidateSourceDocumentCount": 6,
+  "candidateDocumentHashMissing": [],
+  "sourceSexEvidenceFound": true,
+  "candidateSexKnown": true,
+  "candidateSexMatchesSource": true,
+  "candidateHistorySexConsistent": true,
+  "sectionLengths": {
+    "history": 334,
+    "exam": 218,
+    "tests": 5608,
+    "diagnosis": 195,
+    "plan": 126
+  },
+  "sourceFileCount": 16,
+  "embeddedImageOccurrences": 4,
+  "externalImageFiles": 10,
+  "distinctImageHashes": 13,
+  "externalMatchesEmbeddedHashes": 0,
+  "candidateHasRuntimeMediaBindings": false,
+  "originalsUnchanged": true,
+  "privacyClearedCount": 0,
+  "bindingAllowedCount": 0,
+  "fullFlowPassed": false,
+  "medicalVerified": false,
+  "firstUnfinishedBreakpoint": "原件图逐张隐私/用途与检查触发定位；运行版本/授权会话/实际显示/报告与刷新恢复未验"
+}

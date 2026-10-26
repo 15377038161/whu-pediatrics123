@@ -1,0 +1,15 @@
+{
+  "caseSeq": 53,
+  "caseId": "teacher-风湿热",
+  "files": {
+    "source-and-media-receipt.json": "4971bb1c1fbf9d62d226800734b2a9c3cf564715c2fa12bd29247c73d2f225f7",
+    "full-folder-inventory.json": "e27f7c5b914c8634a4bd2b424d77bbfd034e7ac06cbc78a561cad0086f4e1cea",
+    "image-inventory.json": "b3d4fc7f192233defa22f066ac66932052142982d2c29556eb03677424f22317",
+    "version-location.json": "f266bfe4a878cf35d8ea416d4d05c9096facc12d8f1565512aeb78aad99d2b9f",
+    "standards.json": "bb0559f6f0bd724a9a67d40befb64a29f4fd21a73dd58faf883a9957a2f315e6",
+    "report.md": "1d31202773985927a2f5b4ae14f7ff15397b12dd4f0d557905612b0194a922ab",
+    "standalone-registration-retest.json": "cfb12ba00b64f340994645e8b4a91b43684754e569bd79bfe61ecf59a446cbfa"
+  },
+  "patientOriginalsIncluded": false,
+  "selfHashExcluded": true
+}
