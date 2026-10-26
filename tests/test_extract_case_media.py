@@ -18,6 +18,32 @@ spec.loader.exec_module(module)
 PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jBfkAAAAASUVORK5CYII=')
 
 class EmbeddedMediaExtractionTest(unittest.TestCase):
+    def test_standalone_images_reach_case_draft_without_publication(self):
+        with tempfile.TemporaryDirectory(prefix='source-media-standalone-') as name:
+            root = Path(name); source = root / 'originals'; source.mkdir()
+            (source / 'nested').mkdir()
+            (source / 'one.png').write_bytes(PNG)
+            (source / 'nested' / 'two.PNG').write_bytes(PNG)
+            (source / 'broken.jpg').write_bytes(b'synthetic-invalid-image')
+            originals = {p: p.read_bytes() for p in source.rglob('*') if p.is_file()}
+            item = {'id':'synthetic-case','name':'合成病例','source':'synthetic',
+                    'folder':str(source),'status':'draft','mediaCount':3}
+            with patch.object(module, 'OUTPUT', root / 'drafts'), patch.object(module, 'read_catalog', return_value=[item]):
+                module.main()
+                import json
+                result = json.loads((root / 'drafts/synthetic-case.json').read_text(encoding='utf-8'))
+            images = result['standaloneMediaCandidates']
+            self.assertEqual(len(images), 3)
+            self.assertEqual({i['sourceLocator'] for i in images}, {'one.png','nested/two.PNG','broken.jpg'})
+            valid = [i for i in images if i['imageReadStatus']=='readable']
+            self.assertEqual(len(valid), 2)
+            self.assertEqual(len({i['sha256'] for i in valid}), 1)
+            self.assertTrue(all(i['width']==1 and i['height']==1 for i in valid))
+            self.assertTrue(all(not i['bindingAllowed'] and i['privacyReview']=='not_verified' for i in images))
+            self.assertEqual(next(i for i in images if i['sourceLocator']=='broken.jpg')['imageReadStatus'], 'read-error')
+            self.assertEqual(result['documents'], [])
+            self.assertTrue(all(p.read_bytes()==data for p,data in originals.items()))
+
     def test_docx_preserves_source_and_keeps_media_private(self):
         with tempfile.TemporaryDirectory(prefix='source-media-docx-') as name:
             root = Path(name); source = root / 'source.docx'

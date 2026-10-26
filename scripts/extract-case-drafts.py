@@ -12,11 +12,13 @@ import xml.etree.ElementTree as ET
 
 from docx import Document
 from pypdf import PdfReader
+from PIL import Image
 
 ROOT = Path('knowledge/儿科常见病')
 CATALOG = Path('src/domain/teacher-case-catalog.ts')
 OUTPUT = Path('output/case-drafts')
 DOCUMENT_EXTENSIONS = {'.doc', '.docx', '.pdf', '.pptx'}
+IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.webp'}
 SECTION_PATTERN = re.compile(r'^(主诉|现病史|既往史|个人史|家族史|体格检查|查体|辅助检查|初步诊断|诊断|鉴别诊断|治疗|诊疗经过|出院诊断)[：:\s]')
 
 
@@ -131,6 +133,26 @@ def extract_file(file):
     return record
 
 
+def collect_standalone_media(folder):
+    """Inventory original image files privately; no medical inference or runtime binding."""
+    candidates = []
+    for file in sorted(folder.rglob('*'), key=lambda path: path.as_posix()):
+        if not file.is_file() or file.suffix.lower() not in IMAGE_EXTENSIONS:
+            continue
+        data = file.read_bytes()
+        item = {'sha256': sha256(data).hexdigest(), 'bytes': len(data),
+                'sourceLocator': file.relative_to(folder).as_posix(), 'localPath': str(file.resolve()),
+                'reviewStatus': 'unreviewed', 'privacyReview': 'not_verified', 'bindingAllowed': False}
+        try:
+            with Image.open(file) as image:
+                image.load()
+                item.update(width=image.width, height=image.height, format=image.format, imageReadStatus='readable')
+        except Exception as error:
+            item.update(imageReadStatus='read-error', imageErrorType=type(error).__name__)
+        candidates.append(item)
+    return candidates
+
+
 def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
     cases = read_catalog()
@@ -142,7 +164,8 @@ def main():
         for record in records:
             counts[record['status']] = counts.get(record['status'], 0) + 1
         draft = {'caseId': item['id'], 'name': item['name'], 'source': item['source'], 'catalogStatus': item['status'],
-                 'reviewStatus': 'unreviewed', 'mediaCount': item['mediaCount'], 'documents': records}
+                 'reviewStatus': 'unreviewed', 'mediaCount': item['mediaCount'], 'documents': records,
+                 'standaloneMediaCandidates': collect_standalone_media(folder) if folder else []}
         (OUTPUT / f"{item['id']}.json").write_text(json.dumps(draft, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps({'cases': len(cases), 'documents': sum(counts.values()), 'statuses': counts, 'output': str(OUTPUT)}, ensure_ascii=False))
 
