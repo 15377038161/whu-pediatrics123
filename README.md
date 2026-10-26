@@ -168,3 +168,5 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 ### 跨平台工程复验（2026-10-26）
 
 骨骼 manifest 通过 `.gitattributes` 固定 LF 以保持审计 SHA256。`pnpm validate` 中真实供应商语音链路需显式 `SPEECH_LIVE_TEST=1` 才执行，默认跳过并保留匿名门禁检查；跳过项不计为已验。详见 [语音验收边界](docs/SPEECH_INTEGRATION.md) 与 [骨骼审计](docs/anatomy-audit.md)。
+
+病例版本现覆盖持久化的检查/查体媒体绑定与结果释放规则；换图、触发ID或释放阶段均换版，历史绑定不自动迁移。逐例证据与未验项见 [病例复核记录](docs/CASE_LIBRARY_REVIEW.md)。

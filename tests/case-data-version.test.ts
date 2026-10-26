@@ -70,3 +70,50 @@ test('真实本地读取/导入/绑定共用v2指纹，旧字段或旧原件指�
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+
+test('检查/查体媒体绑定和释放时点变动必须换版，不能让旧会话静默换图或提前释放', () => {
+  const bound = recordSchema.parse({ ...fixture,
+    testMedia: [{ testId: 'source-test-0', media: [{ fileId: 'synthetic-image-a', kind: 'image', caption: '教学示意' }] }],
+    examMedia: [{ examId: 'source-exam-test', media: [{ fileId: 'synthetic-exam-a', kind: 'image', caption: '教学示意' }] }],
+    testRelease: [{ testId: 'source-test-0', availableFromStage: 'tests', resultDelayNote: '合成延迟说明' }],
+  });
+  const edits = [
+    { ...bound, testMedia: [{ ...bound.testMedia![0], testId: 'source-test-1' }] },
+    { ...bound, testMedia: [{ ...bound.testMedia![0], media: [{ ...bound.testMedia![0].media[0], fileId: 'synthetic-image-b' }] }] },
+    { ...bound, testMedia: [{ ...bound.testMedia![0], media: [{ ...bound.testMedia![0].media[0], caption: '修订教学示意' }] }] },
+    { ...bound, examMedia: [{ ...bound.examMedia![0], examId: 'source-exam-other' }] },
+    { ...bound, examMedia: [{ ...bound.examMedia![0], media: [{ ...bound.examMedia![0].media[0], fileId: 'synthetic-exam-b' }] }] },
+    { ...bound, testRelease: [{ ...bound.testRelease![0], availableFromStage: 'report' as const }] },
+    { ...bound, testRelease: [{ ...bound.testRelease![0], resultDelayNote: '不同合成延迟说明' }] },
+    { ...bound, testMedia: [] },
+  ];
+  for (const edited of edits) {
+    assert.deepEqual(edited.documents, bound.documents);
+    assert.notEqual(computeCaseDataVersion(edited), computeCaseDataVersion(bound));
+  }
+});
+
+test('媒体版本贯穿本地读取/导入与绑定，旧版本不读取修订绑定', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'case-media-version-'));
+  const previousRoot = process.env.PEDIATRICS_KNOWLEDGE_ROOT;
+  try {
+    mkdirSync(path.join(directory, 'teaching-cases'));
+    const file = path.join(directory, 'teaching-cases', `${fixture.caseId}.json`);
+    process.env.PEDIATRICS_KNOWLEDGE_ROOT = directory;
+    const original = recordSchema.parse({ ...fixture, testMedia: [{ testId: 'source-test-0', media: [{ fileId: 'synthetic-old', kind: 'image', caption: '教学示意' }] }] });
+    writeFileSync(file, JSON.stringify(original));
+    const oldVersion = getLocalImportVersion(fixture.caseId)!;
+    const revised = { ...original, testMedia: [{ testId: 'source-test-0', media: [{ fileId: 'synthetic-new', kind: 'image' as const, caption: '教学示意' }] }] };
+    writeFileSync(file, JSON.stringify(revised));
+    const newVersion = getLocalImportVersion(fixture.caseId)!;
+    assert.notEqual(newVersion, oldVersion);
+    assert.equal(newVersion, computeImportVersion(revised));
+    assert.equal(readTeacherCaseData(fixture.caseId, oldVersion), null);
+    assert.equal(readTeacherCaseData(fixture.caseId, newVersion)?.testMedia?.[0].media[0].fileId, 'synthetic-new');
+  } finally {
+    if (previousRoot === undefined) delete process.env.PEDIATRICS_KNOWLEDGE_ROOT;
+    else process.env.PEDIATRICS_KNOWLEDGE_ROOT = previousRoot;
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
