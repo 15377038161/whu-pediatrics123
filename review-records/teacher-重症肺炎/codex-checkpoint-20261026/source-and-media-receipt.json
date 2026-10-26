@@ -1,0 +1,38 @@
+{
+  "caseSeq": 52,
+  "caseId": "teacher-重症肺炎",
+  "checkedAt": "2026-10-26T23:26:46+08:00",
+  "candidateSHA256": "3b06f5d38831640f078f314085f24fa72b2c62e43b8b4b1f4a9a9f149641a2f5",
+  "ledgerCandidateMatch": true,
+  "rootRuntimeSHA256": "5a54271facfe4a82327ab7b5ca59f6ede9d6e17b604001c4d5593ff28a7c119c",
+  "candidateAndRootBytesEqual": false,
+  "candidateChangedTopFields": [
+    "sourceDocument",
+    "documents"
+  ],
+  "candidateSourceDocumentCount": 4,
+  "candidateDocumentHashMissing": [],
+  "sourceSexEvidenceFound": true,
+  "candidateSexKnown": true,
+  "candidateSexMatchesSource": true,
+  "candidateHistorySexConsistent": true,
+  "sectionLengths": {
+    "history": 420,
+    "exam": 196,
+    "tests": 1828,
+    "diagnosis": 246,
+    "plan": 190
+  },
+  "sourceFileCount": 335,
+  "embeddedImageOccurrences": 6,
+  "externalImageFiles": 331,
+  "distinctImageHashes": 336,
+  "externalMatchesEmbeddedHashes": 0,
+  "candidateHasRuntimeMediaBindings": false,
+  "originalsUnchanged": true,
+  "privacyClearedCount": 0,
+  "bindingAllowedCount": 0,
+  "fullFlowPassed": false,
+  "medicalVerified": false,
+  "firstUnfinishedBreakpoint": "原件图逐张隐私/用途与检查触发定位；运行版本/授权会话/实际显示/报告与刷新恢复未验"
+}

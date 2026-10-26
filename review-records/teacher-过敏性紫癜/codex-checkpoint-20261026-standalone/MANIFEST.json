@@ -1,0 +1,15 @@
+{
+  "caseSeq": 51,
+  "caseId": "teacher-过敏性紫癜",
+  "files": {
+    "source-and-media-receipt.json": "06f54930158f9357f3f9cd67e0b9e123e9f5be483b05818df34d9576bf25c075",
+    "full-folder-inventory.json": "26d8378b785e5ddff60e1d998e2e4c63b1b9a395ae41aaa7eba376fe921348f2",
+    "image-inventory.json": "689b3996f148e8ce9bcbc91e7e7fa70775025989e7e616f50d3f0a597baf503e",
+    "version-location.json": "5599731c399efc307926c05e5e0cc721523568dd09fae84593c7ad3320561e44",
+    "standards.json": "8e5d1c0b07c657f75b0ffb448b03aac31b148d01ebab2de31595870bb965e9bd",
+    "report.md": "c6c3050440f6ee9ddff8102d6d1b9428679699e11eabd8f5c50b8a4cb7169e6a",
+    "standalone-registration-retest.json": "e7cc94fe407e37ba31724a67ef8fefb0219da266bebdb82ad82357bb531e8f71"
+  },
+  "patientOriginalsIncluded": false,
+  "selfHashExcluded": true
+}

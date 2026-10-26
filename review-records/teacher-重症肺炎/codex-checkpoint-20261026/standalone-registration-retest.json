@@ -1,0 +1,12 @@
+{
+  "caseSeq": 52,
+  "sourceFiles": 331,
+  "uniqueHashes": 331,
+  "readStatusCounts": {
+    "readable": 331
+  },
+  "originalHashesMatch": true,
+  "privacyCleared": 0,
+  "bindingAllowed": 0,
+  "fullFlowPassed": false
+}

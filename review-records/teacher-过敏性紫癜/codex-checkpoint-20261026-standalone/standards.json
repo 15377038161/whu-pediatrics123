@@ -1,0 +1,481 @@
+{
+  "caseSeq": 51,
+  "caseId": "teacher-过敏性紫癜",
+  "reviewer": "Codex independent",
+  "contentReady": false,
+  "medicalVerified": false,
+  "fullFlowPassed": false,
+  "standards": [
+    {
+      "id": "A01",
+      "requirement": "首页条目能定位到明确的患者事实集合；别名、亚型和演示病例分清",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "A02",
+      "requirement": "年龄、性别、主诉、病程、就诊时间点一致；婴儿月龄、新生儿日龄表达明确",
+      "status": "review_with_findings",
+      "sources": [
+        "source-and-media-receipt.json",
+        "image-inventory.json"
+      ],
+      "issues": "已核来源指纹/性别一致性或图片存在，仍缺真实绑定与逐图隐私/用途/触发/实际显示证据，不能判整项通过"
+    },
+    {
+      "id": "A03",
+      "requirement": "病史、体征和检查区分入院前、初诊、治疗后、出院等时点",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "A04",
+      "requirement": "有明确学习对象、训练模式、学习目标和完成条件；时间为设计预估",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "A05",
+      "requirement": "材料读取失败、抽取遗漏、字段归错、原文缺失、系统未接入分别记录",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "B01",
+      "requirement": "完整主诉、年龄、性别与进入后的患者一致；首页遵守三列、每页九例既有约定",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "B02",
+      "requirement": "形象适配年龄阶段及性别；新生儿、婴幼儿、学龄儿童、青少年不能共用明显错龄形象",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "B03",
+      "requirement": "同一患者在卡片、问诊、站立/仰卧查体中保持可识别的一致形象",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "B04",
+      "requirement": "外观、体位、设备、精神状态不与已设定病情冲突；中性示意不暗示额外体征",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "B05",
+      "requirement": "非患者本人形象有清楚的教学示意说明；不能在文件名、替代文字、标签提前泄题",
+      "status": "review_with_findings",
+      "sources": [
+        "source-and-media-receipt.json",
+        "image-inventory.json"
+      ],
+      "issues": "已核来源指纹/性别一致性或图片存在，仍缺真实绑定与逐图隐私/用途/触发/实际显示证据，不能判整项通过"
+    },
+    {
+      "id": "C01",
+      "requirement": "有固定开场、主诉及本病必要的现病史，学生能逐步问出有效信息",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "C02",
+      "requirement": "按本例目标覆盖症状特点、起病演变、伴随表现、已做检查/用药、生活影响",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "C03",
+      "requirement": "按年龄和疾病关联覆盖必要的围产、生长发育、喂养、接种、既往、过敏、家族等信息",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "C04",
+      "requirement": "“未问”“未知/记不清”“否认”“未做”“未提供”“结果暂不可取”语义分开",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "C05",
+      "requirement": "开场不倾倒完整病历；开放提问可得到合理概括，具体追问获得细节",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "C06",
+      "requirement": "同义问法答案一致；重复问不换年龄、病程、数值；不将当前医生尚未完成的诊断当成患者已知",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "D01",
+      "requirement": "明确本轮由谁回答；语言和理解能力与年龄相符，新生儿不得口头讲病史",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "D02",
+      "requirement": "家长以观察和回忆表达，患儿以感受表达，不照读医生病历或教科书",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "D03",
+      "requirement": "具备本例情绪、顾虑、配合度、安抚后的变化；不能所有病例同一人设",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "D04",
+      "requirement": "模型只自然表达已保存事实；新增模拟事实先入本例固定版本，不能边问边生成患者事实",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "D05",
+      "requirement": "未覆盖问题能自然说明记不清、不知道或需查证；不连续机械重复“未记录”",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "D06",
+      "requirement": "不因学生诱导、错误断言或提示词注入而改变事实、透露评分答案",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "E01",
+      "requirement": "从本例目标列出必要查体，明确方法、器材、部位、体位、侧别及准备动作",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "E02",
+      "requirement": "每条异常体征及用于排除的关键阴性均有依据或明确模拟设定；未记录不默认正常",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "E03",
+      "requirement": "正确操作解锁相应结果，错误部位/方法不返回同一段通用病理结果",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "E04",
+      "requirement": "图片、声音、视频确实支持所述体征；听诊音不能来自不匹配部位或病情而宣称本例原始音",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "E05",
+      "requirement": "适合直接观察的表现可初见提供；需操作获得的结果按动作出现",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "E06",
+      "requirement": "操作产生的证据及时入记录，重复操作不重复加分，回看仍可播放或放大",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "F01",
+      "requirement": "每项检查的名称、适应的教学目标、结果、单位、时点和来源清楚",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "F02",
+      "requirement": "检验数值、报告、影像及文字解读彼此一致；年龄相关参考范围有出处，不能套成人范围",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "F03",
+      "requirement": "合理同义检查名可识别，歧义需澄清；无结果与请求失败分别处理",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "F04",
+      "requirement": "初次查看符合下单规则；已获得结果允许回看；未开检查不能从资源列表或网络响应获得隐藏结果",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "F05",
+      "requirement": "多页报告、影像序列和视频有合理导航，关键页可读，有需要时提供定位",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "F06",
+      "requirement": "外部病例素材、示例报告和生成示意不能冒充本患者实测结果",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "G01",
+      "requirement": "标准诊断、分型/严重程度与当前患者全部事实一致",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "G02",
+      "requirement": "必需诊断依据在本轮实际可获得，不能用诊断标签反推补造一套伪装原始的证据",
+      "status": "review_with_findings",
+      "sources": [
+        "source-and-media-receipt.json",
+        "image-inventory.json"
+      ],
+      "issues": "已核来源指纹/性别一致性或图片存在，仍缺真实绑定与逐图隐私/用途/触发/实际显示证据，不能判整项通过"
+    },
+    {
+      "id": "G03",
+      "requirement": "鉴别诊断围绕本例，说明为何考虑、如何区分、仍需何种证据；不机械凑数量",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "G04",
+      "requirement": "同义诊断、允许的上位诊断和不充分答案有清楚规则；模糊证据允许合理不确定性",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "G05",
+      "requirement": "非相关检查不成为唯一解锁答案的暗门；可接受的替代路径有记录",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "H01",
+      "requirement": "处置目标与年龄、体重、严重程度、过敏和已知检查一致",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "H02",
+      "requirement": "涉及药物剂量时明确体重、计量单位、途径、频次、最大量等必要条件及来源；未具备条件不强评精确剂量",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "H03",
+      "requirement": "区分紧急处理、进一步评估、治疗、复查、转诊/住院、随访；内容按本例目标适用",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "H04",
+      "requirement": "家长能提出本例合理顾虑；学生解释病情、风险、检查目的和后续安排后有对应反馈",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "H05",
+      "requirement": "病情演变仅在已设计的时间/事件条件下发生；不能操作一下就无依据痊愈或恶化",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "I01",
+      "requirement": "学习目标、可获得证据、可执行行为、评分点一一对应；不因材料缺失扣学生分",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "I02",
+      "requirement": "合理替代表述和路径可得分，重复操作不重复加分；避免只靠关键词误判",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "I03",
+      "requirement": "报告区分“未询问/未执行”和“系统未提供/请求失败”，不归责学生",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "I04",
+      "requirement": "每条反馈能指出具体行为、缺失证据、改进建议；必要时回看材料",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "I05",
+      "requirement": "复盘把关键图片、结果、诊断推理和处置理由串起来；答案标注图适合在此展示",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "J01",
+      "requirement": "每份文件登记唯一 ID、路径、哈希、格式、所属病例、来源类型、阅读状态",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "J02",
+      "requirement": "每份材料决定用途：本例证据/教学参考/复盘讲解/同源重复/不适用/无法读取待处理",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "J03",
+      "requirement": "使用材料记录时点、部位/侧别、支持事实、展示阶段、触发动作、是否泄题",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "J04",
+      "requirement": "图片清晰且可缩放，音视频可播放，有必要的裁剪、转码、字幕/说明；保留原件",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "J05",
+      "requirement": "隐私、来源、使用条件明确；外部图不能因可搜索就当成可再分发",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "J06",
+      "requirement": "大批连续图像按真实序列分组，审阅关键段并记录覆盖范围，不能按张数当作不同检查",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "K01",
+      "requirement": "补充类型明确：表达润色、一般角色设计、医学事实/数值模拟、外部临床参考、生成形象/示意",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "K02",
+      "requirement": "医学补充可回到可访问的专业依据；具体患者数值属于教学设定，引用指南不使其变成真实实测值",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "K03",
+      "requirement": "补充后全例自洽，所有派生脚本、图片、结果、评分同步；与原件冲突不得静默覆盖",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "K04",
+      "requirement": "老师能集中看到全部新增项、来源、风险和修改位置；原始内容与补充内容可对照",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "K05",
+      "requirement": "发布和审核独立；教师试用可以未医学审核，但不能标“老师已确认”",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "L01",
+      "requirement": "每个首页条目都验证能进入、完成、生成报告、退出和恢复，不只抽测代表病例",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "L02",
+      "requirement": "手机优先，材料加载、放大、音频/视频播放和返回不丢进度；资源失败可重试",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "L03",
+      "requirement": "问诊、查体、检查和报告使用同一事实版本；修订不改变既有会话的患者事实",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "L04",
+      "requirement": "仅老师试用此次发布；老师走学生相同页面及业务流程，但不会改变账号实际权限",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "L05",
+      "requirement": "部署端实际拥有材料和派生文件，不能本地可读就声称线上可用",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    },
+    {
+      "id": "L06",
+      "requirement": "类型、静态检查、相关测试和构建通过；不把构建成功当成内容或医学验收",
+      "status": "not_verified",
+      "sources": [],
+      "issues": "本轮未完成该项完整验收，不继承材料/工程摘要通过"
+    }
+  ]
+}

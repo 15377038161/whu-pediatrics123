@@ -1,0 +1,32 @@
+{
+  "caseSeq": 51,
+  "images": [
+    {
+      "sha256": "270064c85d962e29fbaafff4cacf516816c760e074842619433b3656aa21097b",
+      "bytes": 19400,
+      "reviewStatus": "unreviewed",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false,
+      "width": 586,
+      "height": 407,
+      "format": "JPEG",
+      "imageReadStatus": "readable"
+    },
+    {
+      "sha256": "02b60f274e9e482c17fff5aa87123d2d16cc3c86d9dd26409ab9fd542c68c9e4",
+      "bytes": 3229788,
+      "reviewStatus": "unreviewed",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false,
+      "width": 1533,
+      "height": 1521,
+      "format": "PNG",
+      "imageReadStatus": "readable"
+    }
+  ],
+  "sourceHashesMatch": true,
+  "readable": 2,
+  "privacyCleared": 0,
+  "bindingAllowed": 0,
+  "fullFlowPassed": false
+}

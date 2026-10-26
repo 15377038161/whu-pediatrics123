@@ -1,0 +1,26 @@
+{
+  "embedded": [],
+  "standalone": [
+    {
+      "sha256": "270064c85d962e29fbaafff4cacf516816c760e074842619433b3656aa21097b",
+      "bytes": 19400,
+      "width": 586,
+      "height": 407,
+      "format": "JPEG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    },
+    {
+      "sha256": "02b60f274e9e482c17fff5aa87123d2d16cc3c86d9dd26409ab9fd542c68c9e4",
+      "bytes": 3229788,
+      "width": 1533,
+      "height": 1521,
+      "format": "PNG",
+      "privacyReview": "not_verified",
+      "bindingAllowed": false
+    }
+  ],
+  "privacyCleared": 0,
+  "bindingAllowed": 0,
+  "runtimeDisplayVerified": false
+}

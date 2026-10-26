@@ -1,0 +1,8 @@
+{
+  "codeBaseline": "5f5ad9497c9762bef161f8930f118a313f5887ba",
+  "candidateSHA256": "e5266c7d6e0156ea69bd8d72955e8434948b08c08a2619777d39e47d75f603bb",
+  "rootRuntimeSHA256": "8a08c68675178212f4659072b831ae95ea6dd072de338986628576bc5e7d7562",
+  "liveSnapshotVersionVerified": false,
+  "historicalBindingsModified": false,
+  "standaloneFixCommit": "80e7218300596dbc776b80b716cd090656772481"
+}

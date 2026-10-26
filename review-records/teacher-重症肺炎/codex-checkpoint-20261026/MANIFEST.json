@@ -1,0 +1,15 @@
+{
+  "caseSeq": 52,
+  "caseId": "teacher-重症肺炎",
+  "files": {
+    "source-and-media-receipt.json": "88c4db5cd2dd47bcd4a0e446c3771ffbb05ab9b3a1e9b8984f54181f72a8b992",
+    "full-folder-inventory.json": "c7ef4dc6f688aff87e5c11164f027ac25ce4eec2b8f208587d7439940eedd1c6",
+    "image-inventory.json": "729588b3b9fb6c170392bcffb73788d9ccdac3f4073947e3f8d4656aa9412991",
+    "version-location.json": "489bd8b48030b06e3734137f48ecbf7ea558f7012757f02101eb0002a8698698",
+    "standards.json": "529f3ee7d80f7fb7e8706165d58c49e8c66207cb9dfb84ba0e36dcb2d3f9f663",
+    "report.md": "df560055cdc9477c1145a0d17875031d9b06136b561b0a1f0b54d7e7ae997fa2",
+    "standalone-registration-retest.json": "3bfedd0a9e172a1c19bcd75068856db3203fbb696b0f5d4630ac81968566f7d3"
+  },
+  "patientOriginalsIncluded": false,
+  "selfHashExcluded": true
+}

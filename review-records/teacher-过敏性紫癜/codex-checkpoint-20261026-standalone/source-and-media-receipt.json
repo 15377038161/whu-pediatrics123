@@ -1,0 +1,38 @@
+{
+  "caseSeq": 51,
+  "caseId": "teacher-过敏性紫癜",
+  "checkedAt": "2026-10-26T22:28:25+08:00",
+  "candidateSHA256": "e5266c7d6e0156ea69bd8d72955e8434948b08c08a2619777d39e47d75f603bb",
+  "ledgerCandidateMatch": true,
+  "rootRuntimeSHA256": "8a08c68675178212f4659072b831ae95ea6dd072de338986628576bc5e7d7562",
+  "candidateAndRootBytesEqual": false,
+  "candidateChangedTopFields": [
+    "sourceDocument",
+    "documents"
+  ],
+  "candidateSourceDocumentCount": 1,
+  "candidateDocumentHashMissing": [],
+  "sourceSexEvidenceFound": true,
+  "candidateSexKnown": true,
+  "candidateSexMatchesSource": true,
+  "candidateHistorySexConsistent": true,
+  "sectionLengths": {
+    "history": 399,
+    "exam": 231,
+    "tests": 1474,
+    "diagnosis": 274,
+    "plan": 208
+  },
+  "sourceFileCount": 3,
+  "embeddedImageOccurrences": 0,
+  "externalImageFiles": 2,
+  "distinctImageHashes": 2,
+  "externalMatchesEmbeddedHashes": 0,
+  "candidateHasRuntimeMediaBindings": false,
+  "originalsUnchanged": true,
+  "privacyClearedCount": 0,
+  "bindingAllowedCount": 0,
+  "fullFlowPassed": false,
+  "medicalVerified": false,
+  "firstUnfinishedBreakpoint": "原件图逐张隐私/用途与检查触发定位；运行版本/授权会话/实际显示/报告与刷新恢复未验"
+}

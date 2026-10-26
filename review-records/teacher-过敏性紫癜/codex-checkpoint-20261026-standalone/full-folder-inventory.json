@@ -1,0 +1,28 @@
+{
+  "files": [
+    {
+      "sourceKey": "d6858194d511",
+      "sha256": "d01d3e5f65f5813addb7e52dd066244cdd31b92fba8d7590f5ed28cf52c744e1",
+      "extension": ".doc",
+      "bytes": 24064,
+      "useReviewed": false
+    },
+    {
+      "sourceKey": "25d5a8f1ad7e",
+      "sha256": "270064c85d962e29fbaafff4cacf516816c760e074842619433b3656aa21097b",
+      "extension": ".jpg",
+      "bytes": 19400,
+      "useReviewed": false
+    },
+    {
+      "sourceKey": "624e53611378",
+      "sha256": "02b60f274e9e482c17fff5aa87123d2d16cc3c86d9dd26409ab9fd542c68c9e4",
+      "extension": ".png",
+      "bytes": 3229788,
+      "useReviewed": false
+    }
+  ],
+  "convertedCarrierSHA256": "6741e10db80de8dae091a7d4f8e786b5343aa0f3340579a2511741a794f39f11",
+  "originalDocumentSHA256": "d01d3e5f65f5813addb7e52dd066244cdd31b92fba8d7590f5ed28cf52c744e1",
+  "sourcePixelsOrTextPublished": false
+}
