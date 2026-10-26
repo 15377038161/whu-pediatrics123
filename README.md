@@ -164,3 +164,7 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 ### AI 题库闭环（2026-10-22）
 
 教师端新增「AI 题库」（`/teacher/question-banks`）：AI 按主题生成题集草稿（一律 draft 态，不跳过审核），教师逐题审核编辑后发布——发布原子冻结版本快照（教师后续编辑不影响既有批次），可见范围默认本班、全平台需项目管理员。学生端 `/student/quiz` 双模式：题集练习（续答优先、同一题集一次进行中、首次提交终局幂等判分、作答前不返回答案解析）+ 错题复盘；练习批次并入 `/student/reports` 统一报告列表（非临床评分分区）。既有 43 题单题速练保留；同步收紧教师对 legacy 题库的直写权限。迁移、RPC、API 与验收边界见 [QUESTION_BANK.md](docs/QUESTION_BANK.md)。补验（F-题库补验-02，迁移 `20261022000200`）：owner 策略教师门控 + 发布字段触发器守卫 + 作答幂等重写（完成后同题重试返回首答结果）+ 受控表 REVOKE；数据库级回归见 `验收记录.md` 第三十一节。
+
+### 跨平台工程复验（2026-10-26）
+
+骨骼 manifest 通过 `.gitattributes` 固定 LF 以保持审计 SHA256。`pnpm validate` 中真实供应商语音链路需显式 `SPEECH_LIVE_TEST=1` 才执行，默认跳过并保留匿名门禁检查；跳过项不计为已验。详见 [语音验收边界](docs/SPEECH_INTEGRATION.md) 与 [骨骼审计](docs/anatomy-audit.md)。

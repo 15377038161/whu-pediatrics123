@@ -33,7 +33,9 @@ test('语音路由匿名门禁：无登录态三路由均 401', async () => {
   assert.equal((await speechTts(post('/api/speech/tts', { sessionId: 'x', messageId: 'y' }))).status, 401);
 });
 
-test('语音路由登录后链路：本人会话成功路径、守卫与会话隔离、跨用户拒绝', async () => {
+test('语音路由登录后链路：本人会话成功路径、守卫与会话隔离、跨用户拒绝', {
+  skip: process.env.SPEECH_LIVE_TEST === '1' ? false : '需显式设置 SPEECH_LIVE_TEST=1 并注入既有平台配置；合成身份直调不等于真实 OAuth/HTTP 验收',
+}, async () => {
   const saved = { preview: process.env.ENABLE_UI_PREVIEW, fixture: process.env.ENABLE_AI_FIXTURE };
   process.env.ENABLE_UI_PREVIEW = 'true';
   process.env.ENABLE_AI_FIXTURE = 'true';

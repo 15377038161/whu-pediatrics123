@@ -1,0 +1,2 @@
+# Audited asset bytes must match the recorded SHA256 on every checkout.
+public/models/anatomy/manifest.json text eol=lf
