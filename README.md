@@ -173,4 +173,4 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 
 本地原件准备链的人口学回归：`python -X utf8 -m unittest discover -s tests -p test_prepare_case_demographics.py`（需既有病例导入Python依赖），覆盖“患者/患儿/性别声明”及亲属误命中；不会读取真实病例或自动发布。
 
-病例本地抽取现在将DOCX/PDF/PPTX内嵌图保存到忽略的`output/case-drafts/embedded-media/`，在草稿文档中登记来源哈希、定位及默认禁止绑定状态；不自动进入运行病例或公开目录。原件不变，隐私/用途核查后仍需显式受控绑定。源准备与媒体回归：`python -X utf8 -m unittest discover -s tests -p "test_*case*.py"`（沿用现有python-docx/pypdf）。
+病例本地抽取现在将DOCX/PDF/PPTX内嵌图保存到忽略的`output/case-drafts/embedded-media/`，在草稿文档中登记来源哈希、定位及默认禁止绑定状态；不自动进入运行病例或公开目录。原件不变，隐私/用途核查后仍需显式受控绑定。先执行 `python -m pip install -r scripts/requirements-cases.txt`（含PDF图片提取必需的Pillow），再执行源准备与媒体回归：`python -X utf8 -m unittest discover -s tests -p "test_*case*.py"`。缺少Pillow时PDF文字提取可能正常而图片提取报错，不能把空候选当作原件无图；须检查草稿媒体错误并补依赖后重跑。
