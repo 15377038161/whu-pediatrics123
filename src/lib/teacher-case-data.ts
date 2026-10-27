@@ -45,6 +45,19 @@ export function getKnowledgeRoot(): string {
   return path.resolve(process.env.PEDIATRICS_KNOWLEDGE_ROOT || [process.cwd(), 'knowledge'].join(path.sep));
 }
 
+/** Controlled local historical files complement DB/cache restoration; never use the current record for an old key. */
+function readArchivedCase(sourceId: string, version?: string | null): TeacherCaseData | null {
+  if(!version || !/^[a-f0-9]{16}$/.test(version))return null;
+  try {
+    const record=recordSchema.parse(JSON.parse(readFileSync(path.join(getKnowledgeRoot(),'teaching-case-versions',sourceId,`${version}.json`),'utf8')));
+    if(record.caseId!==sourceId || computeCaseDataVersion(record)!==version)throw new Error('CASE_ARCHIVE_INVALID');
+    return record;
+  }catch(error){
+    if((error as NodeJS.ErrnoException).code==='ENOENT')return null;
+    throw new Error('CASE_ARCHIVE_INVALID');
+  }
+}
+
 export function readTeacherCaseData(caseId: string, version?: string | null, sessionId?: string | null): TeacherCaseData | null {
   const sourceId = getTeacherSourceId(caseId);
   if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId)) return null;
@@ -64,9 +77,11 @@ export function readTeacherCaseData(caseId: string, version?: string | null, ses
     if (record.caseId !== sourceId) return null;
     // 本地文件存在但版本已绑定：本地当前版本与绑定版本一致才直接使用本地完整事实；
     // 不一致（本地内容已修订）时优先恢复绑定版本的进程内缓存快照（同事实集合），
-    // 缓存无该版本（重启后过期/未预热）则返回 null（资料不足），
+    // 先查受控本地历史版本文件，再查缓存；均无精确版本则返回null（资料不足），
     // 绝不返回新版本地数据换患者事实——与 ENOENT 分支同一防漂移语义。
     if (!version || computeCaseDataVersion(record) === version) return record;
+    const archived = readArchivedCase(sourceId,version);
+    if(archived)return archived;
     const pinned = getCachedSnapshot(sourceId, version, sessionId);
     if (!pinned) return null;
     const parsed = recordSchema.safeParse(pinned);
@@ -77,6 +92,8 @@ export function readTeacherCaseData(caseId: string, version?: string | null, ses
       // 回退到进程内知识库召回快照（由 ensureCaseSnapshot 预热），保证真实来源、不补造事实。
       // 会话已绑定版本时仅命中该版本（含会话作用域键），版本不一致返回 null（资料不足），
       // 不回退漂移数据换患者。
+      const archived = readArchivedCase(sourceId,version);
+      if(archived)return archived;
       const snapshot = getCachedSnapshot(sourceId, version, sessionId);
       if (!snapshot) return null;
       const parsed = recordSchema.safeParse(snapshot);
