@@ -480,6 +480,7 @@ function buildRubricReport(session: SessionState, reportId: string, rubric: Rubr
     ...(session.practiceFocus ? { practiceFocus: session.practiceFocus } : {}),
     rubricId: rubric.id,
     rubricVersion: rubric.version,
+    sourceSnapshotVersion: session.sourceSnapshotVersion ?? null,
     evaluationBasis: 'clinical_rubric',
     assessableMaxScore,
     ...(unscored ? { unscored, unscoredReason } : {}),
@@ -522,6 +523,7 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
   if (diagnosisReference) evidence.push({ code: 'SOURCE_DIAGNOSIS_REFERENCE', label: '原病例诊断对照', achieved: true, score: 0, maxScore: 0, detail: diagnosisReference, eventIds: [] });
   if (planReference) evidence.push({ code: 'SOURCE_PLAN_REFERENCE', label: '原病例诊疗经过对照', achieved: true, score: 0, maxScore: 0, detail: planReference, eventIds: [] });
   return { id: reportId, sessionId: session.id, userId: session.userId, caseId: session.caseId, mode: session.mode,
+    sourceSnapshotVersion: session.sourceSnapshotVersion ?? null,
     studentDecision: session.decision ? { ...session.decision } : null,
     caseTitle: resolveCaseTitleForReport(session),
     totalScore: Object.values(abilities).reduce((sum, score) => sum + score, 0), abilities, evidence,

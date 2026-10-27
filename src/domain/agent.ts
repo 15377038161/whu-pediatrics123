@@ -258,6 +258,8 @@ export interface ScoreEvidence {
 }
 
 export interface TrainingReport {
+  /** Frozen source version for evidence/media replay; absent historical reports do not guess. */
+  sourceSnapshotVersion?: string | null;
   /** 生成时固定的学生最终提交，不追溯重写历史报告。 */
   studentDecision?: SessionState['decision'];
   id: string;

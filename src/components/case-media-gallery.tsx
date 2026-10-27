@@ -43,10 +43,18 @@ function CaseMediaImage({ sessionId, item }: { sessionId: string; item: CaseMedi
 }
 
 export function CaseMediaGallery({ sessionId, media }: { sessionId: string; media: CaseMedia[] }) {
+  const [page,setPage]=useState({sessionId,index:0});
   if (media.length === 0) return null;
+  // Original image series may contain thousands of frames. Only request signed
+  // links for the visible group; loading="lazy" alone does not limit our fetches.
+  const pages=Math.ceil(media.length/6);
+  const index=page.sessionId===sessionId?Math.min(page.index,pages-1):0;
   return (
-    <div className="case-media-gallery">
-      {media.map((item) => <CaseMediaImage key={`${sessionId}:${item.fileId}`} sessionId={sessionId} item={item} />)}
+    <div>
+      <div className="case-media-gallery">
+        {media.slice(index*6,index*6+6).map((item) => <CaseMediaImage key={`${sessionId}:${item.fileId}`} sessionId={sessionId} item={item} />)}
+      </div>
+      {pages>1&&<nav className="case-media-pagination" aria-label="病例图片分页"><button type="button" disabled={index===0} onClick={()=>setPage({sessionId,index:index-1})}>上一组图片</button><span aria-live="polite">第{index+1}/{pages}组，共{media.length}张</span><button type="button" disabled={index===pages-1} onClick={()=>setPage({sessionId,index:index+1})}>下一组图片</button></nav>}
     </div>
   );
 }

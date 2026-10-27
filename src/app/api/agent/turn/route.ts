@@ -19,9 +19,16 @@ export async function POST(request: NextRequest) {
     const result = await runAgentTurn(session, parsed.data.event as AgentEvent, parsed.data.clientEventId, { forwardHeaders, accessToken: user.accessToken });
     await repository.saveSession(result.session);
     await repository.saveAgentCall(result.session.id, parsed.data.clientEventId, result.trace, result.runtime);
+    // The facts RPC can expose exam media only after the validated clinical event
+    // has been persisted. Re-read that bound projection for the immediate response;
+    // ordinary refresh/report readers use the same repository reconstruction.
+    const hasSourceExam=parsed.data.event.type==='EXAM_ACTION' && result.session.sourceSnapshotVersion
+      && result.session.events.some(event=>event.clientEventId===parsed.data.clientEventId && event.correct===true
+        && event.evidenceCodes.some(code=>code.startsWith('SOURCE_EX_')));
+    const responseSession=hasSourceExam ? await repository.getSession(result.session.id) : result.session;
     // 防透题投影：学生响应的 caseOptions 中性化（sourceName 替换中性标题、tests 剥离）；
     // 持久化（saveSession）保留完整状态，投影只作用于响应边界。
-    return ok({ ...result, session: projectSessionForRole(result.session, user.role),
+    return ok({ ...result, session: projectSessionForRole(responseSession, user.role),
       trace: user.role === 'student' ? result.trace.map(item => ({ ...item, sourceIds: [] })) : result.trace });
   } catch (error) {
     const detail = errorFromUnknown(error);

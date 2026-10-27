@@ -769,6 +769,7 @@ textarea { resize: vertical; }
 .case-media-item img { display: block; max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #d8e6de; background: #fff; }
 .case-media-item figcaption { font-size: 12px; color: #5a6b62; margin-top: 6px; }
 .case-media-state { font-size: 13px; color: #5a6b62; margin: 8px 0; }
+.case-media-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 8px 0; }
 .evidence-table td { white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 699px) {
   .case-library-filter label { flex-basis: 100%; }

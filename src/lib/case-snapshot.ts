@@ -5,6 +5,7 @@ import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
 import type { CaseMedia } from '@/domain/agent';
+import { decodeCaseMedia } from '@/lib/case-media';
 
 /**
  * 结构化病例快照（来源：平台知识库召回）
@@ -81,6 +82,7 @@ export interface SnapshotCaseData {
   sections: { history: string; exam: string; tests: string; diagnosis: string; plan: string };
   vitals: { temperature: number | null; heartRate: number | null; respiratoryRate: number | null; spo2: number | null };
   documents: Array<{ source: string; text: string; sha256: string }>;
+  examMedia?: Array<{examId: string; media: CaseMedia[]}>;
 }
 
 export interface SnapshotResult {
@@ -405,6 +407,16 @@ export async function restoreCaseSnapshotFacts(caseId: string, version: string, 
       const { data, error } = await db.from('case_snapshot_facts').select('facts').eq('case_id', sourceId).eq('version', version).maybeSingle();
       if (error) throw error;
       if (data) facts = data.facts as ReturnType<typeof buildFactsPayload>;
+      if (facts) {
+        // Teacher supervision keeps its existing RLS-authorized read. Never reuse this
+        // full private metadata in the student/session-scoped RPC cache.
+        const {data: answer,error: bindingError}=await db.from('case_snapshot_answers')
+          .select('binding_config').eq('case_id',sourceId).eq('version',version).maybeSingle();
+        if (!bindingError && Array.isArray(answer?.binding_config?.examMedia)) {
+          facts.examMedia=answer.binding_config.examMedia.filter((item: {examId?: unknown})=>typeof item?.examId==='string')
+            .map((item: {examId:string;media:unknown})=>({examId:item.examId,media:decodeCaseMedia(item.media)}));
+        }
+      }
     }
     if (!facts) return null;
     // 学生受控 RPC 的阶段化事实投影（迁移 20261010120000）：未执行查体/开检查前
@@ -550,9 +562,8 @@ export function decodeCaseTestResult(data: unknown, testId: string): ReleasedCas
   if (item.pending === true) return {...identity, result: '', pending: true,
     resultDelayNote: typeof item.resultDelayNote === 'string' ? item.resultDelayNote : '标本已送检，结果待回报。'};
   if (typeof item.result !== 'string' || !item.result) return null;
-  const media: CaseMedia[] = Array.isArray(item.media) ? item.media.filter((value): value is CaseMedia =>
-    Boolean(value && typeof value === 'object' && value.kind === 'image' && typeof value.fileId === 'string' && value.fileId && typeof value.caption === 'string')) : [];
-  return {...identity, result: item.result, ...(media.length ? {media: media.map(({fileId,kind,caption})=>({fileId,kind,caption}))} : {})};
+  const media=decodeCaseMedia(item.media);
+  return {...identity, result: item.result, ...(media.length ? {media} : {})};
 }
 
 export async function getCaseTestResult(caseId: string, version: string, sessionId: string, accessToken: string | null, testId: string): Promise<ReleasedCaseTestResult | null> {

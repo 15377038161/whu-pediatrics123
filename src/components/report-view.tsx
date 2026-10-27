@@ -4,6 +4,7 @@ import { findPublicCase } from '@/domain/case-catalog';
 import { RandomAdmission } from '@/components/random-admission';
 import { findRubricForReport, isUnscoredReport, rubricStatusForDisplay, unscoredReasonForDisplay, type RubricItem } from '@/domain/training-rubric';
 import { practiceScenarios } from '@/domain/practice-scenarios';
+import { ReportEvidenceMedia } from '@/components/report-evidence-media';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
   { key: 'history', label: '儿科问诊', max: 25 },
@@ -120,6 +121,12 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           {report.studentSubmissions.examObservation && <p className="preserve-lines"><strong>查体观察记录：</strong>{report.studentSubmissions.examObservation.findings}{report.studentSubmissions.examObservation.interpretation && <>；<strong>观察解释：</strong>{report.studentSubmissions.examObservation.interpretation}</>}{report.studentSubmissions.examObservation.linkedEvidence && <>；<strong>关联查体结果：</strong>{report.studentSubmissions.examObservation.linkedEvidence.join('、')}</>}{report.studentSubmissions.examObservation.caseVersion !== undefined && <>（病例版本 v{report.studentSubmissions.examObservation.caseVersion}）</>}</p>}
         </section>
       )}
+      {report.evidence.some(item=>(item.eventIds?.length??0)>0) && <section className="report-section" style={{marginTop:14}}>
+        <h2>评分关联图片</h2>
+        {report.sourceSnapshotVersion
+          ? <ReportEvidenceMedia key={`${report.id}:${report.sourceSnapshotVersion}`} sessionId={report.sessionId} version={report.sourceSnapshotVersion} eventIds={[...new Set(report.evidence.flatMap(item=>item.eventIds??[]))]}/>
+          : <p>历史报告未保存材料版本，暂不自动关联图片。</p>}
+      </section>}
     </div>
   );
 }

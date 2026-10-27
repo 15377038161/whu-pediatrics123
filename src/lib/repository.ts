@@ -12,6 +12,8 @@ import { eligibleAdmissions, selectAdmission } from '@/lib/case-admission';
 import { getUnpublishedCaseIds } from '@/lib/case-publication';
 import { creationSessionId, creationFingerprint, type SessionCreationOptions } from '@/lib/session-creation';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getCase } from '@/domain/case';
+import { hydrateReleasedExamMedia } from '@/lib/case-media';
 
 export interface TeacherStudentSummary {
   id: string;
@@ -344,7 +346,11 @@ export class AgentRepository {
         }
       }
     }
-    return refreshSourceSession(restored);
+    const refreshed=refreshSourceSession(restored);
+    if (refreshed.caseId.startsWith('teacher-') && refreshed.sourceSnapshotVersion) {
+      hydrateReleasedExamMedia(refreshed,getCase(refreshed.caseId,refreshed.sourceSnapshotVersion,refreshed.id).exams);
+    }
+    return refreshed;
   }
 
   async saveSession(session: SessionState): Promise<void> {
