@@ -18,6 +18,10 @@
 
 私有持久化：新增迁移 `20261027114509_case_snapshot_private_binding_config.sql` 在既有教师专用 `case_snapshot_answers` 增加可空 `binding_config`，保存精确版本的 `testMedia/examMedia/testRelease`。普通facts载荷仍不含这些字段；不改RLS/GRANT/RPC、不自动回填旧版本。迁移要求精确tenant、既有answers表及RLS已开启。未执行该迁移时，带配置的导入在写facts之前失败；无配置旧病例不新增列依赖。已存在同版本但缺配置或内容不同的行报 `SNAPSHOT_BINDING_CONFIG_MISSING_OR_CONFLICT`，不得记为unchanged或静默填旧历史。
 
-发布仍待配套：持久化只是第一段，学生受控释放/恢复与行级结果解码尚未接上新私有列，不得声称图片链已修复或直接导入上线。不能仅将三字段加入现有facts对象：当前学生RPC在裁剪sections后仍返回其他顶层字段，会提前暴露未释放媒体。后续必须配套按归属/版本/操作/阶段保护投影、结果解码及冷恢复回归。旧图已授权与新代码发布分别记录。
+检查结果释放：迁移 `20261027124136_case_test_private_media_release.sql` 只替换既有 `case_snapshot_get_test`，保留本人会话、入口、精确版本、已下单及固定来源映射，ACL不变。私有配置从answers关联读取；未到配置的回报阶段（含未知阶段）仅返回待回报及说明，不返回结果或媒体。到阶段后只返回该已下单项目的结果和图片fileId/类型/图注，不返回其他项目或存储URL。应用解码与引擎保留待回报单据，待回报不解锁证据、不挂图；再次申请实际获准后才随事件挂载图。一般facts投影仍不带绑定配置。
+
+发布仍待配套：查体媒体按操作释放、生产数据库冷恢复与真实图片授权显示尚未全部接通/验收，不得声称全图片链已修复或直接导入上线。不能仅将三字段加入现有facts对象：当前学生RPC在裁剪sections后仍返回其他顶层字段，会提前暴露未释放媒体。旧图已授权与新代码发布分别记录。部署须先核当前实际迁移状态，按既有入口/来源键修复→私有列→检查媒体释放的依赖顺序执行；不能凭本地测试假定生产已执行。
 
 隔离验证：`pnpm exec tsx --test tests/case-binding-persistence.test.ts` 实际执行PostgreSQL迁移及jsonb往返，检查旧NULL不变、合成学生RLS拒绝、教师读取、权限不变、重放与错误tenant拒绝。它不证明生产迁移或真实OAuth身份验收。
+
+检查释放回归：`pnpm exec tsx --test tests/case-test-media-release.test.ts tests/test-order-failure.test.ts` 覆盖14关联入口、错归属/入口/版本/未下单/匿名、待回报无结果无图、到阶段仅本项图片、普通facts无绑定、URL剥离、ACL不变和迁移重放。使用隔离PGlite及合成RPC缝，重复绑定读取不等于生产进程冷重启。

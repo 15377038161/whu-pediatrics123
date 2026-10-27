@@ -631,9 +631,20 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
       if (recorded === null) throw new Error('TEST_ORDER_REJECTED');
       // 网络/权限失败在此抛出（TEST_ORDER_RPC_FAILED / TEST_RESULT_RPC_FAILED），不伪记成功下单或资料未提供
       const fetched = await testOrderRpc.getResult(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, test.id);
+      if (fetched?.pending) {
+        session.orderedTests = uniq([...session.orderedTests, test.id]);
+        const note = fetched.resultDelayNote ?? '标本已送检，结果待回报。';
+        session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：已开单送检，结果待回报`, null, []));
+        const pendingMessage = message('system', `${test.label}已开出。${note}`, {kind:'navigation'});
+        session.messages.push(pendingMessage); newMessages.push(pendingMessage);
+        feedbackParts.push(`${test.label}已开单送检，结果待回报。`);
+        traceItems.push(trace('病例状态', '绑定版本的数据库释放规则：暂不解锁结果或媒体'));
+        continue;
+      }
       if (fetched?.result) {
         test.result = fetched.result;
         if (fetched.label) test.label = fetched.label;
+        if (fetched.media?.length) test.media = fetched.media;
       } else {
         // record 已成功但行级读取返回 null：守卫竞态/数据异常（record 已验证项目在目录内且已下单，
         // get_test 同规则解析不应无行）——不落入「资料未提供」：不记资料缺失、不解锁证据；
