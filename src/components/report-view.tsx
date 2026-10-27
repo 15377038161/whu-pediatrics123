@@ -123,7 +123,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         </section>
       )}
       {report.evidence.some(item=>(item.eventIds?.length??0)>0) && <section className="report-section" style={{marginTop:14}}>
-        <h2>评分关联图片</h2>
+        <h2>本轮已获得的图片</h2>
         {report.learningIllustration && <section className="report-section"><h2>教学机制图</h2><p>{report.learningIllustration.caption}</p><figure className="case-media-item">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={report.learningIllustration.url} alt={report.learningIllustration.caption} loading="lazy"/><figcaption>教学素材 {report.learningIllustration.assetVersion} · 与本报告一起保存，非临床检查证据</figcaption></figure></section>}
       {report.collectionReview && report.collectionReview.length>0 && <section className="workspace-panel"><div className="panel-head"><h2>本病例的信息采集复盘</h2></div><div className="panel-body"><p>以下按本例可获得资料与实际事件核对。尚未采集不等于必须开单，已采集不等于已理解；临床必要性与解释质量另行评价，不在这里加减分，也不展示完整标准病历。</p><ul>{report.collectionReview.map((item,index)=><li key={`${item.area}:${index}`}><strong>{item.label}</strong>：{item.collected===0?'本次尚无已获得记录':item.collected<item.available?'记录尚未覆盖全部对应资料':'已获得对应资料'}（{item.collected}/{item.available}）；{item.eventIds.length?`关联${item.eventIds.length}条实际操作记录`:'无对应操作证据'}。</li>)}</ul></div></section>}
       {report.sourceSnapshotVersion
