@@ -494,7 +494,7 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
   const source = getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts;
   const diagnosisReference = reference?.diagnosis ?? source?.sections.diagnosis ?? '';
   const planReference = reference?.plan ?? source?.sections.plan ?? '';
-  const checks: Array<{ key: keyof AbilityScores; label: string; max: number; codes: string[]; complete: boolean; detail: string }> = [
+  let checks: Array<{ key: keyof AbilityScores; label: string; max: number; codes: string[]; complete: boolean; detail: string }> = [
     { key: 'history', label: '病史采集记录', max: 25, codes: session.askedIntents.filter((code) => code.startsWith('SOURCE_HX_')), complete: session.askedIntents.some((code) => code.startsWith('SOURCE_HX_')), detail: '是否通过问诊获取该病例实际提供的病史。' },
     { key: 'examination', label: '查体证据记录', max: 25, codes: session.unlockedEvidence.filter((code) => code.startsWith('SOURCE_EX_')), complete: session.unlockedEvidence.some((code) => code.startsWith('SOURCE_EX_')), detail: '是否完成检查准备并获取原病例的查体结果。' },
     { key: 'reasoning', label: '诊断思路提交', max: 20, codes: ['DECISION'], complete: Boolean(session.decision?.diagnosis && session.decision.summary), detail: '记录病情摘要与诊断思路；本项评价任务完成，不判断诊断正确性。' },
@@ -502,21 +502,39 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
     { key: 'communication', label: '家长沟通记录', max: 10, codes: ['COMMUNICATION'], complete: Boolean(session.communication?.trim()), detail: '是否提交向患儿及家长说明病情、风险和后续安排的沟通原文。' },
     { key: 'professionalism', label: '检查准备', max: 5, codes: ['EX_PREP'], complete: session.unlockedEvidence.includes('EX_PREP'), detail: '是否完成手卫生与检查说明。' },
   ];
-  const abilities = Object.fromEntries(checks.map((check) => [check.key, check.complete ? check.max : 0])) as unknown as AbilityScores;
-  const evidence: ScoreEvidence[] = checks.map((check) => ({ code: `SOURCE_PROCESS_${check.key}`, label: check.label, achieved: check.complete, score: check.complete ? check.max : 0, maxScore: check.max, detail: check.detail, eventIds: eventIdsFor(session, check.codes) }));
+  const focus = session.mode === 'practice' ? session.practiceFocus : null;
+  const focusedDimensions: Record<NonNullable<SessionState['practiceFocus']>, Array<keyof AbilityScores>> = {
+    history: ['history'], exam: ['examination', 'professionalism'],
+    safety: ['reasoning', 'safety'], communication: ['communication'],
+  };
+  if (focus) checks = checks.filter(check => focusedDimensions[focus].includes(check.key));
+  // 沟通专项只保留提交，不能用提交或关键词代替沟通质量评分。
+  const unscored = focus === 'communication';
+  const abilities: AbilityScores = { history: 0, examination: 0, reasoning: 0, safety: 0, communication: 0, professionalism: 0 };
+  for (const check of checks) abilities[check.key] = !unscored && check.complete ? check.max : 0;
+  const evidence: ScoreEvidence[] = checks.map((check) => ({ code: `SOURCE_PROCESS_${check.key}`, label: check.label,
+    achieved: !unscored && check.complete, score: abilities[check.key], maxScore: unscored ? 0 : check.max,
+    ...(unscored ? { status: 'not_assessable' as const } : {}),
+    detail: unscored ? '沟通提交原文已保留；缺少专业审核的沟通质量判据，无法自动评价，待教师复核。' : check.detail,
+    eventIds: eventIdsFor(session, check.codes) }));
+  if (focus === 'exam') evidence.push({code:'SOURCE_EX_FINDINGS',label:'查体结果识别',achieved:false,score:0,maxScore:0,status:'not_assessable',
+    detail:'观察与解释提交及关联证据保留在报告；缺少专业审核的结果识别判据，待教师复核。',eventIds:eventIdsFor(session,['EX_OBSERVATION'])});
   if (diagnosisReference) evidence.push({ code: 'SOURCE_DIAGNOSIS_REFERENCE', label: '原病例诊断对照', achieved: true, score: 0, maxScore: 0, detail: diagnosisReference, eventIds: [] });
   if (planReference) evidence.push({ code: 'SOURCE_PLAN_REFERENCE', label: '原病例诊疗经过对照', achieved: true, score: 0, maxScore: 0, detail: planReference, eventIds: [] });
   return { id: reportId, sessionId: session.id, userId: session.userId, caseId: session.caseId, mode: session.mode,
     studentDecision: session.decision ? { ...session.decision } : null,
     caseTitle: resolveCaseTitleForReport(session),
     totalScore: Object.values(abilities).reduce((sum, score) => sum + score, 0), abilities, evidence,
-    strengths: checks.filter((check) => check.complete).map((check) => check.label), improvements: checks.filter((check) => !check.complete).map((check) => check.label),
+    evaluatedAbilities: checks.map(check => check.key),
+    strengths: unscored ? (session.communication?.trim() ? ['已保留沟通提交，质量待教师复核。'] : []) : checks.filter((check) => check.complete).map((check) => check.label),
+    improvements: unscored ? [] : checks.filter((check) => !check.complete).map((check) => check.label),
     recommendation: source ? '对照原病例诊断与诊疗经过，解释自己的证据与判断；请教师复核诊断及处置。' : '本病种暂无独立原始病历，请整理自己的问诊与诊疗思路，待补充资料后再对照复盘。',
     scoreBasis: 'process',
     ...(session.practiceFocus ? { practiceFocus: session.practiceFocus } : {}),
     evaluationBasis: 'process_completion',
     // C-观察与报告-04：过程分报告按六环节满分之和持久化可评价满分（与前端展示同源）。
-    assessableMaxScore: checks.reduce((sum, check) => sum + check.max, 0),
+    assessableMaxScore: unscored ? 0 : checks.reduce((sum, check) => sum + check.max, 0),
+    ...(unscored ? {unscored:true,unscoredReason:'缺少专业审核的沟通质量判据，提交原文保留待教师复核。'} : {}),
     studentSubmissions: snapshotSubmissions(session),
     status: 'pending_review', createdAt: new Date().toISOString() };
 }

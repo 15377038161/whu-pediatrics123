@@ -58,12 +58,14 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
       <div className="report-grid">
         <section className="report-section"><h2>你的诊断与依据</h2><p><strong>初步诊断：</strong>{report.studentDecision?.diagnosis || '历史报告未保存此项'}</p><p className="preserve-lines"><strong>诊断依据：</strong>{report.studentDecision?.diagnosisBasis || '历史记录未填写诊断依据'}</p></section>
         <section className="report-section">
-          <h2>{processReport ? '六环节完成度' : rubric?.scope === 'focused' ? '专项能力画像' : '六维能力画像'}</h2>
+          <h2>{processReport ? (focusScenario ? '专项过程记录' : '六环节完成度') : rubric?.scope === 'focused' ? '专项能力画像' : '六维能力画像'}</h2>
           <div className="dimension-list">
             {dimensions
-              .filter(({ key }) => processReport || !rubric || rubric.items.some((item) => item.dimension === key))
+              .filter(({ key }) => report.evaluatedAbilities ? report.evaluatedAbilities.includes(key) : processReport || !rubric || rubric.items.some((item) => item.dimension === key))
               .map(({ key, label, max }) => {
-                const dimensionMax = rubric
+                const processEvidence = report.evidence.find(item => item.code === `SOURCE_PROCESS_${key}`);
+                const dimensionMax = processReport && report.evaluatedAbilities
+                  ? processEvidence?.maxScore ?? 0 : rubric
                   ? rubric.items.filter((item) => item.dimension === key && isAssessableRubricItem(item)).reduce((sum, item) => sum + item.maxScore, 0)
                   : max;
                 const width = dimensionMax > 0 ? Math.min(100, report.abilities[key] / dimensionMax * 100) : 0;
@@ -71,7 +73,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
                   <div className="dimension" key={key}>
                     <span>{processReport ? report.evidence.find((item) => item.code === `SOURCE_PROCESS_${key}`)?.label ?? label : label}</span>
                     <div className="dimension-track" aria-hidden="true"><i style={{ width: `${width}%` }} /></div>
-                    <strong>{rubric ? (dimensionMax > 0 ? `${report.abilities[key]}/${dimensionMax}` : '无法评价') : report.abilities[key]}</strong>
+                    <strong>{rubric || (processReport && report.evaluatedAbilities) ? (dimensionMax > 0 ? `${report.abilities[key]}/${dimensionMax}` : '无法评价') : report.abilities[key]}</strong>
                   </div>
                 );
               })}

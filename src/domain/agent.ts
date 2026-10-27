@@ -271,6 +271,8 @@ export interface TrainingReport {
   mode: SessionMode;
   totalScore: number;
   abilities: AbilityScores;
+  /** 生成时冻结的评价维度；历史报告缺失时保持原六维展示，不按现行专项配置重算。 */
+  evaluatedAbilities?: Array<keyof AbilityScores>;
   evidence: ScoreEvidence[];
   strengths: string[];
   improvements: string[];

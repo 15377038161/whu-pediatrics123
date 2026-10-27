@@ -59,7 +59,7 @@ export const practiceScenarios: Record<PracticeFocus, PracticeScenario> = {
   exam: {
     focus: 'exam',
     configVersion: 6,
-    title: '肺部规范查体',
+    title: '儿科规范查体',
     goal: '按规范流程完成本病例的重点查体，并提交查体观察与解释',
     briefing: [
       '本病例的必要病史已由系统直接提供（标记为 provided，不计入你的查体得分）。',

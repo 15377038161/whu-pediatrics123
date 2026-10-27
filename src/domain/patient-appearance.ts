@@ -11,8 +11,7 @@
  *    （adolescent ≥12 岁）新增分档专属素材——同性别一档一对站姿/仰卧，已逐对图核
  *    确认同一可识别个体（outputs/case-library-review/20261023/asset-identity-check-20261023.md）；
  *    素材仍未完成医学/形象专业审核（reviewStatus=unaudited），不声称已审核。
- *    学龄前（preschool 3-6 岁）、年龄未知/解析失败仍走原虚拟儿童素材与稳定哈希
- *    （同一病例同一形象）。
+ *    已知学龄前（preschool 3-6 岁）走原虚拟儿童素材与稳定哈希；未知年龄返回占位，不能猜成学龄前。
  *  - 所有素材均为通用虚拟示教角色，不代表患者本人或实际体征。
  */
 import { parseAgeToDays, toAgeBand } from './communication-profile';
@@ -69,7 +68,7 @@ export function allowedPostures(ageKnown?: string): Array<'standing' | 'supine'>
   return ['standing', 'supine'];
 }
 
-/** 新生儿（≤28 天）或婴儿（≤1 岁）：只用卧位婴儿形象（年龄缺失/解析失败为 false，走通用儿童素材）。 */
+/** 新生儿（≤28 天）或婴儿（≤1 岁）：只用卧位婴儿形象。 */
 function isYoungInfant(ageKnown?: string): boolean {
   if (!ageKnown) return false;
   const band = toAgeBand(parseAgeToDays(ageKnown));
@@ -79,6 +78,9 @@ function isYoungInfant(ageKnown?: string): boolean {
 export function patientAppearance(sex: string, posture: 'standing'|'supine', caseId: string, ageKnown?: string): PatientAppearance {
   const normalized = sex.trim();
   if (normalized!=='男' && normalized!=='女') return { key:'unspecified',src:null,alt:'病例未注明性别，暂不指定男女照片' };
+  if (toAgeBand(parseAgeToDays(ageKnown ?? '')) === 'unknown') return {
+    key: 'age-unspecified', src: null, alt: '病例年龄未明确，暂不指定年龄形象；请核实原始病例资料',
+  };
   // 新生儿/婴儿（≤1 岁）：同性别卧位婴儿形象；请求站立也按卧位返回（该月龄不能站立），
   // 不参与哈希选择——1 天女婴不得显示站立学龄前儿童（C01 修复核心）。
   if (isYoungInfant(ageKnown)) {
@@ -102,7 +104,7 @@ export function patientAppearance(sex: string, posture: 'standing'|'supine', cas
       };
     }
   }
-  // 学龄前/年龄未知：不用 Math.random——同一病例刷新、恢复、切换姿势时固定同一个虚拟角色。
+  // 已知学龄前：同一病例刷新、恢复、切换姿势时固定同一个虚拟角色。
   let hash=2166136261;
   for (const char of caseId) hash=Math.imul(hash^char.charCodeAt(0),16777619)>>>0;
   const character=characters[normalized][caseId.startsWith('peds-respiratory-') ? 0 : hash%2];
