@@ -53,7 +53,7 @@ export const agentTurnSchema = z.object({
         z.object({ requestedTests: z.string().trim().min(1).max(400), reason: z.string().trim().max(300).optional() }).strict(),
       ]),
     }),
-    z.object({ type: z.literal('SUBMIT_DECISION'), data: z.object({ diagnosis: z.string().trim().min(2).max(200), summary: z.string().trim().min(10).max(1500), diagnosisBasis: z.string().trim().min(10).max(1500), differentials: z.string().trim().max(800) }) }),
+    z.object({ type: z.literal('SUBMIT_DECISION'), data: z.object({ diagnosis: z.string().trim().min(2).max(200), summary: z.string().trim().min(10).max(1500), diagnosisBasis: z.string().trim().min(10).max(1500), differentials: z.string().trim().max(800), linkedEventIds:z.array(z.string().trim().min(1).max(80)).max(128).optional() }) }),
     z.object({ type: z.literal('SUBMIT_HISTORY_SUMMARY'), data: z.object({ summary: z.string().trim().min(10).max(1500) }) }),
     // 查体专项观察/解释提交（C-观察与报告-04 / C-关联与验收-05）：观察所见必填，关联定位符
     // linkedEvidence 必填且非空（学生声明本次观察关联哪些已实际获得结果的查体项；服务端另按

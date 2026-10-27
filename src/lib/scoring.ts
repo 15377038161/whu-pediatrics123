@@ -1,6 +1,7 @@
 import {TEACHING_ILLUSTRATIONS} from '@/domain/teaching-illustrations';
 import teachingIllustrations from '@/domain/case-teaching-illustrations.json';
 import {SOURCE_HISTORY_TOPICS, sourceHistorySentences} from '@/domain/source-history';
+import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
 import type { AbilityScores, ScoreEvidence, SessionState, TrainingReport } from '@/domain/agent';
 import { getCase } from '@/domain/case';
 import { flagshipClinicalRubric, focusedRubrics, type RubricDefinition, type RubricItem, type RubricItemStatus } from '@/domain/training-rubric';
@@ -24,12 +25,12 @@ export interface ReportReference {
 /** 原始提交快照（方案 4.6）：报告生成时冻结学生的全部最终提交原文，不追溯重写。 */
 function snapshotSubmissions(session: SessionState): NonNullable<TrainingReport['studentSubmissions']> {
   return {
-    decision: session.decision ? { ...session.decision } : null,
+    decision: session.decision ? structuredClone(session.decision) : null,
     plan: session.plan ? { ...session.plan } : null,
     communication: session.communication ?? null,
     historySummary: session.historySummary ?? null,
     // C-观察与报告-04：查体专项观察/解释提交原文随快照冻结（历史报告无此字段按未提交展示）。
-    examObservation: session.examObservation ? { ...session.examObservation } : null,
+    examObservation: session.examObservation ? structuredClone(session.examObservation) : null,
   };
 }
 
@@ -47,8 +48,16 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
   // 评分全程按会话绑定版本+会话作用域读取教学事实：teacher 病例命中本人会话投影态，
   // 不读共享键的完整事实（防跨会话泄露）；无有效事实时走 buildSourceReport 过程分口径（非生成式兜底）。
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
-  if (pediatricCase.sourceFacts !== undefined) return buildSourceReport(session, reportId, reference);
-  return buildRubricReport(session, reportId, rubricForSession(session));
+  const report=pediatricCase.sourceFacts !== undefined
+    ? buildSourceReport(session, reportId, reference) : buildRubricReport(session, reportId, rubricForSession(session));
+  const selected=session.decision?.linkedEventIds;
+  if(selected!==undefined){
+    const events=new Map(diagnosticEvidenceEvents(session).map(event=>[event.id,event]));
+    const unique=[...new Set(selected)],items=unique.flatMap(id=>{const event=events.get(id);return event?[{eventId:id,stage:event.stage,summary:event.summary}]:[];});
+    const unavailableCount=unique.length-items.length;
+    report.decisionEvidenceReview={status:unavailableCount?'unavailable':items.length?'linked':'unlinked',items,unavailableCount,caseVersion:session.caseVersion,sourceSnapshotVersion:session.sourceSnapshotVersion??null};
+  }
+  return report;
 }
 
 interface ItemEvaluation {
@@ -467,7 +476,7 @@ function buildRubricReport(session: SessionState, reportId: string, rubric: Rubr
     : recommendationBase;
   return {
     id: reportId,
-    studentDecision: session.decision ? { ...session.decision } : null,
+    studentDecision: session.decision ? structuredClone(session.decision) : null,
     sessionId: session.id,
     userId: session.userId,
     caseId: session.caseId,
@@ -558,7 +567,7 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
   return { id: reportId, sessionId: session.id, userId: session.userId, caseId: session.caseId, mode: session.mode,
     sourceSnapshotVersion: session.sourceSnapshotVersion ?? null,
     releasedMediaEventIds: session.events.filter(event=>event.media?.length).map(event=>event.id),
-    studentDecision: session.decision ? { ...session.decision } : null,
+    studentDecision: session.decision ? structuredClone(session.decision) : null,
     caseTitle: resolveCaseTitleForReport(session),
     totalScore: Object.values(abilities).reduce((sum, score) => sum + score, 0), abilities, evidence,
     evaluatedAbilities: checks.map(check => check.key),

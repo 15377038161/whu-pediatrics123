@@ -148,6 +148,8 @@ export interface SessionState {
     summary: string;
     /** 诊断依据（任务3 必填）：历史会话可能缺失，读取方需可选访问。 */
     diagnosisBasis?: string;
+    /** Server-validated references to actual acquired events; absent in older submissions. */
+    linkedEventIds?: string[];
     differentials: string;
   } | null;
   plan: {
@@ -201,7 +203,7 @@ export type AgentEvent =
   | { type: 'DOCTOR_INTERVENTION'; data: { action: 'child_answer' | 'pause_parent' | 'comfort_child' } }
   | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string; posture?: 'standing' | 'supine' } }
   | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
-  | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string } }
+  | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string; linkedEventIds?:string[] } }
   | { type: 'SUBMIT_HISTORY_SUMMARY'; data: { summary: string } }
   | { type: 'SUBMIT_EXAM_OBSERVATION'; data: { findings: string; interpretation?: string; linkedEvidence: string[] } }
   | { type: 'SUBMIT_PLAN'; data: { priority: string; detail: string } }
@@ -263,6 +265,8 @@ export interface TrainingReport {
   sourceSnapshotVersion?: string | null;
   /** 生成时固定的学生最终提交，不追溯重写历史报告。 */
   studentDecision?: SessionState['decision'];
+  /** Frozen record association only; no clinical correctness score. */
+  decisionEvidenceReview?: {status:'linked'|'unlinked'|'unavailable';items:Array<{eventId:string;stage:Stage;summary:string}>;unavailableCount:number;caseVersion:number;sourceSnapshotVersion:string|null};
   id: string;
   sessionId: string;
   userId: string;

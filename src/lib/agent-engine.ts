@@ -1,6 +1,7 @@
 import {SOURCE_HISTORY_TOPICS, sourceHistorySentences} from '@/domain/source-history';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
+import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
 import { postureAllows, type ExamPosture } from '@/domain/exam-methods';
 import { stageReached } from '@/domain/agent';
 import type {
@@ -678,7 +679,14 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
   // 任务3：诊断依据必填——引擎级守卫（Zod 之外的第二道防线，直调引擎的调用方同样受约束）；
   // 学生必须写明诊断依据，防止只猜诊断名词不做证据推理
   if (!data.diagnosisBasis || data.diagnosisBasis.trim().length < 10) throw new Error('DIAGNOSIS_BASIS_REQUIRED');
-  session.decision = data;
+  let linkedEventIds:string[]|undefined;
+  if(data.linkedEventIds!==undefined){
+    if(!Array.isArray(data.linkedEventIds)||data.linkedEventIds.length>128||data.linkedEventIds.some(id=>typeof id!=='string'||!id||id.length>80))throw new Error('DECISION_EVIDENCE_INVALID');
+    linkedEventIds=uniq(data.linkedEventIds);
+    const obtained=new Set(diagnosticEvidenceEvents(session).map(event=>event.id));
+    if(linkedEventIds.some(id=>!obtained.has(id)))throw new Error('DECISION_EVIDENCE_NOT_OBTAINED');
+  }
+  session.decision = {...data,...(linkedEventIds!==undefined?{linkedEventIds}:{})};
   session.events.push(clinicalEvent(clientEventId, 'SUBMIT_DECISION', 'assessment', `提交初步诊断：${data.diagnosis}`, null, ['DECISION']));
   advanceStageTo(session, 'assessment');
   session.updatedAt = now();
@@ -687,7 +695,7 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
   return {
     session,
     newMessages: [],
-    feedback: feedbackFor(session, '诊断与依据已保存。系统将在报告中核对诊断依据与已获取证据是否一致。'),
+    feedback: feedbackFor(session, '诊断与依据已保存，关联记录将随报告保留。证据解释与诊断的合理性仍需结合具体内容复核。'),
     trace: [trace('病例状态', '保存病情摘要、诊断依据与鉴别诊断'), trace('知识检索', '检索诊断与危险信号依据', sources)],
   };
 }

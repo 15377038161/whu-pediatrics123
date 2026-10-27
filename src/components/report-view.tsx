@@ -52,13 +52,14 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         <div>
           <p className="eyebrow">{mode}{focusScenario ? ` · ${focusScenario.title}` : ''} · {readonly ? '只读报告' : '训练完成'}</p>
           <h1>{caseTitle}</h1>
-          <p>{processReport ? '分数表示训练过程完成度。原病例诊断与诊疗经过用于对照，诊断和处置的正确性由教师复核。' : report.mode === 'osce' ? '模拟站参考评分依据实际问答、器材操作、临床决策与沟通原文生成，不构成正式考试成绩。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
+          <p>{processReport ? '分数表示训练过程完成度。请根据已获得的记录复盘，诊断和处置的正确性由教师结合具体内容复核。' : report.mode === 'osce' ? '模拟站参考评分依据实际问答、器材操作、临床决策与沟通原文生成，不构成正式考试成绩。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
           <p style={{ fontSize: 13, opacity: 0.75 }}>评分量表：{rubric ? `${rubric.name}（v${report.rubricVersion}）` : `版本 v${report.rubricVersion ?? '未记录'} 的历史量表定义未存档，按报告快照展示`} · 成绩口径：{evaluationBasisLabels[evaluationBasis]}{report.assessableMaxScore !== undefined && !unscored ? ` · 可评价满分：${report.assessableMaxScore} 分（无法评价/不适用项不计入）` : ''}</p>
           {unscoredReason && <p style={{ fontSize: 13, opacity: 0.75 }} role="note">未评分说明：{unscoredReason}</p>}
         </div>
       </section>
       <div className="report-grid">
         <section className="report-section"><h2>你的诊断与依据</h2><p><strong>初步诊断：</strong>{report.studentDecision?.diagnosis || '历史报告未保存此项'}</p><p className="preserve-lines"><strong>诊断依据：</strong>{report.studentDecision?.diagnosisBasis || '历史记录未填写诊断依据'}</p></section>
+        {report.decisionEvidenceReview&&<section className="report-section"><h2>诊断依据的记录关联</h2>{report.decisionEvidenceReview.status==='unlinked'?<p>本次未关联具体记录，暂时无法定位诊断依据。下次训练可关联已获得的记录并说明推理关系。</p>:<>{report.decisionEvidenceReview.status==='unavailable'&&<p>部分关联记录无法还原，不能据此判断临床推理的正确性。</p>}<ol>{report.decisionEvidenceReview.items.map(item=><li className="preserve-lines" key={item.eventId} data-event-id={item.eventId}>{item.summary}</li>)}</ol></>}<p>关联记录用于追溯依据，不因勾选数量加减分，也不自动判定诊断或证据解释正确。</p></section>}
         <section className="report-section">
           <h2>{processReport ? (focusScenario ? '专项过程记录' : '六环节完成度') : rubric?.scope === 'focused' ? '专项能力画像' : '六维能力画像'}</h2>
           <div className="dimension-list">

@@ -15,6 +15,7 @@ export function fail(error: ApiError, id = requestId(), status = 400): NextRespo
 
 export function errorFromUnknown(error: unknown): ApiError {
   const message = error instanceof Error ? error.message : String(error);
+  if(message.includes('DECISION_EVIDENCE_'))return {code:'INVALID_REQUEST',message:'关联记录未在本次接诊中实际获得，或提交格式无效。请刷新后重新选择。',retryable:false};
   if (message.includes('NO_ELIGIBLE_CASE')) return { code: 'NO_ELIGIBLE_CASE', message: '暂无资料完整且已发布的病例，请稍后再试。', retryable: false };
   if (message.includes('BANK_NOT_FOUND')) return { code: 'BANK_NOT_FOUND', message: '未找到该题集（或不在你的管理范围内）。', retryable: false };
   if (message.includes('ITEM_NOT_FOUND')) return { code: 'ITEM_NOT_FOUND', message: '未找到该题目条目。', retryable: false };

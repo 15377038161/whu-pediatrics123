@@ -2,6 +2,7 @@
 
 import { teachingHints } from '@/domain/teaching-copy';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
+import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
 import { allowedPostures, patientAppearance } from '@/domain/patient-appearance';
 import { resolveCommunicationProfile, speechCapabilityLabel } from '@/domain/communication-profile';
 import { ageBandLabel, bindingGapNote, patientAssetByKey, sexPresentationLabel } from '@/domain/patient-assets';
@@ -151,6 +152,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [diagnosis, setDiagnosis] = useState('');
   const [summary, setSummary] = useState('');
   const [diagnosisBasis, setDiagnosisBasis] = useState('');
+  const [decisionEvidenceIds,setDecisionEvidenceIds]=useState<string[]>([]);
   const [posture, setPosture] = useState<'standing' | 'supine'>('standing');
   const [differentials, setDifferentials] = useState('');
   const [priority, setPriority] = useState('');
@@ -198,6 +200,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     setDiagnosis(next.decision?.diagnosis ?? '');
     setSummary(next.decision?.summary ?? '');
     setDiagnosisBasis(next.decision?.diagnosisBasis ?? '');
+    setDecisionEvidenceIds(next.decision?.linkedEventIds ?? []);
     setDifferentials(next.decision?.differentials ?? '');
     setPriority(next.plan?.priority ?? '');
     setPlanDetail(next.plan?.detail ?? '');
@@ -264,7 +267,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     (examFindingsText.trim() && (examFindingsText !== (session?.examObservation?.findings ?? '') || examInterpretationText !== (session?.examObservation?.interpretation ?? ''))) ||
     (examLinkedEvidence.length > 0 && examLinkedEvidence.join(',') !== (session?.examObservation?.linkedEvidence ?? []).join(',')) ||
     (session && (diagnosis !== (session.decision?.diagnosis ?? '') || summary !== (session.decision?.summary ?? '') ||
-    diagnosisBasis !== (session.decision?.diagnosisBasis ?? '') || differentials !== (session.decision?.differentials ?? '') ||
+    diagnosisBasis !== (session.decision?.diagnosisBasis ?? '') || decisionEvidenceIds.join(',')!==(session.decision?.linkedEventIds??[]).join(',') || differentials !== (session.decision?.differentials ?? '') ||
     priority !== (session.plan?.priority ?? '') || planDetail !== (session.plan?.detail ?? ''))));
   useEffect(() => {
     if (!hasUnsavedDraft) return;
@@ -385,6 +388,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const displayStage: Stage | undefined = session?.viewStage ?? (session?.stage === 'communication' && session.mode !== 'osce' && session.mode !== 'practice' ? 'history' : session?.stage);
   const currentIndex = visibleStages.findIndex((stage) => stage.id === displayStage);
   const evidenceEvents = useMemo(() => session?.events.filter((event) => event.evidenceCodes.length > 0) ?? [], [session?.events]);
+  const decisionEvidenceItems=useMemo(()=>session?diagnosticEvidenceEvents(session):[],[session]);
   const examEvidenceCount = evidenceEvents.filter((event) => event.stage === 'exam').length;
   // 已实际获得结果的查体项（观察关联选项，C-关联与验收-05）：由服务端返回的会话查体事件派生——
   // EXAM_ACTION 成功事件携带的结果项证据码（准备项 EX_PREP/系统提供项 EX_PROVIDED 不计入）；
@@ -503,11 +507,12 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'tests').length === 0 && <p>尚无检查记录：提交申请后，结果会在此逐项显示。</p>}{evidenceEvents.filter((event) => event.stage === 'tests').map((event) => <div key={event.id} className="source-result-item"><p>{event.summary}</p>{event.media && event.media.length > 0 ? <CaseMediaGallery sessionId={session.id} media={event.media} /> : null}</div>)}</div>
         <div className="form-actions"><button className="btn btn-secondary" type="button" onClick={() => navigate('assessment')}>形成病情摘要与诊断 <ChevronRight size={16} /></button></div>
       </>;
-      case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, diagnosisBasis, differentials } }); if (result) await navigate('plan'); }}>
+      case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, diagnosisBasis, differentials,linkedEventIds:decisionEvidenceIds } }); if (result) await navigate('plan'); }}>
         <div className="stage-intro"><p className="eyebrow">证据整合</p><h2>病情摘要与初步诊断</h2><p>只使用你在本次会话中实际获得的信息，体现儿科年龄特点和危险信号判断。</p></div>
         <div className="form-field"><label htmlFor="summary">病情摘要</label><textarea id="summary" required minLength={10} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="年龄、主诉、重要阳性与阴性信息、危险信号…" /></div>
         <div className="form-field"><label htmlFor="diagnosis">初步诊断</label><input id="diagnosis" required value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="输入诊断与病情严重程度" /></div>
         <div className="form-field"><label htmlFor="diagnosis-basis">诊断依据（必填）</label><textarea id="diagnosis-basis" required minLength={10} value={diagnosisBasis} onChange={(e) => setDiagnosisBasis(e.target.value)} placeholder="支撑该诊断的病史、体征与检查证据：哪些阳性发现支持诊断？关键阴性发现排除了什么？" /></div>
+        <fieldset className="form-field"><legend>关联诊断依据的记录（可选）</legend><p>选择你实际使用的记录，并在诊断依据中说明它支持或排除了什么，无需全选。</p>{decisionEvidenceItems.length?<details><summary>选择本轮已获得的记录</summary>{decisionEvidenceItems.map(item=><label className="checkbox-row" key={item.id}><input type="checkbox" checked={decisionEvidenceIds.includes(item.id)} disabled={busy} onChange={event=>setDecisionEvidenceIds(event.target.checked?[...decisionEvidenceIds,item.id]:decisionEvidenceIds.filter(id=>id!==item.id))}/><span>{item.summary}</span></label>)}</details>:<small>本轮尚无可关联的问诊、查体或检查记录；仍可在诊断依据中说明接诊时已知的信息。</small>}</fieldset>
         <div className="form-field"><label htmlFor="differentials">鉴别诊断</label><textarea id="differentials" value={differentials} onChange={(e) => setDifferentials(e.target.value)} placeholder="列出需要鉴别的疾病及理由" /></div>
         <button className="btn btn-primary btn-block" disabled={busy}>提交诊断并继续</button>
       </form>;
