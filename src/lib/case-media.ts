@@ -1,4 +1,5 @@
 import type { CaseMedia, SessionState } from '@/domain/agent';
+import { TEACHING_ILLUSTRATIONS } from '@/domain/teaching-illustrations';
 
 /** Keep storage URLs and any extra private properties out of event metadata. */
 export function decodeCaseMedia(value: unknown): CaseMedia[] {
@@ -43,6 +44,9 @@ export function findReleasedMedia(session: SessionState, fileId: string): CaseMe
 
 /** 媒体签名链接解析：以已释放登记的 fileId 换带期限链接（过期前端重新请求）。 */
 export async function getCaseMediaLink(fileId: string): Promise<{ url: string; expiresAt: string; fileName: string | null }> {
+  const illustration = Object.hasOwn(TEACHING_ILLUSTRATIONS, fileId) ? TEACHING_ILLUSTRATIONS[fileId] : undefined;
+  if (illustration) return {url: illustration.url, expiresAt: '', fileName: null};
+  if (fileId.startsWith('teaching-illustration:')) throw new Error('FILE_UNAVAILABLE');
   const { StorageClient } = await import('coder-coding-dev-sdk');
   const storage = new StorageClient();
   try {

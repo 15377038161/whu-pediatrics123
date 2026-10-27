@@ -55,8 +55,10 @@ async function main(){
     if(!focus||focus==='exam'){
      await navigate('exam');await turn({type:'EXAM_ACTION',data:{toolId:'hand-hygiene',bodyPartId:'hands'}});
      const exam=getCase(entry.caseId,version,session.id).exams.find(x=>x.id!=='prep-hygiene');assert.ok(exam);
-     await turn({type:'EXAM_ACTION',data:{toolId:exam.toolId,bodyPartId:exam.bodyPartId,posture:'supine'}});
-     assert.ok(session.unlockedEvidence.includes(exam.evidenceCode));
+     for(const action of getCase(entry.caseId,version,session.id).exams.filter(x=>x.id!=='prep-hygiene')) {
+      await turn({type:'EXAM_ACTION',data:{toolId:action.toolId,bodyPartId:action.bodyPartId,posture:'supine'}});
+      assert.ok(session.unlockedEvidence.includes(action.evidenceCode));
+     }
      if(focus==='exam'){
       await turn({type:'SUBMIT_EXAM_OBSERVATION',data:{findings:'本地工程观察提交，仅验证所见与已获得证据的关联保存。',linkedEvidence:[exam.evidenceCode]}});
       assert.ok(session.examObservation?.linkedEventIds.length);
@@ -64,7 +66,9 @@ async function main(){
     }
     if(!focus){
      await navigate('tests');const test=getCase(entry.caseId,version,session.id).tests[0];assert.ok(test);
-     await turn({type:'ORDER_TEST',data:{testId:test.id}});assert.ok(session.orderedTests.includes(test.id));
+     for(const check of getCase(entry.caseId,version,session.id).tests){
+      await turn({type:'ORDER_TEST',data:{testId:check.id}});assert.ok(session.orderedTests.includes(check.id));
+     }
     }
     if(!focus||focus==='safety'){
      await navigate('assessment');await turn({type:'SUBMIT_DECISION',data:{diagnosis:'工程提交，不作医学判断',summary:'验证诊断保存流程',diagnosisBasis:'依据已获得的合成工程操作记录验证字段保存，不作医学判断',differentials:'待教师复核'}});

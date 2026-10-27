@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { getSupabaseUserClient, isDatabaseConfigured } from '@/lib/supabase-client';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
+import simulations from '@/domain/teaching-simulations.json';
 import { recordSchema, getKnowledgeRoot, type TeacherCaseData } from '@/lib/teacher-case-data';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
 
@@ -52,6 +53,17 @@ export function computeImportVersion(record: TeacherCaseData): string {
   return computeCaseDataVersion(record);
 }
 
+/** Only controlled files or explicit built-in simulations; never cached recall as a local authoritative version. */
+function readImportRecord(caseId: string): TeacherCaseData | null {
+  try {
+    let raw: unknown;
+    try {raw=JSON.parse(readFileSync(path.join(getKnowledgeRoot(),'teaching-cases',`${caseId}.json`),'utf8'));}
+    catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;raw=simulations.find(item=>item.caseId===caseId);}
+    const record=recordSchema.parse(raw);
+    return record.caseId===caseId?record:null;
+  }catch{return null;}
+}
+
 /** 本地完整审核版本：读本地受控产物 JSON 并计算内容哈希（完整审核来源的权威稳定版本）。
  *  文件缺失/schema 无效返回 null（调用方按版本选择规则降级）。
  *  与导入写入 DB 的版本同算法：本地存在即与 DB 导入版本一致，新会话直接绑定权威版本。 */
@@ -59,8 +71,8 @@ export function getLocalImportVersion(caseId: string): string | null {
   const sourceId = decodeURIComponent(caseId);
   if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId)) return null;
   try {
-    const file = path.join(getKnowledgeRoot(), 'teaching-cases', `${sourceId}.json`);
-    const record = recordSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
+    const record = readImportRecord(sourceId);
+    if (!record) return null;
     if (record.caseId !== sourceId) return null;
     return computeImportVersion(record);
   } catch {
@@ -78,6 +90,7 @@ export function buildFactsPayloadForInit(record: TeacherCaseData) {
     age: record.age,
     sex: record.sex,
     complaint: record.complaint,
+    ...(record.teachingSimulation ? {teachingSimulation: true as const} : {}),
     sections: { history: record.sections.history, exam: record.sections.exam, tests: record.sections.tests },
     vitals: record.vitals,
   };
@@ -146,7 +159,7 @@ export async function diagnoseTeacherCaseImport(accessToken: string): Promise<Im
   }
   // 本地侧：catalog 53 例逐例解析本地版本指纹
   const cases: CaseImportDiagnostic[] = TEACHER_CASE_CATALOG
-    .filter((item) => item.folder)
+    .filter((item) => item.folder || simulations.some(record => record.caseId === item.id))
     .map((item) => {
       const localVersion = getLocalImportVersion(item.id);
       const dbVersion = dbLatest.get(item.id) ?? null;
@@ -178,9 +191,10 @@ export async function importTeacherCases(accessToken: string, options?: ImportOp
   try {
     files = readdirSync(dir).filter((name) => name.endsWith('.json')).sort();
   } catch {
-    return { total: 0, imported: 0, unchanged: 0, skipped: 0, failed: 0, results: [] };
+    files = [];
   }
 
+  files = [...new Set([...files, ...simulations.map(item => `${item.caseId}.json`)])].sort();
   const results: ImportCaseResult[] = [];
   for (const file of files) {
     const caseId = file.replace(/\.json$/, '');
@@ -191,7 +205,9 @@ export async function importTeacherCases(accessToken: string, options?: ImportOp
     }
     let record: TeacherCaseData;
     try {
-      record = recordSchema.parse(JSON.parse(readFileSync(path.join(dir, file), 'utf8')));
+      const local = readImportRecord(caseId);
+      if (!local) throw new Error('CASE_SOURCE_UNAVAILABLE');
+      record = local;
     } catch (error) {
       results.push({ caseId, status: 'skipped_invalid_schema', detail: (error as Error).message });
       continue;

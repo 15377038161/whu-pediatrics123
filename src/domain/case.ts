@@ -62,7 +62,7 @@ export interface FlagshipCase {
   patientName: string;
   patientImage: string;
   patientAlt: string;
-  contentStatus: 'flagship-fixture' | 'demo-pending-review' | 'teacher-materials-indexed' | 'teacher-catalog-only' | 'teacher-folder-only';
+  contentStatus: 'flagship-fixture' | 'demo-pending-review' | 'teacher-materials-indexed' | 'teacher-catalog-only' | 'teacher-folder-only' | 'teaching-simulation';
   openingParent: string;
   initialEmotion: Emotion;
   initialVitals: VitalSigns;

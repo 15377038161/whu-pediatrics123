@@ -233,8 +233,8 @@ test('历史占位会话升级后清理肺炎事实，并采用过程记录报�
   assert.equal(report.evidence.some((item) => item.code === 'RUBRIC_SAFETY'), false);
 });
 
-test('教师病例处置不会统一改善血氧，缺资料病种不编造问诊事实', async () => {
-  const session = createInitialSession('student-1', 'guided', 'teacher-新生儿脑梗死');
+test('教师病例处置不会统一改善血氧，历史缺资料版本不被新模拟病例替换', async () => {
+  const session = createInitialSession('student-1', 'guided', 'teacher-新生儿脑梗死', undefined, 'legacy-missing-source-version');
   assert.deepEqual(session.vitals, { temperature: null, heartRate: null, respiratoryRate: null, spo2: null });
   const question = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '什么时候开始发烧？' } }, 'missing-source-question');
   assert.ok(question.newMessages.some((message) => message.content.includes('说不清楚')));

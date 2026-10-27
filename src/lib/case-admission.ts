@@ -13,7 +13,7 @@ export function admissionProfile(profile: PublicCaseProfile): PublicCaseProfile 
   const complaint = verifiedComplaint(source);
   if (!source || !complaint) return profile;
   const sex = source.sex === '男' ? '男童' : source.sex === '女' ? '女童' : '患儿';
-  return { ...profile, title: `${source.age}${sex}，${complaint}`, presentingSymptoms: [complaint],
+  return { ...profile, ...(source.teachingSimulation ? {subtitle: 'AI教学模拟 · 非真实患者病例'} : {}), title: `${source.age}${sex}，${complaint}`, presentingSymptoms: [complaint],
     age: source?.age || '待核验', sex: source?.sex === '男' || source?.sex === '女' ? source.sex : '待核验' };
 }
 

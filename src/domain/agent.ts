@@ -176,6 +176,7 @@ export interface SessionState {
     age: string;
     sex: string;
     hasSource: boolean;
+    teachingSimulation?: true;
     exams: Array<{ toolId: string; bodyPartId: string; label: string }>;
     tests: Array<{ id: string; label: string; indication: string }>;
   };
@@ -278,6 +279,11 @@ export interface TrainingReport {
   evidence: ScoreEvidence[];
   strengths: string[];
   improvements: string[];
+  /** Evidence collection coverage, not a clinical correctness score or full standard note. */
+  collectionReview?: Array<{area:'history'|'exam'|'tests';label:string;available:number;collected:number;eventIds:string[]}>;
+  learningIllustration?: {url:string;sha256:string;assetVersion:string;origin:string;caption:string};
+  /** Media replay is independent of which events carry scoring points. */
+  releasedMediaEventIds?: string[];
   recommendation: string;
   status: 'ready' | 'pending_review';
   scoreBasis?: 'clinical' | 'process';

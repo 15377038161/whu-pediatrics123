@@ -1,3 +1,4 @@
+import {SOURCE_HISTORY_TOPICS, sourceHistorySentences} from '@/domain/source-history';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
 import { postureAllows, type ExamPosture } from '@/domain/exam-methods';
@@ -100,6 +101,7 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
     userId,
     caseId: pediatricCase.id,
     caseVersion: pediatricCase.version,
+    sourceSnapshotVersion: sourceSnapshotVersion ?? null,
     mode,
     practiceFocus: mode === 'practice' ? practiceFocus ?? 'history' : null,
     scenarioVersion: scenario?.configVersion,
@@ -130,8 +132,10 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
     vitals: { ...pediatricCase.initialVitals },
     reportId: null,
     ...(pediatricCase.sourceFacts !== undefined ? { caseOptions: {
-      sourceName: pediatricCase.sourceFacts?.sourceName ?? pediatricCase.title,
+      sourceName: pediatricCase.sourceFacts?.teachingSimulation ? 'AI教学模拟病例' : '教师教学病例',
+      complaint: pediatricCase.sourceFacts ? verifiedComplaint(pediatricCase.sourceFacts) ?? undefined : undefined,
       age: pediatricCase.age, sex: pediatricCase.sex, hasSource: Boolean(pediatricCase.sourceFacts),
+      ...(pediatricCase.sourceFacts?.teachingSimulation ? {teachingSimulation: true as const} : {}),
       exams: pediatricCase.exams.map(({ toolId, bodyPartId, label }) => ({ toolId, bodyPartId, label })),
       tests: pediatricCase.tests.map(({ id, label, indication }) => ({ id, label, indication })),
     } } : {}),
@@ -404,21 +408,8 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   const source = pediatricCase.sourceFacts;
   const history = source?.sections.history ?? '';
-  const sentences = history.split(/[。；;\n]/).filter((line) => line.trim());
-  const topics = [
-    { question: /哪里不舒服|怎么了|什么不舒服|主要|为什么来|主诉/, source: /./ },
-    { question: /多久|什么时候|几天|开始|起病/, source: /天|周|月|小时|分钟|起病|出现/ },
-    { question: /发烧|发热|体温|退烧/, source: /发热|发烧|体温|退热/ },
-    { question: /精神|吃饭|食欲|吃东西|饮食|睡|喝水|大小便|小便/, source: /精神|饮食|食欲|睡眠|小便|大便|吃奶|喂养|尿/ },
-    { question: /出生|早产|胎龄|怀孕|发育|生长|喂养/, source: /胎|产|出生|窒息|喂养|发育|生长/ },
-    { question: /以前|既往|住院|过敏|疫苗|接种|家族/, source: /既往|平素|过敏|接种|家族|否认/ },
-    { question: /吃药|用药|治疗|处理|在家|药/, source: /治疗|用药|予|在家|药|处理/ },
-    { question: /喘|憋|呼吸|咳|痰/, source: /喘|呼吸|憋|咳|痰/ },
-    { question: /水肿|肿|浮肿|尿|血尿/, source: /肿|浮肿|尿/ },
-    { question: /疼|痛|肚子|呕吐|腹泻|拉肚子/, source: /痛|腹|呕吐|腹泻|大便/ },
-    { question: /抽搐|惊厥|发作|意识|昏迷/, source: /抽搐|惊厥|发作|意识|昏迷/ },
-    { question: /黄|皮疹|皮肤|出血/, source: /黄|皮疹|皮肤|出血/ },
-  ];
+  const sentences = sourceHistorySentences(history);
+  const topics = SOURCE_HISTORY_TOPICS;
   let matches: Array<{ fact: string; index: number }> = [];
   if (/多大|几岁|年龄|男孩|女孩|性别/.test(text) && source) {
     matches = [{ fact: `孩子${source.age}，${source.sex}。`, index: -1 }];
@@ -429,7 +420,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
     matches = sentences.map((fact, index) => ({ fact: fact.trim().replace(/^[一二三四五六七八九十\d]+[、.．]\s*(?=[\u4e00-\u9fff])/, ''), index,
       relevance: relevantTerms.filter((term) => fact.includes(term)).length * 3 + selected.filter((topic) => topic.source.test(fact)).length }))
       .filter((item) => item.relevance > 0).sort((a, b) => b.relevance - a.relevance).slice(0, 3);
-    if (/哪里不舒服|怎么了|主诉|为什么来/.test(text) && source) matches = [{ fact: verifiedComplaint(source) ?? '主诉尚需补充核实', index: -2 }];
+    if (/哪里不舒服|怎么了|主诉|为什么来|什么不舒服|主要症状|主要问题/.test(text) && source) matches = [{ fact: verifiedComplaint(source) ?? '主诉尚需补充核实', index: -2 }];
   }
   const fact = matches.map((item) => item.fact).join('。');
   // 发言计划（方案 8.2/8.4）：先按病例角色能力决定说话者，再渲染角色回复。

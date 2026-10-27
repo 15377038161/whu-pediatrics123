@@ -79,6 +79,7 @@ export interface SnapshotCaseData {
   age: string;
   sex: string;
   complaint: string;
+  teachingSimulation?: true;
   sections: { history: string; exam: string; tests: string; diagnosis: string; plan: string };
   vitals: { temperature: number | null; heartRate: number | null; respiratoryRate: number | null; spo2: number | null };
   documents: Array<{ source: string; text: string; sha256: string }>;
@@ -351,6 +352,7 @@ function buildFactsPayload(snapshot: SnapshotResult): Omit<SnapshotCaseData, 'se
     age: snapshot.data.age,
     sex: snapshot.data.sex,
     complaint: snapshot.data.complaint,
+    ...(snapshot.data.teachingSimulation ? {teachingSimulation: true as const} : {}),
     sections: { history: snapshot.data.sections.history, exam: snapshot.data.sections.exam, tests: snapshot.data.sections.tests },
     vitals: snapshot.data.vitals,
   };

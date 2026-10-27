@@ -404,8 +404,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const postureOptions = allowedPostures(caseProfile.age);
   const effectivePosture = postureOptions.includes(posture) ? posture : postureOptions[0];
   const spatialExam = displayStage === 'exam';
-  const examTools = [...tools, ...sourceExamTools];
-  const examHotspots = [...baseExamHotspots, ...sourceExamHotspots];
+  const examTools = [...tools, ...sourceExamTools].filter(tool => !session.caseOptions || session.caseOptions.exams.some(exam => exam.toolId === tool.id));
+  const examHotspots = [...baseExamHotspots, ...sourceExamHotspots].filter(([id]) => !session.caseOptions || session.caseOptions.exams.some(exam => exam.bodyPartId === id && exam.toolId === selectedTool));
   const hygieneCompleted = session.unlockedEvidence.includes('EX_PREP');
   const currentFocus = session.practiceFocus ?? practiceFocus;
   const hints = stageHints[displayStage ?? session.stage];
@@ -473,11 +473,11 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       </>;
       case 'history': return conversationContent;
       case 'exam': return <>
-        <div className="stage-intro exam-stage-intro"><p className="eyebrow">器材逻辑校验</p><h2>选择检查方法，点击患儿对应部位</h2><p>{session.caseOptions ? '按原病例记录逐项检查：先完成手卫生，再选择器材点击部位；病例未记录的组合会明确提示「资料未提供」，不会编造结果。' : '系统会校验准备动作、器材与部位，并即时反馈真实查体结果。'}</p></div>
+        <div className="stage-intro exam-stage-intro"><p className="eyebrow">器材逻辑校验</p><h2>选择检查方法，点击患儿对应部位</h2><p>{session.caseOptions ? '本例仅显示已配置结果的器材和对应部位。先完成手卫生，再选择器材；结果会写入本轮记录。教学模拟内容已单独标识。' : '系统会校验准备动作、器材与部位，并即时反馈真实查体结果。'}</p></div>
         <div className="exam-safety-strip" data-complete={hygieneCompleted} role="status"><span>{hygieneCompleted ? <Check /> : '1'}</span><p><strong>{hygieneCompleted ? '手卫生已完成' : '先完成手卫生'}</strong><small>{hygieneCompleted ? '可以开始接触患儿' : '点击下方“手卫生”即可自动完成'}</small></p></div>
         <div className="posture-selector" role="group" aria-label="查体姿势">{postureOptions.map((value) => { const label = value === 'standing' ? '站立' : '仰卧'; return <button key={value} type="button" className="btn btn-secondary" aria-pressed={effectivePosture === value} disabled={busy} onClick={() => { setPosture(value); setExamObservation(null); }}>{label}</button>; })}<small>{postureOptions.includes('supine') && postureOptions.includes('standing') ? '腹部检查请切换为仰卧' : '新生儿/婴儿仅支持仰卧位查体'}</small></div>
         <div className="exam-tool-selector">
-          <div className="exam-tool-heading"><strong>选择方法或器材</strong><span>{selectedTool ? `当前：${examTools.find((tool) => tool.id === selectedTool)?.label}` : '尚未选择'}</span></div>
+          <div className="exam-tool-heading"><strong>选择方法或器材</strong><span>{selectedTool ? `当前：${examTools.find((tool) => tool.id === selectedTool)?.label ?? '请先选择本例器材'}` : '尚未选择'}</span></div>
           <ToolRack tools={examTools} selectedTool={selectedTool} onSelect={(toolId) => { void selectExamTool(toolId); }} busy={busy} hygieneCompleted={hygieneCompleted} />
         </div>
         <div className="exam-route" aria-label="后续操作"><span>2</span><p><strong>点击患儿检查部位</strong><small>{examEvidenceCount > 0 ? `实时病例记录已新增 ${examEvidenceCount} 项证据` : '有效结果会自动写入右侧病例记录'}</small></p></div>
@@ -535,7 +535,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="stage-scroll" aria-label="训练阶段">{visibleStages.map((stage,index) => <button key={stage.id} className="stage-chip" data-current={displayStage === stage.id} data-done={stageCompleted(stage.id)} disabled={busy || stage.id === 'report' || (session.mode === 'osce' && index < currentIndex) || (practiceCompletion === 'safety_decision_plan' && stage.id === 'plan' && !session.decision)} onClick={() => { void navigate(stage.id); }} aria-label={stage.label}>{stage.short}</button>)}</div>
       </header>
       <div className="case-band"><span>{session.mode === 'osce' ? '无提示、不可重试' : session.mode === 'immersive' ? '场景教学 · 可暂停、回看与获得方向性提示' : '操作自动保存 · 提供方向性反馈'}</span><span>病例 v{session.caseVersion}</span><span>证据 {session.unlockedEvidence.length} 项</span></div>
-      {session.caseOptions && <div className="case-source-banner"><strong>学习案例：{session.caseOptions.sourceName}</strong><span>{session.caseOptions.hasSource ? '问诊、查体与检查按原病例资料展开；完成后对照诊疗经过复盘。' : '尚无独立病例正文，可开展问诊与诊疗思路记录。'}</span></div>}
+      {session.caseOptions && <div className="case-source-banner"><strong>学习案例：{session.caseOptions.sourceName}</strong><span>{session.caseOptions.teachingSimulation ? 'AI教学模拟病例：病史、数值和结果为教学设定，配图为示意，非真实患者影像。' : session.caseOptions.hasSource ? '问诊、查体与检查按原病例资料展开；完成后对照诊疗经过复盘。' : '尚无独立病例正文，可开展问诊与诊疗思路记录。'}</span></div>}
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       <div className="training-grid">
         <section className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={mobileView !== 'task'} data-mobile-drawer={spatialExam && mobileView === 'task'}><div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>

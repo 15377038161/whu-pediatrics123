@@ -22,7 +22,7 @@ export interface PublicCaseProfile {
   patientName: string;
   patientImage: string;
   patientAlt: string;
-  contentStatus: 'flagship-fixture' | 'demo-pending-review' | 'teacher-materials-indexed' | 'teacher-catalog-only' | 'teacher-folder-only';
+  contentStatus: 'flagship-fixture' | 'demo-pending-review' | 'teacher-materials-indexed' | 'teacher-catalog-only' | 'teacher-folder-only' | 'teaching-simulation';
   /** 教师病例：与源病例的名称关系（alias 同名异拼 / subtype 具体亚型；null=无关联）。 */
   sourceRelation: 'alias' | 'subtype' | null;
   mediaCount?: number;
@@ -55,7 +55,7 @@ export const TEACHER_PUBLIC_ENTRIES: TeacherPublicEntry[] = [
   { id: "case-57ba1841-4e5b-485a-9b2a-8576a819a078", title: "新生儿与新生儿疾病 · 真实病例 07", subtitle: "教师病例学习", category: "新生儿与新生儿疾病", sourceRelation: "alias", contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
   { id: "case-db73006d-d876-4bea-bcbd-b9e8e1c1f907", title: "新生儿与新生儿疾病 · 真实病例 08", subtitle: "教师病例学习", category: "新生儿与新生儿疾病", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 0, documentCount: 1 },
   { id: "case-0ea1580f-cfa1-4df9-893c-689eac1e5542", title: "新生儿与新生儿疾病 · 真实病例 09", subtitle: "教师病例学习", category: "新生儿与新生儿疾病", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 163, documentCount: 1 },
-  { id: "case-3f7233bb-9d2f-4554-b6b0-e6ce25024ea3", title: "新生儿与新生儿疾病 · 真实病例 10", subtitle: "教师病例学习", category: "新生儿与新生儿疾病", sourceRelation: null, contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
+  { id: "case-3f7233bb-9d2f-4554-b6b0-e6ce25024ea3", title: "新生儿与新生儿疾病 · 教学模拟病例 10", subtitle: "AI教学模拟 · 非真实患者", category: "新生儿与新生儿疾病", sourceRelation: null, contentStatus: 'teaching-simulation', mediaCount: 1, documentCount: 0 },
   { id: "case-05779155-1092-4607-a3d2-966ffc0fc718", title: "新生儿与新生儿疾病 · 真实病例 11", subtitle: "教师病例学习", category: "新生儿与新生儿疾病", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 475, documentCount: 5 },
   { id: "case-46edc151-c7ef-4629-bfe0-1b6ecf6cfd57", title: "新生儿与新生儿疾病 · 真实病例 12", subtitle: "教师病例学习", category: "新生儿与新生儿疾病", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 1333, documentCount: 4 },
   { id: "case-e78cc1a1-1ee6-4305-bb42-399526ba139f", title: "免疫性疾病 · 真实病例 01", subtitle: "教师病例学习", category: "免疫性疾病", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 10, documentCount: 6 },
@@ -70,7 +70,7 @@ export const TEACHER_PUBLIC_ENTRIES: TeacherPublicEntry[] = [
   { id: "case-53188ccd-1658-45f1-b0ec-5dd257a11676", title: "呼吸系统疾病 · 真实病例 03", subtitle: "教师病例学习", category: "呼吸系统疾病", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 1, documentCount: 3 },
   { id: "case-171082d2-069e-46f7-8c4c-4cdaa5dacdf2", title: "呼吸系统疾病 · 真实病例 04", subtitle: "关联真实亚型病例", category: "呼吸系统疾病", sourceRelation: "subtype", contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
   { id: "case-dd7c9327-fd9c-44db-bb24-614b4a50b58f", title: "呼吸系统疾病 · 真实病例 05", subtitle: "教师病例学习", category: "呼吸系统疾病", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 0, documentCount: 2 },
-  { id: "case-9651f03b-8e9e-4fe7-9f51-b75ddbd1edd8", title: "呼吸系统疾病 · 真实病例 06", subtitle: "教师病例学习", category: "呼吸系统疾病", sourceRelation: null, contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
+  { id: "case-9651f03b-8e9e-4fe7-9f51-b75ddbd1edd8", title: "呼吸系统疾病 · 教学模拟病例 06", subtitle: "AI教学模拟 · 非真实患者", category: "呼吸系统疾病", sourceRelation: null, contentStatus: 'teaching-simulation', mediaCount: 1, documentCount: 0 },
   { id: "case-3a061e58-1306-4f33-be6b-c6ffa7917c87", title: "呼吸系统疾病 · 真实病例 07", subtitle: "关联真实亚型病例", category: "呼吸系统疾病", sourceRelation: "subtype", contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
   { id: "case-ea9a434b-2f3c-41bc-a7b4-52c9ab3a52ea", title: "呼吸系统疾病 · 真实病例 08", subtitle: "教师病例学习", category: "呼吸系统疾病", sourceRelation: "alias", contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
   { id: "case-d1d70aa5-eb74-4a74-8fb3-43b86f9804fa", title: "心血管系统疾病 · 真实病例 01", subtitle: "关联真实亚型病例", category: "心血管系统疾病", sourceRelation: "subtype", contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
@@ -89,7 +89,7 @@ export const TEACHER_PUBLIC_ENTRIES: TeacherPublicEntry[] = [
   { id: "case-e708a448-8b01-4dfb-ae6b-b447ec2e4af3", title: "神经系统 · 真实病例 03", subtitle: "教师病例学习", category: "神经系统", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 1904, documentCount: 5 },
   { id: "case-50acf9bc-a130-460d-a760-d67d0b5402f7", title: "神经系统 · 真实病例 04", subtitle: "教师病例学习", category: "神经系统", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 1094, documentCount: 4 },
   { id: "case-cc4701b3-87f1-40ba-9c77-0beacf546c48", title: "神经系统 · 真实病例 05", subtitle: "教师病例学习", category: "神经系统", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 1088, documentCount: 6 },
-  { id: "case-5dc2a192-cda2-43d1-b547-c07908384ff9", title: "神经系统 · 真实病例 06", subtitle: "教师病例学习", category: "神经系统", sourceRelation: null, contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
+  { id: "case-5dc2a192-cda2-43d1-b547-c07908384ff9", title: "神经系统 · 教学模拟病例 06", subtitle: "AI教学模拟 · 非真实患者", category: "神经系统", sourceRelation: null, contentStatus: 'teaching-simulation', mediaCount: 1, documentCount: 0 },
   { id: "case-9c03399f-1652-48f2-8c02-ceaca7a3d8a9", title: "神经系统 · 真实病例 07", subtitle: "教师病例学习", category: "神经系统", sourceRelation: "alias", contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
   { id: "case-12c7efe2-9eb0-4283-b346-e4f96c0a663e", title: "内分泌疾病 · 真实病例 01", subtitle: "关联真实亚型病例", category: "内分泌疾病", sourceRelation: "subtype", contentStatus: 'teacher-catalog-only', mediaCount: 0, documentCount: 0 },
   { id: "case-eb0abf40-2029-4490-8241-d4a98b94c6e4", title: "内分泌疾病 · 真实病例 02", subtitle: "教师病例学习", category: "内分泌疾病", sourceRelation: null, contentStatus: 'teacher-materials-indexed', mediaCount: 1811, documentCount: 4 },
@@ -161,7 +161,7 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
     presentingSymptoms: summaries[item.id] ? [summaries[item.id].complaint] : [],
     age: summaries[item.id]?.age ?? '待核验',
     sex: summaries[item.id]?.sex === '男' ? '男' : summaries[item.id]?.sex === '女' ? '女' : '待核验',
-    difficulty: item.contentStatus === 'teacher-catalog-only' && item.sourceRelation === null ? '病种自主研习' : '真实案例学习',
+    difficulty: item.contentStatus === 'teaching-simulation' ? '教学模拟训练' : item.contentStatus === 'teacher-catalog-only' && item.sourceRelation === null ? '病种自主研习' : '真实案例学习',
     expectedMinutes: 0,
     patientName: '小朋友',
     patientImage: patientAppearance(summaries[item.id]?.sex ?? '待核验','standing',item.id,summaries[item.id]?.age).src ?? '/media/clinical/virtual-child-unclassified.svg',

@@ -30,6 +30,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
   const caseProfile = findPublicCase(report.caseId);
   const caseTitle = report.caseTitle ?? caseProfile?.title ?? `病例 ${report.caseId}`;
   const processReport = report.scoreBasis === 'process';
+  const mediaEventIds = report.releasedMediaEventIds ?? [...new Set(report.evidence.flatMap(item=>item.eventIds??[]))];
   // 量表元数据（方案 4.6）：报告快照带 rubricId/version/evaluationBasis；历史报告无 rubricId 时降级展示固定六维。
   const rubric = findRubricForReport(report);
   // 适用满分口径（方案 4.4）：总满分=适用计分项满分之和；无法评价/不适用项不计入维度满分。
@@ -83,7 +84,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         <section className="report-section">
           <h2><BookOpenCheck size={18} style={{ verticalAlign: -4, marginRight: 6 }} />下一步补练</h2>
           <p>{report.recommendation}</p>
-          {report.strengths.length > 0 && <p><strong>已经掌握：</strong>{report.strengths.join('、')}</p>}
+          {report.strengths.length > 0 && <p><strong>{processReport ? '本轮已完成：' : '已经掌握：'}</strong>{report.strengths.join('、')}</p>}
           {report.improvements.length > 0 && <p><strong>重点改进：</strong>{report.improvements.join('、')}</p>}
           {!readonly && <div className="report-actions"><RandomAdmission excludeCaseId={report.caseId} label="接诊下一位患儿" /><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={`/student/training?mode=guided&case=${encodeURIComponent(report.caseId)}`}>再练一次 <ArrowRight size={14} /></a></div>}
         </section>
@@ -123,8 +124,10 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
       )}
       {report.evidence.some(item=>(item.eventIds?.length??0)>0) && <section className="report-section" style={{marginTop:14}}>
         <h2>评分关联图片</h2>
-        {report.sourceSnapshotVersion
-          ? <ReportEvidenceMedia key={`${report.id}:${report.sourceSnapshotVersion}`} sessionId={report.sessionId} version={report.sourceSnapshotVersion} eventIds={[...new Set(report.evidence.flatMap(item=>item.eventIds??[]))]}/>
+        {report.learningIllustration && <section className="report-section"><h2>教学机制图</h2><p>{report.learningIllustration.caption}</p><figure className="case-media-item">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={report.learningIllustration.url} alt={report.learningIllustration.caption} loading="lazy"/><figcaption>教学素材 {report.learningIllustration.assetVersion} · 与本报告一起保存，非临床检查证据</figcaption></figure></section>}
+      {report.collectionReview && report.collectionReview.length>0 && <section className="workspace-panel"><div className="panel-head"><h2>本病例的信息采集复盘</h2></div><div className="panel-body"><p>以下按本例可获得资料与实际事件核对。尚未采集不等于必须开单，已采集不等于已理解；临床必要性与解释质量另行评价，不在这里加减分，也不展示完整标准病历。</p><ul>{report.collectionReview.map((item,index)=><li key={`${item.area}:${index}`}><strong>{item.label}</strong>：{item.collected===0?'本次尚无已获得记录':item.collected<item.available?'记录尚未覆盖全部对应资料':'已获得对应资料'}（{item.collected}/{item.available}）；{item.eventIds.length?`关联${item.eventIds.length}条实际操作记录`:'无对应操作证据'}。</li>)}</ul></div></section>}
+      {report.sourceSnapshotVersion
+          ? <ReportEvidenceMedia key={`${report.id}:${report.sourceSnapshotVersion}`} sessionId={report.sessionId} version={report.sourceSnapshotVersion} eventIds={mediaEventIds}/>
           : <p>历史报告未保存材料版本，暂不自动关联图片。</p>}
       </section>}
     </div>

@@ -70,6 +70,12 @@ export function classifyCase(profile: PublicCaseProfile): CaseClassification {
       searchableText,
     };
   }
+  if (profile.contentStatus === 'teaching-simulation') return {
+    subject: normalizeCategory(profile.category), stars: 2,
+    starReason: '已配置完整虚构教学场景，过程反馈不代表临床能力认证',
+    readiness: {readiness: 'independent', label: '教学模拟', note: 'AI生成，非真实患者；原始病例来源仍缺失'},
+    searchableText,
+  };
   if (isInsufficient) {
     return {
       subject: normalizeCategory(profile.category),

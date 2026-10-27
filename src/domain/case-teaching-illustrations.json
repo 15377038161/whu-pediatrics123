@@ -1,0 +1,492 @@
+{
+  "teacher-1型糖尿病伴有酮症酸中毒": {
+    "url": "/media/teaching/v1/case-001.png",
+    "sha256": "bc37319aa240cbf267b2c8b45ae57df019a8f8edb784fd26503ae8c976ae0c77",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-中枢性尿崩症": {
+    "url": "/media/teaching/v1/case-002.png",
+    "sha256": "57b8eba454047217931835caa882f2f1be779b479df86a7c056d1b04ede3b754",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-中枢性性早熟": {
+    "url": "/media/teaching/v1/case-003.png",
+    "sha256": "49a5c656d6f573d0019992fd507912db4318f63bb50a4053ca15483b314b29c7",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-中枢神经系统脱髓鞘病": {
+    "url": "/media/teaching/v1/case-004.png",
+    "sha256": "2c6e442c14e211be4080f24b0362a570aa1aa1f233d22d88a618c4191bfc5963",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-传染性单核细胞增多症": {
+    "url": "/media/teaching/v1/case-005.svg",
+    "sha256": "07cf7631e05ad48dc5e751b04751918d4dbea4c19ea8a5c277f18ed03d915cb8",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-儿童-肥胖症": {
+    "url": "/media/teaching/v1/case-006.png",
+    "sha256": "605ae6e9f818b4d35867eb8fcf83e962e08c5cf804eea33a21c680fcde8c6d06",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-先天性肌无力": {
+    "url": "/media/teaching/v1/case-007.png",
+    "sha256": "198e47f22ee1e2dc5cc37a52d735843fee6a2d3a3235bed98bfedf91333d43ac",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-先天性肾上腺皮质增生症": {
+    "url": "/media/teaching/v1/case-008.svg",
+    "sha256": "8e6da4b19890dcd30539260a89b23f9f64392c9e89d7578118a60504b4665f4f",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-再生障碍性贫血": {
+    "url": "/media/teaching/v1/case-009.png",
+    "sha256": "bb9ac3c4785e513b8ad04a4f202f2a1b8d4f6b6ebbbaf8e174b3dfb9673f2b80",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-化脓性脑膜炎": {
+    "url": "/media/teaching/v1/case-010.svg",
+    "sha256": "92191f047de39d6e048453d5683b64a879ddd37c4d30d199d4967fa0aff492fc",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-发热性惊厥": {
+    "url": "/media/teaching/v1/case-011.png",
+    "sha256": "cc8ff4ad8cccd8ef1af7b8dce04d802fe3484038cf48b17021f68fbb94fd8fd2",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-噬血细胞综合征": {
+    "url": "/media/teaching/v1/case-012.png",
+    "sha256": "1f72d45abb25aa995bfba933d2bee14939287a32bfede0427f27203f4ed5deed",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-外周性性早熟": {
+    "url": "/media/teaching/v1/case-013.svg",
+    "sha256": "8f35512e4bd8529a74280537c6124f2c10821f4b8009b3b67ae5d527e5e78d60",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-婴儿胆汁淤积症-巨细胞病毒感染": {
+    "url": "/media/teaching/v1/case-014.png",
+    "sha256": "b79493cc87dcaa24dd4b2725c3d3495765b8f7561060bdce97d8a93fcc8fce67",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-川崎病": {
+    "url": "/media/teaching/v1/case-015.png",
+    "sha256": "2b3ce7e853612adaf06fa7736ae3e20444c37297a6cbcdc6f5ef3ebd67660c90",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-异物吸入性窒息": {
+    "url": "/media/teaching/v1/case-016.png",
+    "sha256": "dc00d793ced7e8032aa97c62d38141b0940c916d66890b9537b9a35dfce0aa45",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-心律失常-室上性心动过速": {
+    "url": "/media/teaching/v1/case-017.png",
+    "sha256": "3861393f827b985276d76df6b7240796cd35628e43d46a2bc2e1ab6986dafea5",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-急性喉炎": {
+    "url": "/media/teaching/v1/case-018.png",
+    "sha256": "8cd92e3362a1db001cbddf0f1b7d661b2de1f78f92f9f901e7fece20a039f9fa",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-急性喘息性支气管炎": {
+    "url": "/media/teaching/v1/case-019.png",
+    "sha256": "a62d4862ec912d1bb56823cf0f6ecef6e4efd73743fb8394e8e92634cb20c84e",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-急性毛细支气管炎": {
+    "url": "/media/teaching/v1/case-020.png",
+    "sha256": "10ea3229499e47fde9f13baf8ad300ad2a8e127567fe7b23f98d0980f792cd00",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-急性白血病-急性淋巴细胞白血病": {
+    "url": "/media/teaching/v1/case-021.png",
+    "sha256": "3754395c7595265bbf107b81b0b2dac0d73f754230d04563bdf3dbea8401ae6d",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-急性百草枯中毒": {
+    "url": "/media/teaching/v1/case-022.png",
+    "sha256": "4f210744b3d01a65aa52f0115d70da8ad1dd209d484f382168ff872747a0a92b",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-急性肾小球肾炎": {
+    "url": "/media/teaching/v1/case-023.png",
+    "sha256": "d400b92e82bad1fdf9ff3f734b0bf8f3187d0ed4639e26cf3518d5ee50aa4a97",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-急性肾衰竭": {
+    "url": "/media/teaching/v1/case-024.png",
+    "sha256": "2321afc72c998e74cf70cf62f055b6b2bb907a18be9e60c3372b21516c83afbc",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-支气管哮喘": {
+    "url": "/media/teaching/v1/case-025.png",
+    "sha256": "dcfda7c1c561f22f205ba81d7e3063e9a4ad00416cce5b77f3f1018f2fe30931",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿abo溶血性黄疸": {
+    "url": "/media/teaching/v1/case-026.svg",
+    "sha256": "a628ad26b6390ccfd6d3d86fee28bb8b9d78d1cd22566e82842ba5e5c50c0f8b",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿rh溶血性黄疸": {
+    "url": "/media/teaching/v1/case-027.png",
+    "sha256": "abcd7eba354435d3e43d0b7d6989203d1935f62414878275e4fe2c4f5df7de72",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿化脓性脑膜炎": {
+    "url": "/media/teaching/v1/case-028.png",
+    "sha256": "ca74fd68789df10698b214960bb881852cb14f88818c1e120ed2f11e22701ec7",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿呼吸窘迫综合征": {
+    "url": "/media/teaching/v1/case-029.svg",
+    "sha256": "8c41f8f2dab6702bb5a1c35baf390c2442270181e24e5416d60a703972233af6",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿缺血缺氧性脑病": {
+    "url": "/media/teaching/v1/case-030.png",
+    "sha256": "a731dc3c513ee1f713aa6b0f7d7dd75e679060b97b4ab6d1baa5862ed4d8baf4",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿肺炎": {
+    "url": "/media/teaching/v1/case-031.svg",
+    "sha256": "94d275bb0d1dd7e7c3d922babb4a64fc9cc023dcccf7a5168f971de81667737a",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿胎粪吸入性肺炎": {
+    "url": "/media/teaching/v1/case-032.png",
+    "sha256": "1139fe6f8af5ccf60ea5b173d619a4b4c93bf827cde487d8ffce0d4d222e4e0f",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿败血症": {
+    "url": "/media/teaching/v1/case-033.svg",
+    "sha256": "d3718e3a33fc86179677255e31a257933b89ac89e0e48617a7a7f3722c53c9a8",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿重度窒息": {
+    "url": "/media/teaching/v1/case-034.svg",
+    "sha256": "ad97959237d211f870ebe9c11b34d1d0caae9d601ed9838795e6d006e2acdc93",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿高胆红素血症": {
+    "url": "/media/teaching/v1/case-035.png",
+    "sha256": "257f7ce0b0fd1c044e04936c9b5145c7fab2bd39e851d47f0b27547a7c829055",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-暴发性心肌炎": {
+    "url": "/media/teaching/v1/case-036.png",
+    "sha256": "d844101a0712ae7a7239a8dfb44cd8cc4477fa6169360ebf79487250bd3e48e5",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-泌尿道感染": {
+    "url": "/media/teaching/v1/case-037.png",
+    "sha256": "2a90483403445e977be84f240842b6daee1afb5b745d0cc07b2291fe76e216ba",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-特发性血小板减少性紫癜": {
+    "url": "/media/teaching/v1/case-038.png",
+    "sha256": "e7159a452ce486081ff0534608291b8955d334fe1c1a8459cc61f646189d294a",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-病毒性脑炎": {
+    "url": "/media/teaching/v1/case-039.png",
+    "sha256": "e3dcfbeb7a99ecdef8b78fa6181237bd9d8de0f98339bfc82a8f1550b51f9611",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-癫痫全面性发作阵挛性发作": {
+    "url": "/media/teaching/v1/case-040.png",
+    "sha256": "e9db6d7639cd5d330a0254b313f41d264db875fa885cacf65cd15b375b8942b2",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-矮小症": {
+    "url": "/media/teaching/v1/case-041.svg",
+    "sha256": "50b417009db42674cc5d4671fe01a78bb07487d293347098102c343cae2fe634",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-糖原贮积病iv型": {
+    "url": "/media/teaching/v1/case-042.svg",
+    "sha256": "225e46077ea2aa341e538d9c0ca80e16b8f97b35bdbd1f6d81d066dd4c355391",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-细菌性肠炎": {
+    "url": "/media/teaching/v1/case-043.png",
+    "sha256": "af70af4057a395cffed4fba2a342b9869307e92c509231d3fa75160cdf62d61d",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-结核性脑炎": {
+    "url": "/media/teaching/v1/case-044.png",
+    "sha256": "b59444d1de5175f09edef1b5d4b18c077a34c561c6b936ce2bf43cd0eccd12bb",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-肝豆状核变性": {
+    "url": "/media/teaching/v1/case-045.png",
+    "sha256": "ac61bf31a9c6b97ec6ce283a16e427c69eed5532c4ad09c16430fd6ea25c3836",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-肺不张": {
+    "url": "/media/teaching/v1/case-046.png",
+    "sha256": "d0b3bb908cd3717c1a5ebc14830ebdc83d8802b2d2d97048f25c3728964ce35e",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-肺炎支原体肺炎": {
+    "url": "/media/teaching/v1/case-047.png",
+    "sha256": "4c33cc8bb04cb797ca1c5e92533feca0ff2fdc9748546fe71f48d38bf2834a3e",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-肾病综合征": {
+    "url": "/media/teaching/v1/case-048.png",
+    "sha256": "6241a6a22cb407f8870cb77eb4b90db9fa63954aa4e8abee889e3ab88f638ed9",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-蚕豆病": {
+    "url": "/media/teaching/v1/case-049.png",
+    "sha256": "81d74246fa7c2124cb3b936e4e99337e48016210bd6c4af9d341342930bec655",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-轮状病毒性肠炎": {
+    "url": "/media/teaching/v1/case-050.png",
+    "sha256": "7e0f8520ac949c11bbbb5d102cde046b98745e3e7c0a0b6c7a7955ba4e7d2c63",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-过敏性紫癜": {
+    "url": "/media/teaching/v1/case-051.png",
+    "sha256": "5e7335cb8948853aa14323f022fac086146020a420603077768be78905e4a476",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-重症肺炎": {
+    "url": "/media/teaching/v1/case-052.png",
+    "sha256": "7ba805ef9c8ac4ee1781cfa8e00049108b4271c5cda081049ce052ade2bcab30",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-风湿热": {
+    "url": "/media/teaching/v1/case-053.png",
+    "sha256": "6b06433e65d2d952bff5588afa39590ae7315c8c5917ea0533035ef81f47f6ce",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-i型糖尿病伴有酮症酸中毒": {
+    "url": "/media/teaching/v1/case-054.png",
+    "sha256": "eee3e959c95c22e6e5147e759d9639fe599fa07969ee89f6638b0eb915fcb07c",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-传染行单核细胞增多症": {
+    "url": "/media/teaching/v1/case-055.svg",
+    "sha256": "e674555eb50c170024a422a57f7a4f4b9078c6ee7609a56f229ba6ce09f8649a",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-先天性肌无力综合征": {
+    "url": "/media/teaching/v1/case-056.png",
+    "sha256": "91e98881db5b0e195bfb57654db84a704fecfa9ca9e9f3db921a92b119513c3b",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-单纯肥胖症": {
+    "url": "/media/teaching/v1/case-057.png",
+    "sha256": "7777dfa7f0ea6571b3f87d600a8d4f8b876384bf589678c48c3b681952087307",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-大叶性肺炎": {
+    "url": "/media/teaching/v1/case-058.png",
+    "sha256": "d5583bfea7ab69db440312af8aa07f7e1a646acad28ae96249c4207675dc6299",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-婴儿胆汁淤积症-巨细胞病毒": {
+    "url": "/media/teaching/v1/case-059.png",
+    "sha256": "90dfd997e30f43500c6b07c82d7e9121dd10036e7b74a435a986a67d270493ef",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-心律失常-阵发性室上性心动过速": {
+    "url": "/media/teaching/v1/case-060.png",
+    "sha256": "cfe529d0d9d57faa1c70a53ca625b8e5004f3c185ef89e97a72f9eac2a2bca0b",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-急性白血病": {
+    "url": "/media/teaching/v1/case-061.png",
+    "sha256": "7f5f76b13d8c6c45663792cd46ff9e02a46da19a5dfde36c7f300643309dafda",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-支气管肺炎": {
+    "url": "/media/teaching/v1/pneumonia.png",
+    "sha256": "9bd8a6f7998fe809245d9a586b08bf03929ab71312dcdfa8702c1fa95750198c",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿胎粪吸入肺炎": {
+    "url": "/media/teaching/v1/case-063.png",
+    "sha256": "1e4975300663b2dbc2d9cf8bcedc521c5ddc83d68a546bd16a6801980165d9ab",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-新生儿脑梗死": {
+    "url": "/media/teaching/v1/neonatal-stroke.png",
+    "sha256": "fced08a71eaf174cbd47804f5e98d8ad9683685a10836951de243cd3914f96d7",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-格林巴利综合征": {
+    "url": "/media/teaching/v1/gbs.png",
+    "sha256": "020c85d556d1f7dbd9cae5059212227ca0fbbee475de73cfed284c62f33fb996",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-毛细支气管炎": {
+    "url": "/media/teaching/v1/case-066.png",
+    "sha256": "3c24b1eed6888df74430ea92c364e00f4491384b63383e2f8ee6bb0ef4c1110c",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-生长激素缺乏症-矮小症": {
+    "url": "/media/teaching/v1/case-067.png",
+    "sha256": "3c377dc788ec5a4f14d5afc8d15be2e37685e06a1ed6c8c276a59f83fc7dd99d",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-癫痫": {
+    "url": "/media/teaching/v1/case-068.png",
+    "sha256": "efe83a5a82ab8fed54944e17b9b8271cdfe199e6bcbf35738c23e8daa06263cc",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-糖原贮积病": {
+    "url": "/media/teaching/v1/case-069.svg",
+    "sha256": "dc8f34f89649b64d161d5898b02d3b11c50e06dd31e3879774946b2618241c30",
+    "assetVersion": "v1",
+    "origin": "ai_assisted_mechanism_flow",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  },
+  "teacher-肺炎支原体性肺炎": {
+    "url": "/media/teaching/v1/case-070.png",
+    "sha256": "e31580ce396a38bf48ee013be941795c772de343e401c3cbfc65f9910e193e63",
+    "assetVersion": "v1",
+    "origin": "ai_generated_concept_illustration",
+    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
+  }
+}

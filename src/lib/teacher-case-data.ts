@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
+import simulations from '@/domain/teaching-simulations.json';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 import { getCachedSnapshot } from '@/lib/case-snapshot';
@@ -9,6 +10,7 @@ import { computeCaseDataVersion } from '@/lib/case-data-version';
 export const recordSchema = z.object({
   caseId: z.string(), sourceName: z.string(), sourceDocument: z.string(),
   age: z.string(), sex: z.string(), complaint: z.string(),
+  teachingSimulation: z.literal(true).optional(),
   sections: z.object({ history: z.string(), exam: z.string(), tests: z.string(), diagnosis: z.string(), plan: z.string() }),
   vitals: z.object({ temperature: z.number().nullable(), heartRate: z.number().nullable(), respiratoryRate: z.number().nullable(), spo2: z.number().nullable() }),
   documents: z.array(z.object({ source: z.string(), text: z.string(), sha256: z.string() })),
@@ -21,8 +23,8 @@ export const recordSchema = z.object({
   })).optional(),
   /** 病例媒体绑定元数据（可选）：按 testId（source-test-N）/examId（source-exam-<toolId>-<bodyPartId>）声明
    *  结果释放时随事件挂载的媒体图；fileId 为对象存储登记标识（URL 仅经服务端签名链接解析，不入库不持久化）。
-   *  仅图核通过（无身份标识、数值与病例一致，adoptable_after_binding）的媒体可登记；
-   *  含未掩码身份信息的媒体（blocked_until_redacted）禁止登记进病例配置（隐私硬门槛）。 */
+   *  原图按已确认的教师授权及实际病例/操作用途接入；AI教学示意单独标识，
+   *  不冒充真实患者影像或影像识别证据，不伪造视觉/医学审核结论。 */
   testMedia: z.array(z.object({
     testId: z.string(),
     media: z.array(z.object({ fileId: z.string(), kind: z.literal('image'), caption: z.string() })),
@@ -45,10 +47,20 @@ export function getKnowledgeRoot(): string {
 
 export function readTeacherCaseData(caseId: string, version?: string | null, sessionId?: string | null): TeacherCaseData | null {
   const sourceId = getTeacherSourceId(caseId);
-  if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId && item.folder)) return null;
+  if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId)) return null;
   try {
     const file = path.join(getKnowledgeRoot(), 'teaching-cases', `${sourceId}.json`);
-    const record = recordSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
+    let raw: unknown;
+    try { raw = JSON.parse(readFileSync(file, 'utf8')); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      const simulation = simulations.find(item => item.caseId === sourceId);
+      if (!simulation) throw error;
+      raw = simulation;
+    }
+    const record = recordSchema.parse(raw);
+    // A catalogue-only entry is usable only with an explicit synthetic source.
+    if (!TEACHER_CASE_CATALOG.some(item => item.id === sourceId && item.folder) && !record.teachingSimulation) return null;
     if (record.caseId !== sourceId) return null;
     // 本地文件存在但版本已绑定：本地当前版本与绑定版本一致才直接使用本地完整事实；
     // 不一致（本地内容已修订）时优先恢复绑定版本的进程内缓存快照（同事实集合），
