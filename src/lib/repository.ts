@@ -1,4 +1,5 @@
 import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, SessionState, SyncEventV1, TrainingReport, UserContext } from '@/domain/agent';
+import {projectReportForRole} from '@/lib/report-projection';
 import { isUnscoredReport } from '@/domain/training-rubric';
 import { createInitialSession, refreshSourceSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
@@ -450,7 +451,7 @@ export class AgentRepository {
       const report = memoryStore().reports.get(id);
       if (!report) throw new Error('REPORT_NOT_FOUND');
       if (this.actor.role !== 'teacher' && report.userId !== this.actor.id) throw new Error('FORBIDDEN');
-      return clone(report);
+      return projectReportForRole(clone(report),this.actor.role);
     }
     const db = this.db();
     // 学生走受控 RPC（受保护 user_id 列判定）；教师直读（RLS teacher_select 放行）
@@ -458,7 +459,7 @@ export class AgentRepository {
       const { data, error } = await db.rpc('report_get_mine', { p_report_id: id });
       if (error) throw error;
       if (!data || typeof data !== 'object') throw new Error('REPORT_NOT_FOUND');
-      return (data as { data: TrainingReport }).data as TrainingReport;
+      return projectReportForRole((data as { data: TrainingReport }).data,this.actor.role);
     }
     const { data, error } = await db.from('training_reports').select('data,user_id,session_id').eq('id', id).maybeSingle();
     if (error) throw error;
@@ -468,14 +469,14 @@ export class AgentRepository {
 
   async listOwnReports(): Promise<TrainingReport[]> {
     if (this.isPreview()) {
-      return [...memoryStore().reports.values()].filter((report) => report.userId === this.actor.id).map(clone).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return [...memoryStore().reports.values()].filter((report) => report.userId === this.actor.id).map(report=>projectReportForRole(clone(report),this.actor.role)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
     const db = this.db();
     // 学生走受控 RPC（受保护 user_id 列判定，无直读策略）；教师走 RLS 直读后过滤本人
     if (this.actor.role === 'student') {
       const { data, error } = await db.rpc('report_list_mine');
       if (error) throw error;
-      return ((data ?? []) as Array<{ data: TrainingReport }>).map((row) => row.data as TrainingReport);
+      return ((data ?? []) as Array<{ data: TrainingReport }>).map(row=>projectReportForRole(row.data,this.actor.role));
     }
     const { data } = await withDatabaseRetry(async () => {
       const result = await db.from('training_reports').select('data').eq('user_id', this.actor.id).order('created_at', { ascending: false });

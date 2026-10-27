@@ -5,6 +5,7 @@ import { runAgentTurn } from '@/lib/agent-engine';
 import { AgentRepository } from '@/lib/repository';
 import { requireAuth } from '@/lib/request-auth';
 import { buildReport } from '@/lib/scoring';
+import {projectReportForRole} from '@/lib/report-projection';
 import { isUnscoredReport } from '@/domain/training-rubric';
 import { restoreCaseSnapshotReference } from '@/lib/case-snapshot';
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     };
     await repository.saveReport(report, event);
     await repository.saveSession(session);
-    return ok(report, undefined, 201);
+    return ok(projectReportForRole(report,user.role), undefined, 201);
   } catch (error) {
     const detail = errorFromUnknown(error);
     const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : detail.code === 'SESSION_NOT_FOUND' || detail.code === 'CASE_NOT_FOUND' ? 404 : 500;
