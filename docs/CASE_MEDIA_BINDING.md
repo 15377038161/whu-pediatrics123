@@ -4,6 +4,8 @@
 
 `scripts/case-audit/bind-case-media.mts <spec.json>` 复用既有StorageClient与受控存储。每个images[]包含file/testId/caption/sourcePath/source/review；sourcePath为私有原件实际路径。source区分：
 
+若材料已经存在同项目存储，可附`existingFileId`复用登记，避免重复上传。仍执行完整原件/候选/用途核对，并通过SDK `getFile`取得短期链接、实际下载核对全部字节；仅文件名相同、拿到ID、浏览器能解码或本地有一份同名文件均不够。所有复用对象必须在任何新上传前校验完；任一失败整批停止，不自动改为重新上传。链接不输出或写入收据。复用读取限20秒、长度不得超过已核原图，错误只报`MEDIA_REGISTERED_MISMATCH`。
+
 - 独立图：`{kind: "standalone-image", originalSha256, locatorSha256}`。locatorSha256取绝对原件路径以正斜杠规范化后的UTF-8 SHA256；实际读取原件并核对完整字节与上传内容一致，不填写DOCX来源。
 - DOCX内嵌图：`{kind: "document-embedded", documentSha256, archiveEntry: "word/media/image1.png"}`。实际读取源文件核SHA，并解出指定ZIP条目逐字节比较。PDF图片尚无该工具的来源校验器，不能伪装为DOCX条目。
 

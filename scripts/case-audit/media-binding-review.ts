@@ -67,3 +67,23 @@ export function verifyMediaOriginal(source: MediaSource, original: Buffer, absol
     throw new Error('MEDIA_SOURCE_MISMATCH');
   }
 }
+
+/** Reuse only after reading the registered object's bytes; names/IDs alone prove no match. */
+export async function verifyRegisteredMedia(fileId:string,expected:Buffer,
+  storage:{getFile(input:{fileId:string;expiresInSeconds:number}):Promise<{url:string}>},
+  download:(url:string,init:{signal:AbortSignal})=>Promise<Response>=fetch) {
+  if(!/^[\w:-]{1,200}$/.test(fileId)||!expected.length||expected.length>40*1024*1024)throw new Error('MEDIA_REGISTERED_MISMATCH');
+  try {
+    const {url}=await storage.getFile({fileId,expiresInSeconds:60});
+    const response=await download(url,{signal:AbortSignal.timeout(20_000)});
+    if(!response.ok||!response.body)throw new Error('read failed');
+    const declared=response.headers.get('content-length');
+    if(declared!==null&&Number(declared)!==expected.length){await response.body.cancel();throw new Error('wrong size');}
+    const reader=response.body.getReader(),chunks:Uint8Array[]=[];let size=0;
+    try {
+      for(;;){const {done,value}=await reader.read();if(done)break;size+=value.length;
+        if(size>expected.length){await reader.cancel();throw new Error('oversize');}chunks.push(value);}
+    }finally{reader.releaseLock();}
+    if(size!==expected.length||!Buffer.concat(chunks).equals(expected))throw new Error('wrong bytes');
+  }catch{throw new Error('MEDIA_REGISTERED_MISMATCH');} // Never log a signed URL or SDK error.
+}

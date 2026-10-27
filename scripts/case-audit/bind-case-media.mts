@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { StorageClient } from 'coder-coding-dev-sdk';
 import { recordSchema } from '@/lib/teacher-case-data';
-import { requireMediaBindingReview, verifyMediaOriginal, type MediaBindingReview, type MediaSource } from './media-binding-review';
+import { requireMediaBindingReview, verifyMediaOriginal, verifyRegisteredMedia, type MediaBindingReview, type MediaSource } from './media-binding-review';
 
 const ROOT = process.cwd();
 async function main() {
@@ -34,7 +34,7 @@ if (!specPath) {
 }
 const spec = JSON.parse(readFileSync(specPath, 'utf8')) as {
   caseId: string; candidatePath: string; imageDir: string;
-  images: Array<{ file: string; testId: string; caption: string; sourcePath: string; source: MediaSource; review: MediaBindingReview }>; outPath: string;
+  images: Array<{ file: string; testId: string; caption: string; sourcePath: string; source: MediaSource; review: MediaBindingReview; existingFileId?:string }>; outPath: string;
 };
 
 const sha256 = (p: string) => createHash('sha256').update(readFileSync(p)).digest('hex');
@@ -68,14 +68,16 @@ console.log(`媒体来源/用途与教师授权校验通过：${spec.images.leng
 
 // 2) 上传（StorageClient 零配置；fileId 为唯一登记标识，不持久化 URL）
 const storage = new StorageClient();
+// Verify every reused object before uploading anything; wrong registrations cannot cause partial new uploads.
+for(const img of spec.images)if(img.existingFileId!==undefined)await verifyRegisteredMedia(img.existingFileId,checkedImages.get(img.file)!,storage);
 const testMediaMap = new Map<string, Array<{ fileId: string; kind: 'image'; caption: string }>>();
-const provenance: Array<{ file: string; sha256: string; fileId: string; testId: string; size: number; source: MediaSource; review: MediaBindingReview }> = [];
+const provenance: Array<{ file: string; sha256: string; fileId: string; testId: string; size: number; source: MediaSource; review: MediaBindingReview; storageAction:'verified-reuse'|'uploaded' }> = [];
 for (const img of spec.images) {
   const content = checkedImages.get(img.file)!;
   const digest = createHash('sha256').update(content).digest('hex');
   const contentType = img.file.toLowerCase().endsWith('.jpeg') || img.file.toLowerCase().endsWith('.jpg') ? 'image/jpeg' : 'image/png';
   // 扁平模型文件名不含目录分隔符；加病例前缀便于平台侧管理识别
-  const uploaded = await storage.uploadFile({
+  const uploaded = img.existingFileId ? {fileId:img.existingFileId} : await storage.uploadFile({
     fileContent: content,
     fileName: `case-media_${digest}${path.extname(img.file).toLowerCase()}`,
     contentType,
@@ -83,7 +85,7 @@ for (const img of spec.images) {
   const list = testMediaMap.get(img.testId) ?? [];
   list.push({ fileId: uploaded.fileId, kind: 'image', caption: img.caption });
   testMediaMap.set(img.testId, list);
-  provenance.push({ file: img.file, sha256: digest, fileId: uploaded.fileId, testId: img.testId, size: content.length, source: img.source, review: img.review });
+  provenance.push({ file: img.file, sha256: digest, fileId: uploaded.fileId, testId: img.testId, size: content.length, source: img.source, review: img.review,storageAction:img.existingFileId?'verified-reuse':'uploaded' });
   console.log(`[bind] image=${digest.slice(0, 12)} trigger=${img.testId}`);
 }
 
