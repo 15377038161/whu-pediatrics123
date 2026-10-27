@@ -1,18 +1,17 @@
 # 病例图片受控绑定
 
-`scripts/case-audit/bind-case-media.mts` 只供既有授权对象存储的受控导入使用，不自动检查图片隐私或确认医学用途。原图提取、使用权限、全图隐私及检查操作对应关系须先有真实审核记录，不得批量写“approved”代替审核。
+本聊天用户已确认教师材料使用授权。脚本不再要求逐图隐私批准作为补全或受控教师试用的前置条件；授权不表示已做视觉核对或医学确认。仍须亲自核对正确病例、时点、检查用途及触发操作，不能批量填写虚假用途批准。
 
-每个 `images[]` 除 `file/testId/caption`，必须提供私有 `review` 收据，包含：
+`scripts/case-audit/bind-case-media.mts <spec.json>` 复用既有StorageClient与受控存储。每个images[]包含file/testId/caption/sourcePath/source/review；sourcePath为私有原件实际路径。source区分：
 
-- `caseId`、`candidateSha256`、`sourceDocumentSha256`、`testId`，精确对应入口、候选、原件和触发操作。
-- `imageSha256`，对应即将上传的完整图片字节；`captionSha256`，对应图注原始字符串的UTF-8字节。
-- `reviewer`、ISO `reviewedAt`、`privacyStatus: approved`、`usageAuthorized: true`、`purposeStatus: approved`。这是已有审核的记录，不是脚本的审核结论。
+- 独立图：`{kind: "standalone-image", originalSha256, locatorSha256}`。locatorSha256取绝对原件路径以正斜杠规范化后的UTF-8 SHA256；实际读取原件并核对完整字节与上传内容一致，不填写DOCX来源。
+- DOCX内嵌图：`{kind: "document-embedded", documentSha256, archiveEntry: "word/media/image1.png"}`。实际读取源文件核SHA，并解出指定ZIP条目逐字节比较。PDF图片尚无该工具的来源校验器，不能伪装为DOCX条目。
 
-所有图片先完成整批检查才创建 `StorageClient`。任一收据缺失、图片/图注/候选/来源/操作变化则拒绝整批，避免前几张已上传才发现后续未审核。当前仅接受PNG/JPEG，图片名不能跨目录。实际上传复用预检过的内存字节，避免读文件两次导致批准内容与上传内容不同。存储名使用图片哈希，控制台只输出数量、哈希短前缀与操作ID，不输出原文件名、患者事实或访问链接。
+review保存caseId/candidateSha256/source/testId/imageSha256/captionSha256，以及真实用途核对人reviewer、reviewedAt、purposeStatus: approved、usageAuthorized: true。authorization包含basis: user-confirmed-teacher-authorization、confirmedAt和指向本次人工确认的reference；privacyStatus可缺省或如实unreviewed，不自动写approved。source必须与本图一致，任何候选/图注/触发/原件变动都须重新核对，不沿用旧收据。旧sourceDocxSha256及强制隐私批准格式停止使用，旧私有spec需依据真实来源重建，不能机械补假字段。
 
-收据、spec、叠加层及原图仍是私有材料，存放Git忽略目录，不纳入公共仓库。脚本不会更改候选原件；生成叠加层也不代表生产导入或学生实际显示通过。仍需按新版本导入、操作解锁、授权加载、实际显示、解释与报告关联逐项验收。旧历史会话继续绑定原版本。
+整批核验通过才创建StorageClient，上传复用预检内存字节。收据/spec/原图/叠加层均留Git忽略的私有目录；输出叠加层每个provenance保留来源和收据，候选原件不改。日志只输出数量、哈希前缀和操作ID。生成叠加层不代表已导入、实际显示或全流程通过，仍按新版本及历史绑定规则验收。
 
-回归：`pnpm exec tsx --test tests/media-binding-review.test.ts`，覆盖缺审核、未批准隐私/用途/权限、图片更换、候选/来源/图注/触发变化。合成收据仅用于本地测试，不得用于真实图片。
+回归：`pnpm exec tsx --test tests/media-binding-review.test.ts`。覆盖教师确认授权且视觉未审可通过、独立图无需DOCX、缺授权/用途未核/候选图注触发变动拒绝，以及真实源字节/定位和DOCX错条目拒绝；测试材料全为合成，不用于真实素材。
 
 图库同时处理签名链接请求失败及图片网络/解码失败，显示“重新加载图片”按钮。按钮仅重新调用当前会话已释放媒体的签名链接API，不重跑查体或检查下单。会话ID与fileId共同作为组件身份，切换会话重新取链接，卸载后旧请求不得写回。2026-10-27受控浏览器合成组件检查已复现旧版破图无重试入口，修复后两种失败均可显式重取并实际显示合成图；这不代表真实存储、OAuth或病例原图显示已验。
 
@@ -28,7 +27,7 @@
 
 报告新生成时保存sourceSnapshotVersion，评分关联图片仅回放该报告eventIds对应的已释放事件，并再次核同一sessionId与材料版本。版本冲突不显示图片，可显式重试；历史报告无材料版本时明确提示，不按当前库猜图。不使用报告页面绕过媒体签名链接API。
 
-发布仍待真实验收：上述链路已在隔离Postgres、独立进程磁盘重开和合成浏览器组件验证；生产数据库冷恢复、真实OAuth、对象存储授权及原图隐私/用途尚未验收，不得称全库可直接上线。部署须核当前实际迁移状态，依次执行入口/来源键修复→私有列→检查媒体释放→查体证据投影；不能凭本地测试假定生产已执行。
+发布仍待真实验收：上述链路已在隔离Postgres、独立进程磁盘重开和合成浏览器组件验证；生产数据库冷恢复、真实OAuth、对象存储实际访问及原图用途尚未验收；教师使用授权已确认，不得称全库可直接上线。部署须核当前实际迁移状态，依次执行入口/来源键修复→私有列→检查媒体释放→查体证据投影；不能凭本地测试假定生产已执行。
 
 隔离验证：`pnpm exec tsx --test tests/case-binding-persistence.test.ts` 实际执行PostgreSQL迁移及jsonb往返，检查旧NULL不变、合成学生RLS拒绝、教师读取、权限不变、重放与错误tenant拒绝。它不证明生产迁移或真实OAuth身份验收。
 
