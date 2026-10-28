@@ -711,3 +711,13 @@ export const TEACHER_CASE_CATALOG: TeacherCaseCatalogItem[] = [
     "source": "folder"
   }
 ];
+
+/** 目录条目稳定编号（按目录数组顺序，从 1 起）：教师端列表展示与问题排查定位的固定锚点，报编号即可唯一定位病例。 */
+export const CASE_INDEX_NUMBER: Readonly<Record<string, number>> = Object.fromEntries(
+  TEACHER_CASE_CATALOG.map((item, index) => [item.id, index + 1] as const),
+);
+
+/** caseId → 病例名称（用于发布管理等仅持 caseId 的视图补显名称）。 */
+export const CASE_NAME_BY_ID: ReadonlyMap<string, string> = new Map(
+  TEACHER_CASE_CATALOG.map((item) => [item.id, item.name] as const),
+);

@@ -192,6 +192,10 @@ textarea { resize: vertical; }
 .teacher-case-index > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 12px; max-height: 380px; overflow-y: auto; }
 .teacher-case-index a { display: flex; justify-content: space-between; gap: 10px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-size: 12px; }
 .teacher-case-index a span { flex: 0 0 auto; color: var(--muted); }
+.teacher-case-index a .case-index-number { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; color: var(--pine-dark); }
+.teacher-case-index a .case-index-id { font-size: 11px; }
+.teacher-case-index a strong { flex: 1 1 auto; }
+.publication-case-name { margin-left: 6px; color: var(--muted); font-weight: 400; }
 .teacher-case-detail { max-width: 1100px; margin: auto; padding: 24px 18px 50px; }
 .teacher-case-detail .case-resource-panel { margin: 22px 0; }
 .anatomy-lab { max-width: 1180px; margin: 0 auto; padding: 30px 20px 60px; }

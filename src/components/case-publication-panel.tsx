@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { formatDateTime } from '@/lib/format-date';
+import { CASE_INDEX_NUMBER, CASE_NAME_BY_ID } from '@/domain/teacher-case-catalog';
 import { authedFetch } from '@/lib/authed-api';
 
 interface PublicationRow {
@@ -102,11 +103,12 @@ export function CasePublicationPanel() {
                 <tr><th>编号</th><th>病例</th><th>状态</th><th>最近操作</th><th>理由</th><th>操作</th></tr>
               </thead>
               <tbody>
-                {overview.cases.map((row, index) => (
+                {overview.cases.map((row) => (
                   <tr key={row.caseId}>
-                    <td>{index + 1}</td>
+                    <td>#{CASE_INDEX_NUMBER[row.caseId] ?? '—'}</td>
                     <td>
                       {row.caseId}
+                      {CASE_NAME_BY_ID.get(row.caseId) ? <span className="publication-case-name">（{CASE_NAME_BY_ID.get(row.caseId)}）</span> : null}
                       {row.missingSource && (
                         <span className="publication-missing-source" title="该目录条目缺少原始接诊资料（folder=null），下架不影响既有训练记录">缺少原始接诊资料</span>
                       )}

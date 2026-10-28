@@ -4,6 +4,7 @@ import { Activity, ArrowRight, Award, Eye, FileUser, Search, ShieldCheck, Triang
 import { useMemo, useState } from 'react';
 import { formatDate } from '@/lib/format-date';
 import type { TeacherStudentsWorkspace } from '@/lib/repository';
+import { CASE_INDEX_NUMBER } from '@/domain/teacher-case-catalog';
 import type { TeacherCaseCatalogItem } from '@/domain/teacher-case-catalog';
 
 export function TeacherDashboard({ workspace, referenceTime, caseCatalog }: { workspace: TeacherStudentsWorkspace; referenceTime: string; caseCatalog: TeacherCaseCatalogItem[] }) {
@@ -32,7 +33,7 @@ export function TeacherDashboard({ workspace, referenceTime, caseCatalog }: { wo
         <div data-alert={needsAttention > 0}><span className="metric-icon"><TriangleAlert /></span><p>建议关注</p><strong>{needsAttention}</strong><small>最近得分低于 80</small></div>
       </section>
       <section className="teacher-case-library"><div><span className="eyebrow">教师病例资料</span><h2>病例资源盘点</h2><p>公开目录已向学生开放（未审核病例与媒体除外）；异名及具体亚型保留对应来源。学生仅可查看已脱敏的资料文本与已审核媒体，教师可核对原始文档并复核诊疗思路。</p></div><div className="teacher-case-stats"><strong>{caseCatalog.filter((item) => item.source === 'list').length}</strong><span>清单病种</span><strong>{caseCatalog.filter((item) => item.status === 'materials-indexed').length}</strong><span>精确匹配</span><strong>{caseCatalog.filter((item) => item.status === 'catalog-only').length}</strong><span>清单待核对</span><strong>{caseCatalog.filter((item) => item.status === 'folder-only').length}</strong><span>目录待核对</span></div></section>
-      <details className="teacher-case-index"><summary>查看全部 {caseCatalog.length} 条病例资料记录</summary><div>{caseCatalog.map((item, index) => <a key={item.id} href={`/teacher/cases/${encodeURIComponent(item.id)}`}><span className="case-index-number">#{index + 1}</span><strong>{item.name}</strong><span>{item.status === 'materials-indexed' ? '精确匹配' : item.status === 'catalog-only' ? '清单待核对' : '目录待核对'}</span></a>)}</div></details>
+      <details className="teacher-case-index"><summary>查看全部 {caseCatalog.length} 条病例资料记录</summary><div>{caseCatalog.map((item) => <a key={item.id} href={`/teacher/cases/${encodeURIComponent(item.id)}`}><span className="case-index-number">#{CASE_INDEX_NUMBER[item.id] ?? '—'}</span><strong>{item.name}</strong><span className="case-index-id">{item.id}</span><span>{item.status === 'materials-indexed' ? '精确匹配' : item.status === 'catalog-only' ? '清单待核对' : '目录待核对'}</span></a>)}</div></details>
       <div className="student-filter">
         <label className="sr-only" htmlFor="student-search">按姓名或学号搜索</label>
         <div style={{ position: 'relative' }}><Search size={17} style={{ position: 'absolute', left: 13, top: 14, color: '#697b78' }} /><input id="student-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="按姓名或学号搜索" style={{ paddingLeft: 40 }} /></div>
