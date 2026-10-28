@@ -20,6 +20,9 @@ function CaseMediaImage({ sessionId, item }: { sessionId: string; item: CaseMedi
   const [link, setLink] = useState<CaseMediaLink | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const reload = () => {
+    setFailed(false); setLink(null); setAttempt(value => value + 1);
+  };
   // 父组件以 sessionId + fileId 为 key，换会话不能保留上一会话的签名链接或失败状态。
   useEffect(() => {
     let cancelled = false;
@@ -28,9 +31,7 @@ function CaseMediaImage({ sessionId, item }: { sessionId: string; item: CaseMedi
       .catch(() => { if (!cancelled) setFailed(true); });
     return () => { cancelled = true; };
   }, [sessionId, item.fileId, attempt]);
-  if (failed) return <div className="case-media-state"><p role="note">「{item.caption}」图片暂时无法加载。</p><button type="button" onClick={() => {
-    setFailed(false); setLink(null); setAttempt(value => value + 1);
-  }}>重新加载图片</button></div>;
+  if (failed) return <div className="case-media-state"><p role="note">「{item.caption}」图片暂时无法加载。</p><button type="button" onClick={reload}>重新加载图片</button></div>;
   if (!link) return <p className="case-media-state" aria-live="polite">正在加载图片：{item.caption}…</p>;
   return (
     <figure className="case-media-item">
@@ -38,6 +39,7 @@ function CaseMediaImage({ sessionId, item }: { sessionId: string; item: CaseMedi
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={link.url} alt={item.caption} loading="lazy" onError={() => setFailed(true)} />
       <figcaption>{item.caption}</figcaption>
+      <div className="case-media-state"><a href={link.url} target="_blank" rel="noopener noreferrer">查看大图</a>{' · '}<button type="button" onClick={reload}>重新加载图片</button></div>
     </figure>
   );
 }

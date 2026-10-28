@@ -284,7 +284,9 @@ export interface TrainingReport {
   strengths: string[];
   improvements: string[];
   /** Evidence collection coverage, not a clinical correctness score or full standard note. */
-  collectionReview?: Array<{area:'history'|'exam'|'tests';label:string;available:number;collected:number;eventIds:string[]}>;
+  collectionReview?: Array<{area:'history'|'exam'|'tests';label:string;available:number;collected:number;eventIds:string[];
+    /** Tests only: a recorded request without obtained evidence is not a student omission. */
+    acquisitionStatus?:'not_requested'|'requested_unavailable'|'obtained'}>;
   learningIllustration?: {url:string;sha256:string;assetVersion:string;origin:string;caption:string};
   /** Media replay is independent of which events carry scoring points. */
   releasedMediaEventIds?: string[];

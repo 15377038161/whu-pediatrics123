@@ -44,6 +44,7 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('REPORT_NOT_FOUND')) return { code: 'REPORT_NOT_FOUND', message: '未找到报告记录。', retryable: false };
   if (message.includes('CASE_SOURCE_INVALID')) return { code: 'CASE_SOURCE_INVALID', message: '病例资料格式异常，请重新生成教学病例数据。', retryable: false };
   if (message.includes('CASE_NOT_FOUND')) return { code: 'CASE_NOT_FOUND', message: '未找到该病例。', retryable: false };
+  if (message.includes('CASE_RETIRED')) return { code: 'CASE_RETIRED', message: '该病例已停用，历史接诊记录和报告保留为只读。', retryable: false };
   if (message.includes('CASE_UNPUBLISHED')) return { code: 'CASE_UNPUBLISHED', message: '该病例已被教师下架，暂时无法开始新的训练。', retryable: false };
   if (message.includes('CASE_INSUFFICIENT')) return { code: 'CASE_INSUFFICIENT', message: '该病种尚无独立病例资料，不能进入可评分测试。', retryable: false };
   if (message.includes('SESSION_COMPLETED')) return { code: 'SESSION_COMPLETED', message: '本次训练已经结束。', retryable: false };

@@ -1,9 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {mkdtempSync,mkdirSync,writeFileSync,readFileSync} from 'node:fs';import os from 'node:os';import path from 'node:path';
-import simulations from '../src/domain/teaching-simulations.json';import {readTeacherCaseData,recordSchema} from '../src/lib/teacher-case-data';import {computeCaseDataVersion} from '../src/lib/case-data-version';
+import {syntheticTeacherCase} from './fixtures/teacher-case';import {readTeacherCaseData,recordSchema} from '../src/lib/teacher-case-data';import {computeCaseDataVersion} from '../src/lib/case-data-version';
 test('本地资料更新后按精确历史内容恢复；错指纹/错病例及非法版本拒绝，不用新版覆盖旧会话',()=>{
  const previous=process.env.PEDIATRICS_KNOWLEDGE_ROOT;const root=mkdtempSync(path.join(os.tmpdir(),'peds-archive-synthetic-'));process.env.PEDIATRICS_KNOWLEDGE_ROOT=root;
  try{
-  const record=recordSchema.parse({...structuredClone(simulations[0]),caseId:'teacher-川崎病'});const version=computeCaseDataVersion(record);
+  const record=recordSchema.parse(syntheticTeacherCase());const version=computeCaseDataVersion(record);
   const dir=path.join(root,'teaching-case-versions',record.caseId);mkdirSync(dir,{recursive:true});const file=path.join(dir,version+'.json');writeFileSync(file,JSON.stringify(record));
   mkdirSync(path.join(root,'teaching-cases'));const current={...record,vitals:{...record.vitals,temperature:37.2}};
   writeFileSync(path.join(root,'teaching-cases',record.caseId+'.json'),JSON.stringify(current));

@@ -2,7 +2,6 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { getSupabaseUserClient, isDatabaseConfigured } from '@/lib/supabase-client';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
-import simulations from '@/domain/teaching-simulations.json';
 import { recordSchema, getKnowledgeRoot, type TeacherCaseData } from '@/lib/teacher-case-data';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
 
@@ -53,12 +52,10 @@ export function computeImportVersion(record: TeacherCaseData): string {
   return computeCaseDataVersion(record);
 }
 
-/** Only controlled files or explicit built-in simulations; never cached recall as a local authoritative version. */
+/** Only current controlled source files; archived/removed entries are never import candidates. */
 function readImportRecord(caseId: string): TeacherCaseData | null {
   try {
-    let raw: unknown;
-    try {raw=JSON.parse(readFileSync(path.join(getKnowledgeRoot(),'teaching-cases',`${caseId}.json`),'utf8'));}
-    catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;raw=simulations.find(item=>item.caseId===caseId);}
+    const raw: unknown=JSON.parse(readFileSync(path.join(getKnowledgeRoot(),'teaching-cases',`${caseId}.json`),'utf8'));
     const record=recordSchema.parse(raw);
     return record.caseId===caseId?record:null;
   }catch{return null;}
@@ -159,7 +156,7 @@ export async function diagnoseTeacherCaseImport(accessToken: string): Promise<Im
   }
   // 本地侧：catalog 53 例逐例解析本地版本指纹
   const cases: CaseImportDiagnostic[] = TEACHER_CASE_CATALOG
-    .filter((item) => item.folder || simulations.some(record => record.caseId === item.id))
+    .filter((item) => item.folder)
     .map((item) => {
       const localVersion = getLocalImportVersion(item.id);
       const dbVersion = dbLatest.get(item.id) ?? null;
@@ -194,7 +191,6 @@ export async function importTeacherCases(accessToken: string, options?: ImportOp
     files = [];
   }
 
-  files = [...new Set([...files, ...simulations.map(item => `${item.caseId}.json`)])].sort();
   const results: ImportCaseResult[] = [];
   for (const file of files) {
     const caseId = file.replace(/\.json$/, '');

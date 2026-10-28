@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import simulations from '@/domain/teaching-simulations.json';
+import {publicCaseId} from '@/lib/case-identity';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 import { getCachedSnapshot } from '@/lib/case-snapshot';
@@ -60,20 +60,19 @@ function readArchivedCase(sourceId: string, version?: string | null): TeacherCas
 
 export function readTeacherCaseData(caseId: string, version?: string | null, sessionId?: string | null): TeacherCaseData | null {
   const sourceId = getTeacherSourceId(caseId);
-  if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId)) return null;
+  if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId)) {
+    // Removed entries are readable only by an exact historical binding, never as current input.
+    if (!version || !/^[a-f0-9]{16}$/.test(version) || publicCaseId(sourceId)===sourceId) return null;
+    const archived=readArchivedCase(sourceId,version);
+    if(archived)return archived;
+    const pinned=getCachedSnapshot(sourceId,version,sessionId),parsed=recordSchema.safeParse(pinned);
+    return parsed.success&&parsed.data.caseId===sourceId?parsed.data:null;
+  }
   try {
     const file = path.join(getKnowledgeRoot(), 'teaching-cases', `${sourceId}.json`);
-    let raw: unknown;
-    try { raw = JSON.parse(readFileSync(file, 'utf8')); }
-    catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-      const simulation = simulations.find(item => item.caseId === sourceId);
-      if (!simulation) throw error;
-      raw = simulation;
-    }
+    const raw: unknown = JSON.parse(readFileSync(file, 'utf8'));
     const record = recordSchema.parse(raw);
-    // A catalogue-only entry is usable only with an explicit synthetic source.
-    if (!TEACHER_CASE_CATALOG.some(item => item.id === sourceId && item.folder) && !record.teachingSimulation) return null;
+    if (!TEACHER_CASE_CATALOG.some(item => item.id === sourceId && item.folder)) return null;
     if (record.caseId !== sourceId) return null;
     // 本地文件存在但版本已绑定：本地当前版本与绑定版本一致才直接使用本地完整事实；
     // 不一致（本地内容已修订）时优先恢复绑定版本的进程内缓存快照（同事实集合），

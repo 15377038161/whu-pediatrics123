@@ -1,4 +1,5 @@
 import {SOURCE_HISTORY_TOPICS, sourceHistorySentences} from '@/domain/source-history';
+import {getPublicCase,isTrainableCase} from '@/lib/case-identity';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
 import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
@@ -78,6 +79,7 @@ function clinicalEvent(
 }
 
 export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id, practiceFocus?: PracticeFocus, sourceSnapshotVersion?: string | null, sessionId?: string | null): SessionState {
+  getPublicCase(caseId);
   const pediatricCase = getCase(caseId, sourceSnapshotVersion, sessionId);
   const startedAt = now();
   // OSCE 时限单一来源（方案 15）：按站点契约配置设定；教师病例/历史路径未定义站点时保持默认时限。
@@ -832,6 +834,7 @@ export interface AgentTurnOptions {
 }
 
 export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string, options?: AgentTurnOptions): Promise<AgentTurnResult> {
+  if(!isTrainableCase(session.caseId))throw new Error('CASE_RETIRED');
   // 证据驱动的投影刷新（教师病例恢复态缓存）：学生真实执行查体/开单后 RPC 门控已按证据放行，
   // 会话作用域缓存仍为剥离态时重新恢复——避免引擎规则匹配读到剥离态造成假阴性
   // （病例实际有记录却判「资料未提供/检查不存在」）。失败不阻断回合（保持原有剥离态语义）。

@@ -36,6 +36,12 @@ test('最长前缀匹配：血气分析优先于血气', () => {
   assert.equal(trustedTestLabel('血气：pH 7.31', 0), '血气');
 });
 
+test('PET/CT 项目可识别且目录不带检查结果', () => {
+  assert.equal(trustedTestLabel('PET/CT：合成结果，仅供测试', 0), 'PET/CT');
+  assert.equal(trustedTestLabel('1、PET/CT：SUV 3.2，合成结论', 1), 'PET/CT');
+  assert.equal(trustedTestLabel('CT：合成对照', 2), 'CT');
+});
+
 test('白名单名在行中不前缀匹配（保守回退检查记录）', () => {
   assert.equal(trustedTestLabel('入院后查血常规：WBC 15', 0), '检查记录 1');
 });

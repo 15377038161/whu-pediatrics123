@@ -2,7 +2,7 @@ import { verifiedComplaint } from '@/lib/admission-complaint';
 import { patientAppearance } from '@/domain/patient-appearance';
 import { sourceExamDefinitions } from '@/domain/exam-methods';
 import type { CaseMedia, Emotion, Stage, VitalSigns } from '@/domain/agent';
-import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
+import { getPublicCase, findPublicCase, publicCaseId, resolveCaseId } from '@/lib/case-identity';
 import { getSessionTestsCatalog } from '@/lib/case-snapshot';
 import { readTeacherCaseData, type TeacherCaseData } from '@/lib/teacher-case-data';
 
@@ -62,7 +62,7 @@ export interface FlagshipCase {
   patientName: string;
   patientImage: string;
   patientAlt: string;
-  contentStatus: 'flagship-fixture' | 'demo-pending-review' | 'teacher-materials-indexed' | 'teacher-catalog-only' | 'teacher-folder-only' | 'teaching-simulation';
+  contentStatus: 'flagship-fixture' | 'demo-pending-review' | 'teacher-materials-indexed' | 'teacher-catalog-only' | 'teacher-folder-only';
   openingParent: string;
   initialEmotion: Emotion;
   initialVitals: VitalSigns;
@@ -229,7 +229,7 @@ export const TRUSTED_TEST_NAMES: readonly string[] = [
   '免疫球蛋白', 'IgE', 'IgG', 'IgA', 'IgM', '补体', '淋巴细胞亚群', 'T细胞亚群', '自身抗体', '抗核抗体', '类风湿因子',
   '抗链球菌溶血素O', '结核菌素试验', 'PPD试验', 'T-SPOT', '痰培养', '血培养', '咽拭子培养', '尿常规', '便常规',
   '大便常规', '大便隐血', '脑脊液', '骨髓', '骨髓细胞学', '胸片', '胸部正位片', '胸部X线', 'X线片', '胸部CT', '头颅CT',
-  'CT', '核磁共振', 'MRI', '头颅MRI', 'B超', '超声', '腹部超声', '泌尿系超声', '心脏彩超', '超声心动图', '心电图',
+  'PET/CT', 'CT', '核磁共振', 'MRI', '头颅MRI', 'B超', '超声', '腹部超声', '泌尿系超声', '心脏彩超', '超声心动图', '心电图',
   'ECG', '脑电图', 'EEG', '动态心电图', '肺功能', '支气管镜', '胃镜', '肠镜', '过敏原', '食物过敏原', '吸入过敏原',
   '遗传代谢筛查', '基因检测', '染色体', '血氨', '乳酸', '血乳酸', '凝血功能', '凝血四项', 'D二聚体', '同型半胱氨酸',
 ];
@@ -246,8 +246,10 @@ export function trustedTestLabel(line: string, index: number): string {
 }
 
 function createSourceCase(caseId: string, version?: string | null, sessionId?: string | null): FlagshipCase {
-  const profile = getPublicCase(caseId);
   const source = readTeacherCaseData(caseId, version, sessionId);
+  const currentProfile=findPublicCase(caseId);
+  if(!currentProfile&&(!version||!source))throw new Error('CASE_NOT_FOUND');
+  const profile=currentProfile??{id:publicCaseId(caseId),title:'已停用的历史病例',subtitle:'历史记录只读',difficulty:'历史记录',expectedMinutes:0,patientAlt:'历史教学部位示意',contentStatus:'teacher-catalog-only' as const};
   const unknown = { temperature: null, heartRate: null, respiratoryRate: null, spo2: null };
   const examText = source?.sections.exam ?? '';
   const definitions = sourceExamDefinitions(examText);

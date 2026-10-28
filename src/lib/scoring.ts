@@ -532,7 +532,9 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
   if (source && !focusArea) {
     for(const check of session.caseOptions?.tests ?? []) {
       const code=`SOURCE_TEST_${check.id.replace('source-test-','')}`;
-      collectionReview.push({area:'tests',label:check.label,available:1,collected:session.unlockedEvidence.includes(code)?1:0,eventIds:eventIdsFor(session,[code])});
+      const obtained=session.unlockedEvidence.includes(code);
+      collectionReview.push({area:'tests',label:check.label,available:1,collected:obtained?1:0,eventIds:eventIdsFor(session,[code]),
+        acquisitionStatus:obtained?'obtained':session.orderedTests.includes(check.id)?'requested_unavailable':'not_requested'});
     }
   }
   const diagnosisReference = reference?.diagnosis ?? source?.sections.diagnosis ?? '';

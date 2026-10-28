@@ -28,7 +28,7 @@ async function main(){
   console.log(JSON.stringify({separateProcessLocalRestorePassed:saved.length,productionDatabaseRestoreVerified:false}));return;
  }
  const [ledgerFile,outputDir,privateBundle]=process.argv.slice(2);assert.ok(ledgerFile&&outputDir&&privateBundle);
- const entries=(JSON.parse(readFileSync(ledgerFile,'utf8')) as {cases:Array<{seq:number;caseId:string}>}).cases;
+ const entries=(JSON.parse(readFileSync(ledgerFile,'utf8')) as {cases:Array<{seq:number;caseId:string;activeForCurrentScope?:boolean}>}).cases.filter(entry=>entry.activeForCurrentScope!==false);
  const rows=[];const saved:Saved[]=[];
  for(const entry of entries){
   const source=readTeacherCaseData(entry.caseId);

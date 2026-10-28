@@ -27,24 +27,18 @@ test('学科归一：5 对同义分类合并，目录分类数收敛', () => {
   assert.ok(subjects.includes('新生儿与新生儿疾病'));
 });
 
-test('资料完备度三档：53 原件来源 + 14 关联来源 + 3 明示教学模拟 + 2 演示独立', () => {
+test('资料完备度三档：53 原件来源 + 14 关联来源，独立演示另计', () => {
   const classified = CASE_CATALOG.map(classifyCase);
   const independent = classified.filter((item) => item.readiness.readiness === 'independent').length;
   const linked = classified.filter((item) => item.readiness.readiness === 'linked').length;
   const insufficient = classified.filter((item) => item.readiness.readiness === 'insufficient');
-  assert.equal(independent, 58); // 53 教师独立 folder 项 + 2 演示病例
+  assert.equal(independent, 55); // 53 教师独立 folder 项 + 2 演示病例
   assert.equal(linked, 14);
   assert.equal(insufficient.length, 0);
-  assert.equal(classified.filter(item=>item.readiness.label==='教学模拟').length,3);
-  // 防透题收敛：insufficient 判定按 id 断言（病种名不再进入分类模块）
-  // 防透题收敛：insufficient 判定按 id 断言（病种名不再进入分类模块）
-  assert.deepEqual(
-    CASE_CATALOG.filter((item) => item.contentStatus === 'teaching-simulation').map((item) => item.id).sort(),
-    ['teacher-新生儿脑梗死', 'teacher-支气管肺炎', 'teacher-格林巴利综合征'].map(publicCaseId).sort(),
-  );
+
 });
 
-test('可评分守卫：明确就绪的模拟与材料病例可进入训练，资料不足状态仍拒绝', () => {
+test('可评分守卫：明确就绪的演示与材料病例可进入训练，资料不足状态仍拒绝', () => {
   for (const profile of CASE_CATALOG) {
     const insufficient = classifyCase(profile).readiness.readiness === 'insufficient';
     assert.equal(isScorableCase(profile), !insufficient, profile.id);

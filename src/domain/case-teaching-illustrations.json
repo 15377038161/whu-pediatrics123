@@ -426,30 +426,9 @@
     "origin": "ai_generated_concept_illustration",
     "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
   },
-  "teacher-支气管肺炎": {
-    "url": "/media/teaching/v1/pneumonia.png",
-    "sha256": "9bd8a6f7998fe809245d9a586b08bf03929ab71312dcdfa8702c1fa95750198c",
-    "assetVersion": "v1",
-    "origin": "ai_generated_concept_illustration",
-    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
-  },
   "teacher-新生儿胎粪吸入肺炎": {
     "url": "/media/teaching/v1/case-063.png",
     "sha256": "1e4975300663b2dbc2d9cf8bcedc521c5ddc83d68a546bd16a6801980165d9ab",
-    "assetVersion": "v1",
-    "origin": "ai_generated_concept_illustration",
-    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
-  },
-  "teacher-新生儿脑梗死": {
-    "url": "/media/teaching/v1/neonatal-stroke.png",
-    "sha256": "fced08a71eaf174cbd47804f5e98d8ad9683685a10836951de243cd3914f96d7",
-    "assetVersion": "v1",
-    "origin": "ai_generated_concept_illustration",
-    "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"
-  },
-  "teacher-格林巴利综合征": {
-    "url": "/media/teaching/v1/gbs.png",
-    "sha256": "020c85d556d1f7dbd9cae5059212227ca0fbbee475de73cfed284c62f33fb996",
     "assetVersion": "v1",
     "origin": "ai_generated_concept_illustration",
     "caption": "AI教学示意，非真实患者影像；通用或常见机制不代表所有亚型，不代表本例检查结果，不作为影像识别评分依据。"

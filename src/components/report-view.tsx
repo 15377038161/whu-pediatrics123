@@ -23,7 +23,7 @@ const evaluationBasisLabels: Record<NonNullable<TrainingReport['evaluationBasis'
 };
 
 export function ReportView({ report, readonly = false }: { report: TrainingReport; readonly?: boolean }) {
-  const mode = report.mode === 'osce' ? 'OSCE 模拟站 · 模拟参考评分' : report.mode === 'practice' ? '专项训练' : '引导训练';
+  const mode = report.mode === 'osce' ? 'OSCE 模拟站 · 模拟参考评分' : report.mode === 'practice' ? '专项训练' : report.mode === 'immersive' ? '沉浸式病例教学' : '引导训练';
   // 降级查询：历史报告可能引用目录外 caseId（如早期探针/归档病例），降级展示 ID 而非 500
   // 防透题：优先使用报告 caseTitle（服务端在完成时写入的真实病种名——完成后释放），
   // 历史报告无该字段时降级公开目录标题（教师病例为中性标题，演示病例为症状标题）
@@ -123,10 +123,13 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           {report.studentSubmissions.examObservation && <p className="preserve-lines"><strong>查体观察记录：</strong>{report.studentSubmissions.examObservation.findings}{report.studentSubmissions.examObservation.interpretation && <>；<strong>观察解释：</strong>{report.studentSubmissions.examObservation.interpretation}</>}{report.studentSubmissions.examObservation.linkedEvidence && <>；<strong>关联查体结果：</strong>{report.studentSubmissions.examObservation.linkedEvidence.join('、')}</>}{report.studentSubmissions.examObservation.caseVersion !== undefined && <>（病例版本 v{report.studentSubmissions.examObservation.caseVersion}）</>}</p>}
         </section>
       )}
-      {report.evidence.some(item=>(item.eventIds?.length??0)>0) && <section className="report-section" style={{marginTop:14}}>
+      {report.learningIllustration && <section className="report-section" style={{marginTop:14}}><h2>教学机制图</h2><p>{report.learningIllustration.caption}</p><figure className="case-media-item">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={report.learningIllustration.url} alt={report.learningIllustration.caption} loading="lazy"/><figcaption>教学素材 {report.learningIllustration.assetVersion} · 与本报告一起保存，非临床检查证据</figcaption></figure></section>}
+      {report.collectionReview && report.collectionReview.length>0 && <section className="workspace-panel"><div className="panel-head"><h2>本病例的信息采集复盘</h2></div><div className="panel-body"><p>以下按本例可获得资料与实际事件核对。尚未采集不等于必须开单，已采集不等于已理解；临床必要性与解释质量另行评价，不在这里加减分，也不展示完整标准病历。</p><ul>{report.collectionReview.map((item,index)=><li key={`${item.area}:${index}`}>
+        <strong>{item.label}</strong>：{item.acquisitionStatus==='requested_unavailable'?'已申请，但尚无已取得的结果证据':item.acquisitionStatus==='not_requested'?'本次未申请':item.collected===0?'本次尚无已获得记录':item.collected<item.available?'记录尚未覆盖全部对应资料':'已获得对应资料'}（{item.collected}/{item.available}）；{item.eventIds.length?`关联${item.eventIds.length}条实际操作记录`:'无已取得结果的操作证据'}。
+        <p>{item.acquisitionStatus==='requested_unavailable'?'请先核对结果回报与读取状态；未取得结果时无法评价解释质量，不将其认定为漏做或解释错误。':item.area==='tests'?'请结合本例需要决定是否申请；取得结果后核对原值、单位和时点，并在诊断依据中解释其意义。':item.collected<item.available?item.area==='history'?`下次可围绕“${item.label}”补充追问，并在摘要中记录实际问到的信息。`:`下次先核对“${item.label}”的适用性、部位与体位，操作后记录实际所见。`:'可回看关联记录，核对自己的摘要或观察解释；已有操作记录不代表临床判断已正确。'}</p>
+      </li>)}</ul></div></section>}
+      {mediaEventIds.length>0 && <section className="report-section" style={{marginTop:14}}>
         <h2>本轮已获得的图片</h2>
-        {report.learningIllustration && <section className="report-section"><h2>教学机制图</h2><p>{report.learningIllustration.caption}</p><figure className="case-media-item">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={report.learningIllustration.url} alt={report.learningIllustration.caption} loading="lazy"/><figcaption>教学素材 {report.learningIllustration.assetVersion} · 与本报告一起保存，非临床检查证据</figcaption></figure></section>}
-      {report.collectionReview && report.collectionReview.length>0 && <section className="workspace-panel"><div className="panel-head"><h2>本病例的信息采集复盘</h2></div><div className="panel-body"><p>以下按本例可获得资料与实际事件核对。尚未采集不等于必须开单，已采集不等于已理解；临床必要性与解释质量另行评价，不在这里加减分，也不展示完整标准病历。</p><ul>{report.collectionReview.map((item,index)=><li key={`${item.area}:${index}`}><strong>{item.label}</strong>：{item.collected===0?'本次尚无已获得记录':item.collected<item.available?'记录尚未覆盖全部对应资料':'已获得对应资料'}（{item.collected}/{item.available}）；{item.eventIds.length?`关联${item.eventIds.length}条实际操作记录`:'无对应操作证据'}。</li>)}</ul></div></section>}
       {report.sourceSnapshotVersion
           ? <ReportEvidenceMedia key={`${report.id}:${report.sourceSnapshotVersion}`} sessionId={report.sessionId} version={report.sourceSnapshotVersion} eventIds={mediaEventIds}/>
           : <p>历史报告未保存材料版本，暂不自动关联图片。</p>}

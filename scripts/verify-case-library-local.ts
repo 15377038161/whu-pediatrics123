@@ -14,10 +14,10 @@ async function main() {
   assert.equal(process.env.ENABLE_AI_FIXTURE,'true','Local runner requires explicit fixture mode');
   const [ledgerPath,outputPath]=process.argv.slice(2);
   assert.ok(ledgerPath && outputPath,'Provide controlled ledger and private output directory');
-  const ledger=JSON.parse(readFileSync(ledgerPath,'utf8')) as {cases:Array<{seq:number;caseId:string}>};
+  const ledger=JSON.parse(readFileSync(ledgerPath,'utf8')) as {cases:Array<{seq:number;caseId:string;activeForCurrentScope?:boolean}>};
   assert.ok(ledger.cases.length>0);
   const rows=[];
-  for(const item of ledger.cases) {
+  for(const item of ledger.cases.filter(entry=>entry.activeForCurrentScope!==false)) {
     const checks:Record<string,boolean>={}; const issues:string[]=[];
     const source=readTeacherCaseData(item.caseId);
     const row={seq:item.seq,caseId:item.caseId,sourceCaseId:getTeacherSourceId(item.caseId),

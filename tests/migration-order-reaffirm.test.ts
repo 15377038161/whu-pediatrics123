@@ -27,11 +27,11 @@ interface FunctionDef {
 
 function extractFunctionDefs(sql: string): FunctionDef[] {
   const defs: FunctionDef[] = [];
-  // create or replace function <name>(<args>) ... as $$ ... $$
-  const re = /create\s+or\s+replace\s+function\s+([a-z_]+)\s*\(([^)]*)\)[\s\S]*?as\s+\$\$([\s\S]*?)\$\$;/g;
+  // Later migrations also use uppercase statements and named dollar quotes.
+  const re = /create\s+or\s+replace\s+function\s+([a-z_]+)\s*\(([^)]*)\)[\s\S]*?\bas\s+(\$[a-z_0-9]*\$)([\s\S]*?)\3;/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(sql)) !== null) {
-    defs.push({ name: m[1], args: m[2].replace(/\s+/g, ' ').trim(), body: m[3] });
+    defs.push({ name: m[1].toLowerCase(), args: m[2].replace(/\s+/g, ' ').trim(), body: m[4] });
   }
   return defs;
 }
@@ -151,11 +151,19 @@ test('SQL 白名单与 src/domain/case.ts TRUSTED_TEST_NAMES 同步', () => {
   assert.ok(m, 'src/domain/case.ts 缺少 TRUSTED_TEST_NAMES');
   const tsNames = Array.from(m[1].matchAll(/'([^']+)'/g)).map((x) => x[1]);
   assert.ok(tsNames.length > 0);
-  const reaffirmSql = readFileSync(join(MIGRATIONS_DIR, '20261016000000_case_tests_rpc_reaffirm.sql'), 'utf8');
-  const whitelistBlocks = Array.from(reaffirmSql.matchAll(/v_whitelist text\[\] := array\[([\s\S]*?)\];/g)).map((x) => x[1]);
-  assert.equal(whitelistBlocks.length, 2, '收口迁移应含两处白名单（get_test 与 list_tests）');
-  for (const block of whitelistBlocks) {
-    const sqlNames = Array.from(block.matchAll(/'([^']+)'/g)).map((x) => x[1]);
-    assert.deepEqual(sqlNames, tsNames, 'SQL 白名单必须与 TS 白名单逐项一致（顺序含）');
+  const {final}=replay();
+  for (const name of [NAMES.getTest,NAMES.listTests]) {
+    const body=final.get(name)?.body;assert.ok(body);
+    const whitelistBlocks=Array.from(body.matchAll(/v_whitelist text\[\] := array\[([\s\S]*?)\];/g));
+    assert.equal(whitelistBlocks.length,1,`${name}最终定义必须含一处白名单`);
+    const sqlNames=Array.from(whitelistBlocks[0][1].matchAll(/'([^']+)'/g)).map(x=>x[1]);
+    assert.deepEqual(sqlNames,tsNames,'最终SQL白名单必须与TS白名单逐项一致（顺序含），历史迁移不改写');
   }
+});
+
+test('重放解析包含大写与命名dollar quote，不能漏掉后续迁移',()=>{
+ const defs=extractFunctionDefs('CREATE OR REPLACE FUNCTION latest_fn(a text) RETURNS text LANGUAGE sql AS $function$ SELECT a; $function$;');
+ assert.deepEqual(defs,[{name:'latest_fn',args:'a text',body:' SELECT a; '}]);
+ const {history}=replay();
+ for(const name of [NAMES.getTest,NAMES.listTests])assert.equal(history.get(name)?.at(-1)?.file,'20261028033510_case_pet_ct_test_label.sql');
 });

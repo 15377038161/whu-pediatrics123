@@ -13,11 +13,12 @@ import {
   ClipboardList, Lightbulb, LoaderCircle, MessageCircle, Mic, Send, Stethoscope, UserRound, Volume2, VolumeX, Waves,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentEvent, AgentTurnResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
 import { getPracticeScenario } from '@/domain/practice-scenarios';
-import { getPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
+import { findPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 import { CaseResourcePanel } from '@/components/case-resource-panel';
 import { CommunicationCall } from '@/components/communication-call';
 import { RoleAudioPlayer, type RoleAudioPlayerHandle } from '@/components/role-audio-player';
@@ -401,7 +402,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   )].map(([code, summary]) => ({ code, summary }));
 
   if (!session) return <main className="loading-screen" id="main-content"><div><div className="pulse-mark"><Activity /></div><strong>{error ?? '正在建立统一病例会话…'}</strong>{error && <p><button className="btn btn-primary" onClick={() => { started.current = false; setError(null); setLoadAttempt(value => value + 1); }}>重新加载</button><a className="btn btn-secondary" href="/student">返回首页</a></p>}</div></main>;
-  const baseProfile = getPublicCase(session.caseId);
+  const baseProfile = findPublicCase(session.caseId);
+  if(!baseProfile)return <main id="main-content" className="workspace-panel"><h1>历史接诊记录</h1><p>该病例已停用，当前记录只读；已保存的接诊内容和报告保留。</p><Link className="btn btn-secondary" href="/student">返回病例库</Link><Link className="btn btn-secondary" href="/student/reports">查看历史报告</Link><ol>{session.events.map(event=><li className="preserve-lines" key={event.id}>{event.summary}</li>)}</ol></main>;
   const caseProfile = session.caseOptions ? { ...baseProfile, title: session.caseOptions.complaint ?? session.caseOptions.sourceName, age: session.caseOptions.age, sex: session.caseOptions.sex } : baseProfile;
   // 新生儿/婴儿（≤1 岁）病例只有仰卧体位（C01）：体位选项与查体事件按病例年龄收窄，
   // 不出现「1 天新生儿站立体位」这类与病例事实矛盾的交互。

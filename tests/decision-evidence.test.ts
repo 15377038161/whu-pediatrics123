@@ -12,6 +12,7 @@ import {errorFromUnknown} from '@/lib/api-result';
 import {ReportView} from '@/components/report-view';
 import {readTeacherCaseData} from '@/lib/teacher-case-data';
 import {computeCaseDataVersion} from '@/lib/case-data-version';
+import {withSyntheticTeacherCase} from './fixtures/teacher-case';
 
 const decision={diagnosis:'合成诊断',summary:'合成工程用病情摘要，保持与实际操作记录对应。',diagnosisBasis:'根据本轮已获得的资料说明支持及排除依据。',differentials:'合成鉴别，仅用于工程验证'};
 async function obtained(caseId?:string){
@@ -25,7 +26,8 @@ async function obtained(caseId?:string){
  return session;
 }
 
-for(const caseId of [undefined,'teacher-支气管肺炎'])test(`诊断关联原记录/快照独立/不因勾选加分：${caseId??'demo'}`,async()=>{
+for(const caseId of [undefined,'teacher-川崎病'])test(`诊断关联原记录/快照独立/不因勾选加分：${caseId??'demo'}`,async()=>{
+ const exercise=async()=>{
  const base=await obtained(caseId),events=diagnosticEvidenceEvents(base);assert.ok(events.length>=2);
  const input=[events[0].id,events[1].id,events[0].id],linked=structuredClone(base),unlinked=structuredClone(base),legacy=structuredClone(base);
  await runAgentTurn(linked,{type:'SUBMIT_DECISION',data:{...decision,linkedEventIds:input}},'linked-decision');
@@ -38,6 +40,8 @@ for(const caseId of [undefined,'teacher-支气管肺炎'])test(`诊断关联原�
  assert.equal(without.decisionEvidenceReview?.status,'unlinked');assert.ok(renderToStaticMarkup(createElement(ReportView,{report:without,readonly:true})).includes('本次未关联具体记录'));
  const frozen=structuredClone(report);linked.decision!.linkedEventIds!.push('session-later-mutation');linked.events.find(e=>e.id===events[0].id)!.summary='later change';assert.deepEqual(report,frozen);
  const restored=JSON.parse(JSON.stringify(base));await runAgentTurn(restored,{type:'SUBMIT_DECISION',data:{...decision,linkedEventIds:[events[0].id]}},'restored-decision');assert.equal(buildReport(restored).decisionEvidenceReview?.items[0].eventId,events[0].id);
+ };
+ if(caseId)await withSyntheticTeacherCase(exercise);else await exercise();
 });
 
 test('准备/未解锁/他会话/伪造或非临床事件不能关联，拒绝前不改提交及事件',async()=>{

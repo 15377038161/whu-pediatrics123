@@ -21,6 +21,7 @@ test('报告冻结材料版本；旧报告无版本或事件ID时不猜图、不
   const session=createInitialSession('synthetic','guided');session.sourceSnapshotVersion='synthetic-version';
   const report=buildReport(session);assert.equal(report.sourceSnapshotVersion,'synthetic-version');
   report.sourceSnapshotVersion=undefined;report.evidence[0].eventIds=['synthetic-event'];
+  delete report.releasedMediaEventIds; // Legacy reports predate the explicit released-media snapshot.
   assert.ok(renderToStaticMarkup(createElement(ReportView,{report,readonly:true})).includes('历史报告未保存材料版本'));
   const oldScore=report.totalScore;
   for(const item of report.evidence)delete (item as Partial<typeof item>).eventIds;

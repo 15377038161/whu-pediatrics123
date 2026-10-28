@@ -74,22 +74,21 @@ test('别名样例：毛细支气管炎 → 急性毛细支气管炎（按源名
   assert.deepEqual(trustedSourceTitles(source!.name), ['急性毛细支气管炎.txt', '急性毛细支气管炎_完整影像资料册.pdf']);
 });
 
-test('无独立来源（D 类 3 项）：folder 空且不在别名映射 → 召回失败关闭（资料不足，不编造）', () => {
+test('退役三例不在有效目录与来源映射中，不再召回或生成', () => {
   const noSource = ['teacher-新生儿脑梗死', 'teacher-支气管肺炎', 'teacher-格林巴利综合征'];
   for (const id of noSource) {
     const item = TEACHER_CASE_CATALOG.find((entry) => entry.id === id);
-    assert.ok(item, `${id} 不在目录`);
-    assert.equal(item!.folder, null);
+    assert.equal(item, undefined, `${id} 已退出有效目录`);
     assert.ok(!TEACHER_CASE_LINKS[id], `${id} 不得存在于别名映射`);
   }
 });
 
-test('目录计数口径：70 教师项 = 53 独立来源文件夹 + 14 别名（folder 空）+ 3 缺来源', () => {
-  assert.equal(TEACHER_CASE_CATALOG.length, 70);
+test('目录计数口径：67 教师项 = 53 独立来源文件夹 + 14 关联入口', () => {
+  assert.equal(TEACHER_CASE_CATALOG.length, 67);
   const withFolder = TEACHER_CASE_CATALOG.filter((item) => item.folder).length;
   const aliases = Object.keys(TEACHER_CASE_LINKS).length;
   const noSource = TEACHER_CASE_CATALOG.filter((item) => !item.folder && !TEACHER_CASE_LINKS[item.id]).length;
   assert.equal(withFolder, 53);
   assert.equal(aliases, 14);
-  assert.equal(noSource, 3);
+  assert.equal(noSource, 0);
 });

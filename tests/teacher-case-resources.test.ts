@@ -63,12 +63,12 @@ test('学生不可获得知识库原图外链：本地目录缺失时仅教师�
 
 
 test('教师清单和病例目录双向覆盖，编码ID和异名均可关联资料', () => {
-  assert.equal(TEACHER_CASE_CATALOG.length, 70);
-  assert.equal(TEACHER_CASE_CATALOG.filter((item) => item.source === 'list').length, 54);
+  assert.equal(TEACHER_CASE_CATALOG.length, 67);
+  assert.equal(TEACHER_CASE_CATALOG.filter((item) => item.source === 'list').length, 51);
   assert.equal(TEACHER_CASE_CATALOG.filter((item) => item.status === 'materials-indexed').length, 37);
-  assert.equal(TEACHER_CASE_CATALOG.filter((item) => item.status === 'catalog-only').length, 17);
+  assert.equal(TEACHER_CASE_CATALOG.filter((item) => item.status === 'catalog-only').length, 14);
   assert.equal(TEACHER_CASE_CATALOG.filter((item) => item.status === 'folder-only').length, 16);
-  assert.equal(new Set(TEACHER_CASE_CATALOG.map((item) => item.id)).size, 70);
+  assert.equal(new Set(TEACHER_CASE_CATALOG.map((item) => item.id)).size, 67);
   assert.equal(getTeacherCaseResourceRoot('teacher-../outside'), null);
   assert.equal(getTeacherCaseResourceRoot(encodeURIComponent(id)), getTeacherCaseResourceRoot(id));
   assert.equal(getTeacherCaseResourceRoot('teacher-肺炎支原体性肺炎'), getTeacherCaseResourceRoot('teacher-肺炎支原体肺炎'));
