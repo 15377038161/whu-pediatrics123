@@ -3,6 +3,8 @@ import test from 'node:test';
 import type { SessionState } from '../src/domain/agent';
 import { createInitialSession } from '../src/lib/agent-engine';
 import { projectSessionForRole, projectSessionsForRole } from '../src/lib/session-projection';
+import { findPublicCase } from '../src/domain/case-catalog';
+import { patientAppearance } from '../src/domain/patient-appearance';
 
 /** 学生会话公开投影（防透题，任务1b）：
  *  学生 + active：caseOptions.sourceName 中性化、tests 剥离；
@@ -28,10 +30,27 @@ test('学生 + active + 教师病例：sourceName 中性化且 tests 剥离', ()
   assert.ok(session.caseOptions!.tests.length > 0 || session.caseOptions!.exams.length > 0);
 });
 
-test('教师角色：不投影（教师核对需要完整数据）', () => {
+test('教师角色使用工作台可识别的公开ID，完整事实字段及内部会话保持不变', () => {
   const session = teacherSession();
   const projected = projectSessionForRole(session, 'teacher');
-  assert.equal(projected, session, '教师响应原样返回');
+  assert.match(projected.caseId, /^case-/);
+  assert.deepEqual({ ...projected, caseId: session.caseId }, session);
+  assert.equal(projected.caseOptions, session.caseOptions, '教师核对字段不裁减');
+  assert.equal(session.caseId, 'teacher-川崎病', '持久化ID不就地改变');
+});
+
+test('教师进入合法来源病例时，响应ID可查到人物配置，不落入历史停用分支', () => {
+  const session = teacherSession();
+  session.caseOptions = { ...session.caseOptions!, age: '1天', sex: '女' }; // 合成渲染条件
+  assert.equal(findPublicCase(session.caseId), null, '内部来源ID不是客户端目录ID');
+  for (const role of ['teacher', 'student'] as const) {
+    const projected = projectSessionForRole(session, role);
+    const profile = findPublicCase(projected.caseId);
+    assert.ok(profile);
+    const appearance = patientAppearance(projected.caseOptions!.sex, 'supine', profile.id, projected.caseOptions!.age);
+    assert.equal(appearance.key, 'newborn-girl');
+    assert.ok(appearance.src);
+  }
 });
 
 test('已完成/报告待生成会话：不投影（复盘需要原始信息）', () => {

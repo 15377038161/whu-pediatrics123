@@ -333,6 +333,10 @@ textarea { resize: vertical; }
 .patient-unspecified { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 28px; text-align: center; color: var(--muted); }
 .patient-stage[data-posture="supine"] .patient-figure { background: #edf3ef; }
 .patient-stage[data-posture="supine"] .patient-photo { object-fit: contain; }
+/* 婴儿素材为512×512方图；按实际画布定位，避免套用竖版儿童容器产生留白及热区错位。 */
+.patient-stage[data-avatar="newborn-boy"] .patient-figure,
+.patient-stage[data-avatar="newborn-girl"] .patient-figure { aspect-ratio: 1; }
+.patient-stage[data-avatar="newborn-boy"], .patient-stage[data-avatar="newborn-girl"] { --hs-supine-forehead: 25%; --hs-supine-mouth: 32%; --hs-supine-neck: 37%; --hs-supine-chest: 43%; --hs-supine-arm: 45%; --hs-supine-skin: 46%; --hs-supine-abdomen: 53%; --hs-supine-finger: 54%; --hs-supine-hands: 54%; --hs-supine-limbs: 65%; }
 .patient-stage[data-posture="supine"] .hotspot-forehead { top: var(--hs-supine-forehead, 12%); }
 .patient-stage[data-posture="supine"] .hotspot-mouth { top: var(--hs-supine-mouth, 22%); }
 .patient-stage[data-posture="supine"] .hotspot-neck { top: var(--hs-supine-neck, 27%); }

@@ -9,7 +9,8 @@ import { readTeacherCaseData } from '@/lib/teacher-case-data';
  * 服务端在响应边界统一收敛建会话/读取/恢复/列表/事件返回路径的学生可见字段，
  * 内部完整状态（repository.getSession → runAgentTurn）不受影响：
  *
- * - 教师（role=teacher）与已完成/报告待生成（status≠active）会话不投影——
+ * - 所有角色的响应使用稳定公开caseId，内部持久化ID不变；教师完整字段保留。
+ * - 教师（role=teacher）与已完成/报告待生成（status≠active）会话不裁减事实字段——
  *   教师核对需要完整数据，已完成会话进入复盘（报告已含原病例诊断与诊疗经过对照）。
  * - 学生 + 进行中（active）会话：
  *   1. caseOptions.sourceName 中性化——替换为公开目录中性标题（学科+序号），
@@ -21,8 +22,9 @@ import { readTeacherCaseData } from '@/lib/teacher-case-data';
  * 只过滤响应投影，不修改持久化状态（投影是纯函数，原始 state 落库不变）。
  */
 export function projectSessionForRole(session: SessionState, role: AppRole): SessionState {
-  if (role === 'teacher') return session;
   const publicSession = { ...session, caseId: publicCaseId(session.caseId) };
+  // 工作台目录按公开ID查人物配置；教师响应也必须统一ID，避免合法病例被当成退役记录。
+  if (role === 'teacher') return publicSession;
   // 创建指纹包含服务端原病例ID，仅用于幂等核对，不能作为公开会话字段。
   delete publicSession.creationRequest;
   if (session.status !== 'active') return publicSession;
