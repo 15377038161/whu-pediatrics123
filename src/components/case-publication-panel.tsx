@@ -99,11 +99,12 @@ export function CasePublicationPanel() {
             <summary>按病例管理发布状态（{overview.cases.length} 例）</summary>
             <table>
               <thead>
-                <tr><th>病例</th><th>状态</th><th>最近操作</th><th>理由</th><th>操作</th></tr>
+                <tr><th>编号</th><th>病例</th><th>状态</th><th>最近操作</th><th>理由</th><th>操作</th></tr>
               </thead>
               <tbody>
-                {overview.cases.map((row) => (
+                {overview.cases.map((row, index) => (
                   <tr key={row.caseId}>
+                    <td>{index + 1}</td>
                     <td>
                       {row.caseId}
                       {row.missingSource && (
