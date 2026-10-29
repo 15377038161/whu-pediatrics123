@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpenCheck, CheckCircle2, CircleAlert, RotateCcw } from 'lucide-react';
+import { ArrowRight, BookOpenCheck, CheckCircle2, CircleAlert, ClipboardPen, RotateCcw } from 'lucide-react';
 import type { TrainingReport } from '@/domain/agent';
 import { findPublicCase } from '@/domain/case-catalog';
 import { RandomAdmission } from '@/components/random-admission';
@@ -87,7 +87,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           <p>{report.recommendation}</p>
           {report.strengths.length > 0 && <p><strong>{processReport ? '本轮已完成：' : '已经掌握：'}</strong>{report.strengths.join('、')}</p>}
           {report.improvements.length > 0 && <p><strong>重点改进：</strong>{report.improvements.join('、')}</p>}
-          {!readonly && <div className="report-actions"><RandomAdmission excludeCaseId={report.caseId} label="接诊下一位患儿" /><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={`/student/training?mode=guided&case=${encodeURIComponent(report.caseId)}`}>再练一次 <ArrowRight size={14} /></a></div>}
+          {!readonly && <div className="report-actions"><RandomAdmission excludeCaseId={report.caseId} label="接诊下一位患儿" /><a className="btn btn-secondary" href={`/student/notes/${encodeURIComponent(report.sessionId)}`}><ClipboardPen size={16} /> 书写病历</a><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={`/student/training?mode=guided&case=${encodeURIComponent(report.caseId)}`}>再练一次 <ArrowRight size={14} /></a></div>}
         </section>
       </div>
       <section className="report-section" style={{ marginTop: 14 }}>

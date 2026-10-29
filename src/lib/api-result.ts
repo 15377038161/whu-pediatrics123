@@ -44,6 +44,9 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('REPORT_NOT_FOUND')) return { code: 'REPORT_NOT_FOUND', message: '未找到报告记录。', retryable: false };
   if (message.includes('REVIEW_COMMENT_REQUIRED')) return { code: 'REVIEW_COMMENT_REQUIRED', message: '复核理由必填，请填写调整依据。', retryable: false };
   if (message.includes('REVIEW_EVIDENCE_UNKNOWN')) return { code: 'REVIEW_EVIDENCE_UNKNOWN', message: '调整分项与报告记录不符，请刷新后重试。', retryable: false };
+  if (message.includes('NOTE_NOT_FOUND')) return { code: 'NOTE_NOT_FOUND', message: '未找到该病历记录（或不在你的可见范围内）。', retryable: false };
+  if (message.includes('NOTE_EMPTY')) return { code: 'NOTE_EMPTY', message: '病历内容为空，请至少填写一个段落后再提交。', retryable: false };
+  if (message.includes('NOTE_REVIEW_UNAVAILABLE')) return { code: 'NOTE_REVIEW_UNAVAILABLE', message: '本次训练尚未生成报告，AI 审阅需要接诊证据，请先完成训练。', retryable: false };
   if (message.includes('CASE_SOURCE_INVALID')) return { code: 'CASE_SOURCE_INVALID', message: '病例资料格式异常，请重新生成教学病例数据。', retryable: false };
   if (message.includes('CASE_NOT_FOUND')) return { code: 'CASE_NOT_FOUND', message: '未找到该病例。', retryable: false };
   if (message.includes('CASE_RETIRED')) return { code: 'CASE_RETIRED', message: '该病例已停用，历史接诊记录和报告保留为只读。', retryable: false };

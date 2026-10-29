@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import type { TeacherStudentProfile } from '@/lib/repository';
 import { formatDate } from '@/lib/format-date';
 import { authedFetch, authedFetchRaw, AuthedApiError } from '@/lib/authed-api';
+import { TeacherStudentNotes } from '@/components/teacher-student-notes';
 
 /**
  * 学生档案页（教师只读）：学生基本信息 + 当前班级归属 + 授权范围内的训练会话索引。
@@ -115,5 +116,6 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
       })}
     </div>
     {sessions.length === 0 && <div className="empty-state">该学生在你的授权范围内暂无可见训练记录（学生可能尚未训练，或训练产生于归属你班级之外的期间）。</div>}
+    <TeacherStudentNotes studentId={student.id} />
   </>;
 }

@@ -16,6 +16,7 @@ import { creationSessionId, creationFingerprint, type SessionCreationOptions } f
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getCase } from '@/domain/case';
 import { hydrateReleasedExamMedia } from '@/lib/case-media';
+import { NOTE_TEMPLATE_VERSION, normalizeNoteContent, type NoteDraftRecord, type NoteReviewResult, type NoteReviewStatus, type NoteSubmissionRecord } from '@/domain/medical-note';
 
 export interface TeacherStudentSummary {
   id: string;
@@ -875,4 +876,207 @@ export class AgentRepository {
     if (error) throw error;
     return { report: updated, review };
   }
+
+  // ============ 批次6·病历书写模块 ============
+
+  /** 保存病历草稿：每学生×会话一份（upsert 语义），仅本人。 */
+  async saveNoteDraft(sessionId: string, rawContent: unknown): Promise<NoteDraftRecord> {
+    const content = normalizeNoteContent(rawContent);
+    await this.getSession(sessionId);
+    const db = this.db();
+    const existing = await withDatabaseRetry(async () => {
+      const result = await db.from('note_drafts').select('*').eq('user_id', this.actor.id).eq('session_id', sessionId).maybeSingle();
+      if (result.error) throw result.error;
+      return result;
+    });
+    if (existing.data) {
+      const updated = await withDatabaseRetry(async () => {
+        const result = await db.from('note_drafts').update({ content, updated_at: new Date().toISOString() }).eq('id', existing.data.id).select('*').maybeSingle();
+        if (result.error) throw result.error;
+        return result;
+      });
+      if (!updated.data) throw new Error('NOTE_DRAFT_LOST');
+      return mapNoteDraftRow(updated.data);
+    }
+    try {
+      const inserted = await withDatabaseRetry(async () => {
+        const result = await db.from('note_drafts').insert({ session_id: sessionId, content }).select('*').maybeSingle();
+        if (result.error) throw result.error;
+        return result;
+      });
+      if (!inserted.data) throw new Error('NOTE_DRAFT_SAVE_FAILED');
+      return mapNoteDraftRow(inserted.data);
+    } catch (error) {
+      // 双标签页并发首存撞唯一约束：回读并发写入的行返回
+      if ((error as { code?: string }).code === '23505') {
+        const raced = await this.getNoteDraft(sessionId);
+        if (raced) return raced;
+      }
+      throw error;
+    }
+  }
+
+  /** 读取本人某会话草稿（无则 null）。 */
+  async getNoteDraft(sessionId: string): Promise<NoteDraftRecord | null> {
+    const db = this.db();
+    const result = await withDatabaseRetry(async () => {
+      const row = await db.from('note_drafts').select('*').eq('user_id', this.actor.id).eq('session_id', sessionId).maybeSingle();
+      if (row.error) throw row.error;
+      return row;
+    });
+    return result.data ? mapNoteDraftRow(result.data) : null;
+  }
+
+  /** 提交病历：内容归一→空校验→归属校验→幂等命中→草稿同步→插入正式提交行。 */
+  async submitNote(sessionId: string, rawContent: unknown, clientEventId?: string): Promise<NoteSubmissionRecord> {
+    const content = normalizeNoteContent(rawContent);
+    const hasText = Object.values(content).some((value) => value.trim().length > 0);
+    if (!hasText) throw new Error('NOTE_EMPTY');
+    const session = await this.getSession(sessionId);
+    if (clientEventId) {
+      const existing = await this.findNoteByClientEventId(clientEventId);
+      if (existing) return existing;
+    }
+    await this.saveNoteDraft(sessionId, content);
+    const db = this.db();
+    const payload: Record<string, unknown> = {
+      session_id: sessionId,
+      case_id: session.caseId,
+      content,
+      ...(session.sourceSnapshotVersion ? { case_version: session.sourceSnapshotVersion } : {}),
+      ...(clientEventId ? { client_event_id: clientEventId } : {}),
+    };
+    try {
+      const inserted = await withDatabaseRetry(async () => {
+        const result = await db.from('note_submissions').insert(payload).select('*').maybeSingle();
+        if (result.error) throw result.error;
+        return result;
+      });
+      if (!inserted.data) throw new Error('NOTE_SUBMIT_FAILED');
+      return mapNoteRow(inserted.data);
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505' && clientEventId) {
+        const existing = await this.findNoteByClientEventId(clientEventId);
+        if (existing) return existing;
+      }
+      throw error;
+    }
+  }
+
+  private async findNoteByClientEventId(clientEventId: string): Promise<NoteSubmissionRecord | null> {
+    const db = this.db();
+    const result = await withDatabaseRetry(async () => {
+      const row = await db.from('note_submissions').select('*').eq('user_id', this.actor.id).eq('client_event_id', clientEventId).maybeSingle();
+      if (row.error) throw row.error;
+      return row;
+    });
+    return result.data ? mapNoteRow(result.data) : null;
+  }
+
+  /** 学生本人提交列表（可选会话过滤，最新在前，上限 100 条）。 */
+  async listMyNotes(sessionId?: string): Promise<NoteSubmissionRecord[]> {
+    const db = this.db();
+    const result = await withDatabaseRetry(async () => {
+      let query = db.from('note_submissions').select('*').eq('user_id', this.actor.id);
+      if (sessionId) query = query.eq('session_id', sessionId);
+      const rows = await query.order('submitted_at', { ascending: false }).limit(100);
+      if (rows.error) throw rows.error;
+      return rows;
+    });
+    return (result.data ?? []).map(mapNoteRow);
+  }
+
+  /** 单条提交（本人或教师，RLS 行级把关可见性）。 */
+  async getNote(noteId: string): Promise<NoteSubmissionRecord | null> {
+    const db = this.db();
+    const result = await withDatabaseRetry(async () => {
+      const row = await db.from('note_submissions').select('*').eq('id', noteId).maybeSingle();
+      if (row.error) throw row.error;
+      return row;
+    });
+    return result.data ? mapNoteRow(result.data) : null;
+  }
+
+  /** 教师查看某学生的病历提交列表（RLS 行级把关，路由层教师鉴权）。 */
+  async listStudentNotes(studentId: string): Promise<NoteSubmissionRecord[]> {
+    const db = this.db();
+    const result = await withDatabaseRetry(async () => {
+      const rows = await db.from('note_submissions').select('*').eq('user_id', studentId).order('submitted_at', { ascending: false }).limit(100);
+      if (rows.error) throw rows.error;
+      return rows;
+    });
+    return (result.data ?? []).map(mapNoteRow);
+  }
+
+  /** AI 审阅结果回填（仅本人提交可写三列；failed 时意见清空、版本留空）。 */
+  async updateNoteReview(noteId: string, status: NoteReviewStatus, review: NoteReviewResult | null, promptVersion: string): Promise<NoteSubmissionRecord> {
+    const db = this.db();
+    const result = await withDatabaseRetry(async () => {
+      const row = await db.from('note_submissions')
+        .update({ ai_review_status: status, ai_review: review, ai_prompt_version: status === 'ready' ? promptVersion : null })
+        .eq('id', noteId).eq('user_id', this.actor.id).select('*').maybeSingle();
+      if (row.error) throw row.error;
+      return row;
+    });
+    if (!result.data) throw new Error('NOTE_NOT_FOUND');
+    return mapNoteRow(result.data);
+  }
+}
+
+// ============ 批次6·病历行映射（DB snake_case → 领域 camelCase） ============
+
+type NoteDraftRow = {
+  id: string;
+  user_id: string;
+  session_id: string;
+  template_version: string | null;
+  content: unknown;
+  created_at: string;
+  updated_at: string;
+};
+
+function mapNoteDraftRow(row: NoteDraftRow): NoteDraftRecord {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    sessionId: row.session_id,
+    templateVersion: row.template_version ?? NOTE_TEMPLATE_VERSION,
+    content: normalizeNoteContent(row.content),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+type NoteRow = {
+  id: string;
+  user_id: string;
+  session_id: string;
+  case_id: string;
+  case_version: string | null;
+  template_version: string | null;
+  content: unknown;
+  client_event_id: string | null;
+  submitted_at: string;
+  ai_review_status: NoteReviewStatus;
+  ai_review: NoteReviewResult | null;
+  ai_prompt_version: string | null;
+  created_at: string;
+};
+
+function mapNoteRow(row: NoteRow): NoteSubmissionRecord {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    sessionId: row.session_id,
+    caseId: row.case_id,
+    caseVersion: row.case_version,
+    templateVersion: row.template_version ?? NOTE_TEMPLATE_VERSION,
+    content: normalizeNoteContent(row.content),
+    clientEventId: row.client_event_id,
+    submittedAt: row.submitted_at,
+    aiReviewStatus: row.ai_review_status,
+    aiReview: row.ai_review,
+    aiPromptVersion: row.ai_prompt_version,
+    createdAt: row.created_at,
+  };
 }

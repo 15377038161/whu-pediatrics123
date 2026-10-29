@@ -128,6 +128,11 @@ tests/                      # 测试
   - `CHAOXING_SECRET` 必须存储在密钥管理中，不得出现在代码/日志中
   - 教师权限基于 `CHAOXING_TEACHER_UIDS` 白名单，空值 = 全部学生权限
   - 首次部署后立即用测试学生和教师账号验证完整登录流程
+- **沙箱预览服务跑生产 build 模式（关键，2026-10-29 批次6验证时确认）**：
+  - `src/server.ts` 硬编码 `const dev = false`，沙箱 dev server 实际服务 `.next` 生产构建产物，tsx watch 只负责重启进程、不重编译路由清单
+  - **新增/删除 API 路由（route.ts）或页面后必须执行 `pnpm build` 才能生效**，否则新路由表现为 404（旧路由正常）
+  - 禁止删除 `.next` 目录——会导致 server 启动崩溃（"Could not find a production build"）且 tsx watch 反复重启失败
+  - 全量单测避免一次性 `pnpm test`（88 个测试文件并发会超时/被杀，exitCode -1），应按每批约 11 个文件分批执行 `pnpm exec tsx --test <files...>`
 
 ## 2026-10-19 登录入口更新
 

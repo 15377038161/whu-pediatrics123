@@ -1,0 +1,109 @@
+/* 批次6·教师学生档案页病历区块样式（teacher-student-notes.tsx 专用） */
+
+.notesSection {
+  margin-top: 26px;
+}
+
+.noteList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.noteCard {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  overflow: hidden;
+}
+
+.noteHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
+}
+
+.noteHead:hover { background: var(--paper); }
+
+.noteRevision {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #e9efeb;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1f6f54;
+}
+
+.noteHead strong { font-size: 13.5px; color: var(--ink); }
+.noteHead time { font-size: 12px; color: var(--muted); }
+
+.noteCaseId {
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 1px 8px;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+}
+
+.noteBadge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--muted);
+}
+
+.noteBadge[data-status='ready'] { color: #1a7f4b; border-color: #bfe3cd; background: #f2faf5; }
+.noteBadge[data-status='failed'] { color: #9a6b00; border-color: #f0d9a0; background: #fffaf0; }
+
+.noteBody {
+  padding: 4px 16px 16px;
+  border-top: 1px dashed var(--line);
+}
+
+.noteContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.noteContent dt {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1f6f54;
+}
+
+.noteContent dd {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.noteContent dd[data-empty] { color: var(--muted); }
+
+.noteFailed {
+  margin: 0;
+  font-size: 12.5px;
+  color: #9a6b00;
+}
+
+.noteEmpty {
+  padding: 14px 16px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 13px;
+  color: var(--muted);
+}

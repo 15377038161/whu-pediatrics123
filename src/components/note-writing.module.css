@@ -1,0 +1,351 @@
+/* 批次6·病历书写页样式（note-writing.tsx 专用，复用全局设计变量） */
+
+.noteShell {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.noteIntro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.noteBoundary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.noteCompleteness {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.noteCompleteness span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+
+.noteCompleteness span[data-level='written'] { color: #1a7f4b; border-color: #bfe3cd; background: #f2faf5; }
+.noteCompleteness span[data-level='partial'] { color: #9a6b00; border-color: #f0d9a0; background: #fffaf0; }
+.noteCompleteness span[data-level='missing'] { color: var(--danger); border-color: #e6c9c2; background: #fdf3f1; }
+
+.noteForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.noteField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.noteFieldHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.noteFieldHead strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.noteFieldHead em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--danger);
+  padding: 1px 7px;
+  border: 1px solid #e6c9c2;
+  border-radius: 999px;
+  background: #fdf3f1;
+}
+
+.noteHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.noteField textarea {
+  width: 100%;
+  min-height: 74px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.noteField textarea:focus {
+  outline: 2px solid var(--brand, #1f6f54);
+  outline-offset: 1px;
+  background: var(--white);
+}
+
+.noteField[data-completeness='partial'] textarea { border-color: #f0d9a0; }
+.noteField[data-completeness='missing'] textarea { border-color: #e6c9c2; }
+
+.noteActions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  box-shadow: 0 -6px 18px rgba(20, 45, 40, 0.06);
+}
+
+.noteSaveState {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.noteSaveState[data-state='saved'] { color: #1a7f4b; }
+.noteSaveState[data-state='failed'] { color: var(--danger); }
+
+.noteMissingWarn {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12.5px;
+  color: #9a6b00;
+}
+
+.noteError {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.noteHistory {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.noteSubmitCard {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+  overflow: hidden;
+}
+
+.noteSubmitHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.noteSubmitHead:hover { background: var(--paper); }
+
+.noteRevision {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #e9efeb;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1f6f54;
+}
+
+.noteSubmitHead strong { font-size: 13.5px; color: var(--ink); }
+.noteSubmitHead time { font-size: 12px; color: var(--muted); }
+
+.noteReviewBadge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--muted);
+}
+
+.noteReviewBadge[data-status='ready'] { color: #1a7f4b; border-color: #bfe3cd; background: #f2faf5; }
+.noteReviewBadge[data-status='failed'] { color: #9a6b00; border-color: #f0d9a0; background: #fffaf0; }
+
+.noteSubmitBody {
+  padding: 4px 16px 16px;
+  border-top: 1px dashed var(--line);
+}
+
+.noteContentRead {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.noteContentRead dt {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1f6f54;
+}
+
+.noteContentRead dd {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.noteContentRead dd[data-empty] { color: var(--muted); }
+
+.noteReviewPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #bfe3cd;
+  border-radius: var(--radius);
+  background: #f2faf5;
+}
+
+.noteReviewSummary {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink);
+  margin: 0;
+}
+
+.noteReviewSection {
+  padding-top: 10px;
+  border-top: 1px dashed #bfe3cd;
+}
+
+.noteReviewSection h5 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #1f6f54;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.noteCompletenessTag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--muted);
+}
+
+.noteCompletenessTag[data-level='written'] { color: #1a7f4b; }
+.noteCompletenessTag[data-level='partial'] { color: #9a6b00; }
+.noteCompletenessTag[data-level='missing'] { color: var(--danger); }
+
+.noteIssue {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid #f0d9a0;
+  background: var(--white);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.noteIssueKind {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #9a6b00;
+}
+
+.noteIssueQuote {
+  display: block;
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--paper);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.noteStrengths {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.noteReviewStream {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.noteReviewStreamStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #1f6f54;
+}
+
+.noteReviewStreamText {
+  max-height: 160px;
+  overflow: auto;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.noteReviewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
