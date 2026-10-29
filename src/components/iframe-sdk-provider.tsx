@@ -14,6 +14,14 @@ declare global {
         };
       };
     };
+    IframeRouteSync?: {
+      child: {
+        create: (options?: { debug?: boolean }) => {
+          init: () => unknown;
+          destroy: () => void;
+        };
+      };
+    };
     IframeElementPicker?: {
       child: {
         create: (options?: {

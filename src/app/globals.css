@@ -194,9 +194,12 @@ textarea { resize: vertical; }
 .teacher-case-index a .case-index-number { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; color: var(--pine-dark); }
 .teacher-case-index a .case-index-id { font-size: 11px; }
 .teacher-case-index a strong { flex: 1 1 auto; }
+.teacher-case-index a .case-index-complaint { flex: 1 1 42%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; color: var(--ink); }
 .publication-case-name { margin-left: 6px; color: var(--muted); font-weight: 400; }
 .teacher-case-detail { max-width: 1100px; margin: auto; padding: 24px 18px 50px; }
 .teacher-case-detail .case-resource-panel { margin: 22px 0; }
+.teacher-case-detail .case-complaint { display: flex; align-items: baseline; gap: 8px; margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: white; font-size: 13px; color: var(--ink); }
+.teacher-case-detail .case-complaint strong { flex: 0 0 auto; color: var(--pine-dark); }
 .anatomy-lab { max-width: 1180px; margin: 0 auto; padding: 30px 20px 60px; }
 .anatomy-lab-head { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 24px; }
 .anatomy-lab-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, .8fr); gap: 16px; }
