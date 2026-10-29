@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, FileText, Film, MonitorPlay, Paperclip, RefreshCw, Trash2 } from 'lucide-react';
 import { authedFetch } from '@/lib/authed-api';
 import { formatDateTime } from '@/lib/format-date';
+import type { SkillCatalogItem } from '@/lib/learning-resource';
 import type { StorageFileBrief, TeacherClassBrief, TeacherResourceRecord } from '@/lib/learning-resource-teacher';
 import styles from './learning-resource-manager.module.css';
 
@@ -55,6 +56,7 @@ interface EditState {
   coverFileId: string;
   durationSeconds: string;
   sortOrder: string;
+  skillId: string;
 }
 
 function toEditState(resource: TeacherResourceRecord): EditState {
@@ -68,6 +70,7 @@ function toEditState(resource: TeacherResourceRecord): EditState {
     coverFileId: resource.coverFileId ?? '',
     durationSeconds: resource.durationSeconds === null ? '' : String(resource.durationSeconds),
     sortOrder: String(resource.sortOrder ?? 0),
+    skillId: resource.skillId ?? '',
   };
 }
 
@@ -87,6 +90,7 @@ export function LearningResourceManager() {
   const [visibility, setVisibility] = useState<string[]>([]);
   const [edit, setEdit] = useState<EditState | null>(null);
   const [files, setFiles] = useState<StorageFileBrief[] | null>(null);
+  const [skills, setSkills] = useState<SkillCatalogItem[]>([]);
   const [pickerTarget, setPickerTarget] = useState<'file' | 'cover' | null>(null);
   const [platformScope, setPlatformScope] = useState(false);
   const [creating, setCreating] = useState({ title: '', kind: 'video' as TeacherResourceRecord['kind'], topic: '' });
@@ -136,6 +140,19 @@ export function LearningResourceManager() {
       .catch((reason) => {
         if (!active) return;
         setError(reason instanceof Error ? reason.message : '资源列表读取失败');
+      });
+    return () => { active = false; };
+  }, []);
+
+  // 技能目录加载（批次7教师绑定下拉）：加载失败置空，不阻塞资源管理主流程
+  useEffect(() => {
+    let active = true;
+    authedFetch<{ skills: SkillCatalogItem[] }>('/api/skills')
+      .then((next) => {
+        if (active) setSkills(next.skills ?? []);
+      })
+      .catch(() => {
+        if (active) setSkills([]);
       });
     return () => { active = false; };
   }, []);
@@ -199,6 +216,7 @@ export function LearningResourceManager() {
       coverFileId: edit.coverFileId.trim() || null,
       durationSeconds: edit.durationSeconds.trim() === '' ? null : Math.max(0, Math.floor(Number(edit.durationSeconds))),
       sortOrder: Math.max(0, Math.min(9999, Math.floor(Number(edit.sortOrder) || 0))),
+      skillId: edit.skillId.trim() || null,
     };
     if (payload.title.length < 2) {
       setError('标题至少 2 个字符。');
@@ -284,6 +302,7 @@ export function LearningResourceManager() {
   }, [pickerTarget, edit]);
 
   const ownedClasses = classes;
+  const skillTitleById = new Map(skills.map((s) => [s.skillId, s.title]));
 
   if (!list) {
     return (
@@ -347,6 +366,15 @@ export function LearningResourceManager() {
             <label>
               排序（小在前）
               <input value={edit.sortOrder} onChange={(e) => setEdit({ ...edit, sortOrder: e.target.value.replace(/[^\d]/g, '') })} inputMode="numeric" />
+            </label>
+            <label>
+              所属技能（批次7目录）
+              <select value={edit.skillId} onChange={(e) => setEdit({ ...edit, skillId: e.target.value })}>
+                <option value="">未绑定</option>
+                {skills.map((s) => (
+                  <option key={s.skillId} value={s.skillId}>{s.category ? `${s.category} · ${s.title}` : s.title}</option>
+                ))}
+              </select>
             </label>
           </div>
 
@@ -477,6 +505,7 @@ export function LearningResourceManager() {
                       {resource.kind === 'video' ? <Film size={12} /> : <FileText size={12} />} {KIND_LABEL[resource.kind]}
                     </span>
                     {resource.scope === 'platform' ? <span className={styles.badge}>全平台</span> : null}
+                    {resource.skillId ? <span className={styles.badge}>{skillTitleById.get(resource.skillId) ?? '已绑定技能'}</span> : null}
                   </div>
                   <h3>{resource.title}</h3>
                   {resource.topic ? <p>{resource.topic}</p> : null}

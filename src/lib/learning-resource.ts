@@ -7,6 +7,10 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SkillCatalogItem } from '@/domain/skill-learning';
+
+// 技能目录类型经本仓储层转出（技能目录 API / 前端统一从此导入）
+export type { SkillCatalogItem };
 
 export type LearningResourceKind = 'video' | 'document';
 
@@ -21,7 +25,11 @@ export interface LearningResourceSummary {
   source: string;
   platformWide: boolean;
   sortOrder: number;
+  /** 所属技能目录项（批次7；未绑定为 null）。 */
+  skillId: string | null;
   positionSeconds: number | null;
+  /** 观看完成标记时间（观看位置达时长 90% 由服务端 RPC 标记；仅前进）。 */
+  completedAt: string | null;
   progressUpdatedAt: string | null;
   updatedAt: string;
 }
@@ -38,8 +46,11 @@ export interface LearningResourceDetailInternal {
   durationSeconds: number | null;
   source: string;
   platformWide: boolean;
+  /** 所属技能目录项（批次7；未绑定为 null）。 */
+  skillId: string | null;
   updatedAt: string;
   positionSeconds: number | null;
+  completedAt: string | null;
   progressUpdatedAt: string | null;
 }
 
@@ -48,6 +59,10 @@ export type LearningResourceDetail = Omit<LearningResourceDetailInternal, 'fileI
 export interface ResourceProgressResult {
   resourceId: string;
   positionSeconds: number;
+  /** 本次提交是否达成完成标记（观看位置达时长 90%）。 */
+  completed: boolean;
+  /** 完成标记时间（首次达成时间；未达成为 null）。 */
+  completedAt: string | null;
   updatedAt: string;
 }
 
@@ -95,7 +110,9 @@ export async function listVisibleLearningResources(db: SupabaseClient): Promise<
       source: String(item.source ?? ''),
       platformWide: item.platformWide === true,
       sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : 0,
+      skillId: item.skillId ? String(item.skillId) : null,
       positionSeconds: typeof item.positionSeconds === 'number' ? item.positionSeconds : null,
+      completedAt: item.completedAt ? String(item.completedAt) : null,
       progressUpdatedAt: item.progressUpdatedAt ? String(item.progressUpdatedAt) : null,
       updatedAt: String(item.updatedAt ?? ''),
     };
@@ -119,10 +136,35 @@ export async function getVisibleLearningResource(db: SupabaseClient, resourceId:
     durationSeconds: typeof item.durationSeconds === 'number' ? item.durationSeconds : null,
     source: String(item.source ?? ''),
     platformWide: item.platformWide === true,
+    skillId: item.skillId ? String(item.skillId) : null,
     updatedAt: String(item.updatedAt ?? ''),
     positionSeconds: typeof item.positionSeconds === 'number' ? item.positionSeconds : null,
+    completedAt: item.completedAt ? String(item.completedAt) : null,
     progressUpdatedAt: item.progressUpdatedAt ? String(item.progressUpdatedAt) : null,
   };
+}
+
+/**
+ * 学生技能学习目录（批次7）：skill_catalog_student 受控 RPC——
+ * 技能 + 可见资源计数 + 本人完成计数；教师/学生通用（教师端忽略聚合字段）。
+ */
+export async function listSkillCatalog(db: SupabaseClient): Promise<SkillCatalogItem[]> {
+  const { data, error } = await db.rpc('skill_catalog_student');
+  if (error) throw translateRpcError(error, 'SKILL_CATALOG');
+  if (!Array.isArray(data)) return [];
+  return (data as unknown[]).map((row) => {
+    const item = asRecord(row);
+    return {
+      skillId: String(item.skillId ?? ''),
+      slug: String(item.slug ?? ''),
+      title: String(item.title ?? ''),
+      description: String(item.description ?? ''),
+      category: String(item.category ?? ''),
+      resourceCount: typeof item.resourceCount === 'number' ? item.resourceCount : 0,
+      completedCount: typeof item.completedCount === 'number' ? item.completedCount : 0,
+      sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : 0,
+    };
+  });
 }
 
 /** 观看进度幂等更新（仅本人位置；范围校验在 RPC 内强制）。 */
@@ -136,6 +178,8 @@ export async function saveResourceProgress(db: SupabaseClient, resourceId: strin
   return {
     resourceId: String(item.resourceId ?? resourceId),
     positionSeconds: Number(item.positionSeconds ?? Math.floor(positionSeconds)),
+    completed: item.completed === true,
+    completedAt: item.completedAt ? String(item.completedAt) : null,
     updatedAt: String(item.updatedAt ?? ''),
   };
 }

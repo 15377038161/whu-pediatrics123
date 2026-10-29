@@ -7,7 +7,8 @@
  * - 可见性由服务端 RPC 强制（教师发布 + 班级范围），下架资源自然从列表消失，历史进度保留（进度不当掌握程度）。
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Clock, FileText, Film, RefreshCw, Sparkles } from 'lucide-react';
 import { authedFetch } from '@/lib/authed-api';
 import type { LearningResourceDetail, LearningResourceKind, LearningResourceSummary } from '@/lib/learning-resource';
@@ -290,8 +291,10 @@ function ResourceDetail({ resourceId, onBack }: { resourceId: string; onBack: ()
   );
 }
 
-export default function StudentResourcesPage() {
-  const [detailId, setDetailId] = useState<string | null>(null);
+function StudentResourcesWithQuery() {
+  const searchParams = useSearchParams();
+  // 从技能学习页跳转进入（?resourceId=xxx）：惰性初始化直接打开对应资源详情
+  const [detailId, setDetailId] = useState<string | null>(() => searchParams.get('resourceId'));
 
   return (
     <>
@@ -306,5 +309,15 @@ export default function StudentResourcesPage() {
         <ResourceListWithSelection onSelect={setDetailId} />
       )}
     </>
+  );
+}
+
+
+export default function StudentResourcesPage() {
+  // useSearchParams 需 Suspense 边界（Next.js CSR bailout 规范）
+  return (
+    <Suspense fallback={<div className="empty-state"><p>正在加载…</p></div>}>
+      <StudentResourcesWithQuery />
+    </Suspense>
   );
 }

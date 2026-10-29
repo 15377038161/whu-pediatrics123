@@ -15,6 +15,7 @@ import { requireAuth } from '@/lib/request-auth';
 import { getSupabaseUserClient, isDatabaseConfigured } from '@/lib/supabase-client';
 import { isTeacherByWhitelist } from '@/lib/case-draft-import';
 import { isProjectAdmin } from '@/lib/question-bank';
+import type { SkillOption } from '@/domain/skill-learning';
 
 export type TeacherResourceStatus = 'draft' | 'published' | 'retired';
 
@@ -32,6 +33,8 @@ export interface TeacherResourceRecord {
   status: TeacherResourceStatus;
   scope: 'class' | 'platform';
   sortOrder: number;
+  /** 所属技能目录项（批次7；未绑定为 null）。 */
+  skillId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -85,6 +88,7 @@ export const createResourceSchema = z.object({
   durationSeconds: z.number().int().min(0).max(MAX_DURATION_SECONDS).nullable().optional(),
   source: z.string().trim().max(120).nullable().optional(),
   sortOrder: z.number().int().min(0).max(9999).optional(),
+  skillId: z.string().uuid().nullable().optional(),
 }).strict();
 
 export const updateResourceSchema = z.object({
@@ -97,7 +101,27 @@ export const updateResourceSchema = z.object({
   durationSeconds: z.number().int().min(0).max(MAX_DURATION_SECONDS).nullable().optional(),
   source: z.string().trim().max(120).nullable().optional(),
   sortOrder: z.number().int().min(0).max(9999).optional(),
+  skillId: z.string().uuid().nullable().optional(),
 }).strict();
+
+/** 技能目录选项（批次7：教师绑定资源下拉；技能项为迁移种子，教师只读）。 */
+export async function listSkillOptions(db: SupabaseClient): Promise<SkillOption[]> {
+  const { data, error } = await db
+    .from('skills')
+    .select('id,slug,title,category,sort_order')
+    .eq('status', 'active')
+    .order('sort_order');
+  if (error) throw new Error(`SKILL_LIST_FAILED: ${error.message}`);
+  return (data ?? []).map((row) => {
+    const item = row as Record<string, unknown>;
+    return {
+      skillId: String(item.id ?? ''),
+      slug: String(item.slug ?? ''),
+      title: String(item.title ?? ''),
+      category: String(item.category ?? ''),
+    };
+  });
+}
 
 export const visibilitySchema = z.object({
   cohortIds: z.array(z.string().uuid()).max(50),
@@ -132,6 +156,7 @@ function rowToRecord(row: Record<string, unknown>): TeacherResourceRecord {
     status: (['draft', 'published', 'retired'].includes(status) ? status : 'draft') as TeacherResourceStatus,
     scope: row.scope === 'platform' ? 'platform' : 'class',
     sortOrder: typeof row.sort_order === 'number' ? row.sort_order : 0,
+    skillId: row.skill_id == null ? null : String(row.skill_id),
     createdAt: String(row.created_at ?? ''),
     updatedAt: String(row.updated_at ?? ''),
   };
@@ -141,7 +166,7 @@ function rowToRecord(row: Record<string, unknown>): TeacherResourceRecord {
 export async function listTeacherResources(db: SupabaseClient): Promise<TeacherResourceRecord[]> {
   const { data, error } = await db
     .from('learning_resources')
-    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,created_at,updated_at')
+    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,skill_id,created_at,updated_at')
     .order('updated_at', { ascending: false });
   if (error) throw new Error(`RESOURCE_LIST_FAILED: ${error.message}`);
   return (data ?? []).map((row) => rowToRecord(row as Record<string, unknown>));
@@ -151,7 +176,7 @@ export async function listTeacherResources(db: SupabaseClient): Promise<TeacherR
 export async function getTeacherResource(db: SupabaseClient, resourceId: string): Promise<TeacherResourceRecord> {
   const { data, error } = await db
     .from('learning_resources')
-    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,created_at,updated_at')
+    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,skill_id,created_at,updated_at')
     .eq('id', resourceId)
     .maybeSingle();
   if (error) throw new Error(`RESOURCE_GET_FAILED: ${error.message}`);
@@ -200,8 +225,9 @@ export async function createTeacherResource(
       duration_seconds: input.durationSeconds ?? null,
       source: input.source ?? null,
       sort_order: input.sortOrder ?? 0,
+      skill_id: input.skillId ?? null,
     })
-    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,created_at,updated_at')
+    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,skill_id,created_at,updated_at')
     .single();
   if (error) throw translateWriteError(error);
   return rowToRecord(data as Record<string, unknown>);
@@ -217,6 +243,7 @@ export type ResourceUpdatePatch = Partial<{
   durationSeconds: number | null;
   source: string | null;
   sortOrder: number;
+  skillId: string | null;
 }>;
 
 /** 编辑资源元数据（不改状态；owner/scope 由触发器保护，updated_at 服务端维护）。 */
@@ -235,12 +262,13 @@ export async function updateTeacherResource(
   if (patch.durationSeconds !== undefined) values.duration_seconds = patch.durationSeconds;
   if (patch.source !== undefined) values.source = patch.source;
   if (patch.sortOrder !== undefined) values.sort_order = patch.sortOrder;
+  if (patch.skillId !== undefined) values.skill_id = patch.skillId;
   if (Object.keys(values).length === 0) return getTeacherResource(db, resourceId);
   const { data, error } = await db
     .from('learning_resources')
     .update(values)
     .eq('id', resourceId)
-    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,created_at,updated_at')
+    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,skill_id,created_at,updated_at')
     .single();
   if (error) throw translateWriteError(error);
   if (!data) throw new Error('RESOURCE_NOT_FOUND');
@@ -262,7 +290,7 @@ export async function publishTeacherResource(
     .from('learning_resources')
     .update(values)
     .eq('id', resourceId)
-    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,created_at,updated_at')
+    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,skill_id,created_at,updated_at')
     .single();
   if (error) throw translateWriteError(error);
   if (!data) throw new Error('RESOURCE_NOT_FOUND');
@@ -275,7 +303,7 @@ export async function retireTeacherResource(db: SupabaseClient, resourceId: stri
     .from('learning_resources')
     .update({ status: 'retired' })
     .eq('id', resourceId)
-    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,created_at,updated_at')
+    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,skill_id,created_at,updated_at')
     .single();
   if (error) throw translateWriteError(error);
   if (!data) throw new Error('RESOURCE_NOT_FOUND');
@@ -288,7 +316,7 @@ export async function restoreTeacherResource(db: SupabaseClient, resourceId: str
     .from('learning_resources')
     .update({ status: 'draft' })
     .eq('id', resourceId)
-    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,created_at,updated_at')
+    .select('id,owner_id,title,description,kind,topic,cover_file_id,file_id,duration_seconds,source,status,scope,sort_order,skill_id,created_at,updated_at')
     .single();
   if (error) throw translateWriteError(error);
   if (!data) throw new Error('RESOURCE_NOT_FOUND');

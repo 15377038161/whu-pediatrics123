@@ -51,6 +51,7 @@ tests/                      # 测试
 - 教师病例统一索引视图（2026-10-29 批次2）：`src/lib/teacher-case-index.ts`（服务端聚合「编号+诊断+完整主诉」三要素；诊断=目录病名，主诉经 `CASE_PUBLIC_IDS` 映射 `admission-summaries.json`；「诊断待确认/主诉待补充/编号#—」三槽位独立失联回退，纯函数 `resolveTeacherCaseIndexEntry` 可负测）；`GET /api/teacher/case-index`（`requireAuth(request, 'teacher')` 教师鉴权）；`TeacherDashboard` 索引行三要素渲染（读取失败降级沿用客户端目录）+ `/teacher/cases/[id]` 详情页补完整主诉。**安全边界：`CASE_PUBLIC_IDS`（teacher-id↔case-uuid 防透题映射）仅服务端使用，下发条目只含 teacherId 不含 case-uuid；客户端仅 type-only 导入（编译后擦除），严禁改为值导入**；测试 `tests/teacher-case-index.test.ts`（67条完整性/编号连续/回退规则/路由权限合成Auth/防透题断言）
 - 学生档案「学生→病例→单次训练」三级进度（2026-10-29 批次3）：`src/lib/repository.ts` 的 `TeacherStudentProfile.caseProgress`（`buildCaseProgress` 服务端纯函数聚合：学生×病例→训练次数/完成数/报告数/最近已评分得分；未评分与过程分不计入，沿用学情首页口径；空/空白 caseId 归「病例未标注」兜底组；组按最近训练时间倒序）；`teacherCaseMeta`（caseId 经 `resolveCaseId` 归一兼容 case-uuid 混入 → 目录病名+编号，未收录回退原始 id）；`getStudentProfile` preview/DB 双分支同步（Entry 增 caseId/status；DB 分支行级可见性仍全由 RLS 决定）；`/teacher/students/[id]` 按病例分组渲染+组内单次训练下钻（证据链至 `/teacher/sessions/[id]`）。**`previewSeedUsers` 种子病例修复：批次1退役合成旗舰（`peds-respiratory-001` 已不在公开目录）后 `createInitialSession` 默认 caseId 必抛 `CASE_NOT_FOUND`，已改用教师目录首例（fail-closed `TEACHER_CASE_CATALOG_EMPTY`），否则 preview 学情列表/学生档案全链路 500**；测试 `tests/teacher-student-profile.test.ts`（聚合契约/过程分排除/空输入/uuid归一回退/preview集成含未标注组/学生403+未知学生404）。**已知环境现象：node --test 默认并发下重测试偶发 SIGKILL（三轮全量失败项互不重复、单跑均过，资源压力偶发非代码回归），全量基线用 `--test-concurrency=2` 取证：465/460 pass/0 fail/5 skip**
 - `src/lib/format-date.ts`：确定性日期格式化（固定 `Asia/Shanghai` + 完整 Intl 选项），**组件内禁止裸用 `toLocaleString/toLocaleDateString/toLocaleTimeString`**（SSR/CSR 时区差异会触发 React 水合错误 #418/#423），一律改用 `formatDateTime/formatDate/formatTime`
+- 独立技能学习模块（2026-10-30 批次7）：`supabase/migrations/20261030100000_skill_learning_catalog.sql`（skills 表 + learning_resources.skill_id 关联 + resource_progress.completed_at 完成标记 + skill_catalog_student RPC + resource_list_student 输出扩展 skillId/completedAt）；领域层 `src/domain/skill-learning.ts`（8 项儿科 OSCE 技能种子 slug、完成阈值 0.9、isResourcePositionComplete/skillProgressLabel/sortSkillCatalog 纯函数）；`GET /api/skills`（requireAuth 学生/教师通用，学生视角含可见资源数与完成数聚合）；学生页 `/student/skills`（技能目录+资源清单+完成度进度条，资源点击跳 `/student/resources?resourceId=`，资源页经 Suspense+useSearchParams 接线自动打开详情）；教师端 `learning-resource-manager.tsx` 元数据表单技能绑定下拉+列表技能徽标。**边界：完成度仅展示（观看位置达时长 90% 由服务端 RPC 标记），不当掌握程度、不入临床评分**。注意 `SkillCatalogItem` 类型经 `src/lib/learning-resource.ts` re-export（前端统一从此导入）。测试 `tests/skill-learning.test.ts`
 - `src/app/api/`：认证、会话、智能体、题库、报告、教师查询、同步接口
 - `src/server.ts`：生产环境入口（build 后 `node dist/server.js` 启动）
 
@@ -132,7 +133,7 @@ tests/                      # 测试
   - `src/server.ts` 硬编码 `const dev = false`，沙箱 dev server 实际服务 `.next` 生产构建产物，tsx watch 只负责重启进程、不重编译路由清单
   - **新增/删除 API 路由（route.ts）或页面后必须执行 `pnpm build` 才能生效**，否则新路由表现为 404（旧路由正常）
   - 禁止删除 `.next` 目录——会导致 server 启动崩溃（"Could not find a production build"）且 tsx watch 反复重启失败
-  - 全量单测避免一次性 `pnpm test`（88 个测试文件并发会超时/被杀，exitCode -1），应按每批约 11 个文件分批执行 `pnpm exec tsx --test <files...>`
+  - 全量单测避免一次性 `pnpm test`（90+ 测试文件并发会超时/被杀，exitCode -1），可按字母序分两批：`npx tsx --test tests/[a-l]*.test.ts` 与 `npx tsx --test tests/[m-z]*.test.ts`（2026-10-30 批次7实测 96s+60s，合计 492 用例 0 失败）
 
 ## 2026-10-19 登录入口更新
 
