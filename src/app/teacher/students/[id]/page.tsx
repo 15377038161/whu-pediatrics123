@@ -39,7 +39,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
     return <div className="empty-state" role="status"><p>正在读取学生档案…</p></div>;
   }
 
-  const { student, sessions } = state.profile;
+  const { student, sessions, caseProgress } = state.profile;
   const scored = sessions.filter((session) => session.totalScore !== null && session.scoreBasis !== 'process');
   const average = scored.length ? Math.round(scored.reduce((sum, session) => sum + (session.totalScore ?? 0), 0) / scored.length) : null;
   return <>
@@ -57,17 +57,31 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
       <div><strong>{sessions.length}</strong><span>可见训练会话</span></div>
       <div><strong>{average ?? '—'}</strong><span>已评分报告平均分（{scored.length} 份计入）</span></div>
       <div><strong>{sessions.filter((session) => session.reportId === null).length}</strong><span>未生成报告</span></div>
+      <div><strong>{caseProgress.length}</strong><span>覆盖病例（训练过）</span></div>
     </section>
-    <div className="student-table-wrap">
-      <table className="student-table">
-        <thead><tr><th>训练时间</th><th>类型</th><th>得分</th><th>证据</th></tr></thead>
-        <tbody>{sessions.map((session) => <tr key={session.sessionId}>
-          <td data-label="训练时间">{formatDate(session.startedAt)}</td>
-          <td data-label="类型">{session.mode === 'osce' ? 'OSCE 模拟站' : session.mode === 'practice' ? '专项训练' : '模拟病例'}</td>
-          <td data-label="得分"><span className="score-tag" data-level={session.totalScore === null ? 'empty' : session.totalScore >= 85 ? 'strong' : session.totalScore >= 80 ? 'steady' : 'attention'}>{session.scoreBasis === 'process' ? `过程 ${session.totalScore ?? '—'}` : session.totalScore ?? '未评分'}</span></td>
-          <td data-label="证据">{session.reportId ? <a className="text-link" href={`/teacher/sessions/${session.sessionId}`}><ClipboardList size={13} style={{ verticalAlign: -3 }} /> 查看全过程</a> : <span style={{ color: '#7d8c89' }}>暂无报告</span>}</td>
-        </tr>)}</tbody>
-      </table>
+    <div className="case-progress-groups">
+      {caseProgress.map((progress) => {
+        const groupSessions = sessions.filter((session) => (session.caseId ?? '') === progress.caseId);
+        return (
+          <details className="student-case-group" key={progress.caseId || 'uncased'} open>
+            <summary>
+              <span className="case-index-number">#{progress.indexNumber ?? '—'}</span>
+              <strong>{progress.caseLabel}</strong>
+              <span>{progress.trainCount} 次训练 · 完成 {progress.completedCount} · 报告 {progress.reportCount} · 最近 {progress.latestAt ? formatDate(progress.latestAt) : '—'}</span>
+              <span className="score-tag" data-level={progress.latestScore === null ? 'empty' : progress.latestScore >= 85 ? 'strong' : progress.latestScore >= 80 ? 'steady' : 'attention'}>{progress.latestScore ?? '未评分'}</span>
+            </summary>
+            <table className="student-table">
+              <thead><tr><th>训练时间</th><th>类型</th><th>得分</th><th>证据</th></tr></thead>
+              <tbody>{groupSessions.map((session) => <tr key={session.sessionId}>
+                <td data-label="训练时间">{formatDate(session.startedAt)}</td>
+                <td data-label="类型">{session.mode === 'osce' ? 'OSCE 模拟站' : session.mode === 'practice' ? '专项训练' : '模拟病例'}</td>
+                <td data-label="得分"><span className="score-tag" data-level={session.totalScore === null ? 'empty' : session.totalScore >= 85 ? 'strong' : session.totalScore >= 80 ? 'steady' : 'attention'}>{session.scoreBasis === 'process' ? `过程 ${session.totalScore ?? '—'}` : session.totalScore ?? '未评分'}</span></td>
+                <td data-label="证据">{session.reportId ? <a className="text-link" href={`/teacher/sessions/${session.sessionId}`}><ClipboardList size={13} style={{ verticalAlign: -3 }} /> 查看全过程</a> : <span style={{ color: '#7d8c89' }}>暂无报告</span>}</td>
+              </tr>)}</tbody>
+            </table>
+          </details>
+        );
+      })}
     </div>
     {sessions.length === 0 && <div className="empty-state">该学生在你的授权范围内暂无可见训练记录（学生可能尚未训练，或训练产生于归属你班级之外的期间）。</div>}
   </>;

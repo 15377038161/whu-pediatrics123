@@ -9,6 +9,7 @@ import { resolveTeacherCaseVersion } from '@/lib/case-version-select';
 import { assertCasePublishedForNewSession } from '@/lib/case-publication';
 import { isScorableCase } from '@/domain/case-classification';
 import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
+import { CASE_INDEX_NUMBER, TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { eligibleAdmissions, selectAdmission } from '@/lib/case-admission';
 import { getUnpublishedCaseIds } from '@/lib/case-publication';
 import { creationSessionId, creationFingerprint, type SessionCreationOptions } from '@/lib/session-creation';
@@ -53,9 +54,27 @@ export interface TeacherStudentProfileEntry {
   mode: SessionMode | null;
   startedAt: string;
   updatedAt: string;
+  /** 训练会话关联病例（teacher-<病名>，批次3 病例分组用）；旧数据可能为空 */
+  caseId: string | null;
+  status: 'active' | 'completed' | 'report_pending' | null;
   reportId: string | null;
   totalScore: number | null;
   scoreBasis: 'clinical' | 'process';
+}
+
+/** 学生档案「病例进度」聚合：学生 × 病例 → 训练次数/完成数/最近得分（批次3，真实会话数据，服务端聚合）。 */
+export interface TeacherCaseProgressEntry {
+  caseId: string;
+  /** 病名（教师端可见，取自教师目录）；目录未收录回退原始 id；无 caseId 会话归入「病例未标注」组 */
+  caseLabel: string;
+  indexNumber: number | null;
+  trainCount: number;
+  completedCount: number;
+  reportCount: number;
+  /** 最近一次已评分报告得分（未评分报告不计入，沿用首页口径）；无评分 → null */
+  latestScore: number | null;
+  latestScoreBasis: 'clinical' | 'process';
+  latestAt: string | null;
 }
 
 export interface TeacherStudentProfile {
@@ -69,6 +88,57 @@ export interface TeacherStudentProfile {
     cohortName: string | null;
   };
   sessions: TeacherStudentProfileEntry[];
+  caseProgress: TeacherCaseProgressEntry[];
+}
+
+export type CaseMetaResolver = (caseId: string) => { caseLabel: string; indexNumber: number | null };
+
+/**
+ * 按病例聚合学生训练进度（批次3 纯函数，便于负测覆盖）：
+ * - 分组键为 caseId（空/空白归入「病例未标注」回退组，数据完整性兜底）；
+ * - trainCount/completedCount/reportCount 为真实计数；completed 仅计 status='completed'；
+ * - 最近得分沿用学情首页口径：未评分报告（isUnscoredReport 已在上游折算为 null）与过程分不计入；
+ * - 组按最近训练时间倒序。
+ */
+export function buildCaseProgress(entries: TeacherStudentProfileEntry[], resolveCaseMeta: CaseMetaResolver): TeacherCaseProgressEntry[] {
+  const groups = new Map<string, TeacherStudentProfileEntry[]>();
+  for (const entry of entries) {
+    const key = entry.caseId?.trim() ?? '';
+    const bucket = groups.get(key);
+    if (bucket) bucket.push(entry);
+    else groups.set(key, [entry]);
+  }
+  const result: TeacherCaseProgressEntry[] = [];
+  for (const [key, bucket] of groups) {
+    const scored = bucket.filter((entry) => entry.totalScore !== null && entry.scoreBasis !== 'process');
+    const latest = [...bucket].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null;
+    const latestScored = [...scored].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null;
+    const meta = key ? resolveCaseMeta(key) : { caseLabel: '病例未标注', indexNumber: null };
+    result.push({
+      caseId: key,
+      caseLabel: meta.caseLabel,
+      indexNumber: meta.indexNumber,
+      trainCount: bucket.length,
+      completedCount: bucket.filter((entry) => entry.status === 'completed').length,
+      reportCount: bucket.filter((entry) => entry.reportId !== null).length,
+      latestScore: latestScored ? latestScored.totalScore : null,
+      latestScoreBasis: latestScored?.scoreBasis ?? 'clinical',
+      latestAt: latest?.startedAt ?? null,
+    });
+  }
+  return result.sort((a, b) => (b.latestAt ?? '').localeCompare(a.latestAt ?? ''));
+}
+
+/** 教师端病例元数据解析：caseId 归一（兼容 case-uuid 混入）→ 目录病名 + 编号；目录未收录回退原始 id。导出供批次3聚合测试直接验证归一与回退契约。 */
+export function teacherCaseMeta(caseId: string): { caseLabel: string; indexNumber: number | null } {
+  const internal = resolveCaseId(caseId);
+  const item = TEACHER_CASE_CATALOG.find((entry) => entry.id === internal);
+  if (!item) {
+    const numberValue = CASE_INDEX_NUMBER[caseId];
+    return { caseLabel: internal, indexNumber: typeof numberValue === 'number' ? numberValue : null };
+  }
+  const numberValue = CASE_INDEX_NUMBER[item.id];
+  return { caseLabel: item.name, indexNumber: typeof numberValue === 'number' ? numberValue : null };
 }
 
 export interface TeacherSessionDetail {
@@ -113,6 +183,11 @@ function clone<T>(value: T): T {
 const DEFAULT_COHORT_ID = '10000000-0000-4000-8000-000000000102';
 
 function previewSeedUsers(store: Store): void {
+  // 种子病例必须落在教师目录内可训练病例上：批次1退役合成旗舰（peds-respiratory-001 已不在
+  // 公开目录）后，createInitialSession 默认 caseId 会经 getPublicCase 抛 CASE_NOT_FOUND，
+  // 导致 preview 学情列表/学生档案全链路 500（批次3 测试暴露的既有回归）。
+  const seedCaseId = TEACHER_CASE_CATALOG[0]?.id;
+  if (!seedCaseId) throw new Error('TEACHER_CASE_CATALOG_EMPTY');
   const seeds: UserContext[] = [
     { id: 'preview-student-001', role: 'student', displayName: '张同学', studentNo: '20240001', provider: 'preview', chaoxingUid: null },
     { id: 'preview-student-002', role: 'student', displayName: '李同学', studentNo: '20240002', provider: 'preview', chaoxingUid: null },
@@ -122,7 +197,7 @@ function previewSeedUsers(store: Store): void {
     if (!store.users.has(user.id)) store.users.set(user.id, user);
     const existing = [...store.sessions.values()].some((session) => session.userId === user.id);
     if (existing) continue;
-    const session = createInitialSession(user.id, index === 1 ? 'guided' : 'osce');
+    const session = createInitialSession(user.id, index === 1 ? 'guided' : 'osce', seedCaseId);
     session.id = `preview-session-${index + 1}`;
     session.status = 'completed';
     session.stage = 'report';
@@ -586,20 +661,24 @@ export class AgentRepository {
       const user = [...store.users.values()].find((item) => item.id === userId && item.role === 'student') ?? null;
       if (!user) throw new Error('STUDENT_NOT_FOUND');
       const sessions = [...store.sessions.values()].filter((session) => session.userId === userId).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      const entries: TeacherStudentProfileEntry[] = sessions.map((session) => {
+        const report = [...store.reports.values()].find((item) => item.sessionId === session.id) ?? null;
+        return {
+          sessionId: session.id,
+          mode: session.mode,
+          startedAt: session.startedAt,
+          updatedAt: session.updatedAt,
+          caseId: session.caseId ?? null,
+          status: session.status ?? null,
+          reportId: report?.id ?? null,
+          totalScore: report ? (isUnscoredReport(report) ? null : report.totalScore) : null,
+          scoreBasis: report?.scoreBasis ?? 'clinical',
+        };
+      });
       return {
         student: { id: user.id, displayName: user.displayName, studentNo: user.studentNo, chaoxingUid: null, avatarUrl: null, cohortId: null, cohortName: null },
-        sessions: sessions.map((session) => {
-          const report = [...store.reports.values()].find((item) => item.sessionId === session.id) ?? null;
-          return {
-            sessionId: session.id,
-            mode: session.mode,
-            startedAt: session.startedAt,
-            updatedAt: session.updatedAt,
-            reportId: report?.id ?? null,
-            totalScore: report ? (isUnscoredReport(report) ? null : report.totalScore) : null,
-            scoreBasis: report?.scoreBasis ?? 'clinical',
-          };
-        }),
+        sessions: entries,
+        caseProgress: buildCaseProgress(entries, teacherCaseMeta),
       };
     }
     const db = this.db();
@@ -612,7 +691,7 @@ export class AgentRepository {
         return result;
       }),
       withDatabaseRetry(async () => {
-        const result = await db.from('training_sessions').select('id,mode,started_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false });
+        const result = await db.from('training_sessions').select('id,mode,started_at,updated_at,case_id,status').eq('user_id', userId).order('updated_at', { ascending: false });
         if (result.error) throw result.error;
         return result;
       }),
@@ -632,6 +711,21 @@ export class AgentRepository {
     if (!profile) throw new Error('STUDENT_NOT_FOUND');
     const indexData = (index ?? {}) as { studentClasses?: Record<string, { cohortId: string; cohortName: string }> };
     const cohort = (indexData.studentClasses ?? {})[userId] ?? null;
+    const sessionEntries: TeacherStudentProfileEntry[] = (sessionRows ?? []).map((row) => {
+      const report = (reportRows ?? []).find((item) => item.session_id === row.id) ?? null;
+      const reportData = report?.data as TrainingReport | undefined;
+      return {
+        sessionId: row.id as string,
+        mode: (row.mode as SessionMode | null) ?? null,
+        startedAt: (row.started_at as string) ?? (row.updated_at as string),
+        updatedAt: row.updated_at as string,
+        caseId: (row.case_id as string | null) ?? null,
+        status: (row.status as 'active' | 'completed' | 'report_pending' | null) ?? null,
+        reportId: report?.id ?? null,
+        totalScore: report ? (isUnscoredReport(reportData as TrainingReport) ? null : (report.total_score as number)) : null,
+        scoreBasis: reportData?.scoreBasis ?? 'clinical',
+      };
+    });
     return {
       student: {
         id: profile.id,
@@ -642,19 +736,8 @@ export class AgentRepository {
         cohortId: cohort?.cohortId ?? null,
         cohortName: cohort?.cohortName ?? null,
       },
-      sessions: (sessionRows ?? []).map((row) => {
-        const report = (reportRows ?? []).find((item) => item.session_id === row.id) ?? null;
-        const reportData = report?.data as TrainingReport | undefined;
-        return {
-          sessionId: row.id as string,
-          mode: (row.mode as SessionMode | null) ?? null,
-          startedAt: (row.started_at as string) ?? (row.updated_at as string),
-          updatedAt: row.updated_at as string,
-          reportId: report?.id ?? null,
-          totalScore: report ? (isUnscoredReport(reportData as TrainingReport) ? null : (report.total_score as number)) : null,
-          scoreBasis: reportData?.scoreBasis ?? 'clinical',
-        };
-      }),
+      sessions: sessionEntries,
+      caseProgress: buildCaseProgress(sessionEntries, teacherCaseMeta),
     };
   }
 
