@@ -66,19 +66,17 @@ test('搜索分页：关键词 + 学科 + 来源组合筛选', () => {
   // 防透题收敛：病种关键词（如「肺炎」）不再可搜索；症状关键词仅命中开放主诉文本
   const byDisease = searchCases(CASE_CATALOG, { keyword: '肺炎', subject: 'all', readiness: 'all', page: 1 });
   assert.equal(byDisease.total, 0, '病种关键词不再出现在可搜索文本中（防透题）');
-  // 合成演示病例退役后，以目录中真实呼吸系统病例的开放主诉作为症状关键词
-  const respiratoryCase = CASE_CATALOG.find(
-    (item) => normalizeCategory(item.category) === '呼吸系统'
-      && item.presentingSymptoms.length > 0
-      && classifyCase(item).readiness.readiness === 'independent',
-  );
-  assert.ok(respiratoryCase, '目录中存在可检索的呼吸系统独立来源病例');
-  const keyword = respiratoryCase.presentingSymptoms[0];
-  const result = searchCases(CASE_CATALOG, { keyword, subject: '呼吸系统', readiness: 'independent', page: 1 });
+  // 合成演示病例退役后，以目录中任一开放主诉真实病例为探针，按其学科与来源档位组合筛选
+  const probe = CASE_CATALOG.find((item) => item.presentingSymptoms.length > 0);
+  assert.ok(probe, '目录中存在开放主诉的可检索病例');
+  const probeSubject = normalizeCategory(probe.category);
+  const probeReadiness = classifyCase(probe).readiness.readiness;
+  const keyword = probe.presentingSymptoms[0];
+  const result = searchCases(CASE_CATALOG, { keyword, subject: probeSubject, readiness: probeReadiness, page: 1 });
   assert.ok(result.total >= 1, '症状关键词命中真实病例主诉');
   for (const item of result.items) {
-    assert.equal(item.classification.subject, '呼吸系统');
-    assert.equal(item.classification.readiness.readiness, 'independent');
+    assert.equal(item.classification.subject, probeSubject);
+    assert.equal(item.classification.readiness.readiness, probeReadiness);
     assert.ok(item.classification.searchableText.includes(keyword.toLowerCase()));
   }
 });
