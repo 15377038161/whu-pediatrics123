@@ -1,3 +1,4 @@
+import './fixtures/legacy-engine-catalog';
 import { publicCaseId } from '../src/lib/case-identity';
 import assert from 'node:assert/strict';
 import test from 'node:test';

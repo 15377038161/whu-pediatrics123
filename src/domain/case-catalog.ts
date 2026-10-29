@@ -114,7 +114,8 @@ export const TEACHER_PUBLIC_ENTRIES: TeacherPublicEntry[] = [
   { id: "case-b115e85f-f023-4de5-ae96-dc4e788ad227", title: "遗传性疾病 · 真实病例 03", subtitle: "教师病例学习", category: "遗传性疾病", sourceRelation: null, contentStatus: 'teacher-folder-only', mediaCount: 167, documentCount: 5 },
 ];
 
-export const CASE_CATALOG: PublicCaseProfile[] = [
+/** Retired synthetic profiles retained only for historical data and deterministic fixtures. */
+export const RETIRED_SIMULATION_PROFILES: PublicCaseProfile[] = [
   {
     id: 'peds-respiratory-001',
     version: 1,
@@ -149,6 +150,9 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
     contentStatus: 'demo-pending-review',
     sourceRelation: null,
   },
+];
+
+export const CASE_CATALOG: PublicCaseProfile[] = [
   ...TEACHER_PUBLIC_ENTRIES.map((item): PublicCaseProfile => ({
     id: item.id,
     version: 1,

@@ -1,3 +1,4 @@
+import './fixtures/legacy-engine-catalog';
 /**
  * 语音服务回归测试（阶段 D 补验 D-验收-01）：
  *  1. 能力探测：listVoices 成功不能推断 ASR/TTS 可用——两者分别经真实最小调用验证；

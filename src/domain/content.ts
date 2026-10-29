@@ -23,32 +23,6 @@ export interface PediatricContentItem {
 
 const CASE_CONTENT: PediatricContentItem[] = [
   {
-    id: 'peds-respiratory-001',
-    type: 'case',
-    category: '呼吸系统',
-    title: '3岁男童发热、咳嗽伴气促',
-    summary: '旗舰病例。以肺炎为主线的完整临床场景：自主问诊、可视化肺部查体、辅助检查、诊断处置与家长沟通。',
-    tags: ['发热', '咳嗽', '气促', '肺炎', '危险信号'],
-    status: 'online',
-    href: '/student/training?mode=guided&case=peds-respiratory-001',
-    age: '3岁2个月',
-    sex: '男',
-    difficulty: '基础进阶',
-  },
-  {
-    id: 'peds-wheeze-002',
-    type: 'case',
-    category: '呼吸系统',
-    title: '5岁女童发热、咳嗽伴喘息',
-    summary: '演示病例。喘息性疾病动线，练习哮鸣音识别、喘息与肺炎的鉴别思路。',
-    tags: ['发热', '咳嗽', '喘息', '鉴别诊断'],
-    status: 'online',
-    href: '/student/training?mode=guided&case=peds-wheeze-002',
-    age: '5岁4个月',
-    sex: '女',
-    difficulty: '基础进阶',
-  },
-  {
     id: 'peds-gi-003',
     type: 'case',
     category: '消化系统',

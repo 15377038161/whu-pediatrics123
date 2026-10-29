@@ -1,3 +1,4 @@
+import './fixtures/legacy-engine-catalog';
 import test from 'node:test';import assert from 'node:assert/strict';import {mkdirSync,writeFileSync,existsSync,readFileSync} from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';
 import {CASE_CATALOG} from '@/domain/case-catalog';import {TEACHER_CASE_CATALOG} from '@/domain/teacher-case-catalog';
 import {publicCaseId,isTrainableCase} from '@/lib/case-identity';import {readTeacherCaseData} from '@/lib/teacher-case-data';import {getLocalImportVersion} from '@/lib/teacher-case-import';

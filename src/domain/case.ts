@@ -1,8 +1,9 @@
+import { RETIRED_SIMULATION_PROFILES } from '@/domain/case-catalog';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { patientAppearance } from '@/domain/patient-appearance';
 import { sourceExamDefinitions } from '@/domain/exam-methods';
 import type { CaseMedia, Emotion, Stage, VitalSigns } from '@/domain/agent';
-import { getPublicCase, findPublicCase, publicCaseId, resolveCaseId } from '@/lib/case-identity';
+import { findPublicCase, publicCaseId, resolveCaseId } from '@/lib/case-identity';
 import { getSessionTestsCatalog } from '@/lib/case-snapshot';
 import { readTeacherCaseData, type TeacherCaseData } from '@/lib/teacher-case-data';
 
@@ -74,7 +75,7 @@ export interface FlagshipCase {
 }
 
 export const FLAGSHIP_CASE: FlagshipCase = {
-  ...getPublicCase('peds-respiratory-001'),
+  ...RETIRED_SIMULATION_PROFILES.find(item => item.id === 'peds-respiratory-001')!,
   triage: '患儿由母亲抱入诊室，精神欠佳，呼吸较快。',
   openingParent: '医生您好，孩子前天开始发热咳嗽，今天呼吸看起来有些快。我担心他越来越严重。',
   initialEmotion: 'nervous',
@@ -168,7 +169,7 @@ export const FLAGSHIP_CASE: FlagshipCase = {
 };
 
 export const FEMALE_WHEEZE_CASE: FlagshipCase = {
-  ...getPublicCase('peds-wheeze-002'),
+  ...RETIRED_SIMULATION_PROFILES.find(item => item.id === 'peds-wheeze-002')!,
   triage: '患儿由父亲陪同进入诊室，可自行步行，咳嗽间歇可闻喘鸣，呼吸稍快。',
   openingParent: '医生您好，孩子昨晚开始发热咳嗽，今天能听见呼吸有些呼呼响，她说胸口不太舒服。',
   initialEmotion: 'nervous',

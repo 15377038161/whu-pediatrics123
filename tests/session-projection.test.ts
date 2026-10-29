@@ -1,3 +1,4 @@
+import './fixtures/legacy-engine-catalog';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { SessionState } from '../src/domain/agent';
