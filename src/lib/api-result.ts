@@ -32,6 +32,16 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('OWNER_PROTECTED')) return { code: 'OWNER_PROTECTED', message: '资源维护者不可变更。', retryable: false };
   if (message.includes('SCOPE_PROTECTED')) return { code: 'SCOPE_PROTECTED', message: '全平台可见范围仅项目管理员可设置。', retryable: false };
   if (message.includes('INVALID_STATUS_TRANSITION')) return { code: 'INVALID_STATUS_TRANSITION', message: '资源状态变更不合法（草稿→发布→下架→重新编辑）。', retryable: false };
+  if (message.includes('ASSESSMENT_NOT_FOUND')) return { code: 'ASSESSMENT_NOT_FOUND', message: '未找到该考核记录（或不在你的管理范围内）。', retryable: false };
+  if (message.includes('ASSESSMENT_STUDENT_FORBIDDEN')) return { code: 'ASSESSMENT_STUDENT_FORBIDDEN', message: '只能对班级内学生创建现场考核。', retryable: false };
+  if (message.includes('ASSESSMENT_LOCKED')) return { code: 'ASSESSMENT_LOCKED', message: '该考核已发布，请先撤回发布再修改评分。', retryable: false };
+  if (message.includes('ASSESSMENT_ALREADY_PUBLISHED')) return { code: 'ASSESSMENT_ALREADY_PUBLISHED', message: '该考核已发布，无需重复发布。', retryable: false };
+  if (message.includes('ASSESSMENT_NOT_PUBLISHED')) return { code: 'ASSESSMENT_NOT_PUBLISHED', message: '该考核尚未发布，无需撤回。', retryable: false };
+  if (message.includes('ASSESSMENT_EMPTY')) return { code: 'ASSESSMENT_EMPTY', message: '请至少完成 1 项计分观察（达标/部分达标/未达标）后再发布。', retryable: false };
+  if (message.includes('ASSESSMENT_DUPLICATE')) return { code: 'ASSESSMENT_DUPLICATE', message: '该操作已提交过，请刷新列表查看。', retryable: false };
+  if (message.includes('ASSESSMENT_INVALID_TARGET')) return { code: 'ASSESSMENT_INVALID_TARGET', message: '学生或技能无效，请刷新后重新选择。', retryable: false };
+  if (message.includes('RUBRIC_MISMATCH')) return { code: 'RUBRIC_MISMATCH', message: '评分项与技能评分表不符，请刷新后重试。', retryable: false };
+  if (message.includes('SKILL_ASSESSMENT_RPC_FAILED')) return { code: 'RPC_UNAVAILABLE', message: '考核成绩服务暂时不可用，请稍后重试。', retryable: true };
   if (message.includes('RESOURCE_LIST_FAILED') || message.includes('RESOURCE_GET_FAILED') || message.includes('RESOURCE_PROGRESS_FAILED') || message.includes('RESOURCE_SAVE_FAILED')) return { code: 'RPC_UNAVAILABLE', message: '学习资源服务暂时不可用，请稍后重试。', retryable: true };
   if (message.includes('DELETE_DRAFT_ONLY')) return { code: 'DELETE_DRAFT_ONLY', message: '仅草稿可删除；已发布或下架过的资源保留学生进度历史，请使用下架。', retryable: false };
   if (message.includes('INVALID_REQUEST')) return { code: 'INVALID_REQUEST', message: '请求参数无效。', retryable: false };

@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle2, ChevronDown, Film, FileText, RefreshCw } from 'lucide-react';
 import { authedFetch } from '@/lib/authed-api';
 import type { LearningResourceSummary, SkillCatalogItem } from '@/lib/learning-resource';
+import { StudentSkillScores } from '@/components/student-skill-scores';
 import styles from './skills.module.css';
 
 
@@ -182,6 +183,8 @@ export default function StudentSkillsPage() {
           })}
         </div>
       )}
+
+      <StudentSkillScores />
     </>
   );
 }

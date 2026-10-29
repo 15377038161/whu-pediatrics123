@@ -1,0 +1,314 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+
+.errorBar {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #e6b3ad;
+  border-radius: 10px;
+  background: #fdf1ef;
+  color: #a33d33;
+  font-size: 14px;
+}
+
+
+.listHead {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+
+.pageTitle {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+
+.pageLead {
+  margin: 0;
+  color: #5b6b66;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--line, #d8e2dc);
+  border-radius: 14px;
+  background: #fff;
+  text-align: left;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+
+.card:active {
+  border-color: var(--brand, #2f7a5e);
+  box-shadow: 0 4px 14px rgba(47, 122, 94, .12);
+}
+
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+
+.studentName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e2b27;
+}
+
+
+.statusChip {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+.statusChip[data-status='draft'] {
+  background: #f2f4f0;
+  color: #5b6b66;
+}
+
+
+.statusChip[data-status='published'] {
+  background: #e7f3ee;
+  color: var(--brand, #2f7a5e);
+}
+
+
+.cardMeta {
+  margin: 0;
+  color: #5b6b66;
+  font-size: 13px;
+}
+
+
+.cardBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+
+.progressText {
+  color: #7d8c89;
+  font-size: 13px;
+}
+
+
+.retakeChip {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fdf4e3;
+  color: #a26b1a;
+  font-style: normal;
+  font-size: 12px;
+}
+
+
+.totalText {
+  color: var(--brand, #2f7a5e);
+  font-size: 16px;
+}
+
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+
+
+.sectionTitle {
+  margin: 0;
+  font-size: 17px;
+}
+
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+
+.field > span {
+  font-size: 13px;
+  color: #5b6b66;
+}
+
+
+.field select,
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line, #d8e2dc);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 15px;
+  color: #1e2b27;
+  box-sizing: border-box;
+}
+
+
+.field textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+
+.field select:disabled,
+.field textarea:disabled {
+  background: #f5f7f4;
+  color: #7d8c89;
+}
+
+
+.scoringHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+
+.previewBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #d8e2dc);
+  border-radius: 12px;
+  background: #f7faf6;
+  color: #5b6b66;
+  font-size: 13px;
+}
+
+
+.previewBar strong {
+  font-size: 22px;
+  color: var(--brand, #2f7a5e);
+}
+
+
+.previewBar strong[data-empty='true'] {
+  color: #b6c2bd;
+}
+
+
+.rubricList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+
+.rubricItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line, #d8e2dc);
+  border-radius: 12px;
+  background: #fff;
+}
+
+
+.rubricLabel {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1e2b27;
+}
+
+
+.scoreRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+
+.scoreBtn {
+  padding: 9px 4px;
+  border: 1px solid var(--line, #d8e2dc);
+  border-radius: 9px;
+  background: #fff;
+  font-size: 12px;
+  color: #5b6b66;
+  transition: all .12s ease;
+}
+
+
+.scoreBtn[data-active='true'] {
+  color: #fff;
+  font-weight: 600;
+  border-color: transparent;
+}
+
+
+.scoreBtn[data-level='2'][data-active='true'] {
+  background: var(--brand, #2f7a5e);
+}
+
+
+.scoreBtn[data-level='1'][data-active='true'] {
+  background: #c08a2d;
+}
+
+
+.scoreBtn[data-level='0'][data-active='true'] {
+  background: #c0564a;
+}
+
+
+.scoreBtn[data-level='null'][data-active='true'] {
+  background: #8a9691;
+}
+
+
+.scoreBtn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+
+.actionRow {
+  display: flex;
+  gap: 10px;
+}
+
+
+.actionRow .btn {
+  flex: 1;
+  justify-content: center;
+}

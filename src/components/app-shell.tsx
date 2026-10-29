@@ -19,6 +19,7 @@ const teacherNav = [
   { href: '/teacher', label: '学生学情', icon: Users },
   { href: '/teacher/classes', label: '班级管理', icon: Users },
   { href: '/teacher/question-banks', label: '题集管理', icon: LibraryBig },
+  { href: '/teacher/skill-assessments', label: '现场考核', icon: ClipboardCheck },
   { href: '/teacher/resources', label: '资源中心', icon: MonitorPlay },
   { href: '/teacher/usage-stats', label: '使用统计', icon: BarChart3 },
   { href: '/teacher/case-drafts', label: '病例草稿', icon: BookOpenCheck },
