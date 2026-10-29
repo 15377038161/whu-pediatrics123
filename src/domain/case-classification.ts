@@ -9,7 +9,6 @@ import type { PublicCaseProfile } from '@/domain/case-catalog';
  * - 资料完备度（可解释、不伪造）：独立来源（contentStatus=teacher-materials-indexed，
  *   53）| 关联来源（sourceRelation 非 null，14）| 资料不足（教师项无 folder 且无关联，3 项）
  *   ——资料不足项如实标注且不得进入可评分测试。
- * - 教学难度星级（可解释映射）：演示病例 1★；真实材料病例 2★。
  * - 搜索分页：客户端过滤公开目录，9/页，筛选变化重置页码。
  *   searchableText 不含病种名（教师病例 title 为中性学科+序号）——按病种关键词搜索
  *   属于透题面，本轮移除；症状关键词搜索仅对演示病例 presentingSymptoms 生效。
@@ -42,8 +41,6 @@ export interface CaseReadinessInfo {
 
 export interface CaseClassification {
   subject: string;
-  stars: 1 | 2;
-  starReason: string;
   readiness: CaseReadinessInfo;
   searchableText: string;
 }
@@ -64,8 +61,6 @@ export function classifyCase(profile: PublicCaseProfile): CaseClassification {
   if (!isTeacher) {
     return {
       subject: normalizeCategory(profile.category),
-      stars: 1,
-      starReason: '引导式完整支架，含结构与方向性提示',
       readiness: { readiness: 'independent', label: '独立来源', note: '演示病例' },
       searchableText,
     };
@@ -73,18 +68,12 @@ export function classifyCase(profile: PublicCaseProfile): CaseClassification {
   if (isInsufficient) {
     return {
       subject: normalizeCategory(profile.category),
-      stars: 2,
-      starReason: '本病种尚无独立病例正文，仅可记录诊疗思路',
       readiness: { readiness: 'insufficient', label: '资料不足', note: '无独立来源，不进入可评分测试' },
       searchableText,
     };
   }
   return {
     subject: normalizeCategory(profile.category),
-    stars: 2,
-    starReason: hasFolder
-      ? '真实材料自主问诊与检查'
-      : '依托关联源病例教学材料学习',
     readiness: hasFolder
       ? { readiness: 'independent', label: '独立来源', note: `${profile.documentCount ?? 0} 份文档 · ${profile.mediaCount ?? 0} 项媒体` }
       : { readiness: 'linked', label: '关联来源', note: '复用关联源病例教学材料' },

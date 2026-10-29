@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, FileWarning, Loader2, RotateCcw, Search, Star, X } from 'lucide-react';
+import { AlertCircle, FileWarning, Loader2, RotateCcw, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PublicCaseProfile } from '@/domain/case-catalog';
 import {
@@ -160,26 +160,15 @@ export function CaseLibrary() {
         </div></details>
       )}
 
-      <p className="case-note-hint case-hidden-note" role="status">
-        共 {result.total} 个病例{result.total > 0 && ` · 显示第 ${(result.page - 1) * PAGE_SIZE + 1}–${Math.min(result.page * PAGE_SIZE, result.total)} 个`} · 仅展示接诊线索
-      </p>
-
       <div className="case-library">
         {result.items.map((item) => {
           const insufficient = item.classification.readiness.readiness === 'insufficient';
           return (
             <article className="case-card" key={item.id}>
               <div className="case-card-copy">
-                <div className="case-card-heading"><p className="case-number">{item.classification.subject}</p>
-                  <span className="case-stars" aria-label={`教学难度 ${item.classification.stars} 星（${item.classification.starReason}）`} title={item.classification.starReason}>
-                    {[1, 2].map((star) => (
-                      <Star key={star} size={13} aria-hidden className={star <= item.classification.stars ? 'star-filled' : 'star-empty'} />
-                    ))}
-                  </span>
-                </div>
+                <div className="case-card-heading"><p className="case-number">{item.classification.subject}</p></div>
                 <h3><a className="case-card-entry" href={`/student/training?mode=guided&case=${encodeURIComponent(item.id)}`} onClick={() => enterCase(item.id)}>{item.title}</a></h3>
                 <div className="case-meta">
-                  <span className={`readiness-badge readiness-${item.classification.readiness.readiness}`}>{item.classification.readiness.label}</span>
                   {item.expectedMinutes > 0 && <span>{item.expectedMinutes} 分钟</span>}
                   <span>{item.age !== '待核验' ? `${item.age} · ${item.sex}` : '接诊信息待审核'}</span>
                 </div>
@@ -190,23 +179,6 @@ export function CaseLibrary() {
                   {item.presentingSymptoms.length
                     ? item.presentingSymptoms.map((symptom) => <span key={symptom}>{symptom}</span>)
                     : <span className="symptom-pending">症状线索进入训练后采集</span>}
-                </div>
-                <div className="case-card-actions">
-                  <details className="case-mode-menu"><summary>更多</summary><div>
-                  {!insufficient && item.classification.readiness.note !== '演示病例' && <p className="case-source-note">{item.classification.readiness.note}{item.classification.readiness.readiness === 'linked' ? '（不另造新患者）' : ''}</p>}
-                  <a className="text-link" href={`/student/training?mode=immersive&case=${encodeURIComponent(item.id)}`} onClick={() => enterCase(item.id)}>
-                    沉浸式教学
-                  </a>
-                  {insufficient ? (
-                    <span className="text-link disabled" aria-disabled="true" title="资料不足，不进入可评分测试">
-                      OSCE 练习（不可用）
-                    </span>
-                  ) : (
-                    <a className="text-link" href={`/student/training?mode=osce&case=${encodeURIComponent(item.id)}`} onClick={() => enterCase(item.id)}>
-                      OSCE 练习
-                    </a>
-                  )}
-                  </div></details>
                 </div>
               </div>
             </article>

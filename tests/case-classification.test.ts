@@ -1,4 +1,3 @@
-import { publicCaseId } from '../src/lib/case-identity';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CASE_CATALOG } from '../src/domain/case-catalog';
@@ -6,6 +5,7 @@ import {
   classifyCase,
   isScorableCase,
   listSubjects,
+  normalizeCategory,
   PAGE_SIZE,
   readRecentSelection,
   recentKey,
@@ -27,12 +27,12 @@ test('学科归一：5 对同义分类合并，目录分类数收敛', () => {
   assert.ok(subjects.includes('新生儿与新生儿疾病'));
 });
 
-test('资料完备度三档：53 原件来源 + 14 关联来源，独立演示另计', () => {
+test('资料完备度三档：53 原件来源 + 14 关联来源', () => {
   const classified = CASE_CATALOG.map(classifyCase);
   const independent = classified.filter((item) => item.readiness.readiness === 'independent').length;
   const linked = classified.filter((item) => item.readiness.readiness === 'linked').length;
   const insufficient = classified.filter((item) => item.readiness.readiness === 'insufficient');
-  assert.equal(independent, 55); // 53 教师独立 folder 项 + 2 演示病例
+  assert.equal(independent, 53); // 53 教师独立 folder 项（合成演示病例 2026-10-29 退役，不入目录）
   assert.equal(linked, 14);
   assert.equal(insufficient.length, 0);
 
@@ -63,15 +63,23 @@ test('九宫格分页：相邻页不重复，末页保留全部余项', () => {
 });
 
 test('搜索分页：关键词 + 学科 + 来源组合筛选', () => {
-  // 防透题收敛：病种关键词（如「肺炎」）不再可搜索；症状关键词仅演示病例命中
+  // 防透题收敛：病种关键词（如「肺炎」）不再可搜索；症状关键词仅命中开放主诉文本
   const byDisease = searchCases(CASE_CATALOG, { keyword: '肺炎', subject: 'all', readiness: 'all', page: 1 });
   assert.equal(byDisease.total, 0, '病种关键词不再出现在可搜索文本中（防透题）');
-  const result = searchCases(CASE_CATALOG, { keyword: '发热', subject: '呼吸系统', readiness: 'independent', page: 1 });
-  assert.ok(result.total >= 1, '症状关键词命中演示病例');
+  // 合成演示病例退役后，以目录中真实呼吸系统病例的开放主诉作为症状关键词
+  const respiratoryCase = CASE_CATALOG.find(
+    (item) => normalizeCategory(item.category) === '呼吸系统'
+      && item.presentingSymptoms.length > 0
+      && classifyCase(item).readiness.readiness === 'independent',
+  );
+  assert.ok(respiratoryCase, '目录中存在可检索的呼吸系统独立来源病例');
+  const keyword = respiratoryCase.presentingSymptoms[0];
+  const result = searchCases(CASE_CATALOG, { keyword, subject: '呼吸系统', readiness: 'independent', page: 1 });
+  assert.ok(result.total >= 1, '症状关键词命中真实病例主诉');
   for (const item of result.items) {
     assert.equal(item.classification.subject, '呼吸系统');
     assert.equal(item.classification.readiness.readiness, 'independent');
-    assert.ok(item.classification.searchableText.includes('发热'));
+    assert.ok(item.classification.searchableText.includes(keyword.toLowerCase()));
   }
 });
 
@@ -105,12 +113,9 @@ test('搜索分页：请求越界页码收敛到末页', () => {
   assert.ok(result.items.length > 0);
 });
 
-test('星级映射：演示 1 星可解释，教师项 2 星', () => {
-  const demo = classifyCase(CASE_CATALOG.find((item) => item.id === 'peds-respiratory-001')!);
-  assert.equal(demo.stars, 1);
-  assert.ok(demo.starReason.length > 0);
-  const teacher = classifyCase(CASE_CATALOG.find((item) => item.id === publicCaseId('teacher-新生儿败血症'))!);
-  assert.equal(teacher.stars, 2);
+test('目录不再含已退役合成演示病例', () => {
+  assert.ok(!CASE_CATALOG.some((item) => item.id === 'peds-respiratory-001'));
+  assert.ok(!CASE_CATALOG.some((item) => item.id === 'peds-wheeze-002'));
 });
 
 test('最近选择：键按用户隔离，读写互不泄露', () => {
@@ -155,8 +160,10 @@ test('最近选择：容量 6 上限、去重置顶、损坏数据降级为空',
   assert.deepEqual(readRecentSelection(shim, user), []);
 });
 
-test('搜索文本包含病种/学科/症状（大小写不敏感由调用方保证 lower）', () => {
-  const profile = CASE_CATALOG.find((item) => item.id === 'peds-respiratory-001')!;
+test('搜索文本包含标题/学科/主诉（大小写不敏感由调用方保证 lower）', () => {
+  const profile = CASE_CATALOG.find((item) => item.presentingSymptoms.length > 0)!;
   const text = classifyCase(profile).searchableText;
-  assert.ok(text.includes('发热') && text.includes('呼吸系统') && text.includes('咳嗽'));
+  assert.ok(text.includes(profile.title.toLowerCase()));
+  assert.ok(text.includes(normalizeCategory(profile.category).toLowerCase()));
+  assert.ok(text.includes(profile.presentingSymptoms[0].toLowerCase()));
 });
