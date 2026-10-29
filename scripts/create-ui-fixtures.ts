@@ -10,8 +10,8 @@ const report = buildReport(session, 'ui-report');
 mkdirSync('outputs/ui', { recursive: true });
 const appearances = [];
 for (const sex of ['男','女']) for (const variant of ['a','b']) {
-  const profile=CASE_CATALOG.find(item => patientAppearance(sex,'standing',item.id).key.endsWith(`-${variant}`))!;
-  appearances.push({ session:{ ...session,caseId:profile.id,stage:'exam',viewStage:'exam',caseOptions:{ sourceName:'合成图片验收',age:'4岁',sex,hasSource:false,exams:[],tests:[] } },standing:patientAppearance(sex,'standing',profile.id),supine:patientAppearance(sex,'supine',profile.id) });
+  const profile=CASE_CATALOG.find(item => patientAppearance(sex,'standing',item.id,'4岁').key.endsWith(`-${variant}`))!;
+  appearances.push({ session:{ ...session,caseId:profile.id,stage:'exam',viewStage:'exam',caseOptions:{ sourceName:'合成图片验收',age:'4岁',sex,hasSource:false,exams:[],tests:[] } },standing:patientAppearance(sex,'standing',profile.id,'4岁'),supine:patientAppearance(sex,'supine',profile.id,'4岁') });
 }
 appearances.push({ session:{ ...session,stage:'exam',viewStage:'exam',caseOptions:{ sourceName:'合成缺性别验收',age:'4岁',sex:'性别未记录',hasSource:false,exams:[],tests:[] } },standing:patientAppearance('','standing',session.caseId),supine:patientAppearance('','supine',session.caseId) });
 writeFileSync('outputs/ui/fixtures.json', JSON.stringify({ session, report, catalog: CASE_CATALOG.slice(0, 2),appearances }));

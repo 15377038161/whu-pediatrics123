@@ -37,7 +37,7 @@ test('patient-appearance 渲染 key 与资产清单一一对齐（含新生儿/�
   for (const sex of ['男', '女']) {
     for (let i = 0; i < 12; i++) {
       const caseId = `case-${i}`;
-      const standing = patientAppearance(sex, 'standing', caseId);
+      const standing = patientAppearance(sex, 'standing', caseId, '4岁');
       const asset = patientAssetByKey(standing.key);
       assert.ok(asset, `key=${standing.key} 未登记到资产清单`);
       assert.equal(asset.sexPresentation, sex === '女' ? 'female' : 'male');

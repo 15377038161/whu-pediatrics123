@@ -1,8 +1,16 @@
 # 珞珈儿科智训
 
+2026-10-28 本地待发布：修复无计分事件时采集复盘被隐藏、独立媒体回放入口及沉浸报告名称；检查复盘区分未申请与已申请未取得结果。范围现为67有效入口；3份AI独立病例及有效入口已撤销，精确旧版和历史只读记录保留。历史70份私有底稿v4已加入来源版本固定的评价依据映射，完整临床判据仍未完成，旧版保留。见 [来源病例专项报告](docs/SOURCE_CASE_FOCUSED_REPORTS.md) 和 [教学内容补全](docs/CASE_TEACHING_COMPLETION.md)。PET/CT安全目录名称有新增配套迁移，尚未应用生产。
+
+本地全库流程检查：`ENABLE_AI_FIXTURE=true pnpm exec tsx scripts/verify-case-library-local.ts <受控账本路径> <私有输出目录>`。按账本覆盖所有入口，逐例保存脱敏工程证据，核身份映射、年龄性别投影、非言语角色、实际查体/检查证据、幂等、诊断处置保存、报告分数求和及序列化恢复；缺来源单列。此命令只验证本地业务引擎，不能替代真实HTTP/OAuth、图片视觉/隐私、设备或医学验收。原件和运行输入继续放Git忽略目录，不上传GitHub。
+
 关联入口的快照恢复、检查下单及结果读取修复与迁移顺序见 [病例快照键契约](docs/CASE_SNAPSHOT_KEYS.md)。代码推送不代表平台迁移或真实病例验收；发布前必须先核对目标租户并执行匹配迁移。
 
 面向武汉大学儿科学教学与教育智能体竞赛的移动端优先全栈应用。系统以一个统一儿科教学智能体贯穿问诊、查体、辅助检查、诊断处置、沟通、OSCE 和学情分析，不是多个互不关联的静态页面。
+
+> 2026-10-28 本地待发布：学生报告的完整来源诊断/处置现经应用与数据库 RPC 双层投影隐藏，教师受控读取保留；历史成绩不改写。迁移尚未应用线上，详见 [报告答案边界](docs/REPORT_ANSWER_BOUNDARY.md)。
+
+诊断阶段现可关联本轮实际取得的问诊、查体和检查事件，报告保留同版本记录定位；关联数量不计临床分。字段契约、旧客户端兼容和验证边界见 [诊断依据关联](docs/DECISION_EVIDENCE.md)。本地实现尚未发布，逐病例临床质量判据仍在补齐。
 
 ## 病例库全流程审核（2026-10-21）
 
@@ -144,7 +152,7 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 
 资料准备依赖 Python（`scripts/requirements-cases.txt`）、LibreOffice（旧版 Word 转换）、FFmpeg（视频转码）。安装后执行 `pnpm prepare:cases`；流程仅生成教学衍生文件，不修改原件。先前生成的旧版 Word 与 MP4 会被复用。
 
-`pnpm verify:cases` 对本地 `127.0.0.1:8876` 的独立学生预览逐例执行完整流程，并检查素材访问。验证服务应显式设置 `ENABLE_UI_PREVIEW=true`、`ENABLE_AI_FIXTURE=true` 和随机 `PREVIEW_SIGNING_SECRET`；脚本禁止连接远程地址，避免写入正式学情库。详情见覆盖核对文档。
+旧 `pnpm verify:cases` 依赖已删除的预览登录入口，不再作为验收步骤，不应恢复该入口绕过鉴权。本地引擎复验见[病例专项报告与本地复验](docs/SOURCE_CASE_FOCUSED_REPORTS.md)；真实浏览器流程需既有授权身份，与工程fixture分开记录。
 # 病例卡片接诊摘要维护
 
 病例卡片按“年龄＋性别＋主诉”显示。`src/domain/admission-summaries.json` 仅包含公开 UUID 和脱敏接诊摘要，不包含诊断答案、姓名或原始病历。部署无需携带私有 `knowledge/` 即可显示摘要；训练事实及随机资格仍按原有服务端资料规则校验，摘要不能替代完整病例。更新受控病例资料后运行 `pnpm exec tsx scripts/gen-admission-summaries.ts`，审阅摘要变更并提交。现有 70 个教师目录条目中 67 个有可核实摘要，3 个无独立接诊资料的条目保留中性目录名称，不编造年龄、性别或主诉。
@@ -178,3 +186,9 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 病例本地抽取现在将DOCX/PDF/PPTX内嵌图保存到忽略的`output/case-drafts/embedded-media/`，在草稿文档中登记来源哈希、定位及默认禁止绑定状态；不自动进入运行病例或公开目录。原件不变，隐私/用途核查后仍需显式受控绑定。先执行 `python -m pip install -r scripts/requirements-cases.txt`（含PDF图片提取必需的Pillow），再执行源准备与媒体回归：`python -X utf8 -m unittest discover -s tests -p "test_*case*.py"`。缺少Pillow时PDF文字提取可能正常而图片提取报错，不能把空候选当作原件无图；须检查草稿媒体错误并补依赖后重跑。
 
 病例目录中的独立图片另登记为私有草稿`standaloneMediaCandidates`，保留每个相对定位、原图SHA/大小、实际解码结果及尺寸；损坏图片保留错误项，重复字节保留不同来源定位。它们不经过Word/PDF内嵌图计数，不能用内嵌图0张推断无图；不复制到公开目录、不自动推断检查类型或加入运行绑定，隐私、用途和实际显示仍需分别核验。
+
+病例图片绑定与私有配置持久化见[CASE_MEDIA_BINDING.md](docs/CASE_MEDIA_BINDING.md)。上传前须核实精确原件字节、来源和用途，教师使用授权按本聊天确认记录，不再强制逐图隐私批准；带媒体配置的教师导入新增私有`binding_config`列前置检查，缺迁移不先写facts。检查/查体按操作释放、报告材料版本与事件关联、本地独立进程磁盘恢复已有工程验证；原图用途、真实存储与鉴权验收仍待，本地通过不代表可直接导入发布。
+
+当前全库教学补全、70配图与3模拟病例入口、版本固定/采集复盘/媒体回放、私有病历底稿及验证边界见[CASE_TEACHING_COMPLETION.md](docs/CASE_TEACHING_COMPLETION.md)。原始病例缺口与AI补充分别记录，未声称已部署或真实全库通过。
+
+完整私有素材交付、安全同步、用户发布及部署后代表验收见 [Coder完整交付说明](docs/CODER_COMPLETE_DELIVERY_20261028.md)。

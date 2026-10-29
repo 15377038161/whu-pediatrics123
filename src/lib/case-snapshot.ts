@@ -4,6 +4,8 @@ import { getSupabaseUserClient, isDatabaseConfigured } from '@/lib/supabase-clie
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
+import type { CaseMedia } from '@/domain/agent';
+import { decodeCaseMedia } from '@/lib/case-media';
 
 /**
  * 结构化病例快照（来源：平台知识库召回）
@@ -77,9 +79,11 @@ export interface SnapshotCaseData {
   age: string;
   sex: string;
   complaint: string;
+  teachingSimulation?: true;
   sections: { history: string; exam: string; tests: string; diagnosis: string; plan: string };
   vitals: { temperature: number | null; heartRate: number | null; respiratoryRate: number | null; spo2: number | null };
   documents: Array<{ source: string; text: string; sha256: string }>;
+  examMedia?: Array<{examId: string; media: CaseMedia[]}>;
 }
 
 export interface SnapshotResult {
@@ -348,6 +352,7 @@ function buildFactsPayload(snapshot: SnapshotResult): Omit<SnapshotCaseData, 'se
     age: snapshot.data.age,
     sex: snapshot.data.sex,
     complaint: snapshot.data.complaint,
+    ...(snapshot.data.teachingSimulation ? {teachingSimulation: true as const} : {}),
     sections: { history: snapshot.data.sections.history, exam: snapshot.data.sections.exam, tests: snapshot.data.sections.tests },
     vitals: snapshot.data.vitals,
   };
@@ -404,6 +409,16 @@ export async function restoreCaseSnapshotFacts(caseId: string, version: string, 
       const { data, error } = await db.from('case_snapshot_facts').select('facts').eq('case_id', sourceId).eq('version', version).maybeSingle();
       if (error) throw error;
       if (data) facts = data.facts as ReturnType<typeof buildFactsPayload>;
+      if (facts) {
+        // Teacher supervision keeps its existing RLS-authorized read. Never reuse this
+        // full private metadata in the student/session-scoped RPC cache.
+        const {data: answer,error: bindingError}=await db.from('case_snapshot_answers')
+          .select('binding_config').eq('case_id',sourceId).eq('version',version).maybeSingle();
+        if (!bindingError && Array.isArray(answer?.binding_config?.examMedia)) {
+          facts.examMedia=answer.binding_config.examMedia.filter((item: {examId?: unknown})=>typeof item?.examId==='string')
+            .map((item: {examId:string;media:unknown})=>({examId:item.examId,media:decodeCaseMedia(item.media)}));
+        }
+      }
     }
     if (!facts) return null;
     // 学生受控 RPC 的阶段化事实投影（迁移 20261010120000）：未执行查体/开检查前
@@ -535,17 +550,32 @@ export async function recordCaseTestOrder(caseId: string, version: string, sessi
 /** 按 testId 行级读取本人会话病例的单行检查结果（case_snapshot_get_test，门控：归属+版本+病例+已下单持久化）。
  *  一次下单仅返回该项目结果，不以一次下单暴露全部 tests 全文。
  *  未下单/守卫拒绝返回 null；网络/权限错误抛出（调用方不得把读取失败伪记为「资料未提供」）。 */
-export async function getCaseTestResult(caseId: string, version: string, sessionId: string, accessToken: string | null, testId: string): Promise<{ id: string; label: string; result: string } | null> {
+export interface ReleasedCaseTestResult {
+  id: string; label: string; result: string;
+  pending?: boolean; resultDelayNote?: string; media?: CaseMedia[];
+}
+
+export function decodeCaseTestResult(data: unknown, testId: string): ReleasedCaseTestResult | null {
+  if (!data || typeof data !== 'object') return null;
+  const item = data as Record<string, unknown>;
+  const identity = { id: typeof item.id === 'string' ? item.id : testId, label: typeof item.label === 'string' ? item.label : '' };
+  if (identity.id !== testId) return null;
+  // Pending responses must never retain even accidentally supplied results/media.
+  if (item.pending === true) return {...identity, result: '', pending: true,
+    resultDelayNote: typeof item.resultDelayNote === 'string' ? item.resultDelayNote : '标本已送检，结果待回报。'};
+  if (typeof item.result !== 'string' || !item.result) return null;
+  const media=decodeCaseMedia(item.media);
+  return {...identity, result: item.result, ...(media.length ? {media} : {})};
+}
+
+export async function getCaseTestResult(caseId: string, version: string, sessionId: string, accessToken: string | null, testId: string): Promise<ReleasedCaseTestResult | null> {
   const sourceId = getTeacherSourceId(caseId);
   if (!accessToken || !isDatabaseConfigured()) return null;
   try {
     const db = getSupabaseUserClient(accessToken);
     const { data, error } = await db.rpc('case_snapshot_get_test', { p_case_id: decodeURIComponent(caseId), p_version: version, p_session_id: sessionId, p_test_id: testId });
     if (error) throw error;
-    if (!data || typeof data !== 'object') return null;
-    const item = data as { id?: unknown; label?: unknown; result?: unknown };
-    if (typeof item.result !== 'string' || !item.result) return null;
-    return { id: typeof item.id === 'string' ? item.id : testId, label: typeof item.label === 'string' ? item.label : '', result: item.result };
+    return decodeCaseTestResult(data, testId);
   } catch (error) {
     if (process.env.LOG_LEVEL === 'debug') console.warn('[case-snapshot] get test failed', sourceId, testId, (error as Error).message);
     throw new Error('TEST_RESULT_RPC_FAILED');

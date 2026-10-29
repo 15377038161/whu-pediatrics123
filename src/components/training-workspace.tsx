@@ -2,6 +2,7 @@
 
 import { teachingHints } from '@/domain/teaching-copy';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
+import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
 import { allowedPostures, patientAppearance } from '@/domain/patient-appearance';
 import { resolveCommunicationProfile, speechCapabilityLabel } from '@/domain/communication-profile';
 import { ageBandLabel, bindingGapNote, patientAssetByKey, sexPresentationLabel } from '@/domain/patient-assets';
@@ -12,11 +13,12 @@ import {
   ClipboardList, Lightbulb, LoaderCircle, MessageCircle, Mic, Send, Stethoscope, UserRound, Volume2, VolumeX, Waves,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentEvent, AgentTurnResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
 import { getPracticeScenario } from '@/domain/practice-scenarios';
-import { getPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
+import { findPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 import { CaseResourcePanel } from '@/components/case-resource-panel';
 import { CommunicationCall } from '@/components/communication-call';
 import { RoleAudioPlayer, type RoleAudioPlayerHandle } from '@/components/role-audio-player';
@@ -151,6 +153,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [diagnosis, setDiagnosis] = useState('');
   const [summary, setSummary] = useState('');
   const [diagnosisBasis, setDiagnosisBasis] = useState('');
+  const [decisionEvidenceIds,setDecisionEvidenceIds]=useState<string[]>([]);
   const [posture, setPosture] = useState<'standing' | 'supine'>('standing');
   const [differentials, setDifferentials] = useState('');
   const [priority, setPriority] = useState('');
@@ -198,6 +201,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     setDiagnosis(next.decision?.diagnosis ?? '');
     setSummary(next.decision?.summary ?? '');
     setDiagnosisBasis(next.decision?.diagnosisBasis ?? '');
+    setDecisionEvidenceIds(next.decision?.linkedEventIds ?? []);
     setDifferentials(next.decision?.differentials ?? '');
     setPriority(next.plan?.priority ?? '');
     setPlanDetail(next.plan?.detail ?? '');
@@ -264,7 +268,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     (examFindingsText.trim() && (examFindingsText !== (session?.examObservation?.findings ?? '') || examInterpretationText !== (session?.examObservation?.interpretation ?? ''))) ||
     (examLinkedEvidence.length > 0 && examLinkedEvidence.join(',') !== (session?.examObservation?.linkedEvidence ?? []).join(',')) ||
     (session && (diagnosis !== (session.decision?.diagnosis ?? '') || summary !== (session.decision?.summary ?? '') ||
-    diagnosisBasis !== (session.decision?.diagnosisBasis ?? '') || differentials !== (session.decision?.differentials ?? '') ||
+    diagnosisBasis !== (session.decision?.diagnosisBasis ?? '') || decisionEvidenceIds.join(',')!==(session.decision?.linkedEventIds??[]).join(',') || differentials !== (session.decision?.differentials ?? '') ||
     priority !== (session.plan?.priority ?? '') || planDetail !== (session.plan?.detail ?? ''))));
   useEffect(() => {
     if (!hasUnsavedDraft) return;
@@ -385,6 +389,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const displayStage: Stage | undefined = session?.viewStage ?? (session?.stage === 'communication' && session.mode !== 'osce' && session.mode !== 'practice' ? 'history' : session?.stage);
   const currentIndex = visibleStages.findIndex((stage) => stage.id === displayStage);
   const evidenceEvents = useMemo(() => session?.events.filter((event) => event.evidenceCodes.length > 0) ?? [], [session?.events]);
+  const decisionEvidenceItems=useMemo(()=>session?diagnosticEvidenceEvents(session):[],[session]);
   const examEvidenceCount = evidenceEvents.filter((event) => event.stage === 'exam').length;
   // 已实际获得结果的查体项（观察关联选项，C-关联与验收-05）：由服务端返回的会话查体事件派生——
   // EXAM_ACTION 成功事件携带的结果项证据码（准备项 EX_PREP/系统提供项 EX_PROVIDED 不计入）；
@@ -397,15 +402,16 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   )].map(([code, summary]) => ({ code, summary }));
 
   if (!session) return <main className="loading-screen" id="main-content"><div><div className="pulse-mark"><Activity /></div><strong>{error ?? '正在建立统一病例会话…'}</strong>{error && <p><button className="btn btn-primary" onClick={() => { started.current = false; setError(null); setLoadAttempt(value => value + 1); }}>重新加载</button><a className="btn btn-secondary" href="/student">返回首页</a></p>}</div></main>;
-  const baseProfile = getPublicCase(session.caseId);
+  const baseProfile = findPublicCase(session.caseId);
+  if(!baseProfile)return <main id="main-content" className="workspace-panel"><h1>历史接诊记录</h1><p>该病例已停用，当前记录只读；已保存的接诊内容和报告保留。</p><Link className="btn btn-secondary" href="/student">返回病例库</Link><Link className="btn btn-secondary" href="/student/reports">查看历史报告</Link><ol>{session.events.map(event=><li className="preserve-lines" key={event.id}>{event.summary}</li>)}</ol></main>;
   const caseProfile = session.caseOptions ? { ...baseProfile, title: session.caseOptions.complaint ?? session.caseOptions.sourceName, age: session.caseOptions.age, sex: session.caseOptions.sex } : baseProfile;
   // 新生儿/婴儿（≤1 岁）病例只有仰卧体位（C01）：体位选项与查体事件按病例年龄收窄，
   // 不出现「1 天新生儿站立体位」这类与病例事实矛盾的交互。
   const postureOptions = allowedPostures(caseProfile.age);
   const effectivePosture = postureOptions.includes(posture) ? posture : postureOptions[0];
   const spatialExam = displayStage === 'exam';
-  const examTools = [...tools, ...sourceExamTools];
-  const examHotspots = [...baseExamHotspots, ...sourceExamHotspots];
+  const examTools = [...tools, ...sourceExamTools].filter(tool => !session.caseOptions || session.caseOptions.exams.some(exam => exam.toolId === tool.id));
+  const examHotspots = [...baseExamHotspots, ...sourceExamHotspots].filter(([id]) => !session.caseOptions || session.caseOptions.exams.some(exam => exam.bodyPartId === id && exam.toolId === selectedTool));
   const hygieneCompleted = session.unlockedEvidence.includes('EX_PREP');
   const currentFocus = session.practiceFocus ?? practiceFocus;
   const hints = stageHints[displayStage ?? session.stage];
@@ -473,11 +479,11 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       </>;
       case 'history': return conversationContent;
       case 'exam': return <>
-        <div className="stage-intro exam-stage-intro"><p className="eyebrow">器材逻辑校验</p><h2>选择检查方法，点击患儿对应部位</h2><p>{session.caseOptions ? '按原病例记录逐项检查：先完成手卫生，再选择器材点击部位；病例未记录的组合会明确提示「资料未提供」，不会编造结果。' : '系统会校验准备动作、器材与部位，并即时反馈真实查体结果。'}</p></div>
+        <div className="stage-intro exam-stage-intro"><p className="eyebrow">器材逻辑校验</p><h2>选择检查方法，点击患儿对应部位</h2><p>{session.caseOptions ? '本例仅显示已配置结果的器材和对应部位。先完成手卫生，再选择器材；结果会写入本轮记录。教学模拟内容已单独标识。' : '系统会校验准备动作、器材与部位，并即时反馈真实查体结果。'}</p></div>
         <div className="exam-safety-strip" data-complete={hygieneCompleted} role="status"><span>{hygieneCompleted ? <Check /> : '1'}</span><p><strong>{hygieneCompleted ? '手卫生已完成' : '先完成手卫生'}</strong><small>{hygieneCompleted ? '可以开始接触患儿' : '点击下方“手卫生”即可自动完成'}</small></p></div>
         <div className="posture-selector" role="group" aria-label="查体姿势">{postureOptions.map((value) => { const label = value === 'standing' ? '站立' : '仰卧'; return <button key={value} type="button" className="btn btn-secondary" aria-pressed={effectivePosture === value} disabled={busy} onClick={() => { setPosture(value); setExamObservation(null); }}>{label}</button>; })}<small>{postureOptions.includes('supine') && postureOptions.includes('standing') ? '腹部检查请切换为仰卧' : '新生儿/婴儿仅支持仰卧位查体'}</small></div>
         <div className="exam-tool-selector">
-          <div className="exam-tool-heading"><strong>选择方法或器材</strong><span>{selectedTool ? `当前：${examTools.find((tool) => tool.id === selectedTool)?.label}` : '尚未选择'}</span></div>
+          <div className="exam-tool-heading"><strong>选择方法或器材</strong><span>{selectedTool ? `当前：${examTools.find((tool) => tool.id === selectedTool)?.label ?? '请先选择本例器材'}` : '尚未选择'}</span></div>
           <ToolRack tools={examTools} selectedTool={selectedTool} onSelect={(toolId) => { void selectExamTool(toolId); }} busy={busy} hygieneCompleted={hygieneCompleted} />
         </div>
         <div className="exam-route" aria-label="后续操作"><span>2</span><p><strong>点击患儿检查部位</strong><small>{examEvidenceCount > 0 ? `实时病例记录已新增 ${examEvidenceCount} 项证据` : '有效结果会自动写入右侧病例记录'}</small></p></div>
@@ -503,11 +509,12 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'tests').length === 0 && <p>尚无检查记录：提交申请后，结果会在此逐项显示。</p>}{evidenceEvents.filter((event) => event.stage === 'tests').map((event) => <div key={event.id} className="source-result-item"><p>{event.summary}</p>{event.media && event.media.length > 0 ? <CaseMediaGallery sessionId={session.id} media={event.media} /> : null}</div>)}</div>
         <div className="form-actions"><button className="btn btn-secondary" type="button" onClick={() => navigate('assessment')}>形成病情摘要与诊断 <ChevronRight size={16} /></button></div>
       </>;
-      case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, diagnosisBasis, differentials } }); if (result) await navigate('plan'); }}>
+      case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, diagnosisBasis, differentials,linkedEventIds:decisionEvidenceIds } }); if (result) await navigate('plan'); }}>
         <div className="stage-intro"><p className="eyebrow">证据整合</p><h2>病情摘要与初步诊断</h2><p>只使用你在本次会话中实际获得的信息，体现儿科年龄特点和危险信号判断。</p></div>
         <div className="form-field"><label htmlFor="summary">病情摘要</label><textarea id="summary" required minLength={10} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="年龄、主诉、重要阳性与阴性信息、危险信号…" /></div>
         <div className="form-field"><label htmlFor="diagnosis">初步诊断</label><input id="diagnosis" required value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="输入诊断与病情严重程度" /></div>
         <div className="form-field"><label htmlFor="diagnosis-basis">诊断依据（必填）</label><textarea id="diagnosis-basis" required minLength={10} value={diagnosisBasis} onChange={(e) => setDiagnosisBasis(e.target.value)} placeholder="支撑该诊断的病史、体征与检查证据：哪些阳性发现支持诊断？关键阴性发现排除了什么？" /></div>
+        <fieldset className="form-field"><legend>关联诊断依据的记录（可选）</legend><p>选择你实际使用的记录，并在诊断依据中说明它支持或排除了什么，无需全选。</p>{decisionEvidenceItems.length?<details><summary>选择本轮已获得的记录</summary>{decisionEvidenceItems.map(item=><label className="checkbox-row" key={item.id}><input type="checkbox" checked={decisionEvidenceIds.includes(item.id)} disabled={busy} onChange={event=>setDecisionEvidenceIds(event.target.checked?[...decisionEvidenceIds,item.id]:decisionEvidenceIds.filter(id=>id!==item.id))}/><span>{item.summary}</span></label>)}</details>:<small>本轮尚无可关联的问诊、查体或检查记录；仍可在诊断依据中说明接诊时已知的信息。</small>}</fieldset>
         <div className="form-field"><label htmlFor="differentials">鉴别诊断</label><textarea id="differentials" value={differentials} onChange={(e) => setDifferentials(e.target.value)} placeholder="列出需要鉴别的疾病及理由" /></div>
         <button className="btn btn-primary btn-block" disabled={busy}>提交诊断并继续</button>
       </form>;
@@ -535,7 +542,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="stage-scroll" aria-label="训练阶段">{visibleStages.map((stage,index) => <button key={stage.id} className="stage-chip" data-current={displayStage === stage.id} data-done={stageCompleted(stage.id)} disabled={busy || stage.id === 'report' || (session.mode === 'osce' && index < currentIndex) || (practiceCompletion === 'safety_decision_plan' && stage.id === 'plan' && !session.decision)} onClick={() => { void navigate(stage.id); }} aria-label={stage.label}>{stage.short}</button>)}</div>
       </header>
       <div className="case-band"><span>{session.mode === 'osce' ? '无提示、不可重试' : session.mode === 'immersive' ? '场景教学 · 可暂停、回看与获得方向性提示' : '操作自动保存 · 提供方向性反馈'}</span><span>病例 v{session.caseVersion}</span><span>证据 {session.unlockedEvidence.length} 项</span></div>
-      {session.caseOptions && <div className="case-source-banner"><strong>学习案例：{session.caseOptions.sourceName}</strong><span>{session.caseOptions.hasSource ? '问诊、查体与检查按原病例资料展开；完成后对照诊疗经过复盘。' : '尚无独立病例正文，可开展问诊与诊疗思路记录。'}</span></div>}
+      {session.caseOptions && <div className="case-source-banner"><strong>学习案例：{session.caseOptions.sourceName}</strong><span>{session.caseOptions.teachingSimulation ? 'AI教学模拟病例：病史、数值和结果为教学设定，配图为示意，非真实患者影像。' : session.caseOptions.hasSource ? '问诊、查体与检查按原病例资料展开；完成后对照诊疗经过复盘。' : '尚无独立病例正文，可开展问诊与诊疗思路记录。'}</span></div>}
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       <div className="training-grid">
         <section className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={mobileView !== 'task'} data-mobile-drawer={spatialExam && mobileView === 'task'}><div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>

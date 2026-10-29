@@ -10,6 +10,7 @@ interface VersionedCaseData {
   age: string;
   sex: string;
   complaint: string;
+  teachingSimulation?: true;
   sections: { history: string; exam: string; tests: string; diagnosis: string; plan: string };
   vitals: { temperature: number | null; heartRate: number | null; respiratoryRate: number | null; spo2: number | null };
   documents: Array<{ source: string; text: string; sha256: string }>;
@@ -35,6 +36,7 @@ export function computeCaseContentHash(record: VersionedCaseData, media: Readonl
     age: record.age,
     sex: record.sex,
     complaint: record.complaint,
+    teachingSimulation: record.teachingSimulation,
     sections: { history: sections.history, exam: sections.exam, tests: sections.tests, diagnosis: sections.diagnosis, plan: sections.plan },
     vitals: { temperature: vitals.temperature, heartRate: vitals.heartRate, respiratoryRate: vitals.respiratoryRate, spo2: vitals.spo2 },
     documents: record.documents.map(({ source, text, sha256 }) => ({ source, text, sha256 })),

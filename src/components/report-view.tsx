@@ -4,6 +4,7 @@ import { findPublicCase } from '@/domain/case-catalog';
 import { RandomAdmission } from '@/components/random-admission';
 import { findRubricForReport, isUnscoredReport, rubricStatusForDisplay, unscoredReasonForDisplay, type RubricItem } from '@/domain/training-rubric';
 import { practiceScenarios } from '@/domain/practice-scenarios';
+import { ReportEvidenceMedia } from '@/components/report-evidence-media';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
   { key: 'history', label: '儿科问诊', max: 25 },
@@ -22,13 +23,14 @@ const evaluationBasisLabels: Record<NonNullable<TrainingReport['evaluationBasis'
 };
 
 export function ReportView({ report, readonly = false }: { report: TrainingReport; readonly?: boolean }) {
-  const mode = report.mode === 'osce' ? 'OSCE 模拟站 · 模拟参考评分' : report.mode === 'practice' ? '专项训练' : '引导训练';
+  const mode = report.mode === 'osce' ? 'OSCE 模拟站 · 模拟参考评分' : report.mode === 'practice' ? '专项训练' : report.mode === 'immersive' ? '沉浸式病例教学' : '引导训练';
   // 降级查询：历史报告可能引用目录外 caseId（如早期探针/归档病例），降级展示 ID 而非 500
   // 防透题：优先使用报告 caseTitle（服务端在完成时写入的真实病种名——完成后释放），
   // 历史报告无该字段时降级公开目录标题（教师病例为中性标题，演示病例为症状标题）
   const caseProfile = findPublicCase(report.caseId);
   const caseTitle = report.caseTitle ?? caseProfile?.title ?? `病例 ${report.caseId}`;
   const processReport = report.scoreBasis === 'process';
+  const mediaEventIds = report.releasedMediaEventIds ?? [...new Set(report.evidence.flatMap(item=>item.eventIds??[]))];
   // 量表元数据（方案 4.6）：报告快照带 rubricId/version/evaluationBasis；历史报告无 rubricId 时降级展示固定六维。
   const rubric = findRubricForReport(report);
   // 适用满分口径（方案 4.4）：总满分=适用计分项满分之和；无法评价/不适用项不计入维度满分。
@@ -50,20 +52,23 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         <div>
           <p className="eyebrow">{mode}{focusScenario ? ` · ${focusScenario.title}` : ''} · {readonly ? '只读报告' : '训练完成'}</p>
           <h1>{caseTitle}</h1>
-          <p>{processReport ? '分数表示训练过程完成度。原病例诊断与诊疗经过用于对照，诊断和处置的正确性由教师复核。' : report.mode === 'osce' ? '模拟站参考评分依据实际问答、器材操作、临床决策与沟通原文生成，不构成正式考试成绩。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
+          <p>{processReport ? '分数表示训练过程完成度。请根据已获得的记录复盘，诊断和处置的正确性由教师结合具体内容复核。' : report.mode === 'osce' ? '模拟站参考评分依据实际问答、器材操作、临床决策与沟通原文生成，不构成正式考试成绩。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
           <p style={{ fontSize: 13, opacity: 0.75 }}>评分量表：{rubric ? `${rubric.name}（v${report.rubricVersion}）` : `版本 v${report.rubricVersion ?? '未记录'} 的历史量表定义未存档，按报告快照展示`} · 成绩口径：{evaluationBasisLabels[evaluationBasis]}{report.assessableMaxScore !== undefined && !unscored ? ` · 可评价满分：${report.assessableMaxScore} 分（无法评价/不适用项不计入）` : ''}</p>
           {unscoredReason && <p style={{ fontSize: 13, opacity: 0.75 }} role="note">未评分说明：{unscoredReason}</p>}
         </div>
       </section>
       <div className="report-grid">
         <section className="report-section"><h2>你的诊断与依据</h2><p><strong>初步诊断：</strong>{report.studentDecision?.diagnosis || '历史报告未保存此项'}</p><p className="preserve-lines"><strong>诊断依据：</strong>{report.studentDecision?.diagnosisBasis || '历史记录未填写诊断依据'}</p></section>
+        {report.decisionEvidenceReview&&<section className="report-section"><h2>诊断依据的记录关联</h2>{report.decisionEvidenceReview.status==='unlinked'?<p>本次未关联具体记录，暂时无法定位诊断依据。下次训练可关联已获得的记录并说明推理关系。</p>:<>{report.decisionEvidenceReview.status==='unavailable'&&<p>部分关联记录无法还原，不能据此判断临床推理的正确性。</p>}<ol>{report.decisionEvidenceReview.items.map(item=><li className="preserve-lines" key={item.eventId} data-event-id={item.eventId}>{item.summary}</li>)}</ol></>}<p>关联记录用于追溯依据，不因勾选数量加减分，也不自动判定诊断或证据解释正确。</p></section>}
         <section className="report-section">
-          <h2>{processReport ? '六环节完成度' : rubric?.scope === 'focused' ? '专项能力画像' : '六维能力画像'}</h2>
+          <h2>{processReport ? (focusScenario ? '专项过程记录' : '六环节完成度') : rubric?.scope === 'focused' ? '专项能力画像' : '六维能力画像'}</h2>
           <div className="dimension-list">
             {dimensions
-              .filter(({ key }) => processReport || !rubric || rubric.items.some((item) => item.dimension === key))
+              .filter(({ key }) => report.evaluatedAbilities ? report.evaluatedAbilities.includes(key) : processReport || !rubric || rubric.items.some((item) => item.dimension === key))
               .map(({ key, label, max }) => {
-                const dimensionMax = rubric
+                const processEvidence = report.evidence.find(item => item.code === `SOURCE_PROCESS_${key}`);
+                const dimensionMax = processReport && report.evaluatedAbilities
+                  ? processEvidence?.maxScore ?? 0 : rubric
                   ? rubric.items.filter((item) => item.dimension === key && isAssessableRubricItem(item)).reduce((sum, item) => sum + item.maxScore, 0)
                   : max;
                 const width = dimensionMax > 0 ? Math.min(100, report.abilities[key] / dimensionMax * 100) : 0;
@@ -71,7 +76,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
                   <div className="dimension" key={key}>
                     <span>{processReport ? report.evidence.find((item) => item.code === `SOURCE_PROCESS_${key}`)?.label ?? label : label}</span>
                     <div className="dimension-track" aria-hidden="true"><i style={{ width: `${width}%` }} /></div>
-                    <strong>{rubric ? (dimensionMax > 0 ? `${report.abilities[key]}/${dimensionMax}` : '无法评价') : report.abilities[key]}</strong>
+                    <strong>{rubric || (processReport && report.evaluatedAbilities) ? (dimensionMax > 0 ? `${report.abilities[key]}/${dimensionMax}` : '无法评价') : report.abilities[key]}</strong>
                   </div>
                 );
               })}
@@ -80,7 +85,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         <section className="report-section">
           <h2><BookOpenCheck size={18} style={{ verticalAlign: -4, marginRight: 6 }} />下一步补练</h2>
           <p>{report.recommendation}</p>
-          {report.strengths.length > 0 && <p><strong>已经掌握：</strong>{report.strengths.join('、')}</p>}
+          {report.strengths.length > 0 && <p><strong>{processReport ? '本轮已完成：' : '已经掌握：'}</strong>{report.strengths.join('、')}</p>}
           {report.improvements.length > 0 && <p><strong>重点改进：</strong>{report.improvements.join('、')}</p>}
           {!readonly && <div className="report-actions"><RandomAdmission excludeCaseId={report.caseId} label="接诊下一位患儿" /><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={`/student/training?mode=guided&case=${encodeURIComponent(report.caseId)}`}>再练一次 <ArrowRight size={14} /></a></div>}
         </section>
@@ -118,6 +123,17 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           {report.studentSubmissions.examObservation && <p className="preserve-lines"><strong>查体观察记录：</strong>{report.studentSubmissions.examObservation.findings}{report.studentSubmissions.examObservation.interpretation && <>；<strong>观察解释：</strong>{report.studentSubmissions.examObservation.interpretation}</>}{report.studentSubmissions.examObservation.linkedEvidence && <>；<strong>关联查体结果：</strong>{report.studentSubmissions.examObservation.linkedEvidence.join('、')}</>}{report.studentSubmissions.examObservation.caseVersion !== undefined && <>（病例版本 v{report.studentSubmissions.examObservation.caseVersion}）</>}</p>}
         </section>
       )}
+      {report.learningIllustration && <section className="report-section" style={{marginTop:14}}><h2>教学机制图</h2><p>{report.learningIllustration.caption}</p><figure className="case-media-item">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={report.learningIllustration.url} alt={report.learningIllustration.caption} loading="lazy"/><figcaption>教学素材 {report.learningIllustration.assetVersion} · 与本报告一起保存，非临床检查证据</figcaption></figure></section>}
+      {report.collectionReview && report.collectionReview.length>0 && <section className="workspace-panel"><div className="panel-head"><h2>本病例的信息采集复盘</h2></div><div className="panel-body"><p>以下按本例可获得资料与实际事件核对。尚未采集不等于必须开单，已采集不等于已理解；临床必要性与解释质量另行评价，不在这里加减分，也不展示完整标准病历。</p><ul>{report.collectionReview.map((item,index)=><li key={`${item.area}:${index}`}>
+        <strong>{item.label}</strong>：{item.acquisitionStatus==='requested_unavailable'?'已申请，但尚无已取得的结果证据':item.acquisitionStatus==='not_requested'?'本次未申请':item.collected===0?'本次尚无已获得记录':item.collected<item.available?'记录尚未覆盖全部对应资料':'已获得对应资料'}（{item.collected}/{item.available}）；{item.eventIds.length?`关联${item.eventIds.length}条实际操作记录`:'无已取得结果的操作证据'}。
+        <p>{item.acquisitionStatus==='requested_unavailable'?'请先核对结果回报与读取状态；未取得结果时无法评价解释质量，不将其认定为漏做或解释错误。':item.area==='tests'?'请结合本例需要决定是否申请；取得结果后核对原值、单位和时点，并在诊断依据中解释其意义。':item.collected<item.available?item.area==='history'?`下次可围绕“${item.label}”补充追问，并在摘要中记录实际问到的信息。`:`下次先核对“${item.label}”的适用性、部位与体位，操作后记录实际所见。`:'可回看关联记录，核对自己的摘要或观察解释；已有操作记录不代表临床判断已正确。'}</p>
+      </li>)}</ul></div></section>}
+      {mediaEventIds.length>0 && <section className="report-section" style={{marginTop:14}}>
+        <h2>本轮已获得的图片</h2>
+      {report.sourceSnapshotVersion
+          ? <ReportEvidenceMedia key={`${report.id}:${report.sourceSnapshotVersion}`} sessionId={report.sessionId} version={report.sourceSnapshotVersion} eventIds={mediaEventIds}/>
+          : <p>历史报告未保存材料版本，暂不自动关联图片。</p>}
+      </section>}
     </div>
   );
 }

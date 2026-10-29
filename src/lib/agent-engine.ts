@@ -1,5 +1,8 @@
+import {SOURCE_HISTORY_TOPICS, sourceHistorySentences} from '@/domain/source-history';
+import {getPublicCase,isTrainableCase} from '@/lib/case-identity';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
+import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
 import { postureAllows, type ExamPosture } from '@/domain/exam-methods';
 import { stageReached } from '@/domain/agent';
 import type {
@@ -76,6 +79,7 @@ function clinicalEvent(
 }
 
 export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id, practiceFocus?: PracticeFocus, sourceSnapshotVersion?: string | null, sessionId?: string | null): SessionState {
+  getPublicCase(caseId);
   const pediatricCase = getCase(caseId, sourceSnapshotVersion, sessionId);
   const startedAt = now();
   // OSCE 时限单一来源（方案 15）：按站点契约配置设定；教师病例/历史路径未定义站点时保持默认时限。
@@ -100,6 +104,7 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
     userId,
     caseId: pediatricCase.id,
     caseVersion: pediatricCase.version,
+    sourceSnapshotVersion: sourceSnapshotVersion ?? null,
     mode,
     practiceFocus: mode === 'practice' ? practiceFocus ?? 'history' : null,
     scenarioVersion: scenario?.configVersion,
@@ -130,8 +135,10 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
     vitals: { ...pediatricCase.initialVitals },
     reportId: null,
     ...(pediatricCase.sourceFacts !== undefined ? { caseOptions: {
-      sourceName: pediatricCase.sourceFacts?.sourceName ?? pediatricCase.title,
+      sourceName: pediatricCase.sourceFacts?.teachingSimulation ? 'AI教学模拟病例' : '教师教学病例',
+      complaint: pediatricCase.sourceFacts ? verifiedComplaint(pediatricCase.sourceFacts) ?? undefined : undefined,
       age: pediatricCase.age, sex: pediatricCase.sex, hasSource: Boolean(pediatricCase.sourceFacts),
+      ...(pediatricCase.sourceFacts?.teachingSimulation ? {teachingSimulation: true as const} : {}),
       exams: pediatricCase.exams.map(({ toolId, bodyPartId, label }) => ({ toolId, bodyPartId, label })),
       tests: pediatricCase.tests.map(({ id, label, indication }) => ({ id, label, indication })),
     } } : {}),
@@ -404,21 +411,8 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   const source = pediatricCase.sourceFacts;
   const history = source?.sections.history ?? '';
-  const sentences = history.split(/[。；;\n]/).filter((line) => line.trim());
-  const topics = [
-    { question: /哪里不舒服|怎么了|什么不舒服|主要|为什么来|主诉/, source: /./ },
-    { question: /多久|什么时候|几天|开始|起病/, source: /天|周|月|小时|分钟|起病|出现/ },
-    { question: /发烧|发热|体温|退烧/, source: /发热|发烧|体温|退热/ },
-    { question: /精神|吃饭|食欲|吃东西|饮食|睡|喝水|大小便|小便/, source: /精神|饮食|食欲|睡眠|小便|大便|吃奶|喂养|尿/ },
-    { question: /出生|早产|胎龄|怀孕|发育|生长|喂养/, source: /胎|产|出生|窒息|喂养|发育|生长/ },
-    { question: /以前|既往|住院|过敏|疫苗|接种|家族/, source: /既往|平素|过敏|接种|家族|否认/ },
-    { question: /吃药|用药|治疗|处理|在家|药/, source: /治疗|用药|予|在家|药|处理/ },
-    { question: /喘|憋|呼吸|咳|痰/, source: /喘|呼吸|憋|咳|痰/ },
-    { question: /水肿|肿|浮肿|尿|血尿/, source: /肿|浮肿|尿/ },
-    { question: /疼|痛|肚子|呕吐|腹泻|拉肚子/, source: /痛|腹|呕吐|腹泻|大便/ },
-    { question: /抽搐|惊厥|发作|意识|昏迷/, source: /抽搐|惊厥|发作|意识|昏迷/ },
-    { question: /黄|皮疹|皮肤|出血/, source: /黄|皮疹|皮肤|出血/ },
-  ];
+  const sentences = sourceHistorySentences(history);
+  const topics = SOURCE_HISTORY_TOPICS;
   let matches: Array<{ fact: string; index: number }> = [];
   if (/多大|几岁|年龄|男孩|女孩|性别/.test(text) && source) {
     matches = [{ fact: `孩子${source.age}，${source.sex}。`, index: -1 }];
@@ -429,7 +423,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
     matches = sentences.map((fact, index) => ({ fact: fact.trim().replace(/^[一二三四五六七八九十\d]+[、.．]\s*(?=[\u4e00-\u9fff])/, ''), index,
       relevance: relevantTerms.filter((term) => fact.includes(term)).length * 3 + selected.filter((topic) => topic.source.test(fact)).length }))
       .filter((item) => item.relevance > 0).sort((a, b) => b.relevance - a.relevance).slice(0, 3);
-    if (/哪里不舒服|怎么了|主诉|为什么来/.test(text) && source) matches = [{ fact: verifiedComplaint(source) ?? '主诉尚需补充核实', index: -2 }];
+    if (/哪里不舒服|怎么了|主诉|为什么来|什么不舒服|主要症状|主要问题/.test(text) && source) matches = [{ fact: verifiedComplaint(source) ?? '主诉尚需补充核实', index: -2 }];
   }
   const fact = matches.map((item) => item.fact).join('。');
   // 发言计划（方案 8.2/8.4）：先按病例角色能力决定说话者，再渲染角色回复。
@@ -631,9 +625,20 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
       if (recorded === null) throw new Error('TEST_ORDER_REJECTED');
       // 网络/权限失败在此抛出（TEST_ORDER_RPC_FAILED / TEST_RESULT_RPC_FAILED），不伪记成功下单或资料未提供
       const fetched = await testOrderRpc.getResult(session.caseId, session.sourceSnapshotVersion, session.id, accessToken, test.id);
+      if (fetched?.pending) {
+        session.orderedTests = uniq([...session.orderedTests, test.id]);
+        const note = fetched.resultDelayNote ?? '标本已送检，结果待回报。';
+        session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：已开单送检，结果待回报`, null, []));
+        const pendingMessage = message('system', `${test.label}已开出。${note}`, {kind:'navigation'});
+        session.messages.push(pendingMessage); newMessages.push(pendingMessage);
+        feedbackParts.push(`${test.label}已开单送检，结果待回报。`);
+        traceItems.push(trace('病例状态', '绑定版本的数据库释放规则：暂不解锁结果或媒体'));
+        continue;
+      }
       if (fetched?.result) {
         test.result = fetched.result;
         if (fetched.label) test.label = fetched.label;
+        if (fetched.media?.length) test.media = fetched.media;
       } else {
         // record 已成功但行级读取返回 null：守卫竞态/数据异常（record 已验证项目在目录内且已下单，
         // get_test 同规则解析不应无行）——不落入「资料未提供」：不记资料缺失、不解锁证据；
@@ -676,7 +681,14 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
   // 任务3：诊断依据必填——引擎级守卫（Zod 之外的第二道防线，直调引擎的调用方同样受约束）；
   // 学生必须写明诊断依据，防止只猜诊断名词不做证据推理
   if (!data.diagnosisBasis || data.diagnosisBasis.trim().length < 10) throw new Error('DIAGNOSIS_BASIS_REQUIRED');
-  session.decision = data;
+  let linkedEventIds:string[]|undefined;
+  if(data.linkedEventIds!==undefined){
+    if(!Array.isArray(data.linkedEventIds)||data.linkedEventIds.length>128||data.linkedEventIds.some(id=>typeof id!=='string'||!id||id.length>80))throw new Error('DECISION_EVIDENCE_INVALID');
+    linkedEventIds=uniq(data.linkedEventIds);
+    const obtained=new Set(diagnosticEvidenceEvents(session).map(event=>event.id));
+    if(linkedEventIds.some(id=>!obtained.has(id)))throw new Error('DECISION_EVIDENCE_NOT_OBTAINED');
+  }
+  session.decision = {...data,...(linkedEventIds!==undefined?{linkedEventIds}:{})};
   session.events.push(clinicalEvent(clientEventId, 'SUBMIT_DECISION', 'assessment', `提交初步诊断：${data.diagnosis}`, null, ['DECISION']));
   advanceStageTo(session, 'assessment');
   session.updatedAt = now();
@@ -685,7 +697,7 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
   return {
     session,
     newMessages: [],
-    feedback: feedbackFor(session, '诊断与依据已保存。系统将在报告中核对诊断依据与已获取证据是否一致。'),
+    feedback: feedbackFor(session, '诊断与依据已保存，关联记录将随报告保留。证据解释与诊断的合理性仍需结合具体内容复核。'),
     trace: [trace('病例状态', '保存病情摘要、诊断依据与鉴别诊断'), trace('知识检索', '检索诊断与危险信号依据', sources)],
   };
 }
@@ -822,6 +834,7 @@ export interface AgentTurnOptions {
 }
 
 export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string, options?: AgentTurnOptions): Promise<AgentTurnResult> {
+  if(!isTrainableCase(session.caseId))throw new Error('CASE_RETIRED');
   // 证据驱动的投影刷新（教师病例恢复态缓存）：学生真实执行查体/开单后 RPC 门控已按证据放行，
   // 会话作用域缓存仍为剥离态时重新恢复——避免引擎规则匹配读到剥离态造成假阴性
   // （病例实际有记录却判「资料未提供/检查不存在」）。失败不阻断回合（保持原有剥离态语义）。

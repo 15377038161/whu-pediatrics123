@@ -4,6 +4,7 @@ import type { AgentEvent } from '@/domain/agent';
 import { __setTestOrderRpcForTests, createInitialSession, runAgentTurn } from '@/lib/agent-engine';
 import { setSessionTestsCatalog } from '@/lib/case-snapshot';
 import { errorFromUnknown } from '@/lib/api-result';
+import { findReleasedMedia } from '@/lib/case-media';
 
 /** 503 路径注入失败验证（缺口B）——开单链路 record/get 失败时的会话一致性：
  *  1) record 网络/权限失败（TEST_ORDER_RPC_FAILED）：回合失败，不新增下单、不解锁证据、不记事件；
@@ -17,6 +18,26 @@ import { errorFromUnknown } from '@/lib/api-result';
 
 const CASE_ID = 'teacher-川崎病';
 const TOKEN = 'token-503-test';
+
+test('冷恢复行级待回报：保留单据但不解锁结果/媒体，到阶段后重试才挂载',async()=>{
+  let pending=true;
+  __setTestOrderRpcForTests({record:async()=>['source-test-0'],getResult:async()=>pending
+    ? {id:'source-test-0',label:'合成检查',result:'',pending:true,resultDelayNote:'合成延迟'}
+    : {id:'source-test-0',label:'合成检查',result:'合成结果',media:[{fileId:'synthetic-released',kind:'image',caption:'合成图'}]}});
+  try {
+    const session=buildSession('synthetic-pending-media','synthetic-pending-version');
+    await runAgentTurn(session,orderEvent('source-test-0'),'pending-order',{accessToken:TOKEN});
+    assert.deepEqual(session.orderedTests,['source-test-0']);assert.ok(!session.unlockedEvidence.includes('SOURCE_TEST_0'));
+    assert.equal(session.events.at(-1)?.media,undefined);
+    assert.equal(findReleasedMedia(session,'synthetic-released'),null);
+    pending=false;session.stage='assessment';
+    await runAgentTurn(session,orderEvent('source-test-0'),'released-order',{accessToken:TOKEN});
+    assert.ok(session.unlockedEvidence.includes('SOURCE_TEST_0'));
+    assert.deepEqual(session.events.at(-1)?.media,[{fileId:'synthetic-released',kind:'image',caption:'合成图'}]);
+    const roundtrip=JSON.parse(JSON.stringify(session));
+    assert.deepEqual(findReleasedMedia(roundtrip,'synthetic-released'),{fileId:'synthetic-released',kind:'image',caption:'合成图'});
+  } finally {__setTestOrderRpcForTests(null);}
+});
 
 function buildSession(sessionId: string, version: string) {
   // createInitialSession 的 session.id 恒为新 UUID（sessionId 参数仅用于 getCase 预载），

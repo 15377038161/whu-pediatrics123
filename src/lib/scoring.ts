@@ -1,3 +1,7 @@
+import {TEACHING_ILLUSTRATIONS} from '@/domain/teaching-illustrations';
+import teachingIllustrations from '@/domain/case-teaching-illustrations.json';
+import {SOURCE_HISTORY_TOPICS, sourceHistorySentences} from '@/domain/source-history';
+import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
 import type { AbilityScores, ScoreEvidence, SessionState, TrainingReport } from '@/domain/agent';
 import { getCase } from '@/domain/case';
 import { flagshipClinicalRubric, focusedRubrics, type RubricDefinition, type RubricItem, type RubricItemStatus } from '@/domain/training-rubric';
@@ -21,12 +25,12 @@ export interface ReportReference {
 /** 原始提交快照（方案 4.6）：报告生成时冻结学生的全部最终提交原文，不追溯重写。 */
 function snapshotSubmissions(session: SessionState): NonNullable<TrainingReport['studentSubmissions']> {
   return {
-    decision: session.decision ? { ...session.decision } : null,
+    decision: session.decision ? structuredClone(session.decision) : null,
     plan: session.plan ? { ...session.plan } : null,
     communication: session.communication ?? null,
     historySummary: session.historySummary ?? null,
     // C-观察与报告-04：查体专项观察/解释提交原文随快照冻结（历史报告无此字段按未提交展示）。
-    examObservation: session.examObservation ? { ...session.examObservation } : null,
+    examObservation: session.examObservation ? structuredClone(session.examObservation) : null,
   };
 }
 
@@ -44,8 +48,16 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
   // 评分全程按会话绑定版本+会话作用域读取教学事实：teacher 病例命中本人会话投影态，
   // 不读共享键的完整事实（防跨会话泄露）；无有效事实时走 buildSourceReport 过程分口径（非生成式兜底）。
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
-  if (pediatricCase.sourceFacts !== undefined) return buildSourceReport(session, reportId, reference);
-  return buildRubricReport(session, reportId, rubricForSession(session));
+  const report=pediatricCase.sourceFacts !== undefined
+    ? buildSourceReport(session, reportId, reference) : buildRubricReport(session, reportId, rubricForSession(session));
+  const selected=session.decision?.linkedEventIds;
+  if(selected!==undefined){
+    const events=new Map(diagnosticEvidenceEvents(session).map(event=>[event.id,event]));
+    const unique=[...new Set(selected)],items=unique.flatMap(id=>{const event=events.get(id);return event?[{eventId:id,stage:event.stage,summary:event.summary}]:[];});
+    const unavailableCount=unique.length-items.length;
+    report.decisionEvidenceReview={status:unavailableCount?'unavailable':items.length?'linked':'unlinked',items,unavailableCount,caseVersion:session.caseVersion,sourceSnapshotVersion:session.sourceSnapshotVersion??null};
+  }
+  return report;
 }
 
 interface ItemEvaluation {
@@ -464,7 +476,7 @@ function buildRubricReport(session: SessionState, reportId: string, rubric: Rubr
     : recommendationBase;
   return {
     id: reportId,
-    studentDecision: session.decision ? { ...session.decision } : null,
+    studentDecision: session.decision ? structuredClone(session.decision) : null,
     sessionId: session.id,
     userId: session.userId,
     caseId: session.caseId,
@@ -480,6 +492,8 @@ function buildRubricReport(session: SessionState, reportId: string, rubric: Rubr
     ...(session.practiceFocus ? { practiceFocus: session.practiceFocus } : {}),
     rubricId: rubric.id,
     rubricVersion: rubric.version,
+    sourceSnapshotVersion: session.sourceSnapshotVersion ?? null,
+    releasedMediaEventIds: session.events.filter(event=>event.media?.length).map(event=>event.id),
     evaluationBasis: 'clinical_rubric',
     assessableMaxScore,
     ...(unscored ? { unscored, unscoredReason } : {}),
@@ -488,13 +502,44 @@ function buildRubricReport(session: SessionState, reportId: string, rubric: Rubr
   };
 }
 
+function learningIllustrationFor(session: SessionState): TrainingReport['learningIllustration'] {
+  const illustration=(teachingIllustrations as Record<string,NonNullable<TrainingReport['learningIllustration']>>)[session.caseId];
+  if(!illustration)return undefined;
+  // The same teaching asset may already be attached to a released test. Replay it once.
+  if(session.events.some(event=>event.media?.some(media=>TEACHING_ILLUSTRATIONS[media.fileId]?.url===illustration.url)))return undefined;
+  return illustration;
+}
+
 function buildSourceReport(session: SessionState, reportId: string, reference?: ReportReference): TrainingReport {
   // 对照来源优先级：会话绑定版本的安全读取（RPC/教师直读）> 进程内缓存快照（本地 knowledge 场景）。
   // 学生会话无绑定版本对照时保持"资料不足"，不用漂移数据补造。
   const source = getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts;
+  const collectionReview: NonNullable<TrainingReport['collectionReview']> = [];
+  const focusArea = session.mode === 'practice' ? session.practiceFocus : null;
+  if (source && (!focusArea || focusArea === 'history')) {
+    const sentences=sourceHistorySentences(source.sections.history);
+    for (const topic of SOURCE_HISTORY_TOPICS) {
+      const codes=sentences.flatMap((fact,index)=>topic.source.test(fact)?[`SOURCE_HX_${index}`]:[]);
+      if(codes.length) collectionReview.push({area:'history',label:topic.label,available:codes.length,
+        collected:codes.filter(code=>session.askedIntents.includes(code)).length,eventIds:eventIdsFor(session,codes)});
+    }
+  }
+  if (source && (!focusArea || focusArea === 'exam')) {
+    for(const exam of getCase(session.caseId,session.sourceSnapshotVersion,session.id).exams.filter(e=>e.evidenceCode!=='EX_PREP')) {
+      collectionReview.push({area:'exam',label:exam.label,available:1,collected:session.unlockedEvidence.includes(exam.evidenceCode)?1:0,eventIds:eventIdsFor(session,[exam.evidenceCode])});
+    }
+  }
+  if (source && !focusArea) {
+    for(const check of session.caseOptions?.tests ?? []) {
+      const code=`SOURCE_TEST_${check.id.replace('source-test-','')}`;
+      const obtained=session.unlockedEvidence.includes(code);
+      collectionReview.push({area:'tests',label:check.label,available:1,collected:obtained?1:0,eventIds:eventIdsFor(session,[code]),
+        acquisitionStatus:obtained?'obtained':session.orderedTests.includes(check.id)?'requested_unavailable':'not_requested'});
+    }
+  }
   const diagnosisReference = reference?.diagnosis ?? source?.sections.diagnosis ?? '';
   const planReference = reference?.plan ?? source?.sections.plan ?? '';
-  const checks: Array<{ key: keyof AbilityScores; label: string; max: number; codes: string[]; complete: boolean; detail: string }> = [
+  let checks: Array<{ key: keyof AbilityScores; label: string; max: number; codes: string[]; complete: boolean; detail: string }> = [
     { key: 'history', label: '病史采集记录', max: 25, codes: session.askedIntents.filter((code) => code.startsWith('SOURCE_HX_')), complete: session.askedIntents.some((code) => code.startsWith('SOURCE_HX_')), detail: '是否通过问诊获取该病例实际提供的病史。' },
     { key: 'examination', label: '查体证据记录', max: 25, codes: session.unlockedEvidence.filter((code) => code.startsWith('SOURCE_EX_')), complete: session.unlockedEvidence.some((code) => code.startsWith('SOURCE_EX_')), detail: '是否完成检查准备并获取原病例的查体结果。' },
     { key: 'reasoning', label: '诊断思路提交', max: 20, codes: ['DECISION'], complete: Boolean(session.decision?.diagnosis && session.decision.summary), detail: '记录病情摘要与诊断思路；本项评价任务完成，不判断诊断正确性。' },
@@ -502,21 +547,43 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
     { key: 'communication', label: '家长沟通记录', max: 10, codes: ['COMMUNICATION'], complete: Boolean(session.communication?.trim()), detail: '是否提交向患儿及家长说明病情、风险和后续安排的沟通原文。' },
     { key: 'professionalism', label: '检查准备', max: 5, codes: ['EX_PREP'], complete: session.unlockedEvidence.includes('EX_PREP'), detail: '是否完成手卫生与检查说明。' },
   ];
-  const abilities = Object.fromEntries(checks.map((check) => [check.key, check.complete ? check.max : 0])) as unknown as AbilityScores;
-  const evidence: ScoreEvidence[] = checks.map((check) => ({ code: `SOURCE_PROCESS_${check.key}`, label: check.label, achieved: check.complete, score: check.complete ? check.max : 0, maxScore: check.max, detail: check.detail, eventIds: eventIdsFor(session, check.codes) }));
+  const focus = session.mode === 'practice' ? session.practiceFocus : null;
+  const focusedDimensions: Record<NonNullable<SessionState['practiceFocus']>, Array<keyof AbilityScores>> = {
+    history: ['history'], exam: ['examination', 'professionalism'],
+    safety: ['reasoning', 'safety'], communication: ['communication'],
+  };
+  if (focus) checks = checks.filter(check => focusedDimensions[focus].includes(check.key));
+  // 沟通专项只保留提交，不能用提交或关键词代替沟通质量评分。
+  const unscored = focus === 'communication';
+  const abilities: AbilityScores = { history: 0, examination: 0, reasoning: 0, safety: 0, communication: 0, professionalism: 0 };
+  for (const check of checks) abilities[check.key] = !unscored && check.complete ? check.max : 0;
+  const evidence: ScoreEvidence[] = checks.map((check) => ({ code: `SOURCE_PROCESS_${check.key}`, label: check.label,
+    achieved: !unscored && check.complete, score: abilities[check.key], maxScore: unscored ? 0 : check.max,
+    ...(unscored ? { status: 'not_assessable' as const } : {}),
+    detail: unscored ? '沟通提交原文已保留；缺少专业审核的沟通质量判据，无法自动评价，待教师复核。' : check.detail,
+    eventIds: eventIdsFor(session, check.codes) }));
+  if (focus === 'exam') evidence.push({code:'SOURCE_EX_FINDINGS',label:'查体结果识别',achieved:false,score:0,maxScore:0,status:'not_assessable',
+    detail:'观察与解释提交及关联证据保留在报告；缺少专业审核的结果识别判据，待教师复核。',eventIds:eventIdsFor(session,['EX_OBSERVATION'])});
   if (diagnosisReference) evidence.push({ code: 'SOURCE_DIAGNOSIS_REFERENCE', label: '原病例诊断对照', achieved: true, score: 0, maxScore: 0, detail: diagnosisReference, eventIds: [] });
   if (planReference) evidence.push({ code: 'SOURCE_PLAN_REFERENCE', label: '原病例诊疗经过对照', achieved: true, score: 0, maxScore: 0, detail: planReference, eventIds: [] });
   return { id: reportId, sessionId: session.id, userId: session.userId, caseId: session.caseId, mode: session.mode,
-    studentDecision: session.decision ? { ...session.decision } : null,
+    sourceSnapshotVersion: session.sourceSnapshotVersion ?? null,
+    releasedMediaEventIds: session.events.filter(event=>event.media?.length).map(event=>event.id),
+    studentDecision: session.decision ? structuredClone(session.decision) : null,
     caseTitle: resolveCaseTitleForReport(session),
     totalScore: Object.values(abilities).reduce((sum, score) => sum + score, 0), abilities, evidence,
-    strengths: checks.filter((check) => check.complete).map((check) => check.label), improvements: checks.filter((check) => !check.complete).map((check) => check.label),
+    evaluatedAbilities: checks.map(check => check.key),
+    strengths: unscored ? (session.communication?.trim() ? ['已保留沟通提交，质量待教师复核。'] : []) : checks.filter((check) => check.complete).map((check) => check.label),
+    improvements: unscored ? [] : [...checks.filter((check) => !check.complete).map((check) => check.label), ...collectionReview.filter(item=>item.area==='history' && item.collected<item.available).map(item=>`病史记录待核对：${item.label}（已获${item.collected}/${item.available}条来源记录）`)],
+    collectionReview,
+    learningIllustration: learningIllustrationFor(session),
     recommendation: source ? '对照原病例诊断与诊疗经过，解释自己的证据与判断；请教师复核诊断及处置。' : '本病种暂无独立原始病历，请整理自己的问诊与诊疗思路，待补充资料后再对照复盘。',
     scoreBasis: 'process',
     ...(session.practiceFocus ? { practiceFocus: session.practiceFocus } : {}),
     evaluationBasis: 'process_completion',
     // C-观察与报告-04：过程分报告按六环节满分之和持久化可评价满分（与前端展示同源）。
-    assessableMaxScore: checks.reduce((sum, check) => sum + check.max, 0),
+    assessableMaxScore: unscored ? 0 : checks.reduce((sum, check) => sum + check.max, 0),
+    ...(unscored ? {unscored:true,unscoredReason:'缺少专业审核的沟通质量判据，提交原文保留待教师复核。'} : {}),
     studentSubmissions: snapshotSubmissions(session),
     status: 'pending_review', createdAt: new Date().toISOString() };
 }

@@ -111,16 +111,6 @@ export const TEACHER_CASE_CATALOG: TeacherCaseCatalogItem[] = [
     "source": "list"
   },
   {
-    "id": "teacher-新生儿脑梗死",
-    "name": "新生儿脑梗死",
-    "category": "新生儿与新生儿疾病",
-    "folder": null,
-    "mediaCount": 0,
-    "documentCount": 0,
-    "status": "catalog-only",
-    "source": "list"
-  },
-  {
     "id": "teacher-先天性肾上腺皮质增生症",
     "name": "先天性肾上腺皮质增生症",
     "category": "新生儿与新生儿疾病",
@@ -258,16 +248,6 @@ export const TEACHER_CASE_CATALOG: TeacherCaseCatalogItem[] = [
     "mediaCount": 0,
     "documentCount": 2,
     "status": "materials-indexed",
-    "source": "list"
-  },
-  {
-    "id": "teacher-支气管肺炎",
-    "name": "支气管肺炎",
-    "category": "呼吸系统疾病",
-    "folder": null,
-    "mediaCount": 0,
-    "documentCount": 0,
-    "status": "catalog-only",
     "source": "list"
   },
   {
@@ -448,16 +428,6 @@ export const TEACHER_CASE_CATALOG: TeacherCaseCatalogItem[] = [
     "mediaCount": 1088,
     "documentCount": 6,
     "status": "materials-indexed",
-    "source": "list"
-  },
-  {
-    "id": "teacher-格林巴利综合征",
-    "name": "格林巴利综合征",
-    "category": "神经系统",
-    "folder": null,
-    "mediaCount": 0,
-    "documentCount": 0,
-    "status": "catalog-only",
     "source": "list"
   },
   {

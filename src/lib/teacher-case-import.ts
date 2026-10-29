@@ -52,6 +52,15 @@ export function computeImportVersion(record: TeacherCaseData): string {
   return computeCaseDataVersion(record);
 }
 
+/** Only current controlled source files; archived/removed entries are never import candidates. */
+function readImportRecord(caseId: string): TeacherCaseData | null {
+  try {
+    const raw: unknown=JSON.parse(readFileSync(path.join(getKnowledgeRoot(),'teaching-cases',`${caseId}.json`),'utf8'));
+    const record=recordSchema.parse(raw);
+    return record.caseId===caseId?record:null;
+  }catch{return null;}
+}
+
 /** 本地完整审核版本：读本地受控产物 JSON 并计算内容哈希（完整审核来源的权威稳定版本）。
  *  文件缺失/schema 无效返回 null（调用方按版本选择规则降级）。
  *  与导入写入 DB 的版本同算法：本地存在即与 DB 导入版本一致，新会话直接绑定权威版本。 */
@@ -59,8 +68,8 @@ export function getLocalImportVersion(caseId: string): string | null {
   const sourceId = decodeURIComponent(caseId);
   if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId)) return null;
   try {
-    const file = path.join(getKnowledgeRoot(), 'teaching-cases', `${sourceId}.json`);
-    const record = recordSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
+    const record = readImportRecord(sourceId);
+    if (!record) return null;
     if (record.caseId !== sourceId) return null;
     return computeImportVersion(record);
   } catch {
@@ -78,8 +87,19 @@ export function buildFactsPayloadForInit(record: TeacherCaseData) {
     age: record.age,
     sex: record.sex,
     complaint: record.complaint,
+    ...(record.teachingSimulation ? {teachingSimulation: true as const} : {}),
     sections: { history: record.sections.history, exam: record.sections.exam, tests: record.sections.tests },
     vitals: record.vitals,
+  };
+}
+
+/** Private, version-bound metadata. Never put this object into student facts. */
+export function buildBindingConfigForInit(record: Pick<TeacherCaseData, 'testMedia' | 'examMedia' | 'testRelease'>) {
+  if (record.testMedia === undefined && record.examMedia === undefined && record.testRelease === undefined) return null;
+  return {
+    testMedia: record.testMedia ?? [],
+    examMedia: record.examMedia ?? [],
+    testRelease: record.testRelease ?? [],
   };
 }
 
@@ -168,7 +188,7 @@ export async function importTeacherCases(accessToken: string, options?: ImportOp
   try {
     files = readdirSync(dir).filter((name) => name.endsWith('.json')).sort();
   } catch {
-    return { total: 0, imported: 0, unchanged: 0, skipped: 0, failed: 0, results: [] };
+    files = [];
   }
 
   const results: ImportCaseResult[] = [];
@@ -181,7 +201,9 @@ export async function importTeacherCases(accessToken: string, options?: ImportOp
     }
     let record: TeacherCaseData;
     try {
-      record = recordSchema.parse(JSON.parse(readFileSync(path.join(dir, file), 'utf8')));
+      const local = readImportRecord(caseId);
+      if (!local) throw new Error('CASE_SOURCE_UNAVAILABLE');
+      record = local;
     } catch (error) {
       results.push({ caseId, status: 'skipped_invalid_schema', detail: (error as Error).message });
       continue;
@@ -191,7 +213,21 @@ export async function importTeacherCases(accessToken: string, options?: ImportOp
       continue;
     }
     const version = computeImportVersion(record);
+    const bindingConfig = buildBindingConfigForInit(record);
     try {
+      // Probe the private column before writing facts. A missing migration must not
+      // leave a fresh facts-only row that a retry later mistakes for a complete import.
+      let persistedBindings: ReturnType<typeof buildBindingConfigForInit> = null;
+      if (bindingConfig) {
+        const { data: answer, error } = await db.from('case_snapshot_answers')
+          .select('binding_config').eq('case_id', caseId).eq('version', version).maybeSingle();
+        if (error) throw error;
+        if (answer?.binding_config) {
+          const parsed = recordSchema.pick({ testMedia: true, examMedia: true, testRelease: true }).parse(answer.binding_config);
+          persistedBindings = buildBindingConfigForInit(parsed);
+          if (JSON.stringify(persistedBindings) !== JSON.stringify(bindingConfig)) throw new Error('SNAPSHOT_BINDING_CONFIG_MISSING_OR_CONFLICT');
+        }
+      }
       // facts：同版本已存在则幂等跳过（unchanged），否则新增（imported）
       const { data: existing, error: selectError } = await db
         .from('case_snapshot_facts')
@@ -201,6 +237,11 @@ export async function importTeacherCases(accessToken: string, options?: ImportOp
         .maybeSingle();
       if (selectError) throw selectError;
       if (existing) {
+        if (bindingConfig) {
+          // The old importer could already have written this version while dropping metadata.
+          // Do not silently reinterpret a historical version or call that state unchanged.
+          if (!persistedBindings) throw new Error('SNAPSHOT_BINDING_CONFIG_MISSING_OR_CONFLICT');
+        }
         results.push({ caseId, status: 'unchanged', version });
         continue;
       }
@@ -222,6 +263,7 @@ export async function importTeacherCases(accessToken: string, options?: ImportOp
             plan: record.sections.plan,
             documents: record.documents,
             media: [],
+            ...(bindingConfig ? { binding_config: bindingConfig } : {}),
           },
           { onConflict: 'case_id,version', ignoreDuplicates: true },
         );

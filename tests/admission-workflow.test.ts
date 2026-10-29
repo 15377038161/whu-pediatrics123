@@ -49,7 +49,7 @@ test('报告固定最终学生依据，修订不重写已生成报告', () => {
 });
 
 test('客户端目录和active学生响应不通过病例ID泄漏病种，历史ID仍可解析', () => {
-  assert.equal(CASE_CATALOG.filter(item => item.id.startsWith('case-')).length, 70);
+  assert.equal(CASE_CATALOG.filter(item => item.id.startsWith('case-')).length, 67);
   const publicId = publicCaseId('teacher-川崎病');
   assert.equal(resolveCaseId(publicId), 'teacher-川崎病');
   assert.equal(publicId.includes('川崎'), false);

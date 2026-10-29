@@ -148,6 +148,8 @@ export interface SessionState {
     summary: string;
     /** 诊断依据（任务3 必填）：历史会话可能缺失，读取方需可选访问。 */
     diagnosisBasis?: string;
+    /** Server-validated references to actual acquired events; absent in older submissions. */
+    linkedEventIds?: string[];
     differentials: string;
   } | null;
   plan: {
@@ -176,6 +178,7 @@ export interface SessionState {
     age: string;
     sex: string;
     hasSource: boolean;
+    teachingSimulation?: true;
     exams: Array<{ toolId: string; bodyPartId: string; label: string }>;
     tests: Array<{ id: string; label: string; indication: string }>;
   };
@@ -200,7 +203,7 @@ export type AgentEvent =
   | { type: 'DOCTOR_INTERVENTION'; data: { action: 'child_answer' | 'pause_parent' | 'comfort_child' } }
   | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string; posture?: 'standing' | 'supine' } }
   | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
-  | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string } }
+  | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string; linkedEventIds?:string[] } }
   | { type: 'SUBMIT_HISTORY_SUMMARY'; data: { summary: string } }
   | { type: 'SUBMIT_EXAM_OBSERVATION'; data: { findings: string; interpretation?: string; linkedEvidence: string[] } }
   | { type: 'SUBMIT_PLAN'; data: { priority: string; detail: string } }
@@ -258,8 +261,12 @@ export interface ScoreEvidence {
 }
 
 export interface TrainingReport {
+  /** Frozen source version for evidence/media replay; absent historical reports do not guess. */
+  sourceSnapshotVersion?: string | null;
   /** 生成时固定的学生最终提交，不追溯重写历史报告。 */
   studentDecision?: SessionState['decision'];
+  /** Frozen record association only; no clinical correctness score. */
+  decisionEvidenceReview?: {status:'linked'|'unlinked'|'unavailable';items:Array<{eventId:string;stage:Stage;summary:string}>;unavailableCount:number;caseVersion:number;sourceSnapshotVersion:string|null};
   id: string;
   sessionId: string;
   userId: string;
@@ -271,9 +278,18 @@ export interface TrainingReport {
   mode: SessionMode;
   totalScore: number;
   abilities: AbilityScores;
+  /** 生成时冻结的评价维度；历史报告缺失时保持原六维展示，不按现行专项配置重算。 */
+  evaluatedAbilities?: Array<keyof AbilityScores>;
   evidence: ScoreEvidence[];
   strengths: string[];
   improvements: string[];
+  /** Evidence collection coverage, not a clinical correctness score or full standard note. */
+  collectionReview?: Array<{area:'history'|'exam'|'tests';label:string;available:number;collected:number;eventIds:string[];
+    /** Tests only: a recorded request without obtained evidence is not a student omission. */
+    acquisitionStatus?:'not_requested'|'requested_unavailable'|'obtained'}>;
+  learningIllustration?: {url:string;sha256:string;assetVersion:string;origin:string;caption:string};
+  /** Media replay is independent of which events carry scoring points. */
+  releasedMediaEventIds?: string[];
   recommendation: string;
   status: 'ready' | 'pending_review';
   scoreBasis?: 'clinical' | 'process';

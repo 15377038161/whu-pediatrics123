@@ -205,7 +205,7 @@ test('沉浸式会话保留统一病例内核并初始化场景状态', () => {
 
 test('全部教师病例均可创建训练、沉浸式与OSCE会话', () => {
   const teacherCases = CASE_CATALOG.filter((item) => item.id.startsWith('case-'));
-  assert.equal(teacherCases.length, 70);
+  assert.equal(teacherCases.length, 67);
   for (const item of teacherCases) {
     assert.equal(getCase(item.id).id, resolveCaseId(item.id));
     for (const mode of ['guided', 'immersive', 'osce'] as const) {
@@ -233,8 +233,8 @@ test('历史占位会话升级后清理肺炎事实，并采用过程记录报�
   assert.equal(report.evidence.some((item) => item.code === 'RUBRIC_SAFETY'), false);
 });
 
-test('教师病例处置不会统一改善血氧，缺资料病种不编造问诊事实', async () => {
-  const session = createInitialSession('student-1', 'guided', 'teacher-新生儿脑梗死');
+test('教师病例处置不会统一改善血氧，历史缺资料版本不被新模拟病例替换', async () => {
+  const session = createInitialSession('student-1', 'guided', 'teacher-川崎病', undefined, 'legacy-missing-source-version');
   assert.deepEqual(session.vitals, { temperature: null, heartRate: null, respiratoryRate: null, spo2: null });
   const question = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '什么时候开始发烧？' } }, 'missing-source-question');
   assert.ok(question.newMessages.some((message) => message.content.includes('说不清楚')));

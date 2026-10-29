@@ -17,7 +17,7 @@ import { TEACHER_CASE_CATALOG } from '../src/domain/teacher-case-catalog';
 
 /**
  * 病例发布管理（单例上下架）测试：
- * - folder=null（catalog-only，缺少原始接诊资料）条目可上下架；未知 ID 拒绝；
+ * - 有效来源病例可上下架；未知或退役 ID 拒绝；
  * - 学生新建会话守卫 CASE_UNPUBLISHED（教师/白名单豁免，非 teacher- 病例放行）；
  * - 学生目录过滤与随机/下一病例抽取不包含已下架病例（保留同源去重）；
  * - 历史读取（getSession）不校验发布状态（源码契约，下架不拦截既有会话恢复）；
@@ -27,7 +27,7 @@ import { TEACHER_CASE_CATALOG } from '../src/domain/teacher-case-catalog';
  * env 覆盖（CODER_SUPABASE_URL → 127.0.0.1 模拟服务）不会泄漏到其他测试。
  */
 
-const UNPUBLISHED_THREE = ['teacher-新生儿脑梗死', 'teacher-支气管肺炎', 'teacher-格林巴利综合征'] as const;
+const UNPUBLISHED_THREE = ['teacher-川崎病', 'teacher-蚕豆病', 'teacher-中枢性尿崩症'] as const;
 
 const here = dirname(fileURLToPath(import.meta.url));
 function readSource(relative: string): string {
@@ -109,12 +109,12 @@ function clearSupabaseEnv(): void {
   delete process.env.COZE_SUPABASE_ANON_KEY;
 }
 
-test('前置：三个目标病例均为目录 folder=null 条目（catalog-only，缺原始资料）', () => {
+test('前置：三个发布测试目标均为有效来源病例', () => {
   for (const caseId of UNPUBLISHED_THREE) {
     const item = TEACHER_CASE_CATALOG.find((entry) => entry.id === caseId);
     assert.ok(item, `目录应包含 ${caseId}`);
-    assert.equal(item.folder, null);
-    assert.equal(item.status, 'catalog-only');
+    assert.ok(item.folder);
+    assert.ok(['materials-indexed','folder-only'].includes(item.status));
   }
 });
 
@@ -126,24 +126,24 @@ test('未知病例 ID：setCasePublication 在目录校验处拒绝 CASE_NOT_FOU
   );
 });
 
-test('folder=null 病例：目录校验通过并可下架/重新上架（missingSource=true，保留审计字段）', async () => {
+test('有来源病例：目录校验通过并可下架/重新上架（保留审计字段）', async () => {
   const mock = await startMockSupabase();
   overrideSupabaseEnv(mock.url);
   try {
     const reason = '缺少原始接诊资料，暂时下架；资料补齐并审核后恢复';
-    const down = await setCasePublication('token', 'teacher-x', 'teacher-新生儿脑梗死', false, reason);
-    assert.equal(down.caseId, 'teacher-新生儿脑梗死');
+    const down = await setCasePublication('token', 'teacher-x', 'teacher-川崎病', false, reason);
+    assert.equal(down.caseId, 'teacher-川崎病');
     assert.equal(down.published, false);
     assert.equal(down.reason, reason);
-    assert.equal(down.missingSource, true);
+    assert.equal(down.missingSource, false);
     assert.equal(mock.upserts.length, 1);
-    assert.equal(mock.upserts[0]?.case_id, 'teacher-新生儿脑梗死');
+    assert.equal(mock.upserts[0]?.case_id, 'teacher-川崎病');
     assert.equal(mock.upserts[0]?.published, false);
     assert.equal(mock.upserts[0]?.updated_by, 'teacher-x');
 
-    const up = await setCasePublication('token', 'teacher-x', 'teacher-新生儿脑梗死', true, '');
+    const up = await setCasePublication('token', 'teacher-x', 'teacher-川崎病', true, '');
     assert.equal(up.published, true);
-    assert.equal(up.missingSource, true);
+    assert.equal(up.missingSource, false);
     assert.equal(mock.upserts.length, 2);
   } finally {
     await mock.close();
@@ -176,7 +176,7 @@ test('教师豁免：应用层教师角色直接放行（仍可预览复核已�
   });
   overrideSupabaseEnv(mock.url);
   try {
-    await assertCasePublishedForNewSession('teacher-支气管肺炎', 'teacher', 'teacher-token');
+    await assertCasePublishedForNewSession('teacher-蚕豆病', 'teacher', 'teacher-token');
   } finally {
     await mock.close();
     clearSupabaseEnv();
@@ -190,7 +190,7 @@ test('白名单教师豁免：数据库 app_is_teacher=true 时学生角色也�
   });
   overrideSupabaseEnv(mock.url);
   try {
-    await assertCasePublishedForNewSession('teacher-支气管肺炎', 'student', 'whitelist-teacher-token');
+    await assertCasePublishedForNewSession('teacher-蚕豆病', 'student', 'whitelist-teacher-token');
   } finally {
     await mock.close();
     clearSupabaseEnv();
@@ -200,23 +200,23 @@ test('白名单教师豁免：数据库 app_is_teacher=true 时学生角色也�
 test('非 teacher- 病例与无令牌预览态：不触发发布守卫（fail-open 仅限预览语义）', async () => {
   await assertCasePublishedForNewSession('demo-case-1', 'student', null);
   clearSupabaseEnv(); // 预览态（无 DB 配置）返回空下架集合
-  await assertCasePublishedForNewSession('teacher-支气管肺炎', 'student', null);
+  await assertCasePublishedForNewSession('teacher-蚕豆病', 'student', null);
 });
 
-test('教师发布状态对照：包含 folder=null 条目并标记 missingSource（含已下架状态与理由）', async () => {
+test('教师发布状态对照：包含有效来源病例（含已下架状态与理由）', async () => {
   const mock = await startMockSupabase({
     allRows: [
-      { case_id: 'teacher-支气管肺炎', published: false, updated_at: '2026-10-14T03:00:00Z', updated_by: 'teacher-x', reason: '缺少原始接诊资料，暂时下架' },
+      { case_id: 'teacher-蚕豆病', published: false, updated_at: '2026-10-14T03:00:00Z', updated_by: 'teacher-x', reason: '缺少原始接诊资料，暂时下架' },
     ],
   });
   overrideSupabaseEnv(mock.url);
   try {
     const overview = await getCasePublicationOverview('teacher-token');
     assert.equal(overview.length, TEACHER_CASE_CATALOG.length);
-    const down = overview.find((row) => row.caseId === 'teacher-支气管肺炎');
+    const down = overview.find((row) => row.caseId === 'teacher-蚕豆病');
     assert.ok(down);
     assert.equal(down.published, false);
-    assert.equal(down.missingSource, true);
+    assert.equal(down.missingSource, false);
     assert.equal(down.reason, '缺少原始接诊资料，暂时下架');
     assert.equal(down.updatedBy, 'teacher-x');
     const normal = overview.find((row) => row.caseId === 'teacher-新生儿呼吸窘迫综合征');
@@ -224,7 +224,7 @@ test('教师发布状态对照：包含 folder=null 条目并标记 missingSourc
     assert.equal(normal.published, true); // 无行 = 已发布缺省开放
     assert.equal(normal.missingSource, false);
     for (const caseId of UNPUBLISHED_THREE) {
-      assert.equal(overview.find((row) => row.caseId === caseId)?.missingSource, true);
+      assert.equal(overview.find((row) => row.caseId === caseId)?.missingSource, false);
     }
   } finally {
     await mock.close();

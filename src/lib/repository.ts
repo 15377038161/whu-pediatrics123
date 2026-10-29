@@ -1,4 +1,5 @@
 import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, SessionState, SyncEventV1, TrainingReport, UserContext } from '@/domain/agent';
+import {projectReportForRole} from '@/lib/report-projection';
 import { isUnscoredReport } from '@/domain/training-rubric';
 import { createInitialSession, refreshSourceSession } from '@/lib/agent-engine';
 import { buildReport } from '@/lib/scoring';
@@ -12,6 +13,8 @@ import { eligibleAdmissions, selectAdmission } from '@/lib/case-admission';
 import { getUnpublishedCaseIds } from '@/lib/case-publication';
 import { creationSessionId, creationFingerprint, type SessionCreationOptions } from '@/lib/session-creation';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getCase } from '@/domain/case';
+import { hydrateReleasedExamMedia } from '@/lib/case-media';
 
 export interface TeacherStudentSummary {
   id: string;
@@ -195,6 +198,7 @@ export class AgentRepository {
   }
 
   async createSession(mode: SessionMode, caseId?: string, practiceFocus?: PracticeFocus, creationId?: string, fingerprint?: string): Promise<SessionState> {
+    if(caseId){caseId=resolveCaseId(caseId);getPublicCase(caseId);}
     // 版本选择（权威稳定序，详见 case-version-select.ts）：本地完整审核哈希 > DB 导入版本 > 召回快照。
     // 防止完整本地材料被绑定零散召回指纹；召回已有不完整版本不能挡住 DB 完整导入版本。
     // 旧会话不受影响：getSession 按会话已绑定版本恢复，保持不漂移。
@@ -203,9 +207,8 @@ export class AgentRepository {
       // 学生新建会话守卫：教师已下架（case_publication published=false）的病例拒绝新建训练；
       // 教师豁免（可继续预览复核）；既有会话恢复不受影响（getSession 不校验发布状态）。
       await assertCasePublishedForNewSession(caseId, this.actor.role, this.actor.accessToken);
-      // 资料不足守卫（可评分双通道之服务端）：无独立来源（无 folder 且无 alias/subtype 链接）的
-      // 3 个病种项不得进入可评分测试（osce/immersive）——空事实会话不应被评分。
-      // 引导学习（guided）与教师预览复核不受限，仍可记录诊疗思路。
+      // 当前目录仍按资料/判据就绪状态限制学生OSCE；已退役病例在进入本方法时即被目录守卫拒绝。
+      // 教师预览不因此获得对既有会话版本或其他用户资料的额外权限。
       if (mode === 'osce' && !isScorableCase(getPublicCase(caseId)) && this.actor.role !== 'teacher') {
         throw new Error('CASE_INSUFFICIENT');
       }
@@ -344,7 +347,11 @@ export class AgentRepository {
         }
       }
     }
-    return refreshSourceSession(restored);
+    const refreshed=refreshSourceSession(restored);
+    if (refreshed.caseId.startsWith('teacher-') && refreshed.sourceSnapshotVersion) {
+      hydrateReleasedExamMedia(refreshed,getCase(refreshed.caseId,refreshed.sourceSnapshotVersion,refreshed.id).exams);
+    }
+    return refreshed;
   }
 
   async saveSession(session: SessionState): Promise<void> {
@@ -444,7 +451,7 @@ export class AgentRepository {
       const report = memoryStore().reports.get(id);
       if (!report) throw new Error('REPORT_NOT_FOUND');
       if (this.actor.role !== 'teacher' && report.userId !== this.actor.id) throw new Error('FORBIDDEN');
-      return clone(report);
+      return projectReportForRole(clone(report),this.actor.role);
     }
     const db = this.db();
     // 学生走受控 RPC（受保护 user_id 列判定）；教师直读（RLS teacher_select 放行）
@@ -452,7 +459,7 @@ export class AgentRepository {
       const { data, error } = await db.rpc('report_get_mine', { p_report_id: id });
       if (error) throw error;
       if (!data || typeof data !== 'object') throw new Error('REPORT_NOT_FOUND');
-      return (data as { data: TrainingReport }).data as TrainingReport;
+      return projectReportForRole((data as { data: TrainingReport }).data,this.actor.role);
     }
     const { data, error } = await db.from('training_reports').select('data,user_id,session_id').eq('id', id).maybeSingle();
     if (error) throw error;
@@ -462,14 +469,14 @@ export class AgentRepository {
 
   async listOwnReports(): Promise<TrainingReport[]> {
     if (this.isPreview()) {
-      return [...memoryStore().reports.values()].filter((report) => report.userId === this.actor.id).map(clone).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return [...memoryStore().reports.values()].filter((report) => report.userId === this.actor.id).map(report=>projectReportForRole(clone(report),this.actor.role)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
     const db = this.db();
     // 学生走受控 RPC（受保护 user_id 列判定，无直读策略）；教师走 RLS 直读后过滤本人
     if (this.actor.role === 'student') {
       const { data, error } = await db.rpc('report_list_mine');
       if (error) throw error;
-      return ((data ?? []) as Array<{ data: TrainingReport }>).map((row) => row.data as TrainingReport);
+      return ((data ?? []) as Array<{ data: TrainingReport }>).map(row=>projectReportForRole(row.data,this.actor.role));
     }
     const { data } = await withDatabaseRetry(async () => {
       const result = await db.from('training_reports').select('data').eq('user_id', this.actor.id).order('created_at', { ascending: false });
