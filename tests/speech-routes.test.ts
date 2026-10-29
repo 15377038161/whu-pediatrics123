@@ -1,3 +1,4 @@
+import './fixtures/legacy-engine-catalog';
 /**
  * 语音路由鉴权与归属回归（阶段 D 补验 D-验收-01）：
  *  - 匿名门禁：三路由无登录态均 401；

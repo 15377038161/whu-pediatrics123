@@ -79,7 +79,7 @@ export const osceStations: OsceStation[] = [
       expiryAction: 'freeze',
       recordsTechnicalInterruptions: true,
     },
-    ready: true,
+    ready: false, // Synthetic station retired; definition retained for historical sessions.
   },
 ];
 
