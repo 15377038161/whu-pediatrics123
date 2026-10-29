@@ -42,6 +42,8 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('SESSION_NOT_FOUND')) return { code: 'SESSION_NOT_FOUND', message: '未找到训练记录。', retryable: false };
   if (message.includes('STUDENT_NOT_FOUND')) return { code: 'STUDENT_NOT_FOUND', message: '未找到该学生档案（或不在你的授权范围内）。', retryable: false };
   if (message.includes('REPORT_NOT_FOUND')) return { code: 'REPORT_NOT_FOUND', message: '未找到报告记录。', retryable: false };
+  if (message.includes('REVIEW_COMMENT_REQUIRED')) return { code: 'REVIEW_COMMENT_REQUIRED', message: '复核理由必填，请填写调整依据。', retryable: false };
+  if (message.includes('REVIEW_EVIDENCE_UNKNOWN')) return { code: 'REVIEW_EVIDENCE_UNKNOWN', message: '调整分项与报告记录不符，请刷新后重试。', retryable: false };
   if (message.includes('CASE_SOURCE_INVALID')) return { code: 'CASE_SOURCE_INVALID', message: '病例资料格式异常，请重新生成教学病例数据。', retryable: false };
   if (message.includes('CASE_NOT_FOUND')) return { code: 'CASE_NOT_FOUND', message: '未找到该病例。', retryable: false };
   if (message.includes('CASE_RETIRED')) return { code: 'CASE_RETIRED', message: '该病例已停用，历史接诊记录和报告保留为只读。', retryable: false };

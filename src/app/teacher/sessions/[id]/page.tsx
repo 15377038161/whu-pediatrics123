@@ -5,7 +5,7 @@ import { ArrowLeft, Clock3, MessageSquareText, Stethoscope } from 'lucide-react'
 import { notFound } from 'next/navigation';
 import { ReportView } from '@/components/report-view';
 import type { SessionState, TrainingReport } from '@/domain/agent';
-import type { TeacherStudentSummary } from '@/lib/repository';
+import type { TeacherReviewResult, TeacherStudentSummary } from '@/lib/repository';
 import { formatTime } from '@/lib/format-date';
 import { authedFetch, AuthedApiError } from '@/lib/authed-api';
 
@@ -39,6 +39,9 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ id: s
     };
   }, [params]);
 
+  const [review, setReview] = useState<{ submitting: boolean; error: string | null; done: string | null }>({ submitting: false, error: null, done: null });
+  const [reviewForm, setReviewForm] = useState<{ action: 'confirm' | 'adjust'; adjustedTotalScore: string; comment: string }>({ action: 'confirm', adjustedTotalScore: '', comment: '' });
+
   if (state.error) {
     return <div className="empty-state" role="alert"><p>{state.error}</p></div>;
   }
@@ -48,10 +51,71 @@ export default function TeacherSessionPage({ params }: { params: Promise<{ id: s
 
   const detail = state.detail;
   const questions = detail.session.messages.filter((message) => message.actor === 'student' || message.actor === 'child' || message.actor === 'parent');
+  const notAssessable = detail.report ? detail.report.evidence.filter((item) => item.status === 'not_assessable') : [];
+
+  /** 批次4：提交教师复核（append-only 留痕）；成功后用返回的报告刷新页面状态。 */
+  async function submitReview() {
+    if (!detail.report) return;
+    const comment = reviewForm.comment.trim();
+    if (comment === '') {
+      setReview({ submitting: false, error: '复核理由必填，请填写复核依据。', done: null });
+      return;
+    }
+    const adjusted = reviewForm.action === 'adjust' ? Number(reviewForm.adjustedTotalScore) : 0;
+    if (reviewForm.action === 'adjust' && !Number.isFinite(adjusted)) {
+      setReview({ submitting: false, error: '调整总分需填写有效数字。', done: null });
+      return;
+    }
+    setReview({ submitting: true, error: null, done: null });
+    try {
+      const result = await authedFetch<TeacherReviewResult>(`/api/teacher/sessions/${encodeURIComponent(detail.report.sessionId)}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: reviewForm.action, adjustedTotalScore: adjusted, comment }),
+      });
+      const updated = result.report;
+      setState((prev) => (prev.detail ? { detail: { ...prev.detail, report: updated } } : prev));
+      setReview({ submitting: false, error: null, done: '复核留痕已保存。' });
+      setReviewForm({ action: 'confirm', adjustedTotalScore: '', comment: '' });
+    } catch (reason: unknown) {
+      setReview({ submitting: false, error: reason instanceof Error ? reason.message : '复核提交失败，请稍后重试。', done: null });
+    }
+  }
   return <>
       <a className="text-link" href="/teacher"><ArrowLeft size={14} /> 返回学生列表</a>
       <div className="section-head"><div>{detail.student.avatarUrl ? <img className="student-avatar" src={detail.student.avatarUrl} alt="" width={44} height={44} loading="lazy" title="头像：按登录同步的超星号构造（用户可改资料，仅展示参考）" /> : null}<p className="eyebrow">{detail.student.studentNo ? `学号 ${detail.student.studentNo}` : '学号未提供'}{detail.student.chaoxingUid ? ` · 超星号 ${detail.student.chaoxingUid}（用户提供）` : ''}</p><h1 className="page-title">{detail.student.displayName} · 训练全过程</h1></div><span className="readonly-badge" style={{ background: '#e9efeb' }}>只读证据</span></div>
       {detail.report && <ReportView report={detail.report} readonly />}
+      {detail.report && (
+        <section className="report-section" style={{ marginTop: 14 }}>
+          <h2>成绩复核（人工留痕）</h2>
+          <p style={{ fontSize: 13, opacity: 0.75 }}>系统评分仅供参考：沟通等无法自动评分项需教师人工复核。复核记录按提交顺序追加、只增不改，理由必填；选择调整总分时由服务端按可评价满分约束。留痕对学生可见。</p>
+          {detail.report.status === 'pending_review' && !(detail.report.teacherReviews?.length) && <span className="review-badge" data-level="pending">待复核</span>}
+          {notAssessable.length > 0 && <p className="review-not-assessable"><strong>无法自动评分项：</strong>{notAssessable.map((item) => item.label).join('、')}——请结合问答与沟通原文复核后在下方留痕。</p>}
+          <div className="review-form">
+            <div className="review-form-row" role="radiogroup" aria-label="复核类型">
+              <label><input type="radio" name="review-action" checked={reviewForm.action === 'confirm'} onChange={() => setReviewForm((prev) => ({ ...prev, action: 'confirm' }))} /> 确认系统评分</label>
+              <label><input type="radio" name="review-action" checked={reviewForm.action === 'adjust'} onChange={() => setReviewForm((prev) => ({ ...prev, action: 'adjust' }))} /> 调整总分</label>
+              {reviewForm.action === 'adjust' && <input type="number" min={0} step={1} value={reviewForm.adjustedTotalScore} onChange={(event) => setReviewForm((prev) => ({ ...prev, adjustedTotalScore: event.target.value }))} placeholder="调整后总分" aria-label="调整后总分" />}
+            </div>
+            <textarea rows={3} value={reviewForm.comment} onChange={(event) => setReviewForm((prev) => ({ ...prev, comment: event.target.value }))} placeholder="复核理由（必填，将留痕展示给学生）" aria-label="复核理由" />
+            <div className="review-form-row">
+              <button type="button" className="btn btn-primary" disabled={review.submitting} onClick={submitReview}>{review.submitting ? '提交中…' : '提交复核'}</button>
+              {review.done && <span style={{ color: '#166534', fontSize: 13 }}>{review.done}</span>}
+              {review.error && <span role="alert" style={{ color: 'var(--danger)', fontSize: 13 }}>{review.error}</span>}
+            </div>
+          </div>
+          {detail.report.teacherReviews && detail.report.teacherReviews.length > 0 && (
+            <ul className="review-list" style={{ marginTop: 12 }}>
+              {detail.report.teacherReviews.map((entry, index) => (
+                <li className="review-entry" key={`${entry.reviewedAt}:${index}`}>
+                  <p><strong>{entry.action === 'confirm' ? '确认系统评分' : entry.action === 'adjust' ? `调整总分 → ${entry.adjustedTotalScore ?? '—'} 分` : entry.action}</strong><span style={{ marginLeft: 8, fontSize: 12, opacity: 0.7 }}>{entry.reviewedAt.slice(0, 19).replace('T', ' ')}{entry.reviewerName ? ` · 复核人 ${entry.reviewerName}` : ''}</span></p>
+                  <p className="preserve-lines">{entry.comment}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
       <section className="report-section" style={{ marginTop: 14 }}>
         <h2>学生临床提交原文</h2>
         <div className="clinical-submissions">

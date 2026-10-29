@@ -108,6 +108,20 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           </table>
         </div>
       </section>
+      {report.teacherReviews && report.teacherReviews.length > 0 && (
+        <section className="report-section" style={{ marginTop: 14 }}>
+          <h2>教师复核留痕</h2>
+          <p style={{ fontSize: 13, opacity: 0.75 }}>教师人工复核记录按提交顺序追加，只增不改；如出现多次调整，以最新一条的分数为准。</p>
+          <ul className="review-list">
+            {report.teacherReviews.map((entry, index) => (
+              <li className="review-entry" key={`${entry.reviewedAt}:${index}`}>
+                <p><strong>{entry.action === 'confirm' ? '确认系统评分' : entry.action === 'adjust' ? `调整总分 → ${entry.adjustedTotalScore ?? '—'} 分` : entry.action}</strong><span style={{ marginLeft: 8, fontSize: 12, opacity: 0.7 }}>{entry.reviewedAt.slice(0, 19).replace('T', ' ')}{entry.reviewerName ? ` · 复核人 ${entry.reviewerName}` : ''}</span></p>
+                <p className="preserve-lines">{entry.comment}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {report.studentSubmissions && (
         <section className="report-section" style={{ marginTop: 14 }}>
           <h2>原始提交快照</h2>

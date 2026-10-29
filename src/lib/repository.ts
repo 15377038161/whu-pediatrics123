@@ -1,4 +1,4 @@
-import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, SessionState, SyncEventV1, TrainingReport, UserContext } from '@/domain/agent';
+import type { AgentRuntimeSummary, AgentTraceItem, PracticeFocus, SessionMode, SessionState, SyncEventV1, TeacherReviewEntry, TrainingReport, UserContext } from '@/domain/agent';
 import {projectReportForRole} from '@/lib/report-projection';
 import { isUnscoredReport } from '@/domain/training-rubric';
 import { createInitialSession, refreshSourceSession } from '@/lib/agent-engine';
@@ -34,6 +34,8 @@ export interface TeacherStudentSummary {
   latestReportId: string | null;
   latestSessionId: string | null;
   lastActiveAt: string | null;
+  /** 批次4：最近一份报告待教师复核（pending_review 且无复核留痕）时为 true。 */
+  latestPendingReview?: boolean;
 }
 
 /** 教师学情首页工作区：班级清单（筛选用）+ 学生学情列表（含当前归属映射） */
@@ -60,6 +62,10 @@ export interface TeacherStudentProfileEntry {
   reportId: string | null;
   totalScore: number | null;
   scoreBasis: 'clinical' | 'process';
+  /** 报告状态（批次4 复核流转用）；无报告 → null */
+  reportStatus: 'ready' | 'pending_review' | null;
+  /** 报告已有教师复核留痕（teacherReports 非空即已复核） */
+  reviewed: boolean;
 }
 
 /** 学生档案「病例进度」聚合：学生 × 病例 → 训练次数/完成数/最近得分（批次3，真实会话数据，服务端聚合）。 */
@@ -75,6 +81,12 @@ export interface TeacherCaseProgressEntry {
   latestScore: number | null;
   latestScoreBasis: 'clinical' | 'process';
   latestAt: string | null;
+  /** 首次正式训练成绩（批次4 成绩规则）：组内最早完成会话的报告分数（unscored 已折算 null；过程分含）。 */
+  officialScore: number | null;
+  /** 重练次数：组内 completed 会话除首次正式训练外的数量。 */
+  retakeCount: number;
+  /** 待教师复核数：组内 pending_review 且无复核留痕的报告数。 */
+  pendingReviewCount: number;
 }
 
 export interface TeacherStudentProfile {
@@ -98,6 +110,8 @@ export type CaseMetaResolver = (caseId: string) => { caseLabel: string; indexNum
  * - 分组键为 caseId（空/空白归入「病例未标注」回退组，数据完整性兜底）；
  * - trainCount/completedCount/reportCount 为真实计数；completed 仅计 status='completed'；
  * - 最近得分沿用学情首页口径：未评分报告（isUnscoredReport 已在上游折算为 null）与过程分不计入；
+ * - 批次4 成绩规则：officialScore=组内最早完成会话的已折算分数（首次正式训练）；retakeCount=其余完成次数；
+ *   pendingReviewCount=组内待教师复核（pending_review 且未复核）报告数；
  * - 组按最近训练时间倒序。
  */
 export function buildCaseProgress(entries: TeacherStudentProfileEntry[], resolveCaseMeta: CaseMetaResolver): TeacherCaseProgressEntry[] {
@@ -113,17 +127,22 @@ export function buildCaseProgress(entries: TeacherStudentProfileEntry[], resolve
     const scored = bucket.filter((entry) => entry.totalScore !== null && entry.scoreBasis !== 'process');
     const latest = [...bucket].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null;
     const latestScored = [...scored].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null;
+    const completedCount = bucket.filter((entry) => entry.status === 'completed').length;
+    const official = [...bucket].filter((entry) => entry.status === 'completed').sort((a, b) => a.startedAt.localeCompare(b.startedAt))[0] ?? null;
     const meta = key ? resolveCaseMeta(key) : { caseLabel: '病例未标注', indexNumber: null };
     result.push({
       caseId: key,
       caseLabel: meta.caseLabel,
       indexNumber: meta.indexNumber,
       trainCount: bucket.length,
-      completedCount: bucket.filter((entry) => entry.status === 'completed').length,
+      completedCount,
       reportCount: bucket.filter((entry) => entry.reportId !== null).length,
       latestScore: latestScored ? latestScored.totalScore : null,
       latestScoreBasis: latestScored?.scoreBasis ?? 'clinical',
       latestAt: latest?.startedAt ?? null,
+      officialScore: official ? official.totalScore : null,
+      retakeCount: Math.max(0, completedCount - (official ? 1 : 0)),
+      pendingReviewCount: bucket.filter((entry) => entry.reportStatus === 'pending_review' && !entry.reviewed).length,
     });
   }
   return result.sort((a, b) => (b.latestAt ?? '').localeCompare(a.latestAt ?? ''));
@@ -145,6 +164,19 @@ export interface TeacherSessionDetail {
   session: SessionState;
   report: TrainingReport | null;
   student: { id: string; displayName: string; studentNo: string | null; chaoxingUid: string | null; avatarUrl: string | null };
+}
+
+/** 教师复核输入（批次4）：理由必填；confirm 语义服务端取原分（客户端分数不参与）；adjust 分数服务端 clamp。 */
+export interface TeacherReviewInput {
+  action: 'confirm' | 'adjust';
+  adjustedTotalScore: number;
+  adjustedEvidence?: Array<{ code: string; score: number }>;
+  comment: string;
+}
+
+export interface TeacherReviewResult {
+  report: TrainingReport;
+  review: TeacherReviewEntry;
 }
 
 /** 超星头像 URL（公网可访问，无需接口）：由 profiles.chaoxing_uid 构造。 */
@@ -583,6 +615,7 @@ export class AgentRepository {
             // C-观察与报告-04：最近一份报告若全部计分项均不可评价（未评分），latestScore 记 null
             // （总分 0 不代表能力 0 分），教师端平均分/建议关注统计不以 0 分计入。
             latestScore: latest ? (isUnscoredReport(latest) ? null : latest.totalScore) : ([86, 78, 92][index] ?? null),
+            latestPendingReview: latest?.status === 'pending_review' && !(latest.teacherReviews?.length),
             latestScoreBasis: latest?.scoreBasis ?? 'clinical',
             latestMode: latest?.mode ?? 'osce',
             reportCount: reports.length || 1,
@@ -598,7 +631,7 @@ export class AgentRepository {
     // 班级清单与学生当前归属映射经受控聚合 RPC（自建班级的 cohort_members 直读受旧策略限制）。
     const [{ data: reports }, { data: sessions }, { data: index, error: indexError }] = await Promise.all([
       withDatabaseRetry(async () => {
-        const result = await db.from('training_reports').select('id,session_id,user_id,total_score,mode,created_at,data').order('created_at', { ascending: false });
+        const result = await db.from('training_reports').select('id,session_id,user_id,total_score,status,mode,created_at,data').order('created_at', { ascending: false });
         if (result.error) throw result.error;
         return result;
       }),
@@ -643,6 +676,7 @@ export class AgentRepository {
           // （总分 0 不代表能力 0 分），教师端平均分/建议关注统计不以 0 分计入。
           latestScore: latest ? (isUnscoredReport(latest.data as TrainingReport) ? null : latest.total_score) : null,
           latestScoreBasis: (latest?.data as TrainingReport | undefined)?.scoreBasis ?? 'clinical',
+          latestPendingReview: latest?.status === 'pending_review' && !((latest?.data as TrainingReport | undefined)?.teacherReviews?.length),
           latestMode: (latest?.mode as SessionMode | undefined) ?? null,
           reportCount: own.length,
           latestReportId: latest?.id ?? null,
@@ -673,6 +707,8 @@ export class AgentRepository {
           reportId: report?.id ?? null,
           totalScore: report ? (isUnscoredReport(report) ? null : report.totalScore) : null,
           scoreBasis: report?.scoreBasis ?? 'clinical',
+          reportStatus: report?.status ?? null,
+          reviewed: Boolean(report?.teacherReviews?.length),
         };
       });
       return {
@@ -696,7 +732,7 @@ export class AgentRepository {
         return result;
       }),
       withDatabaseRetry(async () => {
-        const result = await db.from('training_reports').select('id,session_id,total_score,data').eq('user_id', userId);
+        const result = await db.from('training_reports').select('id,session_id,total_score,status,data').eq('user_id', userId);
         if (result.error) throw result.error;
         return result;
       }),
@@ -724,6 +760,8 @@ export class AgentRepository {
         reportId: report?.id ?? null,
         totalScore: report ? (isUnscoredReport(reportData as TrainingReport) ? null : (report.total_score as number)) : null,
         scoreBasis: reportData?.scoreBasis ?? 'clinical',
+        reportStatus: (report?.status as 'ready' | 'pending_review' | null) ?? null,
+        reviewed: Boolean(reportData?.teacherReviews?.length),
       };
     });
     return {
@@ -779,5 +817,56 @@ export class AgentRepository {
       }),
     ]);
     return { session, report: reportRow?.data as TrainingReport | null ?? null, student: { id: profile.id, displayName: profile.display_name, studentNo: profile.student_no, chaoxingUid: profile.chaoxing_uid ?? null, avatarUrl: chaoxingAvatarUrl(profile.chaoxing_uid) } };
+  }
+
+  /**
+   * 教师复核学生报告（批次4）：append-only 留痕（teacherReviews 追加，不覆盖前次记录），
+   * 总分与分项调整经服务端 clamp（不越过可评价满分/分项满分；分项 code 必须命中报告 evidence，
+   * fail-closed 拒绝伪造分项）；confirm 语义服务端取原分。DB 分支走教师 manage RLS 更新
+   * data/total_score（status 列保持原值，已复核语义由 teacherReviews 非空表达，避免触碰值域约束）。
+   */
+  async reviewStudentReport(sessionId: string, input: TeacherReviewInput): Promise<TeacherReviewResult> {
+    if (this.actor.role !== 'teacher') throw new Error('FORBIDDEN');
+    if (typeof input.comment !== 'string' || input.comment.trim() === '') throw new Error('REVIEW_COMMENT_REQUIRED');
+    const detail = await this.getTeacherSession(sessionId);
+    if (!detail.report) throw new Error('REPORT_NOT_FOUND');
+    const report = detail.report;
+    const maxByCode = new Map(report.evidence.map((item) => [item.code, item.maxScore]));
+    const assessableMax = report.assessableMaxScore ?? report.evidence.reduce((sum, item) => sum + item.maxScore, 0);
+    const clamp = (value: number, max: number) => Math.max(0, Math.min(Math.round(value), max));
+    const adjustedEvidence = (input.adjustedEvidence ?? []).map((item) => {
+      const max = maxByCode.get(item.code);
+      if (max === undefined) throw new Error('REVIEW_EVIDENCE_UNKNOWN');
+      return { code: item.code, score: clamp(item.score, max) };
+    });
+    const adjustedTotalScore = input.action === 'confirm'
+      ? report.totalScore
+      : clamp(input.adjustedTotalScore, Math.max(assessableMax, report.totalScore));
+    const review: TeacherReviewEntry = {
+      reviewId: crypto.randomUUID(),
+      reviewedAt: new Date().toISOString(),
+      reviewerId: this.actor.id,
+      reviewerName: this.actor.displayName,
+      action: input.action,
+      adjustedTotalScore,
+      ...(adjustedEvidence.length > 0 ? { adjustedEvidence } : {}),
+      comment: input.comment.trim(),
+    };
+    const updated: TrainingReport = {
+      ...report,
+      totalScore: adjustedTotalScore,
+      teacherReviews: [...(report.teacherReviews ?? []), review],
+    };
+    if (this.isPreview()) {
+      memoryStore().reports.set(updated.id, clone(updated));
+      return { report: clone(updated), review: structuredClone(review) };
+    }
+    const db = this.db();
+    const { error } = await db.from('training_reports').update({
+      total_score: adjustedTotalScore,
+      data: updated,
+    }).eq('id', updated.id);
+    if (error) throw error;
+    return { report: updated, review };
   }
 }

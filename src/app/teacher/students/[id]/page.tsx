@@ -57,6 +57,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
       <div><strong>{sessions.length}</strong><span>可见训练会话</span></div>
       <div><strong>{average ?? '—'}</strong><span>已评分报告平均分（{scored.length} 份计入）</span></div>
       <div><strong>{sessions.filter((session) => session.reportId === null).length}</strong><span>未生成报告</span></div>
+      <div><strong>{sessions.filter((session) => session.reportStatus === 'pending_review' && !session.reviewed).length}</strong><span>待教师复核</span></div>
       <div><strong>{caseProgress.length}</strong><span>覆盖病例（训练过）</span></div>
     </section>
     <div className="case-progress-groups">
@@ -67,7 +68,8 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
             <summary>
               <span className="case-index-number">#{progress.indexNumber ?? '—'}</span>
               <strong>{progress.caseLabel}</strong>
-              <span>{progress.trainCount} 次训练 · 完成 {progress.completedCount} · 报告 {progress.reportCount} · 最近 {progress.latestAt ? formatDate(progress.latestAt) : '—'}</span>
+              <span>{progress.trainCount} 次训练 · 完成 {progress.completedCount} · 报告 {progress.reportCount}{progress.officialScore !== null ? ` · 正式 ${progress.officialScore} 分` : ''}{progress.retakeCount > 0 ? ` · 重练 ${progress.retakeCount} 次` : ''} · 最近 {progress.latestAt ? formatDate(progress.latestAt) : '—'}</span>
+              {progress.pendingReviewCount > 0 && <span className="review-badge" data-level="pending">待复核 {progress.pendingReviewCount}</span>}
               <span className="score-tag" data-level={progress.latestScore === null ? 'empty' : progress.latestScore >= 85 ? 'strong' : progress.latestScore >= 80 ? 'steady' : 'attention'}>{progress.latestScore ?? '未评分'}</span>
             </summary>
             <table className="student-table">
@@ -76,7 +78,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
                 <td data-label="训练时间">{formatDate(session.startedAt)}</td>
                 <td data-label="类型">{session.mode === 'osce' ? 'OSCE 模拟站' : session.mode === 'practice' ? '专项训练' : '模拟病例'}</td>
                 <td data-label="得分"><span className="score-tag" data-level={session.totalScore === null ? 'empty' : session.totalScore >= 85 ? 'strong' : session.totalScore >= 80 ? 'steady' : 'attention'}>{session.scoreBasis === 'process' ? `过程 ${session.totalScore ?? '—'}` : session.totalScore ?? '未评分'}</span></td>
-                <td data-label="证据">{session.reportId ? <a className="text-link" href={`/teacher/sessions/${session.sessionId}`}><ClipboardList size={13} style={{ verticalAlign: -3 }} /> 查看全过程</a> : <span style={{ color: '#7d8c89' }}>暂无报告</span>}</td>
+                <td data-label="证据">{session.reportId ? <a className="text-link" href={`/teacher/sessions/${session.sessionId}`}><ClipboardList size={13} style={{ verticalAlign: -3 }} /> 查看全过程</a> : <span style={{ color: '#7d8c89' }}>暂无报告</span>}{session.reportStatus === 'pending_review' && !session.reviewed && <span className="review-badge" data-level="pending">待复核</span>}{session.reviewed && <span className="review-badge" data-level="reviewed">已复核</span>}</td>
               </tr>)}</tbody>
             </table>
           </details>

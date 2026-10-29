@@ -260,6 +260,22 @@ export interface ScoreEvidence {
   status?: 'achieved' | 'partial' | 'missing' | 'incorrect' | 'not_applicable' | 'not_assessable';
 }
 
+/** 教师复核留痕条目（批次4）：每次复核追加一条，不覆盖前次（append-only 审计）。 */
+export interface TeacherReviewEntry {
+  reviewId: string;
+  reviewedAt: string;
+  reviewerId: string;
+  /** 复核人展示名（留痕冗余，复核后改名不影响历史记录可读性）。 */
+  reviewerName: string;
+  action: 'confirm' | 'adjust';
+  /** 复核后总分：confirm=维持原分，adjust=调整后分数（0..assessableMaxScore 服务端 clamp）。 */
+  adjustedTotalScore: number;
+  /** 分项调整明细（可省略：仅总分确认时无分项改动）。 */
+  adjustedEvidence?: Array<{ code: string; score: number }>;
+  /** 复核理由（必填，留痕依据）。 */
+  comment: string;
+}
+
 export interface TrainingReport {
   /** Frozen source version for evidence/media replay; absent historical reports do not guess. */
   sourceSnapshotVersion?: string | null;
@@ -292,6 +308,8 @@ export interface TrainingReport {
   releasedMediaEventIds?: string[];
   recommendation: string;
   status: 'ready' | 'pending_review';
+  /** 教师复核留痕（批次4）：pending_review 报告经教师复核后追加留痕；历史报告无此字段按未复核。 */
+  teacherReviews?: TeacherReviewEntry[];
   scoreBasis?: 'clinical' | 'process';
   /** 专项训练聚焦能力（方案 4.6 快照字段）：完整接诊报告无此字段。 */
   practiceFocus?: PracticeFocus | null;

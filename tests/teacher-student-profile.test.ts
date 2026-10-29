@@ -7,6 +7,7 @@ import {
   type TeacherStudentProfileEntry,
 } from '../src/lib/repository';
 import { CASE_PUBLIC_IDS } from '../src/lib/case-identity';
+import type { TrainingReport } from '../src/domain/agent';
 import { TEACHER_CASE_CATALOG, CASE_INDEX_NUMBER } from '../src/domain/teacher-case-catalog';
 import { createInitialSession } from '../src/lib/agent-engine';
 
@@ -21,6 +22,8 @@ const baseEntry = (overrides: Partial<TeacherStudentProfileEntry> & { sessionId:
   reportId: 'r1',
   totalScore: 88,
   scoreBasis: 'clinical',
+  reportStatus: 'ready',
+  reviewed: false,
   ...overrides,
 });
 
@@ -107,7 +110,7 @@ test('批次3·teacherCaseMeta：目录命中/未收录回退/case-uuid 混入�
   );
 });
 
-type TestStore = { sessions: Map<string, ReturnType<typeof createInitialSession>> };
+type TestStore = { sessions: Map<string, ReturnType<typeof createInitialSession>>; reports?: Map<string, TrainingReport> };
 
 function memoryStore(): TestStore {
   const store = (globalThis as unknown as { __luojiaPedsStore?: TestStore }).__luojiaPedsStore;
@@ -157,4 +160,82 @@ test('批次3·preview 档案权限：学生 403 语义 + 未知学生 404 语�
   await assert.rejects(() => studentRepo.getStudentProfile('preview-student-001'), /FORBIDDEN/, '学生角色不可查他人档案');
   const teacherRepo = new AgentRepository(teacherActor);
   await assert.rejects(() => teacherRepo.getStudentProfile('preview-无此学生'), /STUDENT_NOT_FOUND/, '不可见或不存在同口径 404');
+});
+
+test('批次4·病例进度聚合：正式成绩/重练次数/待复核计数契约（纯函数）', () => {
+  const progress = buildCaseProgress([
+    baseEntry({ sessionId: 'r1', caseId: 'teacher-R', status: 'completed', reportId: 'a1', totalScore: 90, startedAt: '2026-02-01T07:00:00Z', updatedAt: '2026-02-01T08:00:00Z' }),
+    baseEntry({ sessionId: 'r2', caseId: 'teacher-R', status: 'completed', reportId: 'a2', totalScore: 85, startedAt: '2026-02-02T07:00:00Z', updatedAt: '2026-02-02T08:00:00Z' }),
+    baseEntry({ sessionId: 'r3', caseId: 'teacher-R', status: 'completed', reportId: 'a3', totalScore: 88, reportStatus: 'pending_review', reviewed: false, startedAt: '2026-02-03T07:00:00Z', updatedAt: '2026-02-03T08:00:00Z' }),
+    baseEntry({ sessionId: 'r4', caseId: 'teacher-R', status: 'completed', reportId: 'a4', totalScore: 91, reportStatus: 'pending_review', reviewed: true, startedAt: '2026-02-04T07:00:00Z', updatedAt: '2026-02-04T08:00:00Z' }),
+    baseEntry({ sessionId: 'r5', caseId: 'teacher-S', status: 'active', reportId: null, totalScore: null, reportStatus: null, startedAt: '2026-02-05T07:00:00Z', updatedAt: '2026-02-05T08:00:00Z' }),
+  ], resolver);
+  const groupR = progress.find((group) => group.caseId === 'teacher-R');
+  assert.ok(groupR);
+  assert.equal(groupR.officialScore, 90, '正式成绩取组内最早 completed 会话的已折算分数');
+  assert.equal(groupR.retakeCount, 3, '重练次数=完成数4-正式1');
+  assert.equal(groupR.pendingReviewCount, 1, '仅计 pending_review 且无留痕（r3）；已复核 r4 不计');
+  const groupS = progress.find((group) => group.caseId === 'teacher-S');
+  assert.ok(groupS);
+  assert.equal(groupS.officialScore, null, '无完成会话 → 无正式成绩');
+  assert.equal(groupS.retakeCount, 0);
+  assert.equal(groupS.pendingReviewCount, 0);
+});
+
+test('批次4·教师复核：理由必填/confirm取原分/adjust clamp/append-only/状态联动（preview 集成）', async () => {
+  const repo = new AgentRepository(teacherActor);
+  const workspaceBefore = await repo.listTeacherStudents();
+  const summaryBefore = workspaceBefore.students.find((item) => item.id === 'preview-student-001');
+  assert.ok(summaryBefore, '种子学生在学情列表可见');
+  const reportId = summaryBefore.latestReportId;
+  assert.ok(reportId, '种子学生存在最近报告');
+  const sessionId = summaryBefore.latestSessionId;
+  assert.ok(sessionId, '最近报告对应会话存在');
+  const profile = await repo.getStudentProfile('preview-student-001');
+  const targetEntry = profile.sessions.find((entry) => entry.reportId === reportId);
+  assert.ok(targetEntry, '档案条目包含最近报告');
+
+  const store = memoryStore();
+  const seedReport = store.reports?.get(reportId);
+  assert.ok(seedReport, 'preview 种子报告存在');
+  const rawScore = seedReport.totalScore;
+
+  // 理由必填（fail-closed，服务端 REVIEW_COMMENT_REQUIRED）
+  await assert.rejects(
+    () => repo.reviewStudentReport(sessionId, { action: 'confirm', adjustedTotalScore: 0, comment: '   ' }),
+    /REVIEW_COMMENT_REQUIRED/,
+  );
+
+  // 模拟待复核：最近报告置 pending_review 且清空留痕，学情列表应联动为待复核
+  seedReport.status = 'pending_review';
+  seedReport.teacherReviews = [];
+  const workspace = await repo.listTeacherStudents();
+  const summary = workspace.students.find((item) => item.id === 'preview-student-001');
+  assert.ok(summary);
+  assert.equal(summary.latestPendingReview, true, '最近报告 pending_review 且无留痕 → latestPendingReview=true');
+
+  // confirm：服务端取原分 + 留痕追加一条
+  const confirmed = await repo.reviewStudentReport(sessionId, { action: 'confirm', adjustedTotalScore: 0, comment: '沟通项人工复核，系统评分与问答原文一致，确认原分。' });
+  assert.equal(confirmed.report.totalScore, rawScore, 'confirm 语义由服务端取报告原分');
+  assert.equal(confirmed.report.teacherReviews?.length, 1);
+  assert.equal(confirmed.review.action, 'confirm');
+  assert.equal(confirmed.review.reviewerId, teacherActor.id);
+  assert.equal(confirmed.review.reviewerName, teacherActor.displayName);
+  assert.ok(confirmed.review.reviewedAt);
+
+  // adjust：服务端 clamp（999 必被约束），append-only 第二条追加不覆盖
+  const adjusted = await repo.reviewStudentReport(sessionId, { action: 'adjust', adjustedTotalScore: 999, comment: '沟通项补充给分，总分上调至可评价满分约束内。' });
+  assert.equal(adjusted.report.teacherReviews?.length, 2, 'append-only：第二次复核为追加');
+  assert.notEqual(adjusted.report.totalScore, 999, '总分被服务端 clamp，不透传越界值');
+  assert.ok(adjusted.report.totalScore === null || (adjusted.report.totalScore ?? 0) <= 100, '总分不超过常规满分');
+
+  // 复核后联动：latestPendingReview=false、档案条目 reviewed=true
+  const workspaceAfter = await repo.listTeacherStudents();
+  const summaryAfter = workspaceAfter.students.find((item) => item.id === 'preview-student-001');
+  assert.ok(summaryAfter);
+  assert.equal(summaryAfter.latestPendingReview, false, '已有复核留痕 → latestPendingReview=false');
+  const after = await repo.getStudentProfile('preview-student-001');
+  const entry = after.sessions.find((item) => item.sessionId === sessionId);
+  assert.ok(entry);
+  assert.equal(entry.reviewed, true, '档案条目 reviewed=true（teacherReviews 非空）');
 });
