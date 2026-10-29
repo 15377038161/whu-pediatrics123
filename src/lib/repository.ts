@@ -36,6 +36,8 @@ export interface TeacherStudentSummary {
   lastActiveAt: string | null;
   /** 批次4：最近一份报告待教师复核（pending_review 且无复核留痕）时为 true。 */
   latestPendingReview?: boolean;
+  /** 批次5：教师可见训练会话总数（学期汇总与导出用，含进行中）。 */
+  trainCount: number;
 }
 
 /** 教师学情首页工作区：班级清单（筛选用）+ 学生学情列表（含当前归属映射） */
@@ -604,6 +606,7 @@ export class AgentRepository {
           const reports = [...store.reports.values()].filter((report) => report.userId === user.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
           const latest = reports[0];
           const latestSession = latest ? store.sessions.get(latest.sessionId) : null;
+          const trainCount = [...store.sessions.values()].filter((session) => session.userId === user.id).length;
           return {
             id: user.id,
             displayName: user.displayName,
@@ -619,6 +622,7 @@ export class AgentRepository {
             latestScoreBasis: latest?.scoreBasis ?? 'clinical',
             latestMode: latest?.mode ?? 'osce',
             reportCount: reports.length || 1,
+            trainCount,
             latestReportId: latest?.id ?? null,
             latestSessionId: latestSession?.id ?? null,
             lastActiveAt: latestSession?.updatedAt ?? new Date(Date.now() - index * 86_400_000).toISOString(),
@@ -663,6 +667,7 @@ export class AgentRepository {
         const own = (reports ?? []).filter((report) => report.user_id === profile.id);
         const latest = own[0];
         const lastSession = (sessions ?? []).find((row) => row.user_id === profile.id) ?? null;
+        const trainCount = (sessions ?? []).filter((row) => row.user_id === profile.id).length;
         const cohort = studentClasses[profile.id] ?? null;
         return {
           id: profile.id,
@@ -679,6 +684,7 @@ export class AgentRepository {
           latestPendingReview: latest?.status === 'pending_review' && !((latest?.data as TrainingReport | undefined)?.teacherReviews?.length),
           latestMode: (latest?.mode as SessionMode | undefined) ?? null,
           reportCount: own.length,
+          trainCount,
           latestReportId: latest?.id ?? null,
           latestSessionId: latest?.session_id ?? null,
           lastActiveAt: lastSession?.updated_at ?? latest?.created_at ?? null,

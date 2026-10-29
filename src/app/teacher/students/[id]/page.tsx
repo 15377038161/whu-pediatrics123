@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ClipboardList, GraduationCap } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Download, GraduationCap } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { TeacherStudentProfile } from '@/lib/repository';
 import { formatDate } from '@/lib/format-date';
-import { authedFetch, AuthedApiError } from '@/lib/authed-api';
+import { authedFetch, authedFetchRaw, AuthedApiError } from '@/lib/authed-api';
 
 /**
  * 学生档案页（教师只读）：学生基本信息 + 当前班级归属 + 授权范围内的训练会话索引。
@@ -14,6 +14,8 @@ import { authedFetch, AuthedApiError } from '@/lib/authed-api';
  */
 export default function TeacherStudentProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const [state, setState] = useState<{ profile?: TeacherStudentProfile; error?: string }>({});
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,6 +44,29 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
   const { student, sessions, caseProgress } = state.profile;
   const scored = sessions.filter((session) => session.totalScore !== null && session.scoreBasis !== 'process');
   const average = scored.length ? Math.round(scored.reduce((sum, session) => sum + (session.totalScore ?? 0), 0) / scored.length) : null;
+
+  /** 批次5·导出学生档案 CSV（训练明细+病例进度两段）：fetch+blob 下载，与工作台导出同模式。 */
+  async function exportProfileCsv() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const response = await authedFetchRaw(`/api/teacher/export?module=profile&userId=${encodeURIComponent(student.id)}`);
+      if (!response.ok) throw new Error('导出失败');
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = `student-profile-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      setExportError('导出失败，请稍后重试。');
+    } finally {
+      setExporting(false);
+    }
+  }
   return <>
     <a className="text-link" href="/teacher"><ArrowLeft size={14} /> 返回学生列表</a>
     <div className="section-head">
@@ -60,6 +85,10 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
       <div><strong>{sessions.filter((session) => session.reportStatus === 'pending_review' && !session.reviewed).length}</strong><span>待教师复核</span></div>
       <div><strong>{caseProgress.length}</strong><span>覆盖病例（训练过）</span></div>
     </section>
+    <div className="profile-export-row">
+      <button type="button" className="btn btn-primary" disabled={exporting} onClick={() => { void exportProfileCsv(); }}><Download size={15} /> {exporting ? '导出中…' : '导出档案 CSV（训练明细 + 病例进度）'}</button>
+      {exportError && <span role="alert" style={{ color: 'var(--danger)', fontSize: 13 }}>{exportError}</span>}
+    </div>
     <div className="case-progress-groups">
       {caseProgress.map((progress) => {
         const groupSessions = sessions.filter((session) => (session.caseId ?? '') === progress.caseId);
