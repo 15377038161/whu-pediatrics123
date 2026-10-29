@@ -1,0 +1,12 @@
+{
+  "files": {
+    "scripts/build.sh": "e3cfcf915bc50cd82ff8e0adcec2b85fe11d6e28a71c978bafa5e3194c0429f4",
+    "scripts/dev.sh": "12008412421aea55b66fa69d7012700991a2e74230357ceec1042a2fa8ca3b06",
+    "scripts/lib/heap.sh": "d0292fc9483c44ea056a2e4dfb1e1e99f326293fe8ecba1ba19610f14600c41c",
+    "scripts/prepare.sh": "ae7e0ace6f18c241bd06e9e2a4d1c4649d6f7c769e8e6d8620f0949da47c6376",
+    "scripts/start.sh": "620f27ac7816537d00503d671a6f57ddee6196528e9d9c53c89bdd4fb489363c",
+    "scripts/validate.sh": "2f726a964556801bbb692e888df5808e36fdccb3ee8fc058a6da7232d6316479",
+    "src/components/iframe-sdk-provider.tsx": "58f25b5de7badc0f587f54095167b7bfe1333b2ebc743c5dd1fd40b11a0faaa9",
+    "src/sdk/bind-route-sync.ts": "adb0ee67fa7b6d8a2a9b3ed749b6a7f6b13152ea5b8be0685b729442a6efc9f5"
+  }
+}
