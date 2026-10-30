@@ -302,6 +302,8 @@ function buildSnapshot(caseId: string, caseName: string, chunks: Array<{ text: s
  *  teacher=true 时同时持久化 answers（诊断/原文/媒体）；学生身份只持久化教学事实。 */
 export async function ensureCaseSnapshot(caseId: string, options?: { accessToken?: string | null; teacher?: boolean }): Promise<SnapshotResult | null> {
   const sourceId = getTeacherSourceId(caseId);
+  const {hasControlledCase}=await import('@/lib/controlled-case-store');
+  if(hasControlledCase(sourceId))return null;
   const item = TEACHER_CASE_CATALOG.find((entry) => entry.id === sourceId);
   if (!item) return null;
   // 来源守卫（失败关闭）：别名解析后仍无已审核来源文件夹（D 类 3 项缺独立来源）不召回，

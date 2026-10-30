@@ -6,6 +6,7 @@ import { buildReport } from '@/lib/scoring';
 import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client';
 import { ensureCaseSnapshot, getSnapshotVersion, listCaseTests, restoreCaseSnapshotFacts, setSessionTestsCatalog } from '@/lib/case-snapshot';
 import { resolveTeacherCaseVersion } from '@/lib/case-version-select';
+import { ensureControlledCaseBundle } from '@/lib/controlled-case-bundle';
 import { assertCasePublishedForNewSession } from '@/lib/case-publication';
 import { isScorableCase } from '@/domain/case-classification';
 import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
@@ -331,6 +332,7 @@ export class AgentRepository {
         isPreview: this.isPreview(),
       });
       const version = resolution.version;
+      if (!this.isPreview() && version) await ensureControlledCaseBundle(caseId,version);
       if (resolution.coldStart) coldStartVersion = version;
       const session = createInitialSession(this.actor.id, mode, caseId, practiceFocus, version);
       if (creationId) session.id = creationId;
@@ -433,6 +435,7 @@ export class AgentRepository {
     if (this.actor.role !== 'teacher' && data.user_id !== this.actor.id) throw new Error('FORBIDDEN');
     const restored = data.state as SessionState;
     if (restored.caseId?.startsWith('teacher-')) {
+      await ensureControlledCaseBundle(restored.caseId,restored.sourceSnapshotVersion);
       // 版本绑定：会话已有绑定版本时按版本从数据库恢复教学事实（防召回漂移/TTL过期/重启换患者）；
       // 未绑定版本（旧会话）绑定当前快照版本。
       if (restored.sourceSnapshotVersion) {

@@ -6,6 +6,7 @@ import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 import { getCachedSnapshot } from '@/lib/case-snapshot';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
+import { getControlledCase } from '@/lib/controlled-case-store';
 
 export const recordSchema = z.object({
   caseId: z.string(), sourceName: z.string(), sourceDocument: z.string(),
@@ -60,6 +61,8 @@ function readArchivedCase(sourceId: string, version?: string | null): TeacherCas
 
 export function readTeacherCaseData(caseId: string, version?: string | null, sessionId?: string | null): TeacherCaseData | null {
   const sourceId = getTeacherSourceId(caseId);
+  const controlled=getControlledCase(sourceId,version);
+  if(controlled)return controlled;
   if (!TEACHER_CASE_CATALOG.some((item) => item.id === sourceId)) {
     // Removed entries are readable only by an exact historical binding, never as current input.
     if (!version || !/^[a-f0-9]{16}$/.test(version) || publicCaseId(sourceId)===sourceId) return null;
