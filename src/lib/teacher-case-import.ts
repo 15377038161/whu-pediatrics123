@@ -94,12 +94,13 @@ export function buildFactsPayloadForInit(record: TeacherCaseData) {
 }
 
 /** Private, version-bound metadata. Never put this object into student facts. */
-export function buildBindingConfigForInit(record: Pick<TeacherCaseData, 'testMedia' | 'examMedia' | 'testRelease'>) {
-  if (record.testMedia === undefined && record.examMedia === undefined && record.testRelease === undefined) return null;
+export function buildBindingConfigForInit(record: Pick<TeacherCaseData, 'testMedia' | 'examMedia' | 'testRelease' | 'examRules'>) {
+  if (record.testMedia === undefined && record.examMedia === undefined && record.testRelease === undefined && record.examRules === undefined) return null;
   return {
     testMedia: record.testMedia ?? [],
     examMedia: record.examMedia ?? [],
     testRelease: record.testRelease ?? [],
+    ...(record.examRules === undefined ? {} : {examRules:record.examRules}),
   };
 }
 

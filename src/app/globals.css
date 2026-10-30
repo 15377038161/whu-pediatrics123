@@ -1028,3 +1028,60 @@ textarea { resize: vertical; }
 .term-summary-stats span { font-size: 12px; color: var(--muted); }
 .term-summary-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .profile-export-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0; }
+
+/* Single-viewport clinical workbench: each information area owns its scrolling. */
+.training-shell { height:100svh; height:100dvh; min-height:0; padding:0; display:flex; flex-direction:column; overflow:hidden; }
+.training-shell .training-head,.training-shell>.case-band,.training-shell>.case-source-banner,.training-shell>.alert { flex-shrink:0; }
+.training-shell .training-toolbar { height:54px; }
+.training-shell .stage-scroll { padding-bottom:8px; }
+.workflow-action-bar { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:46px; padding:6px 18px; border-top:1px solid #e6efea; background:#f2f8f4; }
+.workflow-action-bar>span { font-size:12px; color:var(--muted); }
+.workflow-action-bar .btn { min-height:32px; padding:5px 12px; white-space:nowrap; font-size:12px; }
+.training-shell>.case-band { padding:6px 16px; font-size:10px; }
+.training-shell>.case-source-banner { max-height:70px; overflow:auto; margin:0 14px; font-size:11px; }
+.training-shell>.alert { max-height:64px; overflow:auto; }
+.training-shell .training-grid { flex:1; min-height:0; grid-template-rows:minmax(0,1fr); align-items:stretch; overflow:hidden; padding:12px; }
+.training-shell .workspace-panel { min-height:0; display:flex; flex-direction:column; }
+.training-shell .workspace-panel[data-mobile-hidden='true'] { display:none; }
+.training-shell .panel-head { flex:none; min-height:44px; padding:9px 14px; }
+.training-shell .panel-head h2 { font-size:14px; }
+.training-shell .training-primary>.panel-body { min-height:0; flex:1; overflow:auto; scrollbar-gutter:stable; }
+.training-shell .training-primary[data-stage='history']>.panel-body,.training-shell .training-primary[data-stage='communication']>.panel-body { display:flex; flex-direction:column; overflow:hidden; gap:8px; }
+.training-shell .training-primary .history-chat { flex:1; min-height:0; max-height:none; padding:12px; }
+.training-shell .composer,.training-shell .voice-toolbar,.training-shell .composer-meta { flex-shrink:0; }
+.training-shell .composer textarea { min-height:56px; max-height:100px; }
+.training-shell .training-record>.panel-body { display:flex; flex:1; flex-direction:column; min-height:0; overflow:hidden; }
+.training-shell .training-record .vitals,.training-shell .record-section-head { flex-shrink:0; }
+.training-shell .evidence-log { flex:1; min-height:0; overflow-y:auto; align-content:start; scrollbar-gutter:stable; overscroll-behavior:contain; padding-right:5px; }
+.training-shell .patient-stage { flex:1; min-height:0; padding:10px 10px 60px; display:flex; justify-content:center; }
+.training-shell .patient-figure { width:auto; height:100%; max-width:100%; flex:1; max-height:100%; }
+.training-shell .patient-background { z-index:6; }
+.training-shell .exam-observation { max-height:42%; overflow-y:auto; }
+.training-shell .patient-caption { padding:8px; font-size:10px; }
+.training-shell .hotspot { min-width:54px; min-height:34px; font-size:11px; background:rgba(255,253,248,.9); }
+.training-shell .hotspot span { background:#75958a; box-shadow:none; width:6px; height:6px; }
+.training-shell .hotspot-neck { top:29%; }
+.training-shell .hotspot-arm { top:43%; }
+.training-shell .hotspot-hands { top:66%; }
+.training-shell .hotspot-finger { top:57%; }
+.training-shell .hotspot-skin { top:26%; }
+.training-shell .hotspot-limbs { top:73%; }
+.training-shell .source-result-item { border:1px solid #e0eae5; border-left:3px solid #8abaaa; background:#fcfefb; border-radius:12px; padding:12px; }
+.training-shell .source-result-item p { font-size:13px; line-height:1.8; }
+.training-shell .test-order-form { padding:18px; border:1px solid #dce8e1; border-radius:16px; background:#f5faf6; margin-bottom:20px; }
+.training-shell .tests-intro h2 { font-size:24px; }
+.training-shell .test-order-form textarea { min-height:110px; background:#fff; }
+.training-note-workspace { flex:1; min-height:0; padding:12px 22px 18px; overflow:hidden; background:rgba(255,254,249,.95); }
+@media(min-width:1024px) {
+  .training-shell .workspace-panel[data-mobile-hidden='true'] { display:flex; }
+  .training-shell .training-grid[data-patient='false'] { grid-template-columns:minmax(0,1fr) minmax(250px,.42fr); }
+  .training-shell .training-grid[data-patient='false'] .training-record { grid-column:2; }
+}
+@media(max-width:1023px) {
+  .training-shell:not([data-note='true']) .training-grid { margin-bottom:76px; }
+  .training-shell .workspace-panel[data-mobile-drawer='true'] { display:flex; height:auto; max-height:62svh; }
+  .training-shell .training-patient { height:100%; }
+  .workflow-action-bar { padding:5px 12px; min-height:42px; }
+  .workflow-action-bar>span { max-width:65%; font-size:10px; }
+  .training-note-workspace { padding:10px 12px; }
+}

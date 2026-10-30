@@ -1,12 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Bot, CheckCircle2, ClipboardPen, Loader2, RefreshCw, Save, Send, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Bot, CheckCircle2, ClipboardPen, Loader2, RefreshCw, Save, Send } from 'lucide-react';
 import { NOTE_TEMPLATE, sectionCompleteness, type NoteContent, type NoteSectionKey } from '@/domain/medical-note';
 import { NoteReviewPanel } from '@/components/note-review-panel';
 import { authedFetch, authedFetchRaw, AuthedApiError } from '@/lib/authed-api';
-import { formatDateTime } from '@/lib/format-date';
+import type { Ref } from 'react';
+import type { SessionState } from '@/domain/agent';
+import { formatDateTime, formatTime } from '@/lib/format-date';
 import type { NoteView } from '@/lib/note-projection';
 import styles from './note-writing.module.css';
 
@@ -27,7 +29,10 @@ const COMPLETENESS_LABEL: Record<ReturnType<typeof sectionCompleteness>, string>
   not_applicable: '选填未写',
 };
 
-export function NoteWriting({ sessionId }: { sessionId: string }) {
+export interface NoteWritingHandle { flush: () => Promise<void> }
+
+export function NoteWriting({ sessionId, embedded=false, context, onComplete, ref }: {sessionId:string; embedded?:boolean; context?:SessionState; onComplete?:()=>void; ref?:Ref<NoteWritingHandle>}) {
+  const [activeSection,setActiveSection]=useState<NoteSectionKey|'submit'|'history'>(NOTE_TEMPLATE[0].key);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [draft, setDraft] = useState<NoteContent>(EMPTY_CONTENT);
@@ -44,13 +49,17 @@ export function NoteWriting({ sessionId }: { sessionId: string }) {
   const clientEventIdRef = useRef<string | null>(null);
   const draftLoadedRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestDraftRef=useRef<NoteContent>(EMPTY_CONTENT);
+  const savedContentRef=useRef(JSON.stringify(EMPTY_CONTENT));
+  const saveChainRef=useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     let cancelled = false;
     authedFetch<{ draft: { content: NoteContent } | null; submissions: NoteView[] }>(`/api/notes?sessionId=${encodeURIComponent(sessionId)}`)
       .then((data) => {
         if (cancelled) return;
-        if (data.draft) setDraft(data.draft.content);
+        const content=data.draft?.content ?? EMPTY_CONTENT;
+        setDraft(content); latestDraftRef.current=content; savedContentRef.current=JSON.stringify(content);
         draftLoadedRef.current = true;
         setSubmissions(data.submissions);
       })
@@ -70,24 +79,33 @@ export function NoteWriting({ sessionId }: { sessionId: string }) {
     setSubmissions(data.submissions);
   }, [sessionId]);
 
-  // 草稿防抖自动保存（首次加载不触发）
-  useEffect(() => {
-    if (!draftLoadedRef.current) return;
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    setSaveState('idle');
-    saveTimerRef.current = setTimeout(() => {
+  // Serialize writes so an older autosave cannot overwrite a newer draft.
+  const flush=useCallback(async()=>{
+    if(saveTimerRef.current)clearTimeout(saveTimerRef.current);
+    if(!draftLoadedRef.current) return;
+    const content=latestDraftRef.current;
+    const snapshot=JSON.stringify(content);
+    const save=async()=>{
+      if(snapshot===savedContentRef.current)return;
       setSaveState('saving');
-      authedFetch('/api/notes/draft', { method: 'PUT', body: JSON.stringify({ sessionId, content: draft }) })
-        .then(() => {
-          setSaveState('saved');
-          setSavedAt(new Date());
-        })
-        .catch(() => setSaveState('failed'));
-    }, 800);
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      try {
+        await authedFetch('/api/notes/draft',{method:'PUT',body:JSON.stringify({sessionId,content})});
+        savedContentRef.current=snapshot;setSavedAt(new Date());
+        if(JSON.stringify(latestDraftRef.current)===snapshot)setSaveState('saved');
+      }catch(error){setSaveState('failed');throw error;}
     };
-  }, [draft, sessionId]);
+    const queued=saveChainRef.current.catch(()=>undefined).then(save);
+    saveChainRef.current=queued;
+    await queued;
+  },[sessionId]);
+  useImperativeHandle(ref,()=>({flush}),[flush]);
+  useEffect(()=>()=>{if(saveTimerRef.current)clearTimeout(saveTimerRef.current);void flush().catch(()=>undefined);},[flush]);
+
+  useEffect(()=>{
+    if(!draftLoadedRef.current||JSON.stringify(draft)===savedContentRef.current)return;
+    const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};
+    window.addEventListener('beforeunload',warn);return ()=>window.removeEventListener('beforeunload',warn);
+  },[draft,saveState]);
 
   const missingRequired = useMemo(
     () => NOTE_TEMPLATE.filter((section) => section.required && sectionCompleteness(draft[section.key], true) === 'missing').map((section) => section.label),
@@ -95,7 +113,10 @@ export function NoteWriting({ sessionId }: { sessionId: string }) {
   );
 
   function updateSection(key: NoteSectionKey, value: string) {
-    setDraft((previous) => ({ ...previous, [key]: value }));
+    const next={...latestDraftRef.current,[key]:value};
+    latestDraftRef.current=next;setDraft(next);setSaveState('idle');
+    if(saveTimerRef.current)clearTimeout(saveTimerRef.current);
+    saveTimerRef.current=setTimeout(()=>{void flush().catch(()=>undefined);},800);
     setConfirmMissing(false);
   }
 
@@ -110,6 +131,7 @@ export function NoteWriting({ sessionId }: { sessionId: string }) {
     if (!clientEventIdRef.current) clientEventIdRef.current = crypto.randomUUID();
     const clientEventId = clientEventIdRef.current;
     try {
+      await flush();
       await authedFetch<NoteView>('/api/notes', { method: 'POST', body: JSON.stringify({ sessionId, content: draft, clientEventId }) });
       clientEventIdRef.current = null;
       setConfirmMissing(false);
@@ -177,66 +199,19 @@ export function NoteWriting({ sessionId }: { sessionId: string }) {
     return <div className="empty-state" role="alert"><p>{loadError}</p><Link className="btn btn-primary" href="/student/reports">返回报告列表</Link></div>;
   }
 
+  const active=NOTE_TEMPLATE.find(section=>section.key===activeSection);
+  const completed=NOTE_TEMPLATE.filter(section=>draft[section.key].trim()).length;
+  const activeIndex=active?NOTE_TEMPLATE.indexOf(active):NOTE_TEMPLATE.length;
+  const saveLabel=saveState==='saving'?'正在保存…':saveState==='saved'?`已保存${savedAt?' '+formatTime(savedAt):''}`:saveState==='failed'?'保存失败，请重试':'更改后自动保存到账号';
   return (
-    <div className={styles.noteShell}>
-      <Link className="text-link" href="/student/reports"><ArrowLeft size={14} /> 返回学情档案</Link>
-      <div className="section-head">
-        <div>
-          <p className="eyebrow"><ClipboardPen size={13} /> 病历书写</p>
-          <h1 className="page-title">小儿接诊病历</h1>
-          <p className="page-lead">按通用儿科大病历结构书写本次接诊；书写质量由 AI 辅助审阅与教师查看反馈，不自动评分。</p>
-        </div>
-      </div>
-      <p className={styles.noteBoundary}>
-        <TriangleAlert size={13} style={{ color: '#9a6b00' }} />
-        必填段完整性仅作提示，不会据此扣分；AI 意见为独立辅助反馈，医学结论由教师复核作出。
-      </p>
-
-      <div className={styles.noteCompleteness} aria-label="段落完成度">
-        {NOTE_TEMPLATE.filter((section) => section.required).map((section) => {
-          const level = sectionCompleteness(draft[section.key], true);
-          return <span key={section.key} data-level={level}>{section.label} · {COMPLETENESS_LABEL[level]}</span>;
-        })}
-      </div>
-
-      <form
-        className={styles.noteForm}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleSubmit();
-        }}
-      >
-        {NOTE_TEMPLATE.map((section) => {
-          const level = sectionCompleteness(draft[section.key], section.required);
-          return (
-            <div className={styles.noteField} data-completeness={level} key={section.key}>
-              <div className={styles.noteFieldHead}>
-                <strong>{section.label}</strong>
-                {section.required && <em>必填</em>}
-              </div>
-              <p className={styles.noteHint}>{section.hint}</p>
-              <textarea
-                value={draft[section.key]}
-                onChange={(event) => updateSection(section.key, event.target.value)}
-                placeholder={`书写${section.label}…`}
-                aria-label={section.label}
-              />
-            </div>
-          );
-        })}
-
-        <div className={styles.noteActions}>
-          <span className={styles.noteSaveState} data-state={saveState}>
-            {saveState === 'saving' ? <><Loader2 size={13} className="spin" /> 保存草稿中…</> : saveState === 'saved' ? <><CheckCircle2 size={13} /> 草稿已保存{savedAt ? ` ${savedAt.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : ''}</> : saveState === 'failed' ? <><Save size={13} /> 草稿保存失败，稍后自动重试</> : <><Save size={13} /> 草稿自动保存</>}
-          </span>
-          <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? <><Loader2 size={15} className="spin" /> 提交中…</> : <><Send size={15} /> {confirmMissing ? `仍有 ${missingRequired.length} 个必填段未写，仍要提交` : '提交病历'}</>}
-          </button>
-          {confirmMissing && missingRequired.length > 0 && <p className={styles.noteMissingWarn}>未书写：{missingRequired.join('、')}。提交后仍可在下一次书写中补全，AI 审阅会指出缺失段落。</p>}
-          {submitError && <p className={styles.noteError} role="alert">{submitError}</p>}
-        </div>
-      </form>
-
+    <div className={styles.noteShell} data-embedded={embedded}>
+      {!embedded&&<Link className="text-link" href={`/student/training?session=${sessionId}`}><ArrowLeft size={14}/> 返回本次接诊</Link>}
+      <header className={styles.noteIntro}><div><p className="eyebrow"><ClipboardPen size={14}/> 病历书写</p><h1>整理这一次接诊</h1><p>用自己的话组织已获得的信息，保留时间、依据和未知项。</p></div><span className={styles.noteSaveState} data-state={saveState} role="status">{saveLabel}</span></header>
+      <div className={styles.progressRow}><span>已写 {completed} / {NOTE_TEMPLATE.length} 个段落</span><progress max={NOTE_TEMPLATE.length} value={completed} aria-label="病历书写进度"/></div>
+      <div className={styles.writingGrid}>
+        <nav className={styles.sectionNav} aria-label="病历段落目录"><p>书写目录</p>{NOTE_TEMPLATE.map((section,index)=><button type="button" key={section.key} aria-current={activeSection===section.key?'step':undefined} onClick={()=>setActiveSection(section.key)}><span>{String(index+1).padStart(2,'0')}</span><strong>{section.label}</strong>{draft[section.key].trim()&&<CheckCircle2 size={14} aria-label="已有内容"/>}</button>)}<button type="button" aria-current={activeSection==='submit'?'step':undefined} onClick={()=>setActiveSection('submit')}>整合与提交 <Send size={14}/></button><button type="button" aria-current={activeSection==='history'?'step':undefined} onClick={()=>setActiveSection('history')}>提交记录 · {submissions.length}</button></nav>
+        <section className={styles.editorPanel} aria-label="病历编辑区">
+          {active?<><div className={styles.editorHeading}><p>段落 {String(activeIndex+1).padStart(2,'0')} / {NOTE_TEMPLATE.length}</p><h2>{active.label}</h2><p>{active.hint}</p></div><div className={styles.questionCard}><strong>围绕这些问题组织记录</strong><p>{active.hint}</p><small>只写本次接诊已核实的内容；没有资料时明确写未知、未询问或未完成。</small></div><textarea className={styles.sectionEditor} aria-label={active.label} value={draft[active.key]} onChange={event=>updateSection(active.key,event.target.value)} placeholder={`用自己的话书写${active.label}，保留信息来源与时间点…`}/><div className={styles.editorMeta}><span>{COMPLETENESS_LABEL[sectionCompleteness(draft[active.key],active.required)]}</span><span>{draft[active.key].length} 字</span></div><footer className={styles.editorFooter}><button className="btn btn-secondary" disabled={activeIndex===0} onClick={()=>setActiveSection(NOTE_TEMPLATE[activeIndex-1].key)}>上一段落</button><button className="btn btn-primary" onClick={()=>setActiveSection(NOTE_TEMPLATE[activeIndex+1]?.key??'submit')}>{activeIndex===NOTE_TEMPLATE.length-1?'整合与提交':'下一段落'} <ArrowLeft size={14} style={{transform:'rotate(180deg)'}}/></button></footer></>:activeSection==='submit'?<div className={styles.reviewContent}><h2>整合与提交</h2><p>完整性提示只帮助检查记录，不据此自动扣分。</p>{NOTE_TEMPLATE.map(section=><article key={section.key}><h3>{section.label}<button type="button" className="text-link" onClick={()=>setActiveSection(section.key)}>返回修改</button></h3><p className="preserve-lines">{draft[section.key]||'尚未书写'}</p></article>)}<div className={styles.noteActions}><button type="button" className="btn btn-secondary" onClick={()=>void flush().catch(()=>undefined)} disabled={saveState==='saving'}><Save size={14}/> 保存草稿</button><button type="button" className="btn btn-primary" onClick={()=>void handleSubmit()} disabled={submitting||!completed}>{submitting?'提交中…':confirmMissing?`仍有 ${missingRequired.length} 个必填段未写，仍要提交`:'提交病历'}</button>{confirmMissing&&<p className={styles.noteMissingWarn}>未书写：{missingRequired.join('、')}。确认后仍可提交，教师会看到原文。</p>}{submitError&&<p role="alert" className={styles.noteError}>{submitError}</p>}{submissions.length>0&&<p role="status">已有 {submissions.length} 次提交，原文已保留。</p>}{embedded&&onComplete&&<button type="button" className="btn btn-secondary" disabled={submitting||saveState==='saving'} onClick={async()=>{try{await flush();onComplete();}catch{/* keep editor open on save failure */}}}>保存并生成训练报告</button>}</div></div>:<div className={styles.reviewContent}>
       <div className="section-head" style={{ marginTop: 30 }}>
         <h2 className="section-title">提交记录</h2>
         <span className="eyebrow">{submissions.length === 0 ? '提交后在此查看与发起 AI 审阅' : `共 ${submissions.length} 次提交`}</span>
@@ -300,6 +275,10 @@ export function NoteWriting({ sessionId }: { sessionId: string }) {
           })}
         </div>
       )}
+</div>}
+        </section>
+        <aside className={styles.thinkingPanel}><h2><Bot size={17}/> 思考提示</h2><p>{active?'检查表达、时间和信息来源。提示不提供标准病历答案。':'核对已填写段落后提交，提交记录会保留各次版本。'}</p><details open><summary>信息与依据</summary><p>{active?.hint??'查看是否把实际采集的信息与个人推断区分开。'}</p></details><details><summary>时间与未知项</summary><p>区分院外与入院后的资料。未知、不适用、未检查与结果未回报分别记录，不填默认正常值。</p></details><details><summary>提交前核对</summary><p>保留自己的临床思路；AI意见是辅助反馈，医学判断由教师复核。</p></details>{context&&<div><h3>本轮记录</h3><p>已采集 {context.askedIntents.length} 类病史 · 已申请 {context.orderedTests.length} 项检查</p><p>需要核对时，可回到接诊工作台查阅自己已获得的证据。</p></div>}<button type="button" className="text-link" disabled={saveState==='saving'} onClick={()=>void flush().catch(()=>undefined)}>手动保存草稿</button></aside>
+      </div>
     </div>
   );
 }

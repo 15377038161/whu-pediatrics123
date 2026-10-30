@@ -4,13 +4,8 @@ import { recordSchema, getTeacherSourceId } from '@/lib/teacher-case-data';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
 import { getControlledCase, registerControlledCase } from '@/lib/controlled-case-store';
 
-interface BundleReference { sourceId: string; version: string; fileId: string; sha256: string }
-// Approved server-side object references. Keep referenced historical entries when publishing newer versions.
-const bundles: BundleReference[] = [{
-  sourceId: 'teacher-1型糖尿病伴有酮症酸中毒', version: 'dcdf43acad052794',
-  fileId: 'bfe15e31c59e4f9cc99e63837781cad0',
-  sha256: '70685fddab754d3514593c2ae56feed0c5262c9460c5601c30d3321cc998b4de',
-}];
+import { controlledCaseBundles as bundles, type BundleReference } from '@/lib/controlled-case-registry';
+
 const digest = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
 export function decodeControlledCaseBundle(bytes: Uint8Array, expected: Pick<BundleReference,'sourceId'|'version'|'sha256'>) {
   if (bytes.length > 8_000_000 || digest(bytes) !== expected.sha256) throw new Error('CASE_BUNDLE_INTEGRITY_FAILED');

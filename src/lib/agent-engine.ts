@@ -500,11 +500,12 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
 
 function handleExam(session: SessionState, toolId: string, bodyPartId: string, clientEventId: string, posture?: ExamPosture): AgentTurnResult {
   if (posture) session.examPosture = posture;
-  if (!postureAllows(bodyPartId, posture)) {
-    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', '腹部检查需要切换为仰卧姿势', false, []));
-    return { session, newMessages: [], feedback: feedbackFor(session, '请先切换为仰卧姿势，再进行腹部检查。'), trace: [trace('查体规则', '检查姿势与部位匹配')] };
-  }
   const rule = findExamRule(session.caseId, toolId, bodyPartId, session.sourceSnapshotVersion, session.id);
+  const effectivePosture=posture ?? session.examPosture ?? (rule?.postures ? 'standing' : undefined);
+  if (!postureAllows(bodyPartId, effectivePosture) || (rule?.postures && effectivePosture && !rule.postures.includes(effectivePosture))) {
+    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', '当前检查与所选体位不匹配，未释放查体结果', false, []));
+    return { session, newMessages: [], feedback: feedbackFor(session, '本次检查不适用于当前体位，请调整体位后再试。'), trace: [trace('查体规则', '检查姿势与部位匹配')] };
+  }
   const traceItems = [trace('查体规则', '校验准备动作、器材、部位与检查顺序')];
   if (!rule) {
     // 来源病例：无来源体征明确「资料未提供」，不补正常结果、不虚构患者事实、不关闭整个查体

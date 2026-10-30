@@ -194,3 +194,6 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 当前全库教学补全、70配图与3模拟病例入口、版本固定/采集复盘/媒体回放、私有病历底稿及验证边界见[CASE_TEACHING_COMPLETION.md](docs/CASE_TEACHING_COMPLETION.md)。原始病例缺口与AI补充分别记录，未声称已部署或真实全库通过。
 
 完整私有素材交付、安全同步、用户发布及部署后代表验收见 [Coder完整交付说明](docs/CODER_COMPLETE_DELIVERY_20261028.md)。
+
+
+病例导入与接诊工作台统一约定见[CASE_TRAINING_TEMPLATE.md](docs/CASE_TRAINING_TEMPLATE.md)，含自主查体定位、体位配置、单屏工作台、病历逐段书写及面向后续全库的参数化盘点/验收命令。该模板工程通过不代表全库真实验收。

@@ -1,156 +1,53 @@
-/* 批次6·病历书写页样式（note-writing.tsx 专用，复用全局设计变量） */
+.noteShell { height:calc(100dvh - 180px); min-height:480px; max-width:1480px; margin:auto; display:flex; flex-direction:column; gap:12px; color:var(--ink); }
+.noteShell[data-embedded='true'] { height:100%; min-height:0; }
+.noteIntro { display:flex; justify-content:space-between; gap:20px; align-items:center; flex:none; padding:4px 0; }
+.noteIntro h1 { font:800 25px var(--font-display); margin:4px 0 6px; }
+.noteIntro p { margin:0; color:var(--muted); font-size:13px; }
+.noteIntro .noteSaveState { white-space:nowrap; }
+.progressRow { display:grid; grid-template-columns:auto minmax(100px,1fr); gap:18px; align-items:center; color:var(--muted); font-size:12px; }
+.progressRow progress { appearance:none; width:100%; height:5px; border:0; border-radius:10px; overflow:hidden; }
+.progressRow progress::-webkit-progress-bar { background:#e4ece5; }
+.progressRow progress::-webkit-progress-value { background:var(--pine); border-radius:10px; }
+.writingGrid { min-height:0; flex:1; display:grid; grid-template-columns:190px minmax(280px,1fr) 240px; gap:24px; overflow:hidden; }
+.sectionNav { min-height:0; overflow:auto; padding:12px 0; scrollbar-gutter:stable; }
+.sectionNav>p { margin:0 12px 14px; color:var(--muted); font-size:12px; }
+.sectionNav button { width:100%; min-height:42px; display:flex; gap:10px; align-items:center; text-align:left; border:0; border-radius:12px; background:transparent; color:#6b8580; padding:10px 12px; cursor:pointer; font-size:13px; }
+.sectionNav button[aria-current='step'] { background:#e6f0e7; color:#185f54; }
+.sectionNav button strong { flex:1; font-weight:600; }
+.sectionNav button span { font-variant-numeric:tabular-nums; font-size:12px; }
+.sectionNav button:hover { background:#f0f5ee; }
+.editorPanel { min-width:0; min-height:0; display:flex; flex-direction:column; padding:12px 2px 4px; overflow:hidden; }
+.editorHeading { flex:none; }
+.editorHeading>p:first-child { color:var(--pine); font-size:12px; font-weight:700; letter-spacing:.08em; }
+.editorHeading h2 { margin:8px 0 10px; font:800 23px var(--font-display); }
+.editorHeading p { margin:0 0 12px; font-size:13px; color:var(--muted); }
+.questionCard { flex:none; border:1px solid #e0e9db; border-radius:14px; background:#eef3e8; color:#597650; padding:14px 16px; font-size:13px; margin-bottom:16px; line-height:1.7; }
+.questionCard p { margin:5px 0; }
+.questionCard small { color:#6b826b; font-size:11px; }
+.sectionEditor { flex:1; min-height:100px; width:100%; resize:none; border:1px solid #d9e5df; border-radius:14px; padding:20px; background:#fffefb; color:var(--ink); font:inherit; font-size:14px; line-height:1.9; }
+.sectionEditor:focus { outline:2px solid #a6cbbc; outline-offset:1px; }
+.sectionEditor::placeholder { color:#96aaa1; }
+.editorMeta { display:flex; justify-content:space-between; color:#92a69b; font-size:11px; padding:8px 0 12px; }
+.editorFooter { display:flex; justify-content:space-between; gap:12px; flex:none; padding-top:8px; }
+.thinkingPanel { min-height:0; overflow:auto; align-self:start; max-height:100%; border:1px solid #e0e8d7; border-radius:18px; padding:20px; background:#f0f3e8; color:#627e61; font-size:13px; line-height:1.8; }
+.thinkingPanel h2 { display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:16px; }
+.thinkingPanel details { border-top:1px solid #dfe7d7; padding:13px 0; }
+.thinkingPanel summary { cursor:pointer; color:var(--ink); font-weight:700; }
+.thinkingPanel h3 { font-size:13px; color:var(--ink); }
+.reviewContent { min-height:0; overflow:auto; padding:0 8px 20px 0; line-height:1.8; scrollbar-gutter:stable; }
+.reviewContent h2 { font:800 22px var(--font-display); }
+.reviewContent article>h3 { display:flex; justify-content:space-between; font-size:14px; color:var(--pine); border-bottom:1px solid var(--line); padding-bottom:8px; }
+.reviewContent article>p { font-size:13px; }
+.noteActions { display:flex; flex-wrap:wrap; gap:12px; position:sticky; bottom:0; padding:14px; border:1px solid var(--line); border-radius:14px; background:var(--white); }
+.noteSaveState { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:12px; }
+.noteSaveState[data-state='saved'] { color:#297a56; }
+.noteSaveState[data-state='failed'], .noteError { color:var(--danger); }
+.noteMissingWarn,.noteError { flex-basis:100%; margin:0; font-size:12px; }
+.noteMissingWarn { color:#936d2d; }
+@media(max-width:1100px) { .writingGrid { grid-template-columns:150px minmax(220px,1fr) 200px; gap:16px; } .thinkingPanel { padding:14px; } }
+@media(max-width:767px) { .noteIntro h1 { font-size:20px; } .noteIntro p:not(.eyebrow) { display:none; } .noteIntro { gap:8px; } .writingGrid { grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); gap:4px; } .sectionNav { display:flex; gap:5px; overflow-x:auto; overflow-y:hidden; padding:4px 0 10px; } .sectionNav>p { display:none; } .sectionNav button { flex:none; width:auto; white-space:nowrap; min-height:36px; padding:8px 10px; } .thinkingPanel { display:none; } .questionCard { padding:10px 12px; margin-bottom:10px; } .questionCard small { display:none; } .editorHeading h2 { font-size:20px; margin:4px 0 8px; } .editorHeading>p { margin-bottom:8px; } .sectionEditor { padding:14px; } .noteShell { gap:8px; } }
 
-.noteShell {
-  max-width: 860px;
-  margin: 0 auto;
-}
-
-.noteIntro {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 16px;
-}
-
-.noteBoundary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--paper);
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.noteCompleteness {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 14px 0;
-}
-
-.noteCompleteness span {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  border: 1px solid var(--line);
-  background: var(--white);
-}
-
-.noteCompleteness span[data-level='written'] { color: #1a7f4b; border-color: #bfe3cd; background: #f2faf5; }
-.noteCompleteness span[data-level='partial'] { color: #9a6b00; border-color: #f0d9a0; background: #fffaf0; }
-.noteCompleteness span[data-level='missing'] { color: var(--danger); border-color: #e6c9c2; background: #fdf3f1; }
-
-.noteForm {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.noteField {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--white);
-}
-
-.noteFieldHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.noteFieldHead strong {
-  font-size: 14px;
-  color: var(--ink);
-}
-
-.noteFieldHead em {
-  font-style: normal;
-  font-size: 11.5px;
-  color: var(--danger);
-  padding: 1px 7px;
-  border: 1px solid #e6c9c2;
-  border-radius: 999px;
-  background: #fdf3f1;
-}
-
-.noteHint {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.noteField textarea {
-  width: 100%;
-  min-height: 74px;
-  resize: vertical;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--paper);
-  font: inherit;
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--ink);
-}
-
-.noteField textarea:focus {
-  outline: 2px solid var(--brand, #1f6f54);
-  outline-offset: 1px;
-  background: var(--white);
-}
-
-.noteField[data-completeness='partial'] textarea { border-color: #f0d9a0; }
-.noteField[data-completeness='missing'] textarea { border-color: #e6c9c2; }
-
-.noteActions {
-  position: sticky;
-  bottom: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-top: 16px;
-  padding: 12px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--white);
-  box-shadow: 0 -6px 18px rgba(20, 45, 40, 0.06);
-}
-
-.noteSaveState {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-.noteSaveState[data-state='saved'] { color: #1a7f4b; }
-.noteSaveState[data-state='failed'] { color: var(--danger); }
-
-.noteMissingWarn {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 12.5px;
-  color: #9a6b00;
-}
-
-.noteError {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 12.5px;
-  color: var(--danger);
-}
-
+/* Submitted versions and the shared AI feedback panel. */
 .noteHistory {
   display: flex;
   flex-direction: column;

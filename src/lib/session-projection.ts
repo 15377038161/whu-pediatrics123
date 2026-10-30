@@ -17,7 +17,7 @@ import { readTeacherCaseData } from '@/lib/teacher-case-data';
  *      病种名/教师来源名称不进入学生响应（完成后经报告 caseTitle 释放）；
  *   2. caseOptions.tests 剥离——未完成训练不下发检查候选目录（配套任务2：
  *      辅助检查改为学生自主文本输入，服务端确定性匹配，客户端无需候选列表）；
- *   3. exams 保留 toolId/bodyPartId/label（查体 UI 所需的中性器材-部位目录，不含结果文本）。
+ *   3. exams 剥离器材-正确部位映射；工作台使用与器材无关的中性解剖部位。
  *
  * 只过滤响应投影，不修改持久化状态（投影是纯函数，原始 state 落库不变）。
  */
@@ -39,6 +39,7 @@ export function projectSessionForRole(session: SessionState, role: AppRole): Ses
       sourceName: complaint ?? profile?.title ?? '真实教学病例',
       complaint: complaint ?? undefined,
       tests: [],
+      exams: [],
     },
   };
 }

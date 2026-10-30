@@ -1,3 +1,4 @@
+import type { SourceExamRule } from '@/domain/source-exam-contract';
 import { createHash } from 'node:crypto';
 
 /** Persisted case content only: no timestamps, review notes or environment values.
@@ -16,6 +17,7 @@ interface VersionedCaseData {
   documents: Array<{ source: string; text: string; sha256: string }>;
   testRelease?: Array<{ testId: string; availableFromStage?: string; resultDelayNote?: string }>;
   testMedia?: Array<{ testId: string; media: Array<{ fileId: string; kind: 'image'; caption: string }> }>;
+  examRules?: SourceExamRule[];
   examMedia?: Array<{ examId: string; media: Array<{ fileId: string; kind: 'image'; caption: string }> }>;
 }
 
@@ -43,6 +45,7 @@ export function computeCaseContentHash(record: VersionedCaseData, media: Readonl
     media: media.map(({ url, caption }) => ({ url, caption })),
     testRelease: record.testRelease?.map(({ testId, availableFromStage, resultDelayNote }) => ({ testId, availableFromStage, resultDelayNote })),
     testMedia: record.testMedia?.map(({ testId, media }) => ({ testId, media: media.map(({ fileId, kind, caption }) => ({ fileId, kind, caption })) })),
+    examRules: record.examRules?.map(({toolId,bodyPartId,label,result,postures,sourceLocator})=>({toolId,bodyPartId,label,result,postures,sourceLocator})),
     examMedia: record.examMedia?.map(({ examId, media }) => ({ examId, media: media.map(({ fileId, kind, caption }) => ({ fileId, kind, caption })) })),
   };
   const canonical = JSON.stringify(payload, (_key, value: unknown) => typeof value === 'string' ? value.replace(/\r\n/g, '\n') : value);

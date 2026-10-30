@@ -1,0 +1,26 @@
+{
+  "caseId": "",
+  "sourceName": "",
+  "sourceDocument": "",
+  "age": "",
+  "sex": "",
+  "complaint": "",
+  "sections": {
+    "history": "",
+    "exam": "",
+    "tests": "",
+    "diagnosis": "",
+    "plan": ""
+  },
+  "vitals": {
+    "temperature": null,
+    "heartRate": null,
+    "respiratoryRate": null,
+    "spo2": null
+  },
+  "documents": [],
+  "examRules": [],
+  "testMedia": [],
+  "examMedia": [],
+  "testRelease": []
+}

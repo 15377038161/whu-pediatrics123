@@ -25,7 +25,7 @@ test('学生 + active + 教师病例：sourceName 中性化且 tests 剥离', ()
   assert.equal(projected.caseOptions.sourceName.includes('川崎'), false);
   assert.equal(projected.caseOptions.sourceName.includes('川崎'), false, '病种名不得进入学生响应');
   assert.equal(projected.caseOptions.tests.length, 0, '检查候选目录不下发');
-  assert.equal(projected.caseOptions.exams.length, session.caseOptions!.exams.length, '查体目录保留');
+  assert.equal(projected.caseOptions.exams.length, 0, '不下发器材与正确部位的对应答案');
   // 原始会话不被修改（纯函数投影）
   assert.ok(session.caseOptions!.sourceName.length > 0);
   assert.ok(session.caseOptions!.tests.length > 0 || session.caseOptions!.exams.length > 0);

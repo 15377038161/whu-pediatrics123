@@ -29,6 +29,7 @@ export interface ExamRule {
   evidenceCode: string;
   requires: string[];
   risk: 'normal' | 'attention' | 'critical';
+  postures?: Array<'standing' | 'supine'>;
   /** 分时点事实释放：该查体项目可执行的最早阶段；缺省不限制（查体阶段即可执行，向后兼容）。 */
   availableFromStage?: Stage;
   /** 查体结果释放时随事件挂载的病例媒体（如体征照片）；缺省无媒体。 */
@@ -257,6 +258,12 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   const unknown = { temperature: null, heartRate: null, respiratoryRate: null, spo2: null };
   const examText = source?.sections.exam ?? '';
   const definitions = sourceExamDefinitions(examText);
+  // Explicit reviewed mappings override only the same tool/body pair; other source snippets remain intact.
+  for (const configured of source?.examRules ?? []) {
+    const index=definitions.findIndex(([tool,part])=>tool===configured.toolId && part===configured.bodyPartId);
+    const definition=[configured.toolId,configured.bodyPartId,configured.label,configured.result];
+    if(index<0) definitions.push(definition); else definitions[index]=definition;
+  }
   const exams: ExamRule[] = [{ id: 'prep-hygiene', toolId: 'hand-hygiene', bodyPartId: 'hands', label: '手卫生与检查说明', result: '已完成手卫生，并向患儿及家长说明检查。', evidenceCode: 'EX_PREP', requires: [], risk: 'normal' }];
   // 查体媒体绑定（可选，按 examId 应用）：查体结果释放时随事件挂载（如体征照片），缺省无媒体。
   const mediaByExamId = new Map((source?.examMedia ?? []).map((item) => [item.examId, item.media]));
@@ -264,7 +271,8 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
     if (!result) return;
     const id = `source-exam-${toolId}-${bodyPartId}`;
     const media = mediaByExamId.get(id);
-    exams.push({ id, toolId, bodyPartId, label, result: `病例记录：${result}。`, evidenceCode: `SOURCE_EX_${toolId}_${bodyPartId}`, requires: ['EX_PREP'], risk: 'normal', ...(media && media.length > 0 ? { media } : {}) });
+    const configured=source?.examRules?.find(rule=>rule.toolId===toolId && rule.bodyPartId===bodyPartId);
+    exams.push({ id, toolId, bodyPartId, label, result: `病例记录：${result}。`, evidenceCode: `SOURCE_EX_${toolId}_${bodyPartId}`, ...(configured ? {postures:configured.postures} : {}), requires: ['EX_PREP'], risk: 'normal', ...(media && media.length > 0 ? { media } : {}) });
   });
   const testLines = source?.sections.tests.split('\n').filter((line) => line.trim() && !/^(?:辅助检查|辅检|入院后辅检)[：:]?$/.test(line.trim())) ?? [];
   // 目录/结果分离：label 走白名单最长前缀匹配（trustedTestLabel，与 SQL 迁移 20261011160000 同规则）——

@@ -1,3 +1,4 @@
+import { sourceExamRulesSchema, type SourceExamRule } from '@/domain/source-exam-contract';
 import { createHash } from 'node:crypto';
 import { KnowledgeClient, Config } from 'coder-coding-dev-sdk';
 import { getSupabaseUserClient, isDatabaseConfigured } from '@/lib/supabase-client';
@@ -83,6 +84,7 @@ export interface SnapshotCaseData {
   sections: { history: string; exam: string; tests: string; diagnosis: string; plan: string };
   vitals: { temperature: number | null; heartRate: number | null; respiratoryRate: number | null; spo2: number | null };
   documents: Array<{ source: string; text: string; sha256: string }>;
+  examRules?: SourceExamRule[];
   examMedia?: Array<{examId: string; media: CaseMedia[]}>;
 }
 
@@ -416,6 +418,9 @@ export async function restoreCaseSnapshotFacts(caseId: string, version: string, 
         // full private metadata in the student/session-scoped RPC cache.
         const {data: answer,error: bindingError}=await db.from('case_snapshot_answers')
           .select('binding_config').eq('case_id',sourceId).eq('version',version).maybeSingle();
+        if (!bindingError && answer?.binding_config?.examRules !== undefined) {
+          facts.examRules=sourceExamRulesSchema.parse(answer.binding_config.examRules);
+        }
         if (!bindingError && Array.isArray(answer?.binding_config?.examMedia)) {
           facts.examMedia=answer.binding_config.examMedia.filter((item: {examId?: unknown})=>typeof item?.examId==='string')
             .map((item: {examId:string;media:unknown})=>({examId:item.examId,media:decodeCaseMedia(item.media)}));
