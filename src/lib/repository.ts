@@ -16,6 +16,7 @@ import { getUnpublishedCaseIds } from '@/lib/case-publication';
 import { creationSessionId, creationFingerprint, type SessionCreationOptions } from '@/lib/session-creation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getCase } from '@/domain/case';
+import { buildClinicalOperationRows } from '@/lib/clinical-operation-rows';
 import { hydrateReleasedExamMedia } from '@/lib/case-media';
 import { NOTE_TEMPLATE_VERSION, normalizeNoteContent, type NoteDraftRecord, type NoteReviewResult, type NoteReviewStatus, type NoteSubmissionRecord } from '@/domain/medical-note';
 
@@ -495,16 +496,7 @@ export class AgentRepository {
       if (messageError) throw messageError;
     }
     if (session.events.length > 0) {
-      const { error: operationError } = await db.from('clinical_operations').upsert(session.events.map((item) => ({
-        id: item.id,
-        session_id: session.id,
-        client_event_id: item.clientEventId,
-        event_type: item.type,
-        stage: item.stage,
-        payload: { summary: item.summary, media: item.media ?? null },
-        result: { correct: item.correct, evidenceCodes: item.evidenceCodes },
-        created_at: item.createdAt,
-      })), { onConflict: 'session_id,client_event_id' });
+      const { error: operationError } = await db.from('clinical_operations').upsert(buildClinicalOperationRows(session), { onConflict: 'session_id,client_event_id' });
       if (operationError) throw operationError;
     }
   }
