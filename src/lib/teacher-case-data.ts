@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
+import { sourceTestDefinitionsSchema } from '@/domain/source-test-contract';
 import { sourceExamRulesSchema } from '@/domain/source-exam-contract';
 import {publicCaseId} from '@/lib/case-identity';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
@@ -32,6 +33,7 @@ export const recordSchema = z.object({
     media: z.array(z.object({ fileId: z.string(), kind: z.literal('image'), caption: z.string() })),
   })).optional(),
   examRules: sourceExamRulesSchema.optional(),
+  testDefinitions: sourceTestDefinitionsSchema.optional(),
   examMedia: z.array(z.object({
     examId: z.string(),
     media: z.array(z.object({ fileId: z.string(), kind: z.literal('image'), caption: z.string() })),

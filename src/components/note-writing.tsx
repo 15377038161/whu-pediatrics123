@@ -117,7 +117,7 @@ export function NoteWriting({ sessionId, embedded=false, context, onComplete, re
     latestDraftRef.current=next;setDraft(next);setSaveState('idle');
     if(saveTimerRef.current)clearTimeout(saveTimerRef.current);
     saveTimerRef.current=setTimeout(()=>{void flush().catch(()=>undefined);},800);
-    setConfirmMissing(false);
+    setConfirmMissing(false);clientEventIdRef.current=null;
   }
 
   async function handleSubmit() {
@@ -205,7 +205,7 @@ export function NoteWriting({ sessionId, embedded=false, context, onComplete, re
   const saveLabel=saveState==='saving'?'正在保存…':saveState==='saved'?`已保存${savedAt?' '+formatTime(savedAt):''}`:saveState==='failed'?'保存失败，请重试':'更改后自动保存到账号';
   return (
     <div className={styles.noteShell} data-embedded={embedded}>
-      {!embedded&&<Link className="text-link" href={`/student/training?session=${sessionId}`}><ArrowLeft size={14}/> 返回本次接诊</Link>}
+      {!embedded&&<Link className="text-link" href={`/student/training?session=${sessionId}`} onClick={event=>{event.preventDefault();void flush().then(()=>window.location.assign(`/student/training?session=${sessionId}`)).catch(()=>undefined);}}><ArrowLeft size={14}/> 返回本次接诊</Link>}
       <header className={styles.noteIntro}><div><p className="eyebrow"><ClipboardPen size={14}/> 病历书写</p><h1>整理这一次接诊</h1><p>用自己的话组织已获得的信息，保留时间、依据和未知项。</p></div><span className={styles.noteSaveState} data-state={saveState} role="status">{saveLabel}</span></header>
       <div className={styles.progressRow}><span>已写 {completed} / {NOTE_TEMPLATE.length} 个段落</span><progress max={NOTE_TEMPLATE.length} value={completed} aria-label="病历书写进度"/></div>
       <div className={styles.writingGrid}>

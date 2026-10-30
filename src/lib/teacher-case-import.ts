@@ -47,6 +47,19 @@ export interface ImportSummary {
   results: ImportCaseResult[];
 }
 
+/** New controlled packages need explicit facts or explicit missing-data statements, not blank form cells. */
+export function controlledCaseReadiness(record:TeacherCaseData):string[]{
+  const issues:string[]=[];
+  if(!record.sourceName.trim()||!record.sourceDocument.trim())issues.push('SOURCE_METADATA_EMPTY');
+  if(!record.age.trim()||!record.sex.trim()||!record.complaint.trim())issues.push('ADMISSION_FIELDS_EMPTY');
+  if(!record.documents.length||record.documents.some(doc=>!doc.source.trim()||!/^[a-f0-9]{64}$/i.test(doc.sha256)))issues.push('SOURCE_PROVENANCE_INVALID');
+  if(!record.sections.history.trim())issues.push('HISTORY_UNSPECIFIED');
+  if(!record.sections.exam.trim()&&!record.examRules?.length)issues.push('EXAM_UNSPECIFIED');
+  if(!record.sections.tests.trim()&&!record.testDefinitions?.length)issues.push('TESTS_UNSPECIFIED');
+  if(!record.sections.diagnosis.trim()||!record.sections.plan.trim())issues.push('REFERENCE_UNSPECIFIED');
+  return issues;
+}
+
 /** Opaque version key shared with the local reader and recall snapshot builder. */
 export function computeImportVersion(record: TeacherCaseData): string {
   return computeCaseDataVersion(record);
@@ -94,13 +107,14 @@ export function buildFactsPayloadForInit(record: TeacherCaseData) {
 }
 
 /** Private, version-bound metadata. Never put this object into student facts. */
-export function buildBindingConfigForInit(record: Pick<TeacherCaseData, 'testMedia' | 'examMedia' | 'testRelease' | 'examRules'>) {
-  if (record.testMedia === undefined && record.examMedia === undefined && record.testRelease === undefined && record.examRules === undefined) return null;
+export function buildBindingConfigForInit(record: Pick<TeacherCaseData, 'testMedia' | 'examMedia' | 'testRelease' | 'examRules' | 'testDefinitions'>) {
+  if (record.testMedia === undefined && record.examMedia === undefined && record.testRelease === undefined && record.examRules === undefined && record.testDefinitions === undefined) return null;
   return {
     testMedia: record.testMedia ?? [],
     examMedia: record.examMedia ?? [],
     testRelease: record.testRelease ?? [],
     ...(record.examRules === undefined ? {} : {examRules:record.examRules}),
+    ...(record.testDefinitions === undefined ? {} : {testDefinitions:record.testDefinitions}),
   };
 }
 

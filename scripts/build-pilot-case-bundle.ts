@@ -6,6 +6,7 @@ import { recordSchema, getKnowledgeRoot } from '../src/lib/teacher-case-data';
 import { TEACHER_CASE_CATALOG } from '../src/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '../src/domain/teacher-case-links';
 import { getCase } from '../src/domain/case';
+import { controlledCaseReadiness } from '../src/lib/teacher-case-import';
 import { buildCaseInitialization } from './generate-case53-init-sql';
 
 /** Offline only: private source bytes never go to stdout or Git. */
@@ -17,6 +18,7 @@ async function main() {
   const raw = readFileSync(path.join(getKnowledgeRoot(), 'teaching-cases', `${caseId}.json`));
   const record = recordSchema.parse(JSON.parse(raw.toString('utf8')));
   if (record.caseId !== caseId) throw new Error('PILOT_ID_MISMATCH');
+  if(controlledCaseReadiness(record).length)throw new Error('PILOT_SOURCE_INCOMPLETE');
   const built = await buildCaseInitialization(record);
   const runtime = getCase(caseId, built.version);
   if (!runtime.sourceFacts) throw new Error('PILOT_RUNTIME_MISSING');

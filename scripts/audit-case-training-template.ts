@@ -6,6 +6,7 @@ import { resolveCaseId,publicCaseId } from '../src/lib/case-identity';
 import { computeCaseDataVersion } from '../src/lib/case-data-version';
 import { getCase } from '../src/domain/case';
 import { controlledCaseBundles } from '../src/lib/controlled-case-registry';
+import { controlledCaseReadiness } from '../src/lib/teacher-case-import';
 import { NOTE_TEMPLATE_VERSION,NOTE_TEMPLATE } from '../src/domain/medical-note';
 
 /** Offline inventory: never imports, activates, calls a model, or prints patient text. */
@@ -21,10 +22,11 @@ async function main(){
   if(!existsSync(file))return {...base,status:'missing_source',offlinePassed:false};
   const parsed=recordSchema.safeParse(JSON.parse(readFileSync(file,'utf8')));
   if(!parsed.success||parsed.data.caseId!==sourceId)return {...base,status:'invalid_schema',offlinePassed:false};
+  const readinessIssues=controlledCaseReadiness(parsed.data);
   const record=parsed.data,version=computeCaseDataVersion(record),runtime=getCase(id,version);
   const testIds=new Set(runtime.tests.map(test=>test.id)),examIds=new Set(runtime.exams.map(exam=>exam.id));
   const invalidBindings=(record.testMedia??[]).filter(b=>!testIds.has(b.testId)).length+(record.examMedia??[]).filter(b=>!examIds.has(b.examId)).length;
-  return {...base,version,status:invalidBindings?'invalid_binding':'schema_ready',offlinePassed:invalidBindings===0,examDefinitions:runtime.exams.filter(e=>e.evidenceCode!=='EX_PREP').length,explicitPostureRules:record.examRules?.length??0,testDefinitions:runtime.tests.length,mediaBindings:(record.testMedia??[]).length+(record.examMedia??[]).length,registeredBundle:controlledCaseBundles.some(b=>b.sourceId===sourceId&&b.version===version),liveImported:'not_checked',activeVersion:'not_checked'};
+  return {...base,version,status:invalidBindings?'invalid_binding':readinessIssues.length?'incomplete_data':'schema_ready',readinessIssues,offlinePassed:invalidBindings===0&&readinessIssues.length===0,examDefinitions:runtime.exams.filter(e=>e.evidenceCode!=='EX_PREP').length,explicitPostureRules:record.examRules?.length??0,testDefinitions:runtime.tests.length,mediaBindings:(record.testMedia??[]).length+(record.examMedia??[]).length,registeredBundle:controlledCaseBundles.some(b=>b.sourceId===sourceId&&b.version===version),liveImported:'not_checked',activeVersion:'not_checked'};
  });
  const report={schemaVersion:1,kind:'offline_template_inventory',activeEntries:CASE_CATALOG.length,retiredSimulationEntries:RETIRED_SIMULATION_PROFILES.length,selectedEntries:rows.length,offlinePassed:rows.filter(r=>r.offlinePassed).length,realFullFlowAccepted:0,rows};
  mkdirSync(path.dirname(target),{recursive:true});writeFileSync(target,JSON.stringify(report,null,2),{mode:0o600,flag:'wx'});

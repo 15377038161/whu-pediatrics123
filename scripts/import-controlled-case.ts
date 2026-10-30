@@ -27,7 +27,8 @@ async function main() {
   const {getTeacherSourceId}=await import('../src/lib/teacher-case-data');
   if(!TEACHER_CASE_CATALOG.some(item=>item.id===expected.sourceId&&item.folder)||getTeacherSourceId(expected.sourceId)!==expected.sourceId)throw new Error('CONTROLLED_SOURCE_REQUIRED');
   const record=decodeControlledCaseBundle(readFileSync(path.join(root,'pilot-case.zip')),expected);
-  const {importTeacherCases,buildFactsPayloadForInit,buildBindingConfigForInit}=await import('../src/lib/teacher-case-import');
+  const {importTeacherCases,buildFactsPayloadForInit,buildBindingConfigForInit,controlledCaseReadiness}=await import('../src/lib/teacher-case-import');
+  if(controlledCaseReadiness(record).length)throw new Error('CONTROLLED_SOURCE_INCOMPLETE');
   const summary=await importTeacherCases(config.accessToken,{only:[expected.sourceId]});
   if(summary.total!==1 || summary.failed || summary.skipped)throw new Error('PILOT_IMPORT_FAILED');
   const facts=await db.from('case_snapshot_facts').select('facts').eq('case_id',expected.sourceId).eq('version',expected.version).single();

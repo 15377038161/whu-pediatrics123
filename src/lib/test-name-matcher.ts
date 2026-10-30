@@ -93,7 +93,7 @@ export function matchRequestedTest(requested: string, catalog: readonly Auxiliar
   const inputRaw = normalizeTestName(requested);
   if (inputRaw.length === 0) return { requested, test: null };
 
-  const exact = catalog.filter(test => inputCanonical === canonicalOf(test.label));
+  const exact = catalog.filter(test => [test.label,...(test.aliases??[])].some(name=>inputCanonical===canonicalOf(name)));
   if (exact.length === 1) return { requested, test: exact[0], status: 'matched' };
   if (exact.length > 1) return { requested, test: null, status: 'ambiguous' };
   // 只允许明确复查后缀，不把CT增强/CTA/五分类/合并检查吞为基础检查。

@@ -37,6 +37,7 @@ export interface ExamRule {
 }
 
 export interface AuxiliaryTest {
+  aliases?: string[];
   id: string;
   label: string;
   indication: string;
@@ -300,6 +301,10 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   });
   // 恢复态投影剥离（未开单 sections.tests 为空串）时，目录来自会话作用域目录缓存
   // （case_snapshot_list_tests 注入，无答案仅 id/label）：保证学生可见可下单目录（死锁修复）。
+  if(source?.testDefinitions?.length){
+    tests.splice(0,tests.length,...source.testDefinitions.map(item=>applyTestMetadata({id:item.testId,label:item.label,aliases:item.aliases,
+      indication:'根据临床问题申请后查看本病例原始记录',result:item.result,evidenceCode:`SOURCE_TEST_${item.testId.slice('source-test-'.length)}`,appropriate:null})));
+  }
   // 目录项与全文行 id 同规则（source-test-N）；全文恢复后（首单触发投影刷新）自然替换，
   // 仅在缓存 tests 为空（剥离态）时合并，避免解析错位产生重复项。
   const catalog = getSessionTestsCatalog(caseId, version, sessionId);

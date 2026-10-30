@@ -1,3 +1,4 @@
+import { sourceTestDefinitionsSchema, type SourceTestDefinition } from '@/domain/source-test-contract';
 import { sourceExamRulesSchema, type SourceExamRule } from '@/domain/source-exam-contract';
 import { createHash } from 'node:crypto';
 import { KnowledgeClient, Config } from 'coder-coding-dev-sdk';
@@ -85,6 +86,7 @@ export interface SnapshotCaseData {
   vitals: { temperature: number | null; heartRate: number | null; respiratoryRate: number | null; spo2: number | null };
   documents: Array<{ source: string; text: string; sha256: string }>;
   examRules?: SourceExamRule[];
+  testDefinitions?: SourceTestDefinition[];
   examMedia?: Array<{examId: string; media: CaseMedia[]}>;
 }
 
@@ -418,6 +420,9 @@ export async function restoreCaseSnapshotFacts(caseId: string, version: string, 
         // full private metadata in the student/session-scoped RPC cache.
         const {data: answer,error: bindingError}=await db.from('case_snapshot_answers')
           .select('binding_config').eq('case_id',sourceId).eq('version',version).maybeSingle();
+        if (!bindingError && answer?.binding_config?.testDefinitions !== undefined) {
+          facts.testDefinitions=sourceTestDefinitionsSchema.parse(answer.binding_config.testDefinitions);
+        }
         if (!bindingError && answer?.binding_config?.examRules !== undefined) {
           facts.examRules=sourceExamRulesSchema.parse(answer.binding_config.examRules);
         }

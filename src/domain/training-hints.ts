@@ -7,9 +7,9 @@ export function progressHints(session:SessionState, stage:Stage):string[] {
   const asked=new Set(session.askedIntents);
   if(stage==='history') {
     if(!asked.size) hints.push('先听主诉，再核实起病时间和症状演变。');
-    if(!asked.has('SOURCE_HX_0')&&!asked.has('HPI_ONSET')) hints.push('起病时间和病程演变还没有形成已采集记录，可继续核实。');
-    if(!asked.has('SOURCE_HX_2')&&!asked.has('GENERAL')) hints.push('可继续了解精神、进食、睡眠和排泄情况；资料未知时明确记录。');
-    if(!asked.has('SOURCE_HX_4')&&!asked.has('PAST_HISTORY')) hints.push('检查是否已询问既往、过敏和家族等相关病史。');
+    if(session.caseOptions&&!asked.has('SOURCE_HX_0')) hints.push('起病时间和病程演变还没有形成已采集记录，可继续核实。');
+    if(session.caseOptions&&!asked.has('SOURCE_HX_2')) hints.push('可继续了解精神、进食、睡眠和排泄情况；资料未知时明确记录。');
+    if(session.caseOptions&&!asked.has('SOURCE_HX_4')) hints.push('检查是否已询问既往、过敏和家族等相关病史。');
     if(session.plan&&!session.communication) return ['处置计划已保存，现在用家长能理解的语言解释下一步，并确认对方理解。'];
   }
   if(stage==='exam') {
