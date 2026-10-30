@@ -43,6 +43,7 @@ interface DepState {
 
 function makeDeps(state: DepState): CaseVersionDeps {
   return {
+    getActiveCaseVersion: async () => null,
     getLocalImportVersion: (caseId: string) => {
       state.localQueryCount += 1;
       assert.ok(caseId.startsWith('teacher-'));

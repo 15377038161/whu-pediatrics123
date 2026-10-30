@@ -554,13 +554,17 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
   };
   if (focus) checks = checks.filter(check => focusedDimensions[focus].includes(check.key));
   // 沟通专项只保留提交，不能用提交或关键词代替沟通质量评分。
-  const unscored = focus === 'communication';
+  // A missing bound snapshot is a data recovery failure, not evidence of student failure.
+  const unscored = !source || focus === 'communication';
+  const unscoredReason = !source
+    ? '本次绑定版本的病例资料未能读取，提交原文已保留，恢复资料后由教师复核。'
+    : '缺少专业审核的沟通质量判据，提交原文保留待教师复核。';
   const abilities: AbilityScores = { history: 0, examination: 0, reasoning: 0, safety: 0, communication: 0, professionalism: 0 };
   for (const check of checks) abilities[check.key] = !unscored && check.complete ? check.max : 0;
   const evidence: ScoreEvidence[] = checks.map((check) => ({ code: `SOURCE_PROCESS_${check.key}`, label: check.label,
     achieved: !unscored && check.complete, score: abilities[check.key], maxScore: unscored ? 0 : check.max,
     ...(unscored ? { status: 'not_assessable' as const } : {}),
-    detail: unscored ? '沟通提交原文已保留；缺少专业审核的沟通质量判据，无法自动评价，待教师复核。' : check.detail,
+    detail: unscored ? unscoredReason : check.detail,
     eventIds: eventIdsFor(session, check.codes) }));
   if (focus === 'exam') evidence.push({code:'SOURCE_EX_FINDINGS',label:'查体结果识别',achieved:false,score:0,maxScore:0,status:'not_assessable',
     detail:'观察与解释提交及关联证据保留在报告；缺少专业审核的结果识别判据，待教师复核。',eventIds:eventIdsFor(session,['EX_OBSERVATION'])});
@@ -577,13 +581,13 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
     improvements: unscored ? [] : [...checks.filter((check) => !check.complete).map((check) => check.label), ...collectionReview.filter(item=>item.area==='history' && item.collected<item.available).map(item=>`病史记录待核对：${item.label}（已获${item.collected}/${item.available}条来源记录）`)],
     collectionReview,
     learningIllustration: learningIllustrationFor(session),
-    recommendation: source ? '对照原病例诊断与诊疗经过，解释自己的证据与判断；请教师复核诊断及处置。' : '本病种暂无独立原始病历，请整理自己的问诊与诊疗思路，待补充资料后再对照复盘。',
+    recommendation: source ? '对照原病例诊断与诊疗经过，解释自己的证据与判断；请教师复核诊断及处置。' : unscoredReason,
     scoreBasis: 'process',
     ...(session.practiceFocus ? { practiceFocus: session.practiceFocus } : {}),
     evaluationBasis: 'process_completion',
     // C-观察与报告-04：过程分报告按六环节满分之和持久化可评价满分（与前端展示同源）。
     assessableMaxScore: unscored ? 0 : checks.reduce((sum, check) => sum + check.max, 0),
-    ...(unscored ? {unscored:true,unscoredReason:'缺少专业审核的沟通质量判据，提交原文保留待教师复核。'} : {}),
+    ...(unscored ? {unscored:true,unscoredReason} : {}),
     studentSubmissions: snapshotSubmissions(session),
     status: 'pending_review', createdAt: new Date().toISOString() };
 }

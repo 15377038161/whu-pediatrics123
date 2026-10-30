@@ -309,7 +309,7 @@ export class AgentRepository {
 
   async createSession(mode: SessionMode, caseId?: string, practiceFocus?: PracticeFocus, creationId?: string, fingerprint?: string): Promise<SessionState> {
     if(caseId){caseId=resolveCaseId(caseId);getPublicCase(caseId);}
-    // 版本选择（权威稳定序，详见 case-version-select.ts）：本地完整审核哈希 > DB 导入版本 > 召回快照。
+    // Explicit entry publication version wins; untouched entries retain local > DB > recall.
     // 防止完整本地材料被绑定零散召回指纹；召回已有不完整版本不能挡住 DB 完整导入版本。
     // 旧会话不受影响：getSession 按会话已绑定版本恢复，保持不漂移。
     let coldStartVersion: string | null = null;
@@ -365,6 +365,7 @@ export class AgentRepository {
       // RPC 校验失败/无数据保持"资料不足"，不回退漂移数据换患者。
       if (coldStartVersion && this.actor.role !== 'teacher') {
         const facts = await restoreCaseSnapshotFacts(caseId, coldStartVersion, this.actor.accessToken, this.actor.role, session.id);
+        if (!facts && resolution.source === 'active') throw new Error('CASE_ACTIVE_VERSION_UNAVAILABLE');
         // 目录/结果分离：未开单时投影剥离 tests，无答案目录经独立 RPC 注入（死锁修复）
         if (facts && !facts.sections.tests) {
           const catalog = await listCaseTests(caseId, coldStartVersion, session.id, this.actor.accessToken);

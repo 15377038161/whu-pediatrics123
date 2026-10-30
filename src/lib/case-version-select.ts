@@ -1,5 +1,6 @@
 import { getLocalImportVersion } from '@/lib/teacher-case-import';
 import { getSnapshotVersion, getDatabaseSnapshotVersion, restoreCaseSnapshotFacts } from '@/lib/case-snapshot';
+import { getActiveCaseVersion } from '@/lib/case-active-version';
 
 /**
  * 教师病例会话版本选择（权威稳定序，防止完整本地材料被绑定零散召回指纹）：
@@ -13,6 +14,7 @@ import { getSnapshotVersion, getDatabaseSnapshotVersion, restoreCaseSnapshotFact
  */
 
 export interface CaseVersionDeps {
+  getActiveCaseVersion: (caseId: string, accessToken: string) => Promise<string | null>;
   getLocalImportVersion: (caseId: string) => string | null;
   getSnapshotVersion: (caseId: string) => string | null;
   getDatabaseSnapshotVersion: (caseId: string, accessToken: string | null) => Promise<string | null>;
@@ -20,6 +22,7 @@ export interface CaseVersionDeps {
 }
 
 export const defaultCaseVersionDeps: CaseVersionDeps = {
+  getActiveCaseVersion,
   getLocalImportVersion,
   getSnapshotVersion,
   getDatabaseSnapshotVersion,
@@ -30,7 +33,7 @@ export interface VersionResolution {
   /** 选定的版本指纹；null=无可用完整版本（资料不足）。 */
   version: string | null;
   /** 版本来源：local=本地完整审核哈希 / db=教师导入版本 / recall=召回快照 / null=无。 */
-  source: 'local' | 'db' | 'recall' | null;
+  source: 'active' | 'local' | 'db' | 'recall' | null;
   /** 冷启动场景（本地缺失，绑定 DB 导入版本，需要后续恢复事实）。 */
   coldStart: boolean;
 }
@@ -42,6 +45,18 @@ export interface VersionSelectOptions {
 }
 
 export async function resolveTeacherCaseVersion(caseId: string, options: VersionSelectOptions, deps: CaseVersionDeps = defaultCaseVersionDeps): Promise<VersionResolution> {
+  if (!options.isPreview && options.accessToken) {
+    const active = await deps.getActiveCaseVersion(caseId, options.accessToken);
+    if (active) {
+      const local = deps.getLocalImportVersion(caseId);
+      if (local === active) return { version: active, source: 'active', coldStart: false };
+      if (options.role === 'teacher') {
+        const restored = await deps.restoreCaseSnapshotFacts(caseId, active, options.accessToken, 'teacher');
+        if (!restored) throw new Error('CASE_ACTIVE_VERSION_UNAVAILABLE');
+      }
+      return { version: active, source: 'active', coldStart: true };
+    }
+  }
   const local = deps.getLocalImportVersion(caseId);
   if (local) return { version: local, source: 'local', coldStart: false };
   if (!options.isPreview && options.accessToken) {
