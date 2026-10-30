@@ -239,6 +239,9 @@ export const TRUSTED_TEST_NAMES: readonly string[] = [
  *  规则与迁移 20261011160000 的 SQL 实现完全一致（数值/阳性结论前缀不进入目录）。 */
 export function trustedTestLabel(line: string, index: number): string {
   const normalized = line.trim().replace(/^[一二三四五六七八九十\d]+[、.．]\s*/, '');
+  // Source reports can be grouped by provenance; retain their explicit heading without dates or results.
+  if (/^辅检[：:]/.test(normalized) && normalized.slice(0, 45).includes('外院')) return '外院检查记录';
+  if (/^入院后相关检查[：:]/.test(normalized)) return '入院后相关检查';
   let matched = '';
   for (const name of TRUSTED_TEST_NAMES) {
     if (normalized.startsWith(name) && name.length > matched.length) matched = name;
