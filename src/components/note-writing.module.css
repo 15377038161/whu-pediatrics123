@@ -16,7 +16,7 @@
 .sectionNav button strong { flex:1; font-weight:600; }
 .sectionNav button span { font-variant-numeric:tabular-nums; font-size:12px; }
 .sectionNav button:hover { background:#f0f5ee; }
-.editorPanel { min-width:0; min-height:0; display:flex; flex-direction:column; padding:12px 2px 4px; overflow:hidden; }
+.editorPanel { min-width:0; min-height:0; display:flex; flex-direction:column; padding:12px 2px 4px; overflow-y:auto; scrollbar-gutter:stable; overscroll-behavior:contain; }
 .editorHeading { flex:none; }
 .editorHeading>p:first-child { color:var(--pine); font-size:12px; font-weight:700; letter-spacing:.08em; }
 .editorHeading h2 { margin:8px 0 10px; font:800 23px var(--font-display); }
@@ -28,7 +28,7 @@
 .sectionEditor:focus { outline:2px solid #a6cbbc; outline-offset:1px; }
 .sectionEditor::placeholder { color:#96aaa1; }
 .editorMeta { display:flex; justify-content:space-between; color:#92a69b; font-size:11px; padding:8px 0 12px; }
-.editorFooter { display:flex; justify-content:space-between; gap:12px; flex:none; padding-top:8px; }
+.editorFooter { display:flex; justify-content:space-between; gap:12px; flex:none; padding:8px 0 4px; position:sticky; bottom:0; z-index:1; background:var(--white); }
 .thinkingPanel { min-height:0; overflow:auto; align-self:start; max-height:100%; border:1px solid #e0e8d7; border-radius:18px; padding:20px; background:#f0f3e8; color:#627e61; font-size:13px; line-height:1.8; }
 .thinkingPanel h2 { display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:16px; }
 .thinkingPanel details { border-top:1px solid #dfe7d7; padding:13px 0; }
