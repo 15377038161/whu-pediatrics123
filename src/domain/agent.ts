@@ -106,6 +106,13 @@ export interface VitalSigns {
   spo2: number | null;
 }
 
+/** Session-only teaching reports. Never imported into the real source snapshot. */
+export interface SupplementalTest {
+  id:string; requested:string; label:string; result:string; origin:'source'|'generated';
+  sourceTestIds:string[]; sourceQuotes:string[]; model:string; createdAt:string;
+  sourceSnapshotVersion:string|null;
+}
+
 export interface SessionState {
   id: string;
   userId: string;
@@ -143,6 +150,8 @@ export interface SessionState {
   preparationActions: string[];
   unlockedEvidence: string[];
   orderedTests: string[];
+  /** Server audit metadata; students see released report events, not per-item origin labels. */
+  supplementalTests?: SupplementalTest[];
   decision: {
     diagnosis: string;
     summary: string;

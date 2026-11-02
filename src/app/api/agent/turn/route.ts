@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { HeaderUtils } from 'coze-coding-dev-sdk';
+import { platformForwardHeaders } from '@/lib/platform-forward-headers';
 import type { AgentEvent } from '@/domain/agent';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { runAgentTurn } from '@/lib/agent-engine';
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return fail({ code: 'INVALID_REQUEST', message: '操作内容不完整，请检查后重试。', retryable: false }, undefined, 422);
     const repository = new AgentRepository(user);
     const session = await repository.getSession(parsed.data.sessionId);
-    const forwardHeaders = HeaderUtils.extractForwardHeaders(request.headers);
+    const forwardHeaders = platformForwardHeaders(request.headers,user.accessToken);
     const result = await runAgentTurn(session, parsed.data.event as AgentEvent, parsed.data.clientEventId, { forwardHeaders, accessToken: user.accessToken });
     await repository.saveSession(result.session);
     await repository.saveAgentCall(result.session.id, parsed.data.clientEventId, result.trace, result.runtime);

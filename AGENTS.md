@@ -86,13 +86,13 @@ tests/                      # 测试
 
 ## Coze 原生 AI 集成
 
-- **唯一文本 AI 调用点**：`src/lib/role-agent.ts` 的 SP 角色应答生成（调用链 `POST /api/agent/turn` → `runAgentTurn` → `handleQuestion` → `renderRoleReply`）。评分/报告/临床规则按教学设计保持确定性，不接入生成式 AI
-- **角色模型**：默认 `doubao-seed-2-0-pro-260215`（可通过 `COZE_AI_ROLE_MODEL` 覆盖），temperature 0.45；人设提示词要求患儿用儿语词/断续含糊/可给误导性自我判断，家长焦急口语化/可给外行推测判断，均不用医学术语
+- **文本 AI 调用点**：`src/lib/role-agent.ts` 生成SP角色应答；2026-11-02按用户要求增加`src/lib/test-result-supplement.ts`，先提取原报告单项、再补全缺失教学检查结果，后台记录来源并按会话固定。全部经`invokeCozeAI`，见`docs/TEST_RESULT_AI.md`。评分、报告评价和原始临床规则仍保持确定性，不让模型改分或改原件。
+- **角色模型**：默认 `doubao-seed-1-8-251228`（可通过 `COZE_AI_ROLE_MODEL` 覆盖），temperature 0.45；人设提示词要求患儿用儿语词/断续含糊/可给误导性自我判断，家长焦急口语化/可给外行推测判断，均不用医学术语
 - **语音播报（TTS）与语音输入（ASR）：阶段 D（2026-10-21，提交 498eaa4 与 D-验收-01 修复）已按平台新 SDK 交付轮次式语音链**。SDK 升级至 `coder-coding-dev-sdk@1.0.0-20261019.d5eff68`（TTSClient/ASRClient/AudioClient，仅服务端调用，密钥不进浏览器）。服务端三路由 `/api/speech/{capabilities,asr,tts}`（requireAuth+**显式本人归属校验**——tts 要求 `session.userId === 当前用户`，教师督导读取不延伸为跨用户合成（他人会话 403 PERMISSION_DENIED），教师本人会话合成保留；能力探测为真实三段——listVoices+最小 TTS 合成+回灌 ASR，listVoices 成功不推断 ASR/TTS 可用；括注与不能言语患儿消息不合成；家长音色按病例已知照护者性别配置，未知明确回退平台默认音色）。前端 voice-input（录音→转写→确认/编辑→发送）+ role-audio-player（队列播报）+ communication-call（模拟通话）；工作台语音/文字切换，失败回退文字。验收状态：服务端 SDK 真实调用与路由守卫已验（合成预览身份直调，非真实 OAuth 多身份）；真实浏览器链路/真实麦克风/移动端/专业审核待验收——详见 `docs/SPEECH_INTEGRATION.md` 验收状态表与 `验收记录.md` 第二十二节。2026-10-09 的旧取消指令与旧 SDK 404 取证保留历史语境（仅说明旧接入方式不可用，不推断平台全部语音能力）。查体真实音效（SPRSound 啰音/哮鸣音）与视频播放不受影响
 - **统一走 `src/lib/coze-ai.ts`**：新增任何 AI 调用必须经 `invokeCozeAI`（内置单次超时、指数退避重试、错误分类），禁止在业务代码直接 `new LLMClient` 或硬编码域名/密钥
 - **凭据与域名**：默认取平台注入的 `COZE_WORKLOAD_IDENTITY_API_KEY` / `COZE_INTEGRATION_BASE_URL`；可选覆盖 `COZE_AI_API_KEY` / `COZE_AI_BASE_URL`；弹性参数 `COZE_AI_TIMEOUT_MS`(30s) / `COZE_AI_MAX_ATTEMPTS`(3) / `COZE_AI_RETRY_BASE_MS`(600)。密钥只进环境变量，不进代码/日志
 - **降级契约**：模型失败（重试耗尽/鉴权/解析失败）→ `reply=null` + `runtime.execution='model_fallback'`（含 `errorKind`/`attempts`），引擎回退确定性事实应答，问诊轮次永不中断
-- **请求头透传**：API Route 必须用 `HeaderUtils.extractForwardHeaders(request.headers)` 并经 `runAgentTurn` 的 `forwardHeaders` 选项传入（需 SDK ≥ 0.7.10）
+- **请求头透传**：API Route 使用 `platformForwardHeaders(request.headers, user.accessToken)` 保留官方追踪/平台上下文并剔除应用用户JWT，随后经 `runAgentTurn` 的 `forwardHeaders` 选项传入（需 SDK ≥ 0.7.10）
 - **测试**：单元 `tests/coze-ai.test.ts`（注入式，不耗配额）；真实集成 `AI_LIVE_TEST=1 pnpm exec tsx --test tests/coze-ai-live.test.ts`（功能+压力，消耗模型配额，按需执行）
 - **改造记录**：`docs/AI_MIGRATION_REPORT.md`（改造清单、错误处理矩阵、测试报告）
 

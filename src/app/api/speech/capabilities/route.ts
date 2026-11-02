@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { extractForwardHeaders } from 'coder-coding-dev-sdk';
+import { platformForwardHeaders } from '@/lib/platform-forward-headers';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { requireAuth } from '@/lib/request-auth';
 import { probeSpeechCapabilities } from '@/lib/speech-service';
@@ -10,8 +10,8 @@ import { probeSpeechCapabilities } from '@/lib/speech-service';
  */
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth(request);
-    const forwardHeaders = extractForwardHeaders(Object.fromEntries(request.headers.entries()));
+    const user = await requireAuth(request);
+    const forwardHeaders = platformForwardHeaders(request.headers,user.accessToken);
     const capabilities = await probeSpeechCapabilities(forwardHeaders);
     return ok(capabilities);
   } catch (error) {

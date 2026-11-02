@@ -27,6 +27,7 @@ import { resolveAuditedCommunicationProfile } from '@/lib/communication-profile-
 import { getPracticeScenario, PROVIDED_HISTORY_INTENT_IDS } from '@/domain/practice-scenarios';
 import { DEFAULT_OSCE_TIME_LIMIT_SECONDS, getOsceStation } from '@/domain/osce-stations';
 import { renderRoleReply } from '@/lib/role-agent';
+import { findSupplementalTest, supplementalTestDefinition, resolveTestSupplements, uniqueModalityTest, type TestSupplementInvoke } from '@/lib/test-result-supplement';
 
 /** 开单 RPC 注入缝：生产默认指向 case-snapshot 封装；仅测试注入 503/守卫拒绝失败路径，
  *  不改变业务判定与守卫逻辑（不绕过归属/版本/已下单校验）。 */
@@ -557,7 +558,7 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
 /** ORDER_TEST 事件数据（双契约：旧 testId 点选 / 新 requestedTests 文本申请）。 */
 type OrderTestData = Extract<AgentEvent, { type: 'ORDER_TEST' }>['data'];
 
-async function handleTest(session: SessionState, data: OrderTestData, clientEventId: string, accessToken?: string | null): Promise<AgentTurnResult> {
+async function handleTest(session: SessionState, data: OrderTestData, clientEventId: string, accessToken?: string | null, forwardHeaders?:Record<string,string>, supplementInvoke?:TestSupplementInvoke): Promise<AgentTurnResult> {
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   // 申请解析：旧 testId 点选直取目录项（不存在即 TEST_NOT_FOUND，语义不变）；
   // 新文本申请按服务端确定性别名匹配解析（同义词组+单向前缀，见 test-name-matcher），
@@ -574,6 +575,21 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
   }
   if (requests.length === 0) throw new Error('TEST_REQUEST_EMPTY');
 
+  // Resolve ordinary names within source reports; only missing results may be synthesized.
+  for(const request of requests){
+    if(request.test)continue;
+    const cached=findSupplementalTest(session,request.requested);
+    request.test=cached?supplementalTestDefinition(cached):uniqueModalityTest(request.requested,pediatricCase.tests);
+  }
+  const unresolved=[...new Set(requests.filter(r=>!r.test).map(r=>r.requested))];
+  const reports=await resolveTestSupplements(session,unresolved,pediatricCase,forwardHeaders,supplementInvoke);
+  if(reports.length)session.supplementalTests=[...(session.supplementalTests??[]),...reports];
+  for(const request of requests){
+    if(request.test)continue;
+    const cached=findSupplementalTest(session,request.requested);
+    if(cached)request.test=supplementalTestDefinition(cached);
+  }
+
   const reason = 'testId' in data ? null : (data.reason?.trim() || null);
   const newMessages: AgentMessage[] = [];
   const feedbackParts: string[] = [];
@@ -585,7 +601,7 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
   for (const request of requests) {
     // 未匹配：记录申请与「资料未提供」，不记下单、不解锁证据（fail-closed，不编造）
     if (!request.test) {
-      const detail = request.status === 'ambiguous' ? '请说明检查部位或具体项目，当前申请尚未匹配。' : '尚未识别到本病例对应的检查记录；这不代表该申请医学上错误。';
+      const detail = request.status === 'ambiguous' ? '请说明检查部位或具体项目，当前申请尚未匹配。' : '检查申请已记录，当前报告暂未取得，请重试；如为影像检查，请写明部位。';
       session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `「${request.requested}」：${detail}`, null, []));
       const unmatchedMessage = message('system', `「${request.requested}」：${detail}`, { kind: 'navigation' });
       session.messages.push(unmatchedMessage);
@@ -832,6 +848,8 @@ export interface AgentTurnOptions {
   forwardHeaders?: Record<string, string>;
   /** 学生会话 JWT：证据驱动的恢复态投影刷新（refreshProjectedFacts）需要以本人身份走受控 RPC。 */
   accessToken?: string | null;
+  /** Internal dependency injection for source/simulation boundary tests, never a request field. */
+  testSupplementInvoke?:TestSupplementInvoke;
 }
 
 export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string, options?: AgentTurnOptions): Promise<AgentTurnResult> {
@@ -861,7 +879,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
     case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders, event.data.speech);
     case 'DOCTOR_INTERVENTION': return handleIntervention(session, event.data.action, clientEventId);
     case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId, event.data.posture);
-    case 'ORDER_TEST': return handleTest(session, event.data, clientEventId, options?.accessToken);
+    case 'ORDER_TEST': return handleTest(session, event.data, clientEventId, options?.accessToken, options?.forwardHeaders, options?.testSupplementInvoke);
     case 'SUBMIT_DECISION': return handleDecision(session, event.data, clientEventId);
     case 'SUBMIT_HISTORY_SUMMARY': return handleHistorySummary(session, event.data.summary, clientEventId);
     case 'SUBMIT_EXAM_OBSERVATION': return handleExamObservation(session, event.data, clientEventId);

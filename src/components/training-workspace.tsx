@@ -167,6 +167,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [hintOpen, setHintOpen] = useState(false);
   // 阶段 D 语音链：能力探测（服务端真实探测，失败按不可用隐藏入口）；文字/语音输入切换；角色播报静音。
   const [speechCapabilities, setSpeechCapabilities] = useState<SpeechCapabilities | null>(null);
+  const [speechProbing,setSpeechProbing]=useState(true);
   const [inputMode, setInputMode] = useState<'text' | 'voice'>('text');
   const [roleAudioMuted, setRoleAudioMuted] = useState(false);
   const audioPlayerRef = useRef<RoleAudioPlayerHandle>(null);
@@ -242,7 +243,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     if (!speechProbeSessionId) return;
     let cancelled = false;
     void fetchSpeechCapabilities().then((capabilities) => {
-      if (!cancelled) setSpeechCapabilities(capabilities);
+      if (!cancelled) {setSpeechCapabilities(capabilities);setSpeechProbing(false);}
     });
     return () => { cancelled = true; };
   }, [speechProbeSessionId]);
@@ -452,6 +453,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
           <button className="btn btn-secondary" type="button" aria-pressed={!roleAudioMuted} onClick={() => setRoleAudioMuted((value) => !value)} title="角色语音播报开关">
             {roleAudioMuted ? <VolumeX size={15} /> : <Volume2 size={15} />} {speechCapabilities?.tts !== 'turn-based' ? '语音播报暂不可用' : roleAudioMuted ? '角色播报已静音' : '角色语音播报中'}
           </button>
+          {(speechCapabilities?.asr!=='turn-based'||speechCapabilities?.tts!=='turn-based')&&<button className="btn btn-secondary" type="button" disabled={speechProbing} onClick={async()=>{setSpeechProbing(true);try{const caps=await fetchSpeechCapabilities();setSpeechCapabilities(caps);setFeedback(caps.asr==='turn-based'&&caps.tts==='turn-based'?'语音服务已恢复。':'语音服务尚未恢复，可稍后重试，文字输入不受影响。');}finally{setSpeechProbing(false);}}}>{speechProbing?'正在检测语音…':'重试语音连接'}</button>}
         </div>
     </>
     {inputMode === 'voice' && voiceInputReady ? (
@@ -505,7 +507,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
           <div className="form-field"><label htmlFor="test-reason">申请理由（可选）</label><input id="test-reason" value={testReason} onChange={(e) => setTestReason(e.target.value)} placeholder="这项检查要回答什么临床问题？" /></div>
           <button className="btn btn-primary btn-block" disabled={busy || !requestedTests.trim()}>提交检查申请 <ChevronRight size={15}/></button>
         </form>
-        <div className="source-result-list" aria-live="polite">{evidenceEvents.filter((event) => event.stage === 'tests').length === 0 && <p>尚无检查结果。申请后，已提供的结果和对应图片会逐项归档。</p>}{evidenceEvents.filter((event) => event.stage === 'tests').map((event) => <div key={event.id} className="source-result-item"><p>{event.summary}</p>{event.media && event.media.length > 0 ? <CaseMediaGallery sessionId={session.id} media={event.media} /> : null}</div>)}</div>
+        <div className="source-result-list" aria-live="polite">{session.events.filter((event) => event.stage === 'tests' && event.type === 'ORDER_TEST').length === 0 && <p>尚无检查结果。申请后，已提供的结果和对应图片会逐项归档。</p>}{session.events.filter((event) => event.stage === 'tests' && event.type === 'ORDER_TEST').map((event) => <div key={event.id} className="source-result-item"><p>{event.summary}</p>{event.media && event.media.length > 0 ? <CaseMediaGallery sessionId={session.id} media={event.media} /> : null}</div>)}</div>
         
       </>;
       case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, diagnosisBasis, differentials,linkedEventIds:decisionEvidenceIds } }); if (result) await navigate('plan'); }}>
@@ -541,7 +543,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="stage-scroll" aria-label="训练阶段">{visibleStages.filter(stage=>stage.id!=='report').map((stage,index) => <button key={stage.id} className="stage-chip" data-current={!noteOpen && displayStage === stage.id} data-done={stageCompleted(stage.id)} disabled={busy || stage.id === 'report' || (session.mode === 'osce' && index < currentIndex) || (practiceCompletion === 'safety_decision_plan' && stage.id === 'plan' && !session.decision)} onClick={() => { void navigate(stage.id); }} aria-label={stage.label}>{stage.short}</button>)}<button type="button" className="stage-chip" data-current={noteOpen} disabled={busy} onClick={openNote} aria-label="病历书写">病历</button><button type="button" className="stage-chip" disabled aria-label="训练报告">报告</button></div><div className="workflow-action-bar"><span>{noteOpen?'整理本次接诊，书写自己的病历':spatialExam?'先选择体位和器材，再自行定位检查部位':displayStage==='tests'?'围绕临床问题申请，按项目查看结果':'操作与证据随本次接诊保存'}</span>{!noteOpen&&nextAction&&!activeScenario&&<button className="btn btn-primary" type="button" disabled={busy} onClick={()=>void navigate(nextAction.stage)}>{nextAction.label}<ChevronRight size={15}/></button>}{!noteOpen&&session.plan&&session.communication&&<button className="btn btn-primary" type="button" disabled={busy} onClick={openNote}>书写病历<ChevronRight size={15}/></button>}</div>
       </header>
       <div className="case-band"><span>{session.mode === 'osce' ? '无提示、不可重试' : session.mode === 'immersive' ? '场景教学 · 可暂停、回看与获得方向性提示' : '操作自动保存 · 提供方向性反馈'}</span><span>病例 v{session.caseVersion}</span><span>证据 {session.unlockedEvidence.length} 项</span></div>
-      {session.caseOptions && <details className="case-source-banner"><summary>病例说明</summary><strong>学习案例：{session.caseOptions.sourceName}</strong><span>{session.caseOptions.teachingSimulation ? 'AI教学模拟病例：病史、数值和结果为教学设定，配图为示意，非真实患者影像。' : session.caseOptions.hasSource ? '问诊、查体与检查按原病例资料展开；完成后对照诊疗经过复盘。' : '尚无独立病例正文，可开展问诊与诊疗思路记录。'}</span></details>}
+      {session.caseOptions && <details className="case-source-banner"><summary>教学仿真 · 原病例资料与AI检查扩展</summary><strong>学习案例：{session.caseOptions.sourceName}</strong><span>{session.caseOptions.teachingSimulation ? 'AI教学模拟病例：病史、数值和结果为教学设定，配图为示意，非真实患者影像。' : session.caseOptions.hasSource ? '教学仿真训练：以原病例为基础，未提供的检查可由AI补全，仅供教学、不用于临床诊疗。完成后对照原诊疗经过复盘。' : '尚无独立病例正文，可开展问诊与诊疗思路记录。'}</span></details>}
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       {noteOpen?<div className="training-note-workspace"><NoteWriting ref={noteRef} sessionId={session.id} embedded context={session} onComplete={()=>void finish()}/></div>:<div className="training-grid" data-patient={showPatient}>
         <section className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={mobileView !== 'task'} data-mobile-drawer={spatialExam && mobileView === 'task'}><div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div><div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div></section>

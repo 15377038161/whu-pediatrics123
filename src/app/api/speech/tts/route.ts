@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { extractForwardHeaders } from 'coder-coding-dev-sdk';
+import { platformForwardHeaders } from '@/lib/platform-forward-headers';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { requireAuth } from '@/lib/request-auth';
 import { AgentRepository } from '@/lib/repository';
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         403,
       );
     }
-    const forwardHeaders = extractForwardHeaders(Object.fromEntries(request.headers.entries()));
+    const forwardHeaders = platformForwardHeaders(request.headers,user.accessToken);
     const result = await synthesizeRoleAudio(session, parsed.data.messageId, forwardHeaders);
     if (!result.ok) {
       return fail(

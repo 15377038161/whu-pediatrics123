@@ -25,6 +25,7 @@ export function projectSessionForRole(session: SessionState, role: AppRole): Ses
   const publicSession = { ...session, caseId: publicCaseId(session.caseId) };
   // 工作台目录按公开ID查人物配置；教师响应也必须统一ID，避免合法病例被当成退役记录。
   if (role === 'teacher') return publicSession;
+  delete publicSession.supplementalTests;
   // 创建指纹包含服务端原病例ID，仅用于幂等核对，不能作为公开会话字段。
   delete publicSession.creationRequest;
   if (session.status !== 'active') return publicSession;

@@ -18,6 +18,8 @@ export interface SpeechCapabilities {
   tts: SpeechMode;
   /** 服务端探测到的可用音色数（用于诊断展示，不用于前端能力判定）。 */
   voiceCount: number;
+  /** Sanitized diagnostic categories only; no provider messages, URLs or credentials. */
+  failures?: { tts?:string; asr?:string };
 }
 
 /** 前端默认态：能力未知/未探测时按不可用处理，隐藏语音入口。 */

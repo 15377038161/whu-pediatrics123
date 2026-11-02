@@ -13,6 +13,7 @@ import type { VoiceInfo } from 'coder-coding-dev-sdk';
 import { getCase } from '@/domain/case';
 import { canChildSpeak } from '@/domain/communication-profile';
 import { resolveAuditedCommunicationProfile } from '@/lib/communication-profile-overrides';
+import { classifyAIError, getAIConfig } from '@/lib/coze-ai';
 import type { AgentMessage, SessionState } from '@/domain/agent';
 import type {
   AsrRequest,
@@ -23,6 +24,13 @@ import type {
   TtsResponse,
   VoiceTurnState,
 } from '@/domain/speech-contract';
+
+/** Share platform credential aliases, with one bounded audio attempt; the UI owns retry. */
+function speechConfig() {
+  const config=getAIConfig();
+  return new Config({apiKey:config.apiKey,modelApiKey:config.modelApiKey,baseUrl:config.baseUrl,modelBaseUrl:config.modelBaseUrl,
+    timeout:Math.min(config.timeout,30000),retryTimes:0,retryDelay:config.retryDelay});
+}
 
 /**
  * 角色稳定音色映射（docs/SPEECH_INTEGRATION.md）：成年配音演播的角色音，非克隆真实儿童声音。
@@ -69,7 +77,7 @@ async function listVoicesCached(forwardHeaders?: Record<string, string>): Promis
   if (fresh && voiceCache.voices) return voiceCache.voices;
   if (fresh && !voiceCache.ok) return null;
   try {
-    const voices = await new AudioClient(new Config(), forwardHeaders).listVoices();
+    const voices = await new AudioClient(speechConfig(), forwardHeaders).listVoices();
     voiceCache.at = Date.now();
     voiceCache.voices = voices;
     voiceCache.ok = true;
@@ -93,16 +101,16 @@ export interface SpeechProbeDeps {
 
 function sdkProbeDeps(forwardHeaders?: Record<string, string>): SpeechProbeDeps {
   return {
-    listVoices: () => new AudioClient(new Config(), forwardHeaders).listVoices(),
+    listVoices: () => new AudioClient(speechConfig(), forwardHeaders).listVoices(),
     synthesize: (text, speaker) =>
-      new TTSClient(new Config(), forwardHeaders).synthesize({ text, speaker, audioFormat: 'mp3', sampleRate: 24000 }),
+      new TTSClient(speechConfig(), forwardHeaders).synthesize({ text, speaker, audioFormat: 'mp3', sampleRate: 24000 }),
     downloadAudio: async (url) => {
       const resp = await fetch(url);
       if (!resp.ok) throw new Error(`探测音频下载失败 HTTP ${resp.status}`);
       return Buffer.from(await resp.arrayBuffer());
     },
     recognize: (base64Data, format) =>
-      new ASRClient(new Config(), forwardHeaders).recognize({ base64Data, format }),
+      new ASRClient(speechConfig(), forwardHeaders).recognize({ base64Data, format }),
   };
 }
 
@@ -140,6 +148,7 @@ export async function probeSpeechCapabilities(
   }
   let ttsOk = false;
   let asrOk = false;
+  const failures:NonNullable<SpeechCapabilities['failures']>={};
   try {
     const synth = await deps.synthesize(PROBE_TEXT, FALLBACK_VOICE);
     const audio = await deps.downloadAudio(synth.audioUrl);
@@ -147,17 +156,20 @@ export async function probeSpeechCapabilities(
     try {
       await deps.recognize(audio.toString('base64'), 'mp3');
       asrOk = true;
-    } catch {
+    } catch (error) {
       asrOk = false;
+      failures.asr=classifyAIError(error).kind;
     }
-  } catch {
+  } catch (error) {
     ttsOk = false;
     asrOk = false;
+    failures.tts=classifyAIError(error).kind;failures.asr='probe_audio_unavailable';
   }
   const result: SpeechCapabilities = {
     asr: asrOk ? 'turn-based' : 'unavailable',
     tts: ttsOk ? 'turn-based' : 'unavailable',
     voiceCount,
+    ...(!ttsOk||!asrOk?{failures}:{}),
   };
   capabilitiesCache.at = Date.now();
   capabilitiesCache.result = result;
@@ -173,7 +185,7 @@ export async function transcribeRecording(
     return { ok: false, error: failure('INVALID_AUDIO', '录音过长（超过 10MB），请缩短后重试。', false) };
   }
   try {
-    const result = await new ASRClient(new Config(), forwardHeaders).recognize({
+    const result = await new ASRClient(speechConfig(), forwardHeaders).recognize({
       base64Data: input.base64Data,
       format: input.format,
     });
@@ -245,7 +257,7 @@ export async function synthesizeRoleAudio(
   }
   try {
     const speaker = await resolveRoleVoice(target, session, forwardHeaders);
-    const response = await new TTSClient(new Config(), forwardHeaders).synthesize({
+    const response = await new TTSClient(speechConfig(), forwardHeaders).synthesize({
       text: target.content,
       speaker,
       audioFormat: 'mp3',

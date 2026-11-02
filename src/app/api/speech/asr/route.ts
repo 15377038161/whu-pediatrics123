@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { extractForwardHeaders } from 'coder-coding-dev-sdk';
+import { platformForwardHeaders } from '@/lib/platform-forward-headers';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { requireAuth } from '@/lib/request-auth';
 import { transcribeRecording } from '@/lib/speech-service';
@@ -21,7 +21,7 @@ const STATUS_BY_CODE: Record<string, number> = {
  */
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth(request, 'student');
+    const user = await requireAuth(request, 'student');
     const parsed = speechAsrSchema.safeParse(await request.json());
     if (!parsed.success) {
       return fail(
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         422,
       );
     }
-    const forwardHeaders = extractForwardHeaders(Object.fromEntries(request.headers.entries()));
+    const forwardHeaders = platformForwardHeaders(request.headers,user.accessToken);
     const result = await transcribeRecording(parsed.data, forwardHeaders);
     if (!result.ok) {
       return fail(
