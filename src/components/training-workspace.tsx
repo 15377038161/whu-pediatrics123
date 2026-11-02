@@ -9,6 +9,7 @@ import { allowedPostures, patientAppearance } from '@/domain/patient-appearance'
 import { resolveCommunicationProfile, speechCapabilityLabel } from '@/domain/communication-profile';
 import { ageBandLabel, bindingGapNote, patientAssetByKey, sexPresentationLabel } from '@/domain/patient-assets';
 import { SharedCaseRecord } from '@/components/shared-case-record';
+import { StreamText } from '@/components/stream-text';
 
 import {
   Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home,
@@ -163,6 +164,14 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [inputMode, setInputMode] = useState<'text' | 'voice'>('text');
   const [roleAudioMuted, setRoleAudioMuted] = useState(false);
   const audioPlayerRef = useRef<RoleAudioPlayerHandle>(null);
+  // 流式呈现：会话加载时的既有条目记为历史（直接全文）；之后新增的角色回复逐字呈现，
+  // 呈现完成记入 doneIds 并恢复该条播报入口。集合在渲染期派生，不用 effect 同步。
+  const [seenForSession, setSeenForSession] = useState<string | null>(null);
+  const [seenIds, setSeenIds] = useState<ReadonlySet<string> | null>(null);
+  const [doneIds, setDoneIds] = useState<ReadonlySet<string>>(() => new Set<string>());
+  const clearStreamId = useCallback((id: string) => {
+    setDoneIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+  }, []);
   const taskPanelRef = useRef<HTMLElement>(null);
   const recordPanelRef = useRef<HTMLElement>(null);
   const mobileNavRef = useRef<HTMLElement>(null);
@@ -209,7 +218,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     (initialSessionId
       ? api<SessionState>(`/api/sessions/${initialSessionId}`)
       : api<SessionState>('/api/sessions', { method: 'POST', body: JSON.stringify({ mode, caseId: initialCaseId, focus: practiceFocus, clientRequestId: loadRequestId.current }) }))
-      .then((value) => { setSession(value); applyDraftBackfill(value); if (value.stage === 'exam') setMobileView('patient'); if (!initialSessionId) router.replace(`/student/training?session=${value.id}`); })
+      .then((value) => { setSession(value); setSeenForSession(value.id); setSeenIds(new Set(value.messages.map((item) => item.id))); setDoneIds(new Set()); applyDraftBackfill(value); if (value.stage === 'exam') setMobileView('patient'); if (!initialSessionId) router.replace(`/student/training?session=${value.id}`); })
       .catch((cause) => {
         // 正式环境网关以固定 HTML 替换 403 正文（JSON 解析失败，客户端仅见 "HTTP 403"）。
         // 此处不依赖响应正文，严格匹配该消息回退友好提示；后端 403 与守卫不变，其他错误原样显示。
@@ -253,6 +262,29 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     });
     return () => window.cancelAnimationFrame(frame);
   }, [session]);
+
+  // 逐字呈现集合：仅本会话加载后新增、尚未呈现完成、非学生的非空回复。
+  const streamingIds = useMemo(() => {
+    const set = new Set<string>();
+    if (!session || !seenIds || seenForSession !== session.id) return set;
+    for (const item of session.messages) {
+      if (!seenIds.has(item.id) && !doneIds.has(item.id) && item.actor !== 'student' && item.content.trim().length > 0) set.add(item.id);
+    }
+    return set;
+  }, [session, seenIds, seenForSession, doneIds]);
+
+  // 逐字呈现期间消息流保持吸底；呈现结束即停止，不干扰非呈现期的用户滚动。
+  useEffect(() => {
+    if (streamingIds.size === 0) return;
+    let frame = 0;
+    const tick = () => {
+      const chat = historyChatRef.current;
+      if (chat) chat.scrollTop = chat.scrollHeight;
+      frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [streamingIds.size]);
 
   const hasUnsavedDraft = Boolean(question.trim() || requestedTests.trim() || testReason.trim() ||
     (historySummaryText.trim() && historySummaryText !== (session?.historySummary ?? '')) ||
@@ -454,28 +486,32 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   })[stage];
 
   const conversationContent = <>
-    <div className="message-list history-chat" aria-live="polite" ref={historyChatRef}>
-      {session.messages.filter((item) => item.kind !== 'navigation' || item.actor !== 'system').map((item) => {
-        const canReplay = !roleAudioMuted && ['child', 'parent', 'tutor'].includes(item.actor) && speechCapabilities?.tts === 'turn-based' && !/^（[^（）]*）$/.test(item.content.trim());
-        return <div className="message" data-actor={item.actor} key={item.id}><p className="message-label"><span>{actorLabel(item.actor)} · {item.emotion}{item.inputMode === 'voice' ? ' · 语音输入' : ''}</span>{canReplay && <button className="message-audio-replay" type="button" onClick={() => audioPlayerRef.current?.replay(item.id)} aria-label={`播报这条${actorLabel(item.actor)}消息`}><Volume2 size={13} /> 播报</button>}</p><div className="message-bubble">{item.content}</div></div>;
-      })}
-    </div>
-    <div className="conversation-input-stack">
-      {inputMode === 'voice' && voiceInputReady ? (
-        <VoiceInput communicationMode={communicationModeActive} disabled={busy} onSend={sendConversationText} />
-      ) : (
-        <div className="composer" data-mode={communicationModeActive ? 'communication' : 'history'}><label className="sr-only" htmlFor="question">{communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={communicationModeActive ? '直接向患儿和家长说明，例如：我理解您很担心，孩子目前呼吸和血氧需要先处理……' : '直接和患儿或家长交流，例如：小朋友别紧张，可以告诉我哪里不舒服吗？'} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitConversation(); } }} /><div className="composer-actions"><button className="btn btn-primary" type="button" disabled={busy || !question.trim()} onClick={submitConversation}><Send size={16} /> 发送</button></div></div>
-      )}
-      <div className="voice-toolbar" role="group" aria-label="语音控制">
-        <button className="btn btn-secondary" type="button" aria-pressed={inputMode === 'voice'} onClick={() => { if (!voiceInputReady) { setFeedback('语音服务暂不可用，请先使用文字输入。'); return; } setInputMode((value) => (value === 'voice' ? 'text' : 'voice')); }}>
-          {inputMode === 'voice' ? <MessageCircle size={15} /> : <Mic size={15} />} {inputMode === 'voice' ? '改用文字输入' : voiceInputReady ? '语音输入' : '语音输入（暂不可用）'}
-        </button>
-        <button className="btn btn-secondary" type="button" aria-pressed={!roleAudioMuted} onClick={() => setRoleAudioMuted((value) => !value)} title="角色语音播报开关">
-          {roleAudioMuted ? <VolumeX size={15} /> : <Volume2 size={15} />} {speechCapabilities?.tts !== 'turn-based' ? '语音播报暂不可用' : roleAudioMuted ? '角色播报已静音' : '自动播报已开启'}
-        </button>
-        {(speechCapabilities?.asr!=='turn-based'||speechCapabilities?.tts!=='turn-based')&&<button className="btn btn-secondary" type="button" disabled={speechProbing} onClick={async()=>{setSpeechProbing(true);try{const caps=await fetchSpeechCapabilities();setSpeechCapabilities(caps);setFeedback(caps.asr==='turn-based'&&caps.tts==='turn-based'?'语音服务已恢复。':'语音服务尚未恢复，可稍后重试，文字输入不受影响。');}finally{setSpeechProbing(false);}}}>{speechProbing?'正在检测语音…':'重试语音连接'}</button>}
+    <div className="conversation-card">
+      <div className="message-list history-chat" aria-live="polite" ref={historyChatRef}>
+        {session.messages.filter((item) => item.kind !== 'navigation' || item.actor !== 'system').map((item) => {
+          const canReplay = !roleAudioMuted && ['child', 'parent', 'tutor'].includes(item.actor) && speechCapabilities?.tts === 'turn-based' && !/^（[^（）]*）$/.test(item.content.trim());
+          const streaming = streamingIds.has(item.id);
+          return <div className="message" data-actor={item.actor} key={item.id}><p className="message-label"><span>{actorLabel(item.actor)} · {item.emotion}{item.inputMode === 'voice' ? ' · 语音输入' : ''}</span>{canReplay && !streaming && <button className="message-audio-replay" type="button" onClick={() => audioPlayerRef.current?.replay(item.id)} aria-label={`播报这条${actorLabel(item.actor)}消息`}><Volume2 size={13} /> 播报</button>}</p><div className="message-bubble"><StreamText text={item.content} animate={streaming} onDone={() => clearStreamId(item.id)} /></div></div>;
+        })}
       </div>
       <RoleAudioPlayer ref={audioPlayerRef} sessionId={session.id} messages={session.messages} enabled={!roleAudioMuted && speechCapabilities?.tts === 'turn-based'} />
+      <div className="composer-card" data-mode={communicationModeActive ? 'communication' : 'history'}>
+        {inputMode === 'voice' && voiceInputReady ? (
+          <VoiceInput communicationMode={communicationModeActive} disabled={busy} onSend={sendConversationText} />
+        ) : (
+          <div className="composer"><label className="sr-only" htmlFor="question">{communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={communicationModeActive ? '直接向患儿和家长说明，例如：我理解您很担心，孩子目前呼吸和血氧需要先处理……' : '直接和患儿或家长交流，例如：小朋友别紧张，可以告诉我哪里不舒服吗？'} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitConversation(); } }} /></div>
+        )}
+        <div className="composer-footer" role="group" aria-label="输入与语音控制">
+          <button className="composer-toggle" type="button" aria-pressed={inputMode === 'voice'} onClick={() => { if (!voiceInputReady) { setFeedback('语音服务暂不可用，请先使用文字输入。'); return; } setInputMode((value) => (value === 'voice' ? 'text' : 'voice')); }}>
+            {inputMode === 'voice' ? <MessageCircle size={14} /> : <Mic size={14} />} {inputMode === 'voice' ? '文字输入' : voiceInputReady ? '语音输入' : '语音输入（暂不可用）'}
+          </button>
+          <button className="composer-toggle" type="button" aria-pressed={!roleAudioMuted} onClick={() => setRoleAudioMuted((value) => !value)} title="角色语音播报开关">
+            {roleAudioMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} {speechCapabilities?.tts !== 'turn-based' ? '播报暂不可用' : roleAudioMuted ? '播报已静音' : '自动播报已开启'}
+          </button>
+          {(speechCapabilities?.asr !== 'turn-based' || speechCapabilities?.tts !== 'turn-based') && <button className="composer-toggle" type="button" disabled={speechProbing} onClick={async () => { setSpeechProbing(true); try { const caps = await fetchSpeechCapabilities(); setSpeechCapabilities(caps); setFeedback(caps.asr === 'turn-based' && caps.tts === 'turn-based' ? '语音服务已恢复。' : '语音服务尚未恢复，可稍后重试，文字输入不受影响。'); } finally { setSpeechProbing(false); } }}>{speechProbing ? '正在检测语音…' : '重连语音'}</button>}
+          {inputMode === 'text' && <button className="btn btn-primary composer-send" type="button" disabled={busy || !question.trim()} onClick={submitConversation}><Send size={15} /> 发送</button>}
+        </div>
+      </div>
     </div>
     {practiceCompletion === 'history_summary' && (
       <form className="clinical-form practice-summary-form" onSubmit={async (event) => { event.preventDefault(); if (historySummaryText.trim().length < 10) return; await sendEvent({ type: 'SUBMIT_HISTORY_SUMMARY', data: { summary: historySummaryText.trim() } }); }}>

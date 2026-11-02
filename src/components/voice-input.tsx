@@ -224,7 +224,7 @@ export function VoiceInput({ disabled = false, communicationMode = false, onSend
               <Mic size={14} /> 重新录音
             </button>
             <button className="btn btn-secondary" type="button" onClick={backToIdle}>
-              改用文字输入
+              <X size={14} /> 放弃本次录音
             </button>
           </div>
         </div>

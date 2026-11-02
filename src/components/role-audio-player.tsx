@@ -96,7 +96,7 @@ export const RoleAudioPlayer = forwardRef<RoleAudioPlayerHandle, RoleAudioPlayer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[messages,enabled]);
   return <div className="role-audio-player" style={{display:!enabled||(!current&&!playbackError)?'none':undefined,flexWrap:'wrap'}} role="status" aria-live="polite">
-    <Volume2 size={15} aria-hidden="true"/><span>{playbackError||(current?`${actorLabel(current.actor)}正在说明…`:'角色语音播报')}</span>
+    <Volume2 size={15} aria-hidden="true"/><span className="role-audio-label">{playbackError||(current?`${actorLabel(current.actor)}正在说明…`:'角色语音播报')}</span>
     <audio ref={audioRef} controls={Boolean(playbackError)} aria-label="角色语音播放器" preload="none" style={{maxWidth:280,width:'100%'}}/>
     {playbackError&&<button className="btn btn-secondary" type="button" onClick={()=>{
       if(failedRef.current){const target=failedRef.current;failedRef.current=null;queueRef.current.unshift(target);void pump();}
