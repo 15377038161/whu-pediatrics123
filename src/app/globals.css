@@ -1085,3 +1085,67 @@ textarea { resize: vertical; }
   .workflow-action-bar>span { max-width:65%; font-size:10px; }
   .training-note-workspace { padding:10px 12px; }
 }
+
+/* Compact clinical workbench and the single shared case record. */
+.workspace-stage-row { display:flex; align-items:center; gap:8px; padding-right:14px; border-bottom:1px solid var(--line); background:#fff; }
+.workspace-stage-row .stage-scroll { flex:1; min-width:0; align-items:center; padding-bottom:6px; }
+.workspace-stage-row .stage-action { flex:none; min-height:30px; padding:4px 10px; font-size:11px; }
+.training-shell .training-title span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.training-shell .shared-case-record-body { gap:10px; padding:10px; overflow-y:auto; }
+.record-head-actions,.record-section-head,.shared-record-note-entry,.case-record-tools { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.record-head-actions { font-size:11px; color:var(--muted); }
+.record-vitals,.record-timeline-section { min-width:0; }
+.record-section-head h3 { margin:0; font-size:12px; }
+.record-section-head>span { font-size:10px; color:var(--muted); }
+.case-record-tools { align-items:stretch; flex-direction:column; }
+.case-record-filters { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
+.case-record-filters button { min-height:30px; padding:3px 5px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--muted); font-size:11px; }
+.case-record-filters button.active { border-color:var(--pine); background:var(--mint); color:var(--pine-dark); font-weight:700; }
+.case-record-search { display:flex; align-items:center; gap:6px; min-height:32px; padding:4px 9px; border:1px solid var(--line); border-radius:9px; background:#fff; color:var(--muted); }
+.case-record-search input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:var(--ink); font:inherit; font-size:11px; }
+.shared-record-timeline ol { display:grid; gap:7px; margin:0; padding:0; list-style:none; }
+.shared-record-item { padding:0; overflow:hidden; }
+.shared-record-item details>summary { display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 7px; align-items:start; padding:9px; cursor:pointer; list-style:none; }
+.shared-record-item details>summary::-webkit-details-marker { display:none; }
+.shared-record-item details>summary::after { content:'展开'; grid-column:1/-1; color:var(--muted); font-size:10px; }
+.shared-record-item details[open]>summary::after { content:'收起'; }
+.shared-record-item summary strong { min-width:0; font-size:12px; line-height:1.55; overflow-wrap:anywhere; }
+.record-category { padding:1px 6px; border-radius:999px; background:var(--paper-deep); color:var(--pine-dark); font-size:10px; white-space:nowrap; }
+.record-evidence-count { grid-column:2; color:var(--muted); font-size:10px; }
+.shared-record-detail { padding:0 9px 9px; }
+.record-answer-list { display:grid; gap:6px; }
+.record-answer-list p { margin:0; padding:8px; border-radius:8px; background:#f5faf7; font-size:12px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; }
+.record-answer-list p>span { display:block; margin-bottom:2px; color:var(--pine-dark); font-size:10px; font-weight:700; }
+.record-detail-muted { color:var(--muted); font-size:11px; }
+.shared-record-note-entry { margin-top:auto; padding-top:9px; border-top:1px solid var(--line); }
+.shared-record-note-entry>div { display:grid; }
+.shared-record-note-entry strong { font-size:12px; }
+.shared-record-note-entry span { color:var(--muted); font-size:10px; }
+.direction-hint-anchor { position:relative; flex:none; }
+.direction-hint-trigger { min-height:32px; padding:4px 8px; white-space:nowrap; font-size:11px; }
+.direction-hint-popover { position:absolute; z-index:40; top:calc(100% + 6px); right:0; width:min(340px,calc(100vw - 28px)); padding:12px; border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:var(--shadow-soft); }
+.direction-hint-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.direction-hint-head strong { font-size:12px; }
+.direction-hint-popover p { margin:8px 0; font-size:12px; line-height:1.7; white-space:pre-wrap; }
+.direction-hint-popover small { display:block; color:var(--muted); font-size:10px; }
+.mobile-drawer-close { display:none; }
+.training-shell section[tabindex='-1']:focus { outline:none; }
+@media(max-width:1023px) {
+  .workspace-stage-row { padding-right:8px; }
+  .direction-hint-trigger { width:34px; overflow:hidden; padding:4px 8px; color:transparent; }
+  .direction-hint-trigger svg { color:var(--ink); flex:none; }
+  .direction-hint-popover { position:fixed; top:112px; right:14px; }
+  .training-shell .mobile-drawer-close { display:inline-flex; }
+  .shared-record-note-entry { padding-bottom:4px; }
+}
+
+.conversation-input-stack { flex:none; display:grid; gap:6px; }
+.training-shell .conversation-input-stack .voice-toolbar { display:flex; flex-wrap:wrap; gap:6px; padding:0 12px; }
+.training-shell .conversation-input-stack .voice-toolbar .btn { min-height:30px; padding:4px 9px; font-size:11px; }
+.training-shell .conversation-input-stack .role-audio-player { margin:0 12px; }
+.message-label { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.message-audio-replay { display:inline-flex; align-items:center; gap:3px; padding:1px 5px; border:0; border-radius:6px; background:transparent; color:var(--pine-dark); font-size:10px; }
+.message-audio-replay:hover,.message-audio-replay:focus-visible { background:var(--mint); }
+.training-shell .voice-input .voice-idle { display:flex; align-items:center; justify-content:center; gap:10px; padding:8px 12px; }
+.training-shell .voice-input .voice-btn { width:40px; height:40px; flex:none; }
+.training-shell .voice-input .voice-hint { margin:0; }

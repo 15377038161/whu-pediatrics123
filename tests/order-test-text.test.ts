@@ -86,3 +86,33 @@ test('旧 testId 点选路径语义不变（兼容历史会话续答）', async 
   );
   assert.equal(getCase(session.caseId).tests.length > 0, true);
 });
+
+test('history 直接查看 tests 后开单：不得从 history 跨过 exam 推进业务阶段', async (t) => {
+  const { session, restore } = await withSourceCase();
+  t.after(() => void restore());
+  await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'history' } }, 'history-test-forward');
+  const navigation = await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'tests' } }, 'history-test-view-tests');
+  assert.equal(navigation.session.stage, 'history', '回看 tests 只改变 viewStage');
+  assert.equal(navigation.session.viewStage, 'tests');
+
+  const result = await runAgentTurn(session, { type: 'ORDER_TEST', data: { requestedTests: '血常规、C反应蛋白、CT' } }, 'history-test-order');
+  assert.equal(result.session.stage, 'history', '不得触发 training_sessions_guard 的跨阶段拒绝');
+  assert.match(result.feedback ?? '', /从当前问诊阶段进入查体/);
+  assert.equal(result.session.events.filter((event) => event.type === 'ORDER_TEST').length, 0, '前置不足时不写入开单事件');
+});
+
+test('exam 无需完成查体操作即可一格开单；后续阶段回看开单不回退业务stage', async (t) => {
+  const { session, restore } = await withSourceCase();
+  t.after(() => void restore());
+  session.stage = 'exam';
+  session.viewStage = 'tests';
+  const fromExam = await runAgentTurn(session, { type: 'ORDER_TEST', data: { requestedTests: '血常规' } }, 'exam-order-without-exam-action');
+  assert.equal(fromExam.session.stage, 'tests');
+  assert.equal(fromExam.session.events.some((event) => event.type === 'EXAM_ACTION'), false, '不得新增查体项目或数量门槛');
+
+  session.stage = 'assessment';
+  session.viewStage = 'tests';
+  const fromLaterStage = await runAgentTurn(session, { type: 'ORDER_TEST', data: { requestedTests: 'C反应蛋白' } }, 'later-stage-order');
+  assert.equal(fromLaterStage.session.stage, 'assessment', '后续阶段回看开单不得回退业务阶段');
+  assert.equal(fromLaterStage.session.events.some((event) => event.type === 'ORDER_TEST' && event.summary.includes('C反应蛋白')), true);
+});

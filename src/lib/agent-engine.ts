@@ -559,6 +559,16 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
 type OrderTestData = Extract<AgentEvent, { type: 'ORDER_TEST' }>['data'];
 
 async function handleTest(session: SessionState, data: OrderTestData, clientEventId: string, accessToken?: string | null, forwardHeaders?:Record<string,string>, supplementInvoke?:TestSupplementInvoke): Promise<AgentTurnResult> {
+  // 最小修复实测路径：业务仍在 history 时仅查看 tests 不得跨 exam 推进；
+  // 既有 triage 直接开单与后续合法阶段开单语义保持不变。
+  if (session.stage === 'history') {
+    return {
+      session,
+      newMessages: [],
+      feedback: feedbackFor(session, '请先从当前问诊阶段进入查体，再提交辅助检查申请；当前问诊和草稿已保留。'),
+      trace: [trace('安全校验', '仅查看检查阶段不会推进业务阶段，开单前须从问诊合法前进到查体')],
+    };
+  }
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   // 申请解析：旧 testId 点选直取目录项（不存在即 TEST_NOT_FOUND，语义不变）；
   // 新文本申请按服务端确定性别名匹配解析（同义词组+单向前缀，见 test-name-matcher），
