@@ -492,15 +492,6 @@ textarea { resize: vertical; }
 .exam-stage-intro { padding-bottom: 10px; }
 .exam-stage-intro h2 { margin-bottom: 4px; font-size: 21px; }
 .exam-stage-intro p { font-size: 12px; line-height: 1.55; }
-.exam-safety-strip, .exam-route { min-height: 54px; padding: 9px 11px; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 9px; align-items: center; border: 1px solid #edc7bd; border-radius: 13px; background: #fff5f1; }
-.exam-safety-strip > span, .exam-route > span { width: 29px; height: 29px; display: grid; place-items: center; border-radius: 10px; color: white; background: var(--brick); font: 900 12px ui-rounded, sans-serif; }
-.exam-safety-strip > span svg { width: 15px; }
-.exam-safety-strip p, .exam-route p { margin: 0; display: grid; gap: 1px; }
-.exam-safety-strip strong, .exam-route strong { font-size: 12px; }
-.exam-safety-strip small, .exam-route small { color: #7a6a65; font-size: 10px; }
-.exam-safety-strip[data-complete="true"] { border-color: #add8c9; background: #edf8f4; }
-.exam-safety-strip[data-complete="true"] > span { background: var(--pine); }
-.exam-safety-strip[data-complete="true"] small { color: #607a72; }
 .exam-tool-selector { margin: 10px 0; overflow: hidden; border: 1px solid #d8e5df; border-radius: 15px; background: #f3f7f4; }
 .exam-tool-heading { min-height: 38px; padding: 8px 11px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #dce7e2; background: rgba(255,255,255,.78); }
 .exam-tool-heading strong { font-size: 12px; }
@@ -777,7 +768,6 @@ textarea { resize: vertical; }
   .app-frame[data-view="student"] .topbar { justify-content: flex-end; }
   .app-frame[data-view="student"] .topbar-brand { display: none; }
 }
-.case-source-banner { margin: 14px 22px; padding: 14px 18px; border: 1px solid #cfe5dc; background: #edf7f2; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .training-resources { margin: 12px 22px 28px; }
 .resource-pagination { display: flex; justify-content: center; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 16px; font-size: 13px; }
 .resource-pagination button { border: 1px solid var(--line); background: white; padding: 9px 14px; border-radius: 9px; min-height: 40px; }
@@ -793,7 +783,6 @@ textarea { resize: vertical; }
 @media (max-width: 699px) {
   .case-library-filter label { flex-basis: 100%; }
   .case-library-filter select { flex: 1; min-width: 0; }
-  .case-source-banner, .training-resources { margin-left: 12px; margin-right: 12px; }
   .teacher-case-library { display: block; }
   .teacher-case-stats { margin-top: 16px; }
   .teacher-case-index > div { grid-template-columns: 1fr; }
@@ -1046,14 +1035,9 @@ textarea { resize: vertical; }
 
 /* Single-viewport clinical workbench: each information area owns its scrolling. */
 .training-shell { height:100svh; height:100dvh; min-height:0; padding:0; display:flex; flex-direction:column; overflow:hidden; }
-.training-shell .training-head,.training-shell>.case-band,.training-shell>.case-source-banner,.training-shell>.alert { flex-shrink:0; }
+.training-shell .training-head,.training-shell>.alert { flex-shrink:0; }
 .training-shell .training-toolbar { height:54px; }
 .training-shell .stage-scroll { padding-bottom:8px; }
-.workflow-action-bar { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:46px; padding:6px 18px; border-top:1px solid #e6efea; background:#f2f8f4; }
-.workflow-action-bar>span { font-size:12px; color:var(--muted); }
-.workflow-action-bar .btn { min-height:32px; padding:5px 12px; white-space:nowrap; font-size:12px; }
-.training-shell>.case-band { padding:6px 16px; font-size:10px; }
-.training-shell>.case-source-banner { max-height:70px; overflow:auto; margin:0 14px; font-size:11px; }
 .training-shell>.alert { max-height:64px; overflow:auto; }
 .training-shell .training-grid { flex:1; min-height:0; grid-template-rows:minmax(0,1fr); align-items:stretch; overflow:hidden; padding:12px; }
 .training-shell .workspace-panel { min-height:0; display:flex; flex-direction:column; }
@@ -1081,8 +1065,6 @@ textarea { resize: vertical; }
 .training-shell .hotspot-finger { top:57%; }
 .training-shell .hotspot-skin { top:26%; }
 .training-shell .hotspot-limbs { top:73%; }
-.training-shell .source-result-item { border:1px solid #e0eae5; border-left:3px solid #8abaaa; background:#fcfefb; border-radius:12px; padding:12px; }
-.training-shell .source-result-item p { font-size:13px; line-height:1.8; }
 .training-shell .test-order-form { padding:18px; border:1px solid #dce8e1; border-radius:16px; background:#f5faf6; margin-bottom:20px; }
 .training-shell .tests-intro h2 { font-size:24px; }
 .training-shell .test-order-form textarea { min-height:110px; background:#fff; }
@@ -1096,8 +1078,6 @@ textarea { resize: vertical; }
   .training-shell:not([data-note='true']) .training-grid { margin-bottom:76px; }
   .training-shell .workspace-panel[data-mobile-drawer='true'] { display:flex; height:auto; max-height:62svh; }
   .training-shell .training-patient { height:100%; }
-  .workflow-action-bar { padding:5px 12px; min-height:42px; }
-  .workflow-action-bar>span { max-width:65%; font-size:10px; }
   .training-note-workspace { padding:10px 12px; }
 }
 
@@ -1161,3 +1141,35 @@ textarea { resize: vertical; }
 .training-shell .voice-input .voice-idle { display:flex; align-items:center; justify-content:center; gap:10px; padding:8px 12px; }
 .training-shell .voice-input .voice-btn { width:40px; height:40px; flex:none; }
 .training-shell .voice-input .voice-hint { margin:0; }
+
+/* One record surface: a side panel while gathering, a modal drawer while writing. */
+.record-drawer-trigger { min-height:32px; padding:4px 9px; white-space:nowrap; font-size:11px; flex:none; }
+.case-record-drawer { position:fixed; inset:0 0 0 auto; margin:0; padding:0; border:0; width:min(520px,94vw); max-width:none; height:100dvh; max-height:100dvh; background:var(--paper); color:var(--ink); box-shadow:-12px 0 36px #183f3526; }
+.case-record-drawer::backdrop { background:#16382e55; }
+.case-record-drawer > .workspace-panel { width:100%; height:100%; margin:0; border:0; border-radius:0; display:flex; flex-direction:column; }
+.case-record-drawer .shared-case-record-body { flex:1; min-height:0; display:flex; flex-direction:column; overflow:auto; }
+.case-record-drawer .record-timeline-section { flex:1; min-height:180px; display:flex; flex-direction:column; }
+.case-record-drawer .shared-record-timeline { flex:1; overflow:auto; min-height:0; }
+.case-record-drawer .vitals { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.record-result-text { margin:0 0 8px; font-size:12px; line-height:1.8; white-space:pre-wrap; overflow-wrap:anywhere; }
+.shared-record-item details:not([open]) summary strong { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+@media(min-width:1024px) {
+ .training-shell .training-grid[data-record-inline='false'][data-patient='false'] { grid-template-columns:minmax(0,1fr); }
+ .training-shell .training-grid[data-record-inline='false'][data-patient='true'] { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); }
+}
+@media(max-width:1023px) {
+ .workspace-stage-row { gap:4px; }
+ .record-drawer-trigger { padding:4px 6px; font-size:10px; }
+ .training-shell .training-grid[data-patient='false'] .training-primary { display:flex; position:static; height:100%; max-height:none; }
+ .training-shell:not([data-note='true']) .training-grid[data-patient='false'] { margin-bottom:0; }
+ .training-shell:not([data-exam='true']) .mobile-workspace-nav { display:none; }
+}
+
+.training-info { position:relative; flex:none; }
+.training-info summary { display:grid; place-items:center; width:30px; height:30px; color:var(--muted); cursor:pointer; list-style:none; }
+.training-info summary::-webkit-details-marker { display:none; }
+.training-info p { position:absolute; z-index:60; top:100%; right:0; width:min(300px,80vw); margin:8px 0; padding:12px; border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:var(--shadow-soft); font-size:12px; line-height:1.7; }
+
+.training-shell .record-timeline-section { flex:1; min-height:160px; display:flex; flex-direction:column; gap:8px; overflow:hidden; }
+.training-shell .record-vitals,.training-shell .case-record-tools,.training-shell .record-section-head,.training-shell .shared-record-note-entry { flex-shrink:0; }
+.training-shell .shared-record-timeline { flex:1; min-height:0; overflow-y:auto; display:block; }

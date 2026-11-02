@@ -1,5 +1,7 @@
 # 珞珈儿科智训
 
+工作台复验补齐：仅查体显示人物，顶部说明收拢，诊断/处置/病历提供统一病例记录抽屉；详情与通用模板见 [CASE_TRAINING_TEMPLATE](docs/CASE_TRAINING_TEMPLATE.md)。
+
 辅助检查原始报告提取与教学补全：[接入与验收说明](docs/TEST_RESULT_AI.md)。
 
 2026-11-02 紧凑接诊工作台：问诊、查体和辅助检查统一收口到共享病例记录，支持分类、搜索和展开，问诊只关联本会话实际返回的患儿/家长回答；语音入口位于输入区下方，保留既有录音→转写→确认与逐条重播。非 OSCE 接诊可由学生本人请求 JSON 格式 AI 方向提示（`GET/POST /api/sessions/[id]/direction-hint`），每次接诊最多 3 次成功提示，复用 `agent_call_records` 三个固定槽及既有唯一键/本人 RLS，不新增表或迁移；同请求标记幂等，模型或安全解析失败不扣额度，模型上下文仅含当前业务阶段和已释放记录，不返回诊断、标准答案或处置方案。开单 409 仅修复 history 直接查看 tests 后跨级提交，exam→tests 与后续阶段回看开单保持原行为，不增加查体项目或数量门槛。
@@ -201,3 +203,4 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 
 
 病例导入与接诊工作台统一约定见[CASE_TRAINING_TEMPLATE.md](docs/CASE_TRAINING_TEMPLATE.md)，含自主查体定位、体位配置、单屏工作台、病历逐段书写及面向后续全库的参数化盘点/验收命令。该模板工程通过不代表全库真实验收。
+

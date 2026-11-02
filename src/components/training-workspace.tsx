@@ -1,5 +1,6 @@
 'use client';
 
+import { CaseRecordDrawer } from '@/components/case-record-drawer';
 import { DirectionHint } from '@/components/direction-hint';
 import { EXAM_LOCATIONS } from '@/domain/source-exam-contract';
 import { NoteWriting, type NoteWritingHandle } from '@/components/note-writing';
@@ -12,7 +13,7 @@ import { SharedCaseRecord } from '@/components/shared-case-record';
 import { StreamText } from '@/components/stream-text';
 
 import {
-  Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home,
+  Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home, Info,
   ClipboardList, LoaderCircle, MessageCircle, Mic, Send, Stethoscope, UserRound, Volume2, VolumeX, X,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -128,6 +129,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const started = useRef(false);
   const noteRef=useRef<NoteWritingHandle>(null);
   const [noteOpen,setNoteOpen]=useState(initialPanel==='note');
+  const [recordOpen,setRecordOpen]=useState(false);
   const finishing = useRef(false);
   const historyChatRef = useRef<HTMLDivElement>(null);
   const cracklesAudioRef = useRef<HTMLAudioElement>(null);
@@ -438,13 +440,18 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const postureOptions = allowedPostures(caseProfile.age);
   const effectivePosture = postureOptions.includes(posture) ? posture : postureOptions[0];
   const spatialExam = !noteOpen && displayStage === 'exam';
+  const drawerStage = noteOpen || displayStage === 'assessment' || displayStage === 'plan';
   function openWorkspaceView(view: 'task' | 'patient' | 'record') {
+    if (view === 'record') {
+      if (drawerStage || window.matchMedia('(max-width:1023px)').matches) setRecordOpen(true);
+      return;
+    }
     if (spatialExam && view !== 'patient' && mobileView !== view) {
       mobileReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     }
     setMobileView(view);
     if (spatialExam && view !== 'patient') {
-      window.requestAnimationFrame(() => (view === 'task' ? taskPanelRef.current : recordPanelRef.current)?.focus());
+      window.requestAnimationFrame(() => taskPanelRef.current?.focus());
     }
   }
   function closeMobileDrawer() {
@@ -455,8 +462,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       (returnTarget?.isConnected ? returnTarget : fallback)?.focus();
     });
   }
-  const showPatient = !noteOpen && ['triage','history','communication','exam'].includes(displayStage ?? '');
-  function openNote(){setNoteOpen(true);setMobileView('task');router.replace(`/student/training?session=${session!.id}&panel=note`);}
+  const showPatient = spatialExam;
+  function openNote(){setRecordOpen(false);setNoteOpen(true);setMobileView('task');router.replace(`/student/training?session=${session!.id}&panel=note`);}
   const nextAction = displayStage==='exam'?{label:'辅助检查',stage:'tests' as Stage}:displayStage==='tests'?{label:'整理诊断',stage:'assessment' as Stage}:displayStage==='history'&&!session.plan?{label:examEvidenceCount>0?'返回查体':'进入查体',stage:'exam' as Stage}:null;
   const examTools = [...tools, ...sourceExamTools];
   const examHotspots = EXAM_LOCATIONS;
@@ -532,7 +539,6 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       case 'history': return conversationContent;
       case 'exam': return <>
         <div className="stage-intro exam-stage-intro"><h2>选择器材，点击检查部位</h2></div>
-        <div className="exam-safety-strip" data-complete={hygieneCompleted} role="status"><span>{hygieneCompleted ? <Check /> : '1'}</span><p><strong>{hygieneCompleted ? '手卫生已完成' : '先完成手卫生'}</strong></p></div>
         <div className="posture-selector" role="group" aria-label="查体姿势">{postureOptions.map((value) => { const label = value === 'standing' ? '站立' : '仰卧'; return <button key={value} type="button" className="btn btn-secondary" aria-pressed={effectivePosture === value} disabled={busy} onClick={() => { setPosture(value); setExamObservation(null); }}>{label}</button>; })}<small>{postureOptions.includes('supine') && postureOptions.includes('standing') ? '自行选择适合本次检查的体位' : '此年龄仅提供卧位查体'}</small></div>
         <div className="exam-tool-selector">
           <div className="exam-tool-heading"><strong>选择方法或器材</strong><span>{selectedTool ? `当前：${examTools.find((tool) => tool.id === selectedTool)?.label ?? '请先选择本例器材'}` : '尚未选择'}</span></div>
@@ -583,13 +589,14 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   })();
 
   return (
-    <main className="training-shell" data-note={noteOpen} id="main-content" onKeyDown={(event) => { if (event.key === 'Escape' && spatialExam && mobileView !== 'patient') closeMobileDrawer(); }}>
+    <main className="training-shell" data-note={noteOpen} data-exam={spatialExam} id="main-content" onKeyDown={(event) => { if (event.key === 'Escape' && spatialExam && mobileView !== 'patient') closeMobileDrawer(); }}>
       <audio ref={cracklesAudioRef} src="/media/clinical/audio/pediatric-fine-crackles-right.mp3" preload="auto" />
       <audio ref={wheezeAudioRef} src="/media/clinical/audio/pediatric-wheeze.mp3" preload="auto" />
       <header className="training-head">
         <div className="training-toolbar">
           <button className="icon-btn" type="button" onClick={leaveTraining} aria-label="暂时退出训练"><ArrowLeft size={18} /></button>
-          <div className="training-title"><strong>{caseProfile.title}</strong><span>{session.mode === 'osce' ? 'OSCE 模拟站' : session.mode === 'practice' ? `专项训练 · ${currentFocus ? focusLabels[currentFocus] : '能力补练'}` : session.mode === 'immersive' ? '沉浸式病例教学 · 场景引导' : '智能体引导模式'} · 病例 v{session.caseVersion}</span></div>
+          <div className="training-title"><strong>{caseProfile.title}</strong></div>
+          <details className="training-info"><summary aria-label="教学说明"><Info size={16}/></summary><p>本平台用于教学训练，原病例未提供的检查可由AI补全；资料不用于真实临床诊疗。</p></details>
           {session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <button className="icon-btn" type="button" onClick={leaveTraining} aria-label="回到首页"><Home size={17} /></button>}
         </div>
         <div className="workspace-stage-row">
@@ -600,21 +607,22 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
             {!noteOpen&&nextAction&&!activeScenario&&<button className="btn btn-primary stage-action" type="button" disabled={busy} onClick={()=>void navigate(nextAction.stage)}>{nextAction.label}<ChevronRight size={15}/></button>}
             {!noteOpen&&session.plan&&session.communication&&<button className="btn btn-primary stage-action" type="button" disabled={busy} onClick={openNote}>书写病历<ChevronRight size={15}/></button>}
           </div>
+          <button className="btn btn-secondary record-drawer-trigger" type="button" onClick={()=>setRecordOpen(true)}><ClipboardList size={15}/>病例记录</button>
           {!noteOpen && <DirectionHint key={`${session.id}:${session.stage}`} sessionId={session.id} stage={session.stage} mode={session.mode} />}
         </div>
       </header>
-      {session.caseOptions && <details className="case-source-banner"><summary>教学仿真 · 原病例资料与AI检查扩展</summary><strong>学习案例：{session.caseOptions.sourceName}</strong><span>{session.caseOptions.teachingSimulation ? 'AI教学模拟病例：病史、数值和结果为教学设定，配图为示意，非真实患者影像。' : session.caseOptions.hasSource ? '教学仿真训练：以原病例为基础，未提供的检查可由AI补全，仅供教学、不用于临床诊疗。完成后对照原诊疗经过复盘。' : '尚无独立病例正文，可开展问诊与诊疗思路记录。'}</span></details>}
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
-      {noteOpen?<div className="training-note-workspace"><NoteWriting ref={noteRef} sessionId={session.id} embedded context={session} onComplete={()=>void finish()}/></div>:<div className="training-grid" data-patient={showPatient}>
+      {noteOpen?<div className="training-note-workspace"><NoteWriting ref={noteRef} sessionId={session.id} embedded context={session} onComplete={()=>void finish()}/></div>:<div className="training-grid" data-patient={showPatient} data-record-inline={!drawerStage && !recordOpen}>
         <section ref={taskPanelRef} tabIndex={-1} className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={mobileView !== 'task'} data-mobile-drawer={spatialExam && mobileView === 'task'}>
           <div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}{spatialExam && mobileView === 'task' && <button className="icon-btn mobile-drawer-close" type="button" onClick={closeMobileDrawer} aria-label="关闭检查方法抽屉"><X size={17} /></button>}</div></div>
           <div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮专项</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div>
         </section>
         {showPatient&&<section className="workspace-panel training-patient" data-mobile-hidden={spatialExam ? false : mobileView !== 'patient'}><div className="panel-head"><h2>{session.caseOptions ? '教学部位示意' : '患儿交互模型'}</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}</span></div><PatientFigure posture={effectivePosture} patient={caseProfile} hotspots={examHotspots} selectedTool={selectedTool} onExamine={examine} observation={examObservation} busy={busy} interactive={spatialExam} /></section>}
-        <section ref={recordPanelRef} tabIndex={-1} className="workspace-panel training-record" aria-label="共享病例记录" data-mobile-hidden={mobileView !== 'record'} data-mobile-drawer={spatialExam && mobileView === 'record'}>
-          <SharedCaseRecord session={session} onOpenNote={openNote} drawer={spatialExam && mobileView === 'record'} onClose={closeMobileDrawer} audioObservation={examObservation?.status === 'success' && examObservation.sound ? { title: examObservation.title, sound: examObservation.sound } : null} onReplayAudio={() => { if (examObservation && !playExamObservationAudio(examObservation)) setFeedback('当前浏览器不支持结果声音播放，请直接阅读查体结果。'); }} />
-        </section>
+        {!drawerStage && !recordOpen && <section ref={recordPanelRef} tabIndex={-1} className="workspace-panel training-record" aria-label="共享病例记录" data-mobile-hidden={true}>
+          <SharedCaseRecord session={session} onOpenNote={openNote}  audioObservation={examObservation?.status === 'success' && examObservation.sound ? { title: examObservation.title, sound: examObservation.sound } : null} onReplayAudio={() => { if (examObservation && !playExamObservationAudio(examObservation)) setFeedback('当前浏览器不支持结果声音播放，请直接阅读查体结果。'); }} />
+        </section>}
       </div>}
+      <CaseRecordDrawer session={session} open={recordOpen} onClose={()=>setRecordOpen(false)} onOpenNote={openNote} />
       {spatialExam && mobileView !== 'patient' && <button className="mobile-drawer-backdrop" type="button" aria-label="关闭抽屉并返回患儿模型" onClick={closeMobileDrawer} />}
       {!noteOpen&&<nav ref={mobileNavRef} className="mobile-workspace-nav" aria-label="临床工作台抽屉切换">
         <button data-view="task" data-active={mobileView === 'task'} onClick={() => openWorkspaceView('task')}><ClipboardList /> {spatialExam ? '检查方法' : '当前任务'}</button>

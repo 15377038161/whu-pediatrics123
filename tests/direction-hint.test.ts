@@ -136,3 +136,15 @@ test('额度按会话隔离，路由匿名/教师/OSCE 均 fail-closed', async (
     if (saved === undefined) delete process.env.ENABLE_UI_PREVIEW; else process.env.ENABLE_UI_PREVIEW = saved;
   }
 });
+
+
+test('后续提示包含此前方向，避免三次机会重复同一建议', async () => {
+  const store = new MemoryHintStore();
+  const first = await generateDirectionHint(session(), 'first', { store, generate: model() });
+  await generateDirectionHint(session(), 'second', { store, generate: async messages => {
+    const context = JSON.parse(messages[1].content as string);
+    assert.deepEqual(context.previousHints, [first.hint]);
+    assert.match(messages[0].content as string, /不要重复previousHints/);
+    return model('{"hint":"可以继续了解患儿既往就诊与处理后的变化。"}')(messages);
+  } });
+});

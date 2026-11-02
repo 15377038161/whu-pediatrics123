@@ -86,10 +86,11 @@ export function SharedCaseRecord({
               <details open={entry.event.id === latestRecordId}>
                 <summary>
                   <span className="record-category">{categoryLabels[entry.category]}</span>
-                  <strong>{entry.question ?? entry.event.summary}</strong>
+                  <strong>{entry.question ?? entry.event.summary.split(/[：:]/u)[0]}</strong>
                   <span className="record-evidence-count">{entry.event.evidenceCodes.length > 0 ? `${entry.event.evidenceCodes.length} 项证据` : '待出结果'}</span>
                 </summary>
                 <div className="shared-record-detail">
+                  {entry.category !== 'history' && <p className="record-result-text">{entry.event.summary}</p>}
                   {entry.answers.length > 0 ? <div className="record-answer-list">{entry.answers.map((answer, index) => <p key={`${entry.event.id}-${index}`}><span>{answer.actor === 'parent' ? '家长回答' : '患儿回答'}</span>{answer.content}</p>)}</div> : null}
                   {entry.category === 'history' && entry.answers.length === 0 ? <p className="record-detail-muted">未关联到可展示的家长或患儿回答。</p> : null}
                   {entry.event.media && entry.event.media.length > 0 ? <CaseMediaGallery sessionId={session.id} media={entry.event.media} /> : null}
