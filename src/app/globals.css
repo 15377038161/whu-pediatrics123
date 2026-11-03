@@ -353,6 +353,12 @@ textarea { resize: vertical; }
 .stream-caret { display: inline-block; width: 2px; height: .95em; margin-left: 2px; vertical-align: -0.12em; background: currentColor; animation: caret-blink .85s steps(2, start) infinite; }
 @keyframes caret-blink { 50% { opacity: 0; } }
 .composer-card { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--white); }
+.composer-header { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+.composer-row { display: flex; align-items: flex-end; gap: 8px; }
+.composer-row .composer { flex: 1; min-width: 0; }
+.composer-row .composer textarea { min-height: 48px; max-height: 120px; }
+.composer-row .voice-hold { flex: none; }
+.composer-row .voice-hold-button { min-height: 48px; min-width: 48px; border-radius: 13px; }
 .composer textarea, .clinical-form textarea, .clinical-form input { width: 100%; border: 1px solid #becbc7; border-radius: 13px; background: white; color: var(--ink); padding: 12px 13px; resize: vertical; }
 .composer textarea { min-height: 64px; max-height: 180px; }
 .composer[data-mode="communication"] textarea { border-color: #e2c89a; background: linear-gradient(135deg, #fff, #fffaf0); }
@@ -362,7 +368,7 @@ textarea { resize: vertical; }
 .composer-toggle[aria-pressed="true"] { background: var(--mint); border-color: #bcd9d0; }
 .composer-toggle:disabled { opacity: .55; cursor: not-allowed; }
 .composer-toggle svg { width: 14px; height: 14px; }
-.composer-send { margin-left: auto; min-height: 34px; }
+.composer-send { min-height: 48px; }
 .hint-anchor { position: relative; }
 .hint-trigger { color: #8a6815; background: #fff5ca; border-color: #ead58e; }
 .hint-popover { position: absolute; z-index: 8; right: 0; bottom: calc(100% + 10px); width: min(270px, calc(100vw - 76px)); padding: 12px 13px; border: 1px solid #e3cb7e; border-radius: 14px 14px 4px 14px; background: #fffaf0; color: #684f16; box-shadow: 0 14px 32px rgba(74,61,25,.16); }
