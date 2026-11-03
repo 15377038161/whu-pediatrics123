@@ -266,8 +266,11 @@ textarea { resize: vertical; }
    图片加载失败时回退纯纸色（background-color），不影响训练流程。 */
 .training-shell { width: min(100%, 1500px); margin: 0 auto; padding: 0 0 92px; min-height: 100svh; background-color: var(--paper); background-image: linear-gradient(rgba(247,251,248,.9), rgba(247,251,248,.93)), url('/ward-bg.png'); background-size: cover; background-position: center; background-repeat: no-repeat; }
 .training-head { position: sticky; top: 0; z-index: 45; background: rgba(250,253,251,.96); border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); }
-.training-toolbar { height: 62px; padding: 0 12px; display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 8px; }
+.training-toolbar { height: 62px; padding: 0 12px; display: grid; grid-template-columns: var(--tap) minmax(0, 1fr) auto auto; align-items: center; gap: 8px; }
 .training-title { min-width: 0; text-align: center; }
+.training-toolbar > .training-info,
+.training-toolbar > .timer,
+.training-toolbar > .icon-btn:last-child { justify-self: end; }
 .training-title strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
 .training-title span { display: block; color: #6b7d7a; font-size: 11px; }
 .timer { min-width: 70px; height: 34px; padding: 0 10px; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: 5px; background: #f4e3dc; color: var(--brick-dark); font: 800 13px ui-monospace, monospace; }

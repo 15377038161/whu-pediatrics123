@@ -47,8 +47,8 @@ export interface WavRecorder {
   onLimitReached: null | (() => void);
 }
 
-/** 单轮录音时长上限：防止误录产生超长音频（ASR 上限远高于此）。 */
-export const MAX_RECORDING_MS = 120_000;
+/** 单轮录音时长上限（V02）：16kHz/16bit WAV 20s 的 base64 约 0.86MB，避开常见 1MB JSON 网关限制。 */
+export const MAX_RECORDING_MS = 20_000;
 
 /** 开始 WAV 录音：getUserMedia + Web Audio 采集（跨浏览器一致产出 wav 格式，ASR 直收）。 */
 export async function startWavRecording(maxDurationMs: number = MAX_RECORDING_MS): Promise<WavRecorder> {
@@ -101,8 +101,8 @@ export async function startWavRecording(maxDurationMs: number = MAX_RECORDING_MS
         const sampleRate = context.sampleRate;
         void context.close();
         stream.getTracks().forEach((track) => track.stop());
-        // 上传前统一降采样到 16kHz 单声道（V01）：120s 录音的 base64 体从 ~15MB（48kHz）
-        // 降到 ~5MB，避免大体 POST 被网关拒绝/超时；durationMs 仍按原始采样率计。
+        // 上传前统一降采样到 16kHz 单声道（V01/V02）：120s 原始录音的 base64 体从 ~15MB（48kHz）
+        // 降到 20s 约 0.86MB，避免大体 POST 被网关拒绝/超时；durationMs 仍按原始采样率计。
         const pcm = resamplePcm(concatPcmChunks(chunks, totalSamples), sampleRate, ASR_SAMPLE_RATE);
         resolve(new Blob([encodeWavBytes(pcm, ASR_SAMPLE_RATE)], { type: 'audio/wav' }));
       }),

@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Check, LoaderCircle, Mic, Pencil, Square, X } from 'lucide-react';
 import type { SpeechTurnMeta, VoiceTurnState } from '@/domain/speech-contract';
 import { canTransitionVoiceTurn, resolveSpeechTurnMeta } from '@/domain/speech-contract';
-import { MicPermissionError, type WavRecorder, startWavRecording, requestTranscription } from '@/lib/speech';
+import { MAX_RECORDING_MS, MicPermissionError, type WavRecorder, startWavRecording, requestTranscription } from '@/lib/speech';
 
 export interface VoiceInputProps {
   disabled?: boolean;
@@ -163,14 +163,14 @@ export function VoiceInput({ disabled = false, communicationMode = false, onSend
           <button className="voice-btn" type="button" disabled={disabled} onClick={() => void startRecording()} aria-label="开始录音（按轮录音，录音后确认转写再发送）">
             <Mic size={16} />
           </button>
-          <p className="voice-hint">{communicationMode ? '语音向家长解释：录音后确认转写再发送' : '语音问诊：录音后确认转写再发送'}</p>
+          <p className="voice-hint">{communicationMode ? `语音向家长解释：录音后确认转写再发送（单轮约${Math.round(MAX_RECORDING_MS / 1000)}秒内）` : `语音问诊：录音后确认转写再发送（单轮约${Math.round(MAX_RECORDING_MS / 1000)}秒内）`}</p>
         </div>
       )}
       {state === 'recording' && (
         <div className="voice-recording" role="status">
           <span className="voice-pulse" aria-hidden="true" />
           <strong className="voice-duration">{Math.floor(durationSec / 60)}:{String(durationSec % 60).padStart(2, '0')}</strong>
-          <span className="voice-hint">录音中…说完后点击停止</span>
+          <span className="voice-hint">录音中（单轮约{Math.round(MAX_RECORDING_MS / 1000)}秒内）…说完后点击停止</span>
           <button className="btn btn-primary voice-stop" type="button" onClick={() => void stopRecording()}>
             <Square size={14} /> 停止并识别
           </button>
