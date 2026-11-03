@@ -13,6 +13,22 @@
  */
 export type SpeechMode = 'unavailable' | 'turn-based';
 
+export type VoiceTurnState = 'idle' | 'recording' | 'transcribing' | 'confirming' | 'sending' | 'failed';
+
+/** 轮次状态机仅描述安全边界；按住说话组件用受控输入框承载 confirming 状态。 */
+export const VOICE_TURN_TRANSITIONS: Readonly<Record<VoiceTurnState, readonly VoiceTurnState[]>> = Object.freeze({
+  idle: ['recording'],
+  recording: ['transcribing', 'idle', 'failed'],
+  transcribing: ['confirming', 'failed'],
+  confirming: ['sending', 'idle'],
+  sending: ['idle', 'confirming', 'failed'],
+  failed: ['recording', 'confirming', 'idle'],
+});
+
+export function canTransitionVoiceTurn(from: VoiceTurnState, to: VoiceTurnState): boolean {
+  return VOICE_TURN_TRANSITIONS[from].includes(to);
+}
+
 export interface SpeechCapabilities {
   asr: SpeechMode;
   tts: SpeechMode;
@@ -89,36 +105,27 @@ export interface SpeechTurnMeta {
   inputMode: 'voice';
   asrRawText: string;
   transcriptEdited: boolean;
+  audioFileId?: string;
+  audioDurationMs?: number;
+}
+
+export interface VoiceRecordingResult {
+  text: string;
+  audioFileId: string | null;
+  audioDurationMs: number;
+  storageWarning?: string;
 }
 
 /** 由确认/编辑结果推导语音轮元数据（纯函数）：编辑过 = 确认文本与 ASR 原文不一致。 */
-export function resolveSpeechTurnMeta(asrRawText: string, confirmedText: string): SpeechTurnMeta {
+export function resolveSpeechTurnMeta(
+  asrRawText: string,
+  confirmedText: string,
+  audio?: { fileId: string; durationMs: number },
+): SpeechTurnMeta {
   return {
     inputMode: 'voice',
     asrRawText,
     transcriptEdited: confirmedText.trim() !== asrRawText.trim(),
+    ...(audio ? { audioFileId: audio.fileId, audioDurationMs: audio.durationMs } : {}),
   };
-}
-
-/** 语音轮状态机（纯转移表，无副作用）：
- *  idle → recording（用户开始录音）
- *  recording → transcribing（用户结束录音）| idle（取消）
- *  transcribing → confirming | failed
- *  confirming → sending（用户确认发送；确认态内含编辑转写）| idle（放弃）
- *  sending → idle（一轮完成；**无 sending → recording 边**，不自动连录）| confirming（发送失败，保留确认草稿可重试）
- *  failed → recording（用户重试）| idle
- */
-export type VoiceTurnState = 'idle' | 'recording' | 'transcribing' | 'confirming' | 'sending' | 'failed';
-
-export const VOICE_TURN_TRANSITIONS: Readonly<Record<VoiceTurnState, readonly VoiceTurnState[]>> = Object.freeze({
-  idle: ['recording'],
-  recording: ['transcribing', 'idle'],
-  transcribing: ['confirming', 'failed'],
-  confirming: ['sending', 'idle'],
-  sending: ['idle', 'confirming'],
-  failed: ['recording', 'idle'],
-} as const);
-
-export function canTransitionVoiceTurn(from: VoiceTurnState, to: VoiceTurnState): boolean {
-  return VOICE_TURN_TRANSITIONS[from].includes(to);
 }

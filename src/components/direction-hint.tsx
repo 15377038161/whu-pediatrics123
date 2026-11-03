@@ -23,6 +23,7 @@ export function DirectionHint({ sessionId, stage, mode }: { sessionId: string; s
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const clientEventIdRef = useRef<string | null>(null);
+  const inFlightRef = useRef(false);
   const endpoint = `/api/sessions/${sessionId}/direction-hint`;
 
   useEffect(() => {
@@ -37,7 +38,8 @@ export function DirectionHint({ sessionId, stage, mode }: { sessionId: string; s
   }, [endpoint, mode]);
 
   const requestHint = useCallback(async () => {
-    if (busy || mode === 'osce' || quota?.remaining === 0) return;
+    if (inFlightRef.current || mode === 'osce' || quota?.remaining === 0) return;
+    inFlightRef.current = true;
     setBusy(true);
     setError(null);
     setOpen(true);
@@ -57,15 +59,16 @@ export function DirectionHint({ sessionId, stage, mode }: { sessionId: string; s
         : cause instanceof Error ? cause.message : 'AI 方向提示暂时不可用，请稍后重试。');
       if (cause instanceof AuthedApiError && cause.code === 'HINT_QUOTA_EXHAUSTED') setQuota({ used: 3, remaining: 0 });
     } finally {
+      inFlightRef.current = false;
       setBusy(false);
     }
-  }, [busy, endpoint, mode, quota?.remaining, stage]);
+  }, [endpoint, mode, quota?.remaining, stage]);
 
   if (mode === 'osce') return null;
   return <div className="direction-hint-anchor">
     <button className="btn btn-quiet direction-hint-trigger" type="button" disabled={busy || quota?.remaining === 0} aria-expanded={open} onClick={() => { if (open) setOpen(false); else void requestHint(); }}>
       {busy ? <LoaderCircle className="spin" size={15} /> : <Lightbulb size={15} />}
-      AI 方向提示{quota ? ` · 余 ${quota.remaining}` : ''}
+      AI 提醒{quota ? ` · 剩余 ${quota.remaining} 次` : ''}
     </button>
     {open && <section className="direction-hint-popover" aria-label="AI 方向提示">
       <div className="direction-hint-head"><strong>仅提示下一步采集方向</strong><button className="icon-btn" type="button" aria-label="关闭 AI 方向提示" onClick={() => setOpen(false)}><X size={15} /></button></div>

@@ -7,6 +7,7 @@ import { AgentRepository } from '@/lib/repository';
 import { projectSessionForRole } from '@/lib/session-projection';
 import { requireAuth } from '@/lib/request-auth';
 import { agentTurnSchema } from '@/lib/validation';
+import { assertStudentVoiceAttachment } from '@/lib/student-voice';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +16,10 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return fail({ code: 'INVALID_REQUEST', message: '操作内容不完整，请检查后重试。', retryable: false }, undefined, 422);
     const repository = new AgentRepository(user);
     const session = await repository.getSession(parsed.data.sessionId);
+    const event = parsed.data.event;
+    if ((event.type === 'ASK_QUESTION' || event.type === 'SEND_COMMUNICATION') && event.data.speech?.audioFileId) {
+      await assertStudentVoiceAttachment(session.id, event.data.speech.audioFileId);
+    }
     const forwardHeaders = platformForwardHeaders(request.headers,user.accessToken);
     const result = await runAgentTurn(session, parsed.data.event as AgentEvent, parsed.data.clientEventId, { forwardHeaders, accessToken: user.accessToken });
     await repository.saveSession(result.session);

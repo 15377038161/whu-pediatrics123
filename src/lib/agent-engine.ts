@@ -47,7 +47,7 @@ function now(): string {
   return new Date().toISOString();
 }
 
-function message(actor: AgentMessage['actor'], content: string, options?: Partial<Pick<AgentMessage, 'emotion' | 'kind' | 'inputMode' | 'asrRawText' | 'transcriptEdited'>>): AgentMessage {
+function message(actor: AgentMessage['actor'], content: string, options?: Partial<Pick<AgentMessage, 'emotion' | 'kind' | 'inputMode' | 'asrRawText' | 'transcriptEdited' | 'audioFileId' | 'audioDurationMs'>>): AgentMessage {
   return {
     id: crypto.randomUUID(),
     actor,
@@ -56,15 +56,25 @@ function message(actor: AgentMessage['actor'], content: string, options?: Partia
     kind: options?.kind ?? 'dialogue',
     createdAt: now(),
     ...(options?.inputMode === 'voice'
-      ? { inputMode: 'voice', asrRawText: options.asrRawText, transcriptEdited: options.transcriptEdited }
+      ? {
+        inputMode: 'voice',
+        asrRawText: options.asrRawText,
+        transcriptEdited: options.transcriptEdited,
+        ...(options.audioFileId && options.audioDurationMs ? { audioFileId: options.audioFileId, audioDurationMs: options.audioDurationMs } : {}),
+      }
       : {}),
   };
 }
 
-/** 语音轮元数据 → 学生消息字段（阶段 D）：仅语音输入附带；文字输入不产生字段。 */
-function speechOptions(speech?: EventSpeechMeta): Partial<Pick<AgentMessage, 'inputMode' | 'asrRawText' | 'transcriptEdited'>> | undefined {
+/** 语音轮元数据 → 学生消息字段：仅语音输入附带；文字输入不产生字段。 */
+function speechOptions(speech?: EventSpeechMeta): Partial<Pick<AgentMessage, 'inputMode' | 'asrRawText' | 'transcriptEdited' | 'audioFileId' | 'audioDurationMs'>> | undefined {
   if (!speech) return undefined;
-  return { inputMode: speech.inputMode, asrRawText: speech.asrRawText, transcriptEdited: speech.transcriptEdited };
+  return {
+    inputMode: speech.inputMode,
+    asrRawText: speech.asrRawText,
+    transcriptEdited: speech.transcriptEdited,
+    ...(speech.audioFileId && speech.audioDurationMs ? { audioFileId: speech.audioFileId, audioDurationMs: speech.audioDurationMs } : {}),
+  };
 }
 
 function clinicalEvent(

@@ -34,8 +34,15 @@ const eventSpeechMetaSchema = z
     inputMode: z.literal('voice'),
     asrRawText: z.string().trim().min(1).max(600),
     transcriptEdited: z.boolean(),
+    audioFileId: z.string().trim().min(1).max(200).optional(),
+    audioDurationMs: z.number().int().min(300).max(20_000).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    if (Boolean(value.audioFileId) !== Boolean(value.audioDurationMs)) {
+      context.addIssue({ code: 'custom', message: '语音文件与时长必须同时提供' });
+    }
+  });
 
 export const agentTurnSchema = z.object({
   sessionId: z.string().uuid(),

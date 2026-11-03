@@ -57,6 +57,17 @@ test('resolveSpeechTurnMeta：记录 ASR 原文与是否编辑，评分只看确
   // 仅首尾空白差异不算编辑
   const meta = contract.resolveSpeechTurnMeta(' 孩子发烧两天了 ', '孩子发烧两天了');
   assert.equal(meta.transcriptEdited, false);
+
+  assert.deepEqual(contract.resolveSpeechTurnMeta('最高体温是多少', '最高体温是多少度', {
+    fileId: 'real-uploaded-file-id',
+    durationMs: 1820,
+  }), {
+    inputMode: 'voice',
+    asrRawText: '最高体温是多少',
+    transcriptEdited: true,
+    audioFileId: 'real-uploaded-file-id',
+    audioDurationMs: 1820,
+  });
 });
 
 test('契约模块只含纯类型与纯函数，不导出网络实现或假成功 adapter', () => {

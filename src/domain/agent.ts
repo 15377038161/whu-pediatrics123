@@ -70,6 +70,10 @@ export interface AgentMessage {
   asrRawText?: string;
   /** 学生是否编辑过转写（确认文本与 ASR 原文不一致时为 true）。 */
   transcriptEdited?: boolean;
+  /** 真实学生录音的对象存储标识；不持久化限时 URL。 */
+  audioFileId?: string;
+  /** 录音时长（毫秒），用于语音气泡展示。 */
+  audioDurationMs?: number;
 }
 
 /**
@@ -205,6 +209,8 @@ export interface EventSpeechMeta {
   inputMode: 'voice';
   asrRawText: string;
   transcriptEdited: boolean;
+  audioFileId?: string;
+  audioDurationMs?: number;
 }
 
 export type AgentEvent =

@@ -10,11 +10,10 @@ import { allowedPostures, patientAppearance } from '@/domain/patient-appearance'
 import { resolveCommunicationProfile, speechCapabilityLabel } from '@/domain/communication-profile';
 import { ageBandLabel, bindingGapNote, patientAssetByKey, sexPresentationLabel } from '@/domain/patient-assets';
 import { SharedCaseRecord } from '@/components/shared-case-record';
-import { StreamText } from '@/components/stream-text';
 
 import {
   Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home, Info,
-  ClipboardList, LoaderCircle, MessageCircle, Mic, Send, Stethoscope, UserRound, Volume2, VolumeX, X,
+  ClipboardList, LoaderCircle, MessageCircle, Send, Stethoscope, UserRound, Volume2, VolumeX, X,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -25,10 +24,11 @@ import { getPracticeScenario } from '@/domain/practice-scenarios';
 import { findPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 import { CommunicationCall } from '@/components/communication-call';
 import { RoleAudioPlayer, type RoleAudioPlayerHandle } from '@/components/role-audio-player';
-import { VoiceInput } from '@/components/voice-input';
+import { VoiceHoldButton } from '@/components/voice-hold-button';
+import { ConversationThread, type PendingConversation } from '@/components/conversation-thread';
 import { reportSessionEvent } from '@/lib/engagement-tracker';
 import { fetchSpeechCapabilities } from '@/lib/speech';
-import type { SpeechCapabilities, SpeechTurnMeta } from '@/domain/speech-contract';
+import { resolveSpeechTurnMeta, type SpeechCapabilities, type SpeechTurnMeta, type VoiceRecordingResult } from '@/domain/speech-contract';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
   { id: 'triage', label: '接诊与分诊', short: '接诊' }, { id: 'history', label: '问诊与沟通', short: '交流' },
@@ -64,10 +64,6 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   // 统一鉴权请求层：携带 Authorization（网关重命名 x-sandbox-authorization），401 自动回登录页
   const { authedFetch } = await import('@/lib/authed-api');
   return authedFetch<T>(url, init);
-}
-
-function actorLabel(actor: string): string {
-  return ({ student: '你（医生）', child: '患儿', parent: '家长', tutor: '教学智能体', system: '病例系统' } as Record<string,string>)[actor] ?? actor;
 }
 
 type ExamObservation = {
@@ -131,7 +127,6 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [noteOpen,setNoteOpen]=useState(initialPanel==='note');
   const [recordOpen,setRecordOpen]=useState(false);
   const finishing = useRef(false);
-  const historyChatRef = useRef<HTMLDivElement>(null);
   const cracklesAudioRef = useRef<HTMLAudioElement>(null);
   const wheezeAudioRef = useRef<HTMLAudioElement>(null);
   const [session, setSession] = useState<SessionState | null>(null);
@@ -139,7 +134,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [question, setQuestion] = useState('');
-  const [pendingConversation, setPendingConversation] = useState<{ text: string; voice: boolean } | null>(null);
+  const [pendingConversation, setPendingConversation] = useState<PendingConversation | null>(null);
+  const [voiceDraft, setVoiceDraft] = useState<{ rawText: string; fileId: string | null; durationMs: number } | null>(null);
   const turnInFlight = useRef(false);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [examObservation, setExamObservation] = useState<ExamObservation | null>(null);
@@ -162,10 +158,9 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [examLinkedEvidence, setExamLinkedEvidence] = useState<string[]>([]);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [mobileView, setMobileView] = useState<'task' | 'patient' | 'record'>('task');
-  // 阶段 D 语音链：能力探测（服务端真实探测，失败按不可用隐藏入口）；文字/语音输入切换；角色播报静音。
+  // 语音链：能力探测（失败按不可用处理）；文字与按住说话共用受控草稿；角色播报可静音。
   const [speechCapabilities, setSpeechCapabilities] = useState<SpeechCapabilities | null>(null);
   const [speechProbing,setSpeechProbing]=useState(true);
-  const [inputMode, setInputMode] = useState<'text' | 'voice'>('text');
   const [roleAudioMuted, setRoleAudioMuted] = useState(false);
   const audioPlayerRef = useRef<RoleAudioPlayerHandle>(null);
   // 流式呈现：会话加载时的既有条目记为历史（直接全文）；之后新增的角色回复逐字呈现，
@@ -258,16 +253,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   }, [speechProbeSessionId]);
 
 
-  useEffect(() => {
-    if (!historyChatRef.current) return;
-    const frame = window.requestAnimationFrame(() => {
-      const chat = historyChatRef.current;
-      if (chat) chat.scrollTop = chat.scrollHeight;
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [session, pendingConversation]);
-
   // 逐字呈现集合：仅本会话加载后新增、尚未呈现完成、非学生的非空回复。
+  // 新消息与逐字呈现期间的吸底统一由 ConversationThread 处理。
   const streamingIds = useMemo(() => {
     const set = new Set<string>();
     if (!session || !seenIds || seenForSession !== session.id) return set;
@@ -276,19 +263,6 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     }
     return set;
   }, [session, seenIds, seenForSession, doneIds]);
-
-  // 逐字呈现期间消息流保持吸底；呈现结束即停止，不干扰非呈现期的用户滚动。
-  useEffect(() => {
-    if (streamingIds.size === 0) return;
-    let frame = 0;
-    const tick = () => {
-      const chat = historyChatRef.current;
-      if (chat) chat.scrollTop = chat.scrollHeight;
-      frame = window.requestAnimationFrame(tick);
-    };
-    frame = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frame);
-  }, [streamingIds.size]);
 
   const hasUnsavedDraft = Boolean(question.trim() || requestedTests.trim() || testReason.trim() ||
     (historySummaryText.trim() && historySummaryText !== (session?.historySummary ?? '')) ||
@@ -356,26 +330,32 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   async function submitConversation() {
     if (!session || busy || turnInFlight.current || !question.trim()) return;
     const text = question;
+    const draft = voiceDraft;
+    const speech = draft ? resolveSpeechTurnMeta(draft.rawText, text, draft.fileId ? { fileId: draft.fileId, durationMs: draft.durationMs } : undefined) : null;
     setQuestion('');
-    if (!await sendConversationText(text, null)) setQuestion(current => current || text);
+    if (await sendConversationText(text, speech)) setVoiceDraft(null);
+    else setQuestion(current => current || text);
+  }
+
+  function acceptVoiceResult(result: VoiceRecordingResult) {
+    setQuestion(result.text);
+    setVoiceDraft({ rawText: result.text, fileId: result.audioFileId, durationMs: result.audioDurationMs });
+    setPendingConversation(null);
   }
 
   // 临时气泡只属于输入界面；成功后由服务端消息原子替换，失败保留原草稿。
   // 文字和已确认的语音共用此入口，不把待发送内容写入临床会话或交给播报器。
   async function sendConversationText(text: string, speech: SpeechTurnMeta | null): Promise<boolean> {
     if (!text.trim() || !session || busy || turnInFlight.current) return false;
-    setPendingConversation({ text, voice: Boolean(speech) });
-    try {
-      const isCommunication = session.stage === 'communication' || Boolean(session.plan);
-      const result = await sendEvent(
-        isCommunication
-          ? { type: 'SEND_COMMUNICATION', data: { text, speech: speech ?? undefined } }
-          : { type: 'ASK_QUESTION', data: { text, speech: speech ?? undefined } },
-      );
-      return Boolean(result);
-    } finally {
-      setPendingConversation(null);
-    }
+    setPendingConversation({ text, voice: Boolean(speech), status: 'sending' });
+    const isCommunication = session.stage === 'communication' || Boolean(session.plan);
+    const result = await sendEvent(
+      isCommunication
+        ? { type: 'SEND_COMMUNICATION', data: { text, speech: speech ?? undefined } }
+        : { type: 'ASK_QUESTION', data: { text, speech: speech ?? undefined } },
+    );
+    if (!result) setPendingConversation({ text, voice: Boolean(speech), status: 'failed' });
+    return Boolean(result);
   }
   async function examine(part: string, toolOverride?: string) {
     const partLabel = ({ forehead: '头面', mouth: '口咽', chest: '胸部', 'upper-arm': '上臂', finger: '手指', hands: '双手', neck: '颈部', skin: '皮肤', abdomen: '腹部', limbs: '四肢' } as Record<string,string>)[part] ?? part;
@@ -486,7 +466,6 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const communicationModeActive = session.stage === 'communication' || Boolean(session.plan);
   // 语音能力就绪（服务端真实探测 asr/tts 均 turn-based）；否则语音入口隐藏、文字流程不受影响
   const voiceInputReady = speechCapabilities?.asr === 'turn-based';
-  const speechReady = voiceInputReady && speechCapabilities?.tts === 'turn-based';
   const practiceCompletion = activeScenario?.completion ?? null;
   const stageCompleted = (stage: Stage) => ({
     triage: session.stage !== 'triage',
@@ -501,33 +480,26 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
 
   const conversationContent = <>
     <div className="conversation-card">
-      <div className="message-list history-chat" aria-live="polite" ref={historyChatRef}>
-        {session.messages.filter((item) => item.kind !== 'navigation' || item.actor !== 'system').map((item) => {
-          const canReplay = !roleAudioMuted && ['child', 'parent', 'tutor'].includes(item.actor) && speechCapabilities?.tts === 'turn-based' && !/^（[^（）]*）$/.test(item.content.trim());
-          const streaming = streamingIds.has(item.id);
-          return <div className="message" data-actor={item.actor} key={item.id}><p className="message-label"><span>{actorLabel(item.actor)} · {item.emotion}{item.inputMode === 'voice' ? ' · 语音输入' : ''}</span>{canReplay && !streaming && <button className="message-audio-replay" type="button" onClick={() => audioPlayerRef.current?.replay(item.id)} aria-label={`播报这条${actorLabel(item.actor)}消息`}><Volume2 size={13} /> 播报</button>}</p><div className="message-bubble"><StreamText text={item.content} animate={streaming} onDone={() => clearStreamId(item.id)} /></div></div>;
-        })}
-        {pendingConversation && <>
-          <div className="message" data-actor="student" data-pending="true"><p className="message-label"><span>你（医生）{pendingConversation.voice ? ' · 语音输入' : ''}</span><span>发送中</span></p><div className="message-bubble">{pendingConversation.text}</div></div>
-          <div className="conversation-waiting" role="status"><LoaderCircle size={14} className="patient-breath"/>正在回复…</div>
-        </>}
-      </div>
+      <ConversationThread
+        sessionId={session.id}
+        messages={session.messages.filter((item) => item.kind !== 'navigation' || item.actor !== 'system')}
+        pending={pendingConversation}
+        streamingIds={streamingIds}
+        onStreamDone={clearStreamId}
+        ttsEnabled={!roleAudioMuted && speechCapabilities?.tts === 'turn-based'}
+        onReplay={(id) => audioPlayerRef.current?.replay(id)}
+        onRetry={() => void submitConversation()}
+      />
       <RoleAudioPlayer ref={audioPlayerRef} sessionId={session.id} messages={session.messages} enabled={!roleAudioMuted && speechCapabilities?.tts === 'turn-based'} />
       <div className="composer-card" data-mode={communicationModeActive ? 'communication' : 'history'}>
-        {inputMode === 'voice' && voiceInputReady ? (
-          <VoiceInput communicationMode={communicationModeActive} disabled={busy} onSend={sendConversationText} />
-        ) : (
-          <div className="composer"><label className="sr-only" htmlFor="question">{communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={communicationModeActive ? '直接向患儿和家长说明，例如：我理解您很担心，孩子目前呼吸和血氧需要先处理……' : '直接和患儿或家长交流，例如：小朋友别紧张，可以告诉我哪里不舒服吗？'} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void submitConversation(); } }} /></div>
-        )}
+        <div className="composer"><label className="sr-only" htmlFor="question">{communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={communicationModeActive ? '直接向患儿和家长说明，例如：我理解您很担心，孩子目前呼吸和血氧需要先处理……' : '直接和患儿或家长交流，例如：小朋友别紧张，可以告诉我哪里不舒服吗？'} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void submitConversation(); } }} /></div>
+        <VoiceHoldButton sessionId={session.id} disabled={busy || !voiceInputReady} onResult={acceptVoiceResult} />
         <div className="composer-footer" role="group" aria-label="输入与语音控制">
-          <button className="composer-toggle" type="button" aria-pressed={inputMode === 'voice'} onClick={() => { if (!voiceInputReady) { setFeedback('语音服务暂不可用，请先使用文字输入。'); return; } setInputMode((value) => (value === 'voice' ? 'text' : 'voice')); }}>
-            {inputMode === 'voice' ? <MessageCircle size={14} /> : <Mic size={14} />} {inputMode === 'voice' ? '文字输入' : voiceInputReady ? '语音输入' : '语音输入（暂不可用）'}
-          </button>
-          <button className="composer-toggle" type="button" aria-pressed={!roleAudioMuted} onClick={() => setRoleAudioMuted((value) => !value)} title="角色语音播报开关">
-            {roleAudioMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} {speechCapabilities?.tts !== 'turn-based' ? '播报暂不可用' : roleAudioMuted ? '播报已静音' : '自动播报已开启'}
+          <button className="composer-toggle" type="button" disabled={speechCapabilities?.tts !== 'turn-based'} aria-pressed={!roleAudioMuted && speechCapabilities?.tts === 'turn-based'} onClick={() => setRoleAudioMuted((value) => !value)} title="AI 回复语音播报开关">
+            {roleAudioMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} {speechCapabilities?.tts !== 'turn-based' ? '播报暂不可用' : roleAudioMuted ? 'AI 播报已关闭' : 'AI 播报已开启'}
           </button>
           {(speechCapabilities?.asr !== 'turn-based' || speechCapabilities?.tts !== 'turn-based') && <button className="composer-toggle" type="button" disabled={speechProbing} onClick={async () => { setSpeechProbing(true); try { const caps = await fetchSpeechCapabilities(); setSpeechCapabilities(caps); setFeedback(caps.asr === 'turn-based' && caps.tts === 'turn-based' ? '语音服务已恢复。' : '语音服务尚未恢复，可稍后重试，文字输入不受影响。'); } finally { setSpeechProbing(false); } }}>{speechProbing ? '正在检测语音…' : '重连语音'}</button>}
-          {inputMode === 'text' && <button className="btn btn-primary composer-send" type="button" disabled={busy || !question.trim()} onClick={submitConversation}><Send size={15} /> 发送</button>}
+          <button className="btn btn-primary composer-send" type="button" disabled={busy || !question.trim()} onClick={submitConversation}><Send size={15} /> 发送</button>
         </div>
       </div>
     </div>
@@ -593,7 +565,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       case 'communication': return activeScenario?.focus === 'communication'
         // 阶段 D：家长焦虑沟通专项使用模拟通话界面（AI 模拟标识、通话时长、静音、停止播报、结束确认）；
         // 语音不可用时组件内提供文字输入，训练进度不受影响。
-        ? <CommunicationCall session={session} speechReady={speechReady} busy={busy} onSend={sendConversationText} onFinish={finish} canFinish={Boolean(session.communication)} />
+        ? <CommunicationCall session={session} voiceReady={voiceInputReady} ttsReady={speechCapabilities?.tts === 'turn-based'} busy={busy} pending={pendingConversation} streamingIds={streamingIds} onStreamDone={clearStreamId} onSend={sendConversationText} onFinish={finish} canFinish={Boolean(session.communication)} />
         : conversationContent;
       case 'report': return <div className="loading-screen"><div><div className="pulse-mark"><Activity /></div><strong>正在生成可解释报告…</strong></div></div>;
     }
