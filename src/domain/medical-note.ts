@@ -4,8 +4,8 @@ import { z } from 'zod';
  * 批次6·独立病历书写模块领域定义。
  *
  * 模板边界（用户澄清确认 + CASE_WORKFLOW_AND_NOTE_WRITING.md 第4节第6条）：
- * 通用儿科大病历结构仅作为书写表单与完整性检查项，不做自动评分/扣分——
- * 不猜院校模板据此给学生扣分；AI 审阅为独立辅助反馈，不冒充医学审核、不改历史成绩。
+ * 通用儿科大病历结构作为书写表单与完整性检查项；病历书写评分仅用于教学反馈，
+ * 由 AI 审阅按固定 100 分维度给出，独立于临床评分、班级积分与选关逻辑，不修改历史成绩。
  */
 
 /** 通用儿科大病历模板结构版本；结构变化时必须换版（已提交病历保留原 template_version）。 */
@@ -31,7 +31,7 @@ export interface NoteSectionDef {
   key: NoteSectionKey;
   /** 中文段落名（表单与审阅展示） */
   label: string;
-  /** 段落书写提示（引导，不构成计分） */
+  /** 段落书写提示（引导，不直接计分） */
   hint: string;
   /** 表单必填段落（完整性检查基础项，不自动评分） */
   required: boolean;
@@ -76,7 +76,7 @@ export const noteContentSchema = z.object(
  */
 export type NoteContent = Record<NoteSectionKey, string>;
 
-/** 完整性检查（不评分）：段落完成度由纯函数按内容判断，仅供 AI 审阅与界面提示使用。 */
+/** 完整性检查：段落完成度由纯函数按内容判断，供评分与界面提示使用；完整不等于质量。 */
 export type SectionCompleteness = 'written' | 'partial' | 'missing' | 'not_applicable';
 
 export function sectionCompleteness(text: string | undefined, required: boolean): SectionCompleteness {
@@ -115,10 +115,40 @@ export const reviewSectionSchema = z.object({
   issues: z.array(reviewIssueSchema),
 });
 
+/** 病历书写五项评分上限（固定 100 分）：独立于临床评分、班级积分与选关。 */
+export const NOTE_WRITING_SCORE_ITEMS = [
+  { key: 'structure', label: '结构完整性', max: 25, hint: '段落齐全、层次清楚，必填信息完整' },
+  { key: 'accuracy', label: '事实准确性', max: 35, hint: '与本次已获得证据一致，无矛盾或无依据推断' },
+  { key: 'diagnosis', label: '诊断依据', max: 20, hint: '诊断、依据与鉴别相互支撑' },
+  { key: 'plan', label: '诊疗计划', max: 15, hint: '处置优先级、监测与随访安排完整' },
+  { key: 'expression', label: '表达规范', max: 5, hint: '术语、时间点与量化表达规范' },
+] as const;
+
+export type NoteWritingScoreKey = (typeof NOTE_WRITING_SCORE_ITEMS)[number]['key'];
+
+const scoreField = (max: number) => z.number().min(0).max(max).transform((value) => Math.round(value));
+
+/** AI 按固定维度给出的病历书写评分；缺失表示旧审阅或本次未完成评分，不补零。 */
+export const noteWritingScoreSchema = z.object({
+  structure: scoreField(25),
+  accuracy: scoreField(35),
+  diagnosis: scoreField(20),
+  plan: scoreField(15),
+  expression: scoreField(5),
+});
+
+export type NoteWritingScore = z.infer<typeof noteWritingScoreSchema>;
+
+/** 五维总分固定由分项相加，避免模型给出的总分与分项不一致。 */
+export function noteWritingScoreTotal(score: NoteWritingScore): number {
+  return NOTE_WRITING_SCORE_ITEMS.reduce((sum, item) => sum + Math.max(0, Math.min(item.max, Math.round(score[item.key]))), 0);
+}
+
 export const noteReviewSchema = z.object({
   summary: z.string(),
   sections: z.array(reviewSectionSchema),
   notableStrengths: z.array(z.string()),
+  writingScore: noteWritingScoreSchema.optional(),
 });
 
 export type NoteReviewResult = z.infer<typeof noteReviewSchema>;

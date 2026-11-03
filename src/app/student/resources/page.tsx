@@ -11,6 +11,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Clock, FileText, Film, RefreshCw, Sparkles } from 'lucide-react';
 import { authedFetch } from '@/lib/authed-api';
+import { MedicalBackdrop } from '@/components/medical-backdrop';
 import type { LearningResourceDetail, LearningResourceKind, LearningResourceSummary } from '@/lib/learning-resource';
 import styles from './resources.module.css';
 
@@ -297,7 +298,7 @@ function StudentResourcesWithQuery() {
   const [detailId, setDetailId] = useState<string | null>(() => searchParams.get('resourceId'));
 
   return (
-    <>
+    <MedicalBackdrop>
       <p className="eyebrow">学习资源</p>
       <h1 className="page-title">学习资源中心</h1>
       <p className="page-lead">
@@ -308,7 +309,7 @@ function StudentResourcesWithQuery() {
       ) : (
         <ResourceListWithSelection onSelect={setDetailId} />
       )}
-    </>
+    </MedicalBackdrop>
   );
 }
 

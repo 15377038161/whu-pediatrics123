@@ -55,7 +55,7 @@ export function CommunicationCall({
   }
 
   function hangUp() {
-    const label = canFinish ? '结束本次通话并生成专项报告？通话中的解释内容已记录。' : '尚未完成有效的解释沟通，结束后将按当前进度生成专项报告。确定结束通话吗？';
+    const label = canFinish ? '结束本次通话并生成临床能力专项报告？通话中的解释内容已记录。' : '尚未完成有效的解释沟通，结束后将按当前进度生成临床能力专项报告。确定结束通话吗？';
     if (!window.confirm(label)) return;
     audioPlayerRef.current?.stop();
     onFinish();

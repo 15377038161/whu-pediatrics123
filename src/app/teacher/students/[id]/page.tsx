@@ -106,7 +106,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
               <thead><tr><th>训练时间</th><th>类型</th><th>得分</th><th>证据</th></tr></thead>
               <tbody>{groupSessions.map((session) => <tr key={session.sessionId}>
                 <td data-label="训练时间">{formatDate(session.startedAt)}</td>
-                <td data-label="类型">{session.mode === 'osce' ? 'OSCE 模拟站' : session.mode === 'practice' ? '专项训练' : '模拟病例'}</td>
+                <td data-label="类型">{session.mode === 'osce' ? 'OSCE 模拟站' : session.mode === 'practice' ? '临床能力专项' : '模拟病例'}</td>
                 <td data-label="得分"><span className="score-tag" data-level={session.totalScore === null ? 'empty' : session.totalScore >= 85 ? 'strong' : session.totalScore >= 80 ? 'steady' : 'attention'}>{session.scoreBasis === 'process' ? `过程 ${session.totalScore ?? '—'}` : session.totalScore ?? '未评分'}</span></td>
                 <td data-label="证据">{session.reportId ? <a className="text-link" href={`/teacher/sessions/${session.sessionId}`}><ClipboardList size={13} style={{ verticalAlign: -3 }} /> 查看全过程</a> : <span style={{ color: '#7d8c89' }}>暂无报告</span>}{session.reportStatus === 'pending_review' && !session.reviewed && <span className="review-badge" data-level="pending">待复核</span>}{session.reviewed && <span className="review-badge" data-level="reviewed">已复核</span>}</td>
               </tr>)}</tbody>

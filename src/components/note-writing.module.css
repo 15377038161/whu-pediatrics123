@@ -140,6 +140,99 @@
   background: #f2faf5;
 }
 
+.noteWritingScore {
+  padding: 12px 14px;
+  border: 1px solid #bfe3cd;
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.noteWritingScore header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.noteWritingScore header span {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1f6f54;
+}
+
+.noteWritingScore header small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.noteWritingScore header > strong {
+  flex: none;
+  font: 800 28px/1 ui-monospace, monospace;
+  color: var(--pine-dark);
+}
+
+.noteWritingScore header > strong small {
+  display: inline;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.noteWritingScoreGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.noteWritingScoreGrid > div {
+  min-width: 0;
+  padding: 7px 4px;
+  border-radius: 8px;
+  background: #f2faf5;
+  text-align: center;
+}
+
+.noteWritingScoreGrid span {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.noteWritingScoreGrid strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 15px;
+  color: var(--pine-dark);
+}
+
+.noteWritingScoreGrid small {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.noteWritingScore > p,
+.noteWritingScoreLegacy {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.noteWritingScoreLegacy {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--white);
+}
+
+@media (max-width: 699px) {
+  .noteWritingScoreGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 .noteReviewSummary {
   font-size: 13.5px;
   line-height: 1.7;

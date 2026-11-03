@@ -1,14 +1,14 @@
 'use client';
 
 import { Bot } from 'lucide-react';
-import type { NoteReviewResult } from '@/domain/medical-note';
-import { sectionCompleteness } from '@/domain/medical-note';
+import type { NoteReviewResult, NoteWritingScore } from '@/domain/medical-note';
+import { NOTE_WRITING_SCORE_ITEMS, noteWritingScoreTotal, sectionCompleteness } from '@/domain/medical-note';
 import styles from './note-writing.module.css';
 
 /**
  * 批次6·AI 审阅意见面板（学生书写页与教师档案页共享）：
- * 结构化意见 = 总评 + 逐段完整性 + 问题条目（引用原文/证据）+ 值得肯定。
- * 意见为独立辅助反馈，不冒充医学审核、不给分、不改历史成绩。
+ * 结构化意见 = 病历书写评分 + 总评 + 逐段完整性 + 问题条目 + 值得肯定。
+ * 评分只评价病历文本，独立于临床评分、班级积分与选关；医学结论由教师复核。
  */
 
 const COMPLETENESS_LABEL: Record<ReturnType<typeof sectionCompleteness>, string> = {
@@ -26,9 +26,33 @@ const ISSUE_KIND_LABEL: Record<string, string> = {
   expression: '表达',
 };
 
+function WritingScoreCard({ score }: { score: NoteWritingScore }) {
+  const total = noteWritingScoreTotal(score);
+  return (
+    <section className={styles.noteWritingScore} aria-label="病历书写评分">
+      <header>
+        <div><span>病历书写评分</span><small>只评本次病历文本</small></div>
+        <strong>{total}<small> / 100</small></strong>
+      </header>
+      <div className={styles.noteWritingScoreGrid}>
+        {NOTE_WRITING_SCORE_ITEMS.map((item) => (
+          <div key={item.key}>
+            <span>{item.label}</span>
+            <strong>{Math.max(0, Math.min(item.max, Math.round(score[item.key])))}<small> / {item.max}</small></strong>
+          </div>
+        ))}
+      </div>
+      <p>不计入临床评分、班级积分或选关结果。</p>
+    </section>
+  );
+}
+
 export function NoteReviewPanel({ review }: { review: NoteReviewResult }) {
   return (
     <div className={styles.noteReviewPanel}>
+      {review.writingScore
+        ? <WritingScoreCard score={review.writingScore} />
+        : <p className={styles.noteWritingScoreLegacy}>本次审阅未包含评分；可重新审阅生成五维评分。</p>}
       <p className={styles.noteReviewSummary}><Bot size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#1f6f54' }} />{review.summary}</p>
       {review.sections.map((section) => (
         <div className={styles.noteReviewSection} key={section.sectionKey}>

@@ -23,7 +23,7 @@ const evaluationBasisLabels: Record<NonNullable<TrainingReport['evaluationBasis'
 };
 
 export function ReportView({ report, readonly = false }: { report: TrainingReport; readonly?: boolean }) {
-  const mode = report.mode === 'osce' ? 'OSCE 模拟站 · 模拟参考评分' : report.mode === 'practice' ? '专项训练' : report.mode === 'immersive' ? '沉浸式病例教学' : '引导训练';
+  const mode = report.mode === 'osce' ? 'OSCE 模拟站 · 模拟参考评分' : report.mode === 'practice' ? '临床能力专项' : report.mode === 'immersive' ? '沉浸式病例教学' : '引导训练';
   // 降级查询：历史报告可能引用目录外 caseId（如早期探针/归档病例），降级展示 ID 而非 500
   // 防透题：优先使用报告 caseTitle（服务端在完成时写入的真实病种名——完成后释放），
   // 历史报告无该字段时降级公开目录标题（教师病例为中性标题，演示病例为症状标题）

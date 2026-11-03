@@ -15,7 +15,7 @@ import { readTeacherCaseData } from '@/lib/teacher-case-data';
  *
  * 边界（CASE_WORKFLOW_AND_NOTE_WRITING.md 第4节第3/4/5条）：
  * - 证据摘要取自学生版报告投影（不含答案参照）；标准病历仅作服务端上下文，绝不随 SSE 下发；
- * - AI 建议引用学生已写内容或本例已获得证据，不编造检查结果/临床结论、不给分、不改历史成绩；
+ * - AI 建议引用学生已写内容或本例已获得证据，不编造检查结果/临床结论；按固定五维给出病历书写评分，评分不进入临床总分/积分/选关，不改历史成绩；
  * - 服务异常 → failed，前端提示但不降级提交。标准病历缺资料时仅跳过漏采对照，仍可审。
  */
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {

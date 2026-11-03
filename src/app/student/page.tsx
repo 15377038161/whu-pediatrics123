@@ -55,7 +55,6 @@ export default function StudentHome() {
         {system && <button className="btn btn-secondary" onClick={() => setSelected(null)}>返回系统地图</button>}
         {active && <Link href={`/student/training?session=${encodeURIComponent(active.id)}`}>继续上次</Link>}
         <Link href="/student/classes">我的班级</Link>
-        <Link href="/student/anatomy">儿童骨骼</Link>
       </div>
     </header>
     {!system ? <nav className={styles.map} aria-label="选择儿科系统">

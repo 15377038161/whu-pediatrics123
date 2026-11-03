@@ -1,0 +1,48 @@
+.backdrop {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(14px, 2.2vw, 26px);
+  border-radius: 22px;
+  background: #f2faf7;
+}
+
+/* 手机优先竖版素材；遮罩保持浅色，确保正文与控件对比度。 */
+.backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: url('/medical-bg-portrait.png') center / cover no-repeat;
+  opacity: .38;
+}
+
+.backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, #fffffff0 0%, #f4fbf8db 52%, #eef9f4e6 100%);
+}
+
+.content {
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .backdrop::before {
+    background-image: url('/medical-bg-landscape.png');
+    opacity: .46;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .backdrop::before {
+    transition: opacity .2s ease;
+  }
+}
+
+@media print {
+  .backdrop { padding: 0; background: #fff; }
+  .backdrop::before, .backdrop::after { display: none; }
+}

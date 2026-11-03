@@ -37,7 +37,7 @@ export function TeacherStudentNotes({ studentId }: { studentId: string }) {
     <section className={styles.notesSection} aria-label="病历提交">
       <div className="section-head">
         <h2 className="section-title"><ClipboardPen size={18} /> 病历提交</h2>
-        <span className="eyebrow">通用儿科大病历 · AI 意见为辅助反馈，不计分</span>
+        <span className="eyebrow">通用儿科大病历 · 书写评分单独计算，不计入临床总分</span>
       </div>
       {error && <p className={styles.noteEmpty} role="alert">{error}</p>}
       {!error && notes === null && <p className={styles.noteEmpty} role="status">正在读取病历提交…</p>}

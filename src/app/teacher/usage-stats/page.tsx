@@ -19,7 +19,7 @@ import { authedFetch, authedFetchRaw } from '@/lib/authed-api';
 
 const MODE_LABELS: Record<string, string> = {
   guided: '带教引导',
-  practice: '专项练习',
+  practice: '临床能力专项',
   osce: 'OSCE 模拟站',
   immersive: '沉浸问诊',
 };
