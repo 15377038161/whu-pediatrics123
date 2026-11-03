@@ -10,7 +10,6 @@ import { ConversationThread, type PendingConversation } from '@/components/conve
 
 export interface CommunicationCallProps {
   session: SessionState;
-  voiceReady: boolean;
   ttsReady: boolean;
   busy: boolean;
   pending: PendingConversation | null;
@@ -22,7 +21,7 @@ export interface CommunicationCallProps {
 }
 
 export function CommunicationCall({
-  session, voiceReady, ttsReady, busy, pending, streamingIds, onStreamDone, onSend, onFinish, canFinish,
+  session, ttsReady, busy, pending, streamingIds, onStreamDone, onSend, onFinish, canFinish,
 }: CommunicationCallProps) {
   const [elapsedSec, setElapsedSec] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -100,8 +99,7 @@ export function CommunicationCall({
           {busy ? <LoaderCircle className="spin" size={15} /> : <Send size={15} />} 发送
         </button>
       </div>
-      <VoiceHoldButton sessionId={session.id} disabled={busy || !voiceReady} onResult={acceptVoiceResult} />
-      {!voiceReady && <p className="call-fallback-note">语音暂不可用，可先用文字完成沟通；训练进度不受影响。</p>}
+      <VoiceHoldButton sessionId={session.id} disabled={busy} onResult={acceptVoiceResult} />
     </footer>
   </div>;
 }

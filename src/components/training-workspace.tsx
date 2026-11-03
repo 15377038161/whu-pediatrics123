@@ -464,8 +464,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     router.push('/student');
   }
   const communicationModeActive = session.stage === 'communication' || Boolean(session.plan);
-  // 语音能力就绪（服务端真实探测 asr/tts 均 turn-based）；否则语音入口隐藏、文字流程不受影响
-  const voiceInputReady = speechCapabilities?.asr === 'turn-based';
+  // 语音能力探测仅用于 UI 提示（播报开关/重连按钮），语音按钮始终可点击
   const practiceCompletion = activeScenario?.completion ?? null;
   const stageCompleted = (stage: Stage) => ({
     triage: session.stage !== 'triage',
@@ -569,7 +568,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       case 'communication': return activeScenario?.focus === 'communication'
         // 阶段 D：家长焦虑沟通专项使用模拟通话界面（AI 模拟标识、通话时长、静音、停止播报、结束确认）；
         // 语音不可用时组件内提供文字输入，训练进度不受影响。
-        ? <CommunicationCall session={session} voiceReady={voiceInputReady} ttsReady={speechCapabilities?.tts === 'turn-based'} busy={busy} pending={pendingConversation} streamingIds={streamingIds} onStreamDone={clearStreamId} onSend={sendConversationText} onFinish={finish} canFinish={Boolean(session.communication)} />
+        ? <CommunicationCall session={session} ttsReady={speechCapabilities?.tts === 'turn-based'} busy={busy} pending={pendingConversation} streamingIds={streamingIds} onStreamDone={clearStreamId} onSend={sendConversationText} onFinish={finish} canFinish={Boolean(session.communication)} />
         : conversationContent;
       case 'report': return <div className="loading-screen"><div><div className="pulse-mark"><Activity /></div><strong>正在生成可解释报告…</strong></div></div>;
     }
