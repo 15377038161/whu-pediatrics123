@@ -1173,3 +1173,9 @@ textarea { resize: vertical; }
 .training-shell .record-timeline-section { flex:1; min-height:160px; display:flex; flex-direction:column; gap:8px; overflow:hidden; }
 .training-shell .record-vitals,.training-shell .case-record-tools,.training-shell .record-section-head,.training-shell .shared-record-note-entry { flex-shrink:0; }
 .training-shell .shared-record-timeline { flex:1; min-height:0; overflow-y:auto; display:block; }
+
+/* Pending input stays in the conversation, not in the persisted clinical record. */
+.conversation-waiting { display:flex; align-items:center; gap:6px; padding:2px 4px; color:var(--muted); font-size:12px; }
+.message[data-pending] .message-label { justify-content:space-between; }
+.message[data-pending] .message-label>span:last-child { font-weight:400; }
+.composer-meta:empty { display:none; }

@@ -139,6 +139,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [question, setQuestion] = useState('');
+  const [pendingConversation, setPendingConversation] = useState<{ text: string; voice: boolean } | null>(null);
+  const turnInFlight = useRef(false);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [examObservation, setExamObservation] = useState<ExamObservation | null>(null);
   const [diagnosis, setDiagnosis] = useState('');
@@ -257,13 +259,13 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
 
 
   useEffect(() => {
-    if (session?.stage !== 'history' && session?.stage !== 'communication') return;
+    if (!historyChatRef.current) return;
     const frame = window.requestAnimationFrame(() => {
       const chat = historyChatRef.current;
       if (chat) chat.scrollTop = chat.scrollHeight;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [session]);
+  }, [session, pendingConversation]);
 
   // 逐字呈现集合：仅本会话加载后新增、尚未呈现完成、非学生的非空回复。
   const streamingIds = useMemo(() => {
@@ -330,18 +332,20 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   }, [finish, session?.expiresAt, session?.status]);
 
   async function sendEvent(event: AgentEvent): Promise<AgentTurnResult | null> {
-    if (!session || busy) return null;
+    if (!session || busy || turnInFlight.current) return null;
+    turnInFlight.current = true;
     setBusy(true); setError(null); setFeedback(null);
     try {
       const result = await api<AgentTurnResult>('/api/agent/turn', {
         method: 'POST', body: JSON.stringify({ sessionId: session.id, clientEventId: crypto.randomUUID(), event }),
       });
-      setSession(result.session); applyDraftBackfill(result.session); setFeedback(result.feedback);
+      if (event.type === 'ASK_QUESTION' || event.type === 'SEND_COMMUNICATION') setPendingConversation(null);
+      setSession(result.session); applyDraftBackfill(result.session); setFeedback(event.type === 'ASK_QUESTION' || event.type === 'SEND_COMMUNICATION' ? null : result.feedback);
       return result;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '当前操作失败，请重试。');
       return null;
-    } finally { setBusy(false); }
+    } finally { turnInFlight.current = false; setBusy(false); }
   }
 
   async function navigate(stage: Stage) {
@@ -350,25 +354,28 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     if (result) { setNoteOpen(false);router.replace(`/student/training?session=${session!.id}`);setMobileView(stage === 'exam' ? 'patient' : 'task');setExamObservation(null); }
   }
   async function submitConversation() {
-    if (!question.trim()) return;
-    const text = question; setQuestion('');
-    // 单聊天框语义自动推导：沟通站（OSCE/沉浸式）或处置已提交后输入为「解释与沟通」，
-    // 其余一律问诊——无需手动切换模式
-    const isCommunication = session?.stage === 'communication' || Boolean(session?.plan);
-    const result = await sendEvent(isCommunication ? { type: 'SEND_COMMUNICATION', data: { text } } : { type: 'ASK_QUESTION', data: { text } });
-    if (!result) setQuestion(text);
+    if (!session || busy || turnInFlight.current || !question.trim()) return;
+    const text = question;
+    setQuestion('');
+    if (!await sendConversationText(text, null)) setQuestion(current => current || text);
   }
-  // 语音轮发送（阶段 D）：语义推导与单聊天框一致；携带语音轮元数据（ASR 原文与是否编辑）。
-  // 返回是否成功：失败时语音组件保留确认草稿可重试/回退文字，训练进度不受影响。
+
+  // 临时气泡只属于输入界面；成功后由服务端消息原子替换，失败保留原草稿。
+  // 文字和已确认的语音共用此入口，不把待发送内容写入临床会话或交给播报器。
   async function sendConversationText(text: string, speech: SpeechTurnMeta | null): Promise<boolean> {
-    if (!text.trim() || !session) return false;
-    const isCommunication = session.stage === 'communication' || Boolean(session.plan);
-    const result = await sendEvent(
-      isCommunication
-        ? { type: 'SEND_COMMUNICATION', data: { text, speech: speech ?? undefined } }
-        : { type: 'ASK_QUESTION', data: { text, speech: speech ?? undefined } },
-    );
-    return Boolean(result);
+    if (!text.trim() || !session || busy || turnInFlight.current) return false;
+    setPendingConversation({ text, voice: Boolean(speech) });
+    try {
+      const isCommunication = session.stage === 'communication' || Boolean(session.plan);
+      const result = await sendEvent(
+        isCommunication
+          ? { type: 'SEND_COMMUNICATION', data: { text, speech: speech ?? undefined } }
+          : { type: 'ASK_QUESTION', data: { text, speech: speech ?? undefined } },
+      );
+      return Boolean(result);
+    } finally {
+      setPendingConversation(null);
+    }
   }
   async function examine(part: string, toolOverride?: string) {
     const partLabel = ({ forehead: '头面', mouth: '口咽', chest: '胸部', 'upper-arm': '上臂', finger: '手指', hands: '双手', neck: '颈部', skin: '皮肤', abdomen: '腹部', limbs: '四肢' } as Record<string,string>)[part] ?? part;
@@ -500,13 +507,17 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
           const streaming = streamingIds.has(item.id);
           return <div className="message" data-actor={item.actor} key={item.id}><p className="message-label"><span>{actorLabel(item.actor)} · {item.emotion}{item.inputMode === 'voice' ? ' · 语音输入' : ''}</span>{canReplay && !streaming && <button className="message-audio-replay" type="button" onClick={() => audioPlayerRef.current?.replay(item.id)} aria-label={`播报这条${actorLabel(item.actor)}消息`}><Volume2 size={13} /> 播报</button>}</p><div className="message-bubble"><StreamText text={item.content} animate={streaming} onDone={() => clearStreamId(item.id)} /></div></div>;
         })}
+        {pendingConversation && <>
+          <div className="message" data-actor="student" data-pending="true"><p className="message-label"><span>你（医生）{pendingConversation.voice ? ' · 语音输入' : ''}</span><span>发送中</span></p><div className="message-bubble">{pendingConversation.text}</div></div>
+          <div className="conversation-waiting" role="status"><LoaderCircle size={14} className="patient-breath"/>正在回复…</div>
+        </>}
       </div>
       <RoleAudioPlayer ref={audioPlayerRef} sessionId={session.id} messages={session.messages} enabled={!roleAudioMuted && speechCapabilities?.tts === 'turn-based'} />
       <div className="composer-card" data-mode={communicationModeActive ? 'communication' : 'history'}>
         {inputMode === 'voice' && voiceInputReady ? (
           <VoiceInput communicationMode={communicationModeActive} disabled={busy} onSend={sendConversationText} />
         ) : (
-          <div className="composer"><label className="sr-only" htmlFor="question">{communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={communicationModeActive ? '直接向患儿和家长说明，例如：我理解您很担心，孩子目前呼吸和血氧需要先处理……' : '直接和患儿或家长交流，例如：小朋友别紧张，可以告诉我哪里不舒服吗？'} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void submitConversation(); } }} /></div>
+          <div className="composer"><label className="sr-only" htmlFor="question">{communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={communicationModeActive ? '直接向患儿和家长说明，例如：我理解您很担心，孩子目前呼吸和血氧需要先处理……' : '直接和患儿或家长交流，例如：小朋友别紧张，可以告诉我哪里不舒服吗？'} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void submitConversation(); } }} /></div>
         )}
         <div className="composer-footer" role="group" aria-label="输入与语音控制">
           <button className="composer-toggle" type="button" aria-pressed={inputMode === 'voice'} onClick={() => { if (!voiceInputReady) { setFeedback('语音服务暂不可用，请先使用文字输入。'); return; } setInputMode((value) => (value === 'voice' ? 'text' : 'voice')); }}>
