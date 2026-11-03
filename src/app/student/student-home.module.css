@@ -4,17 +4,100 @@
 .heading p { margin: .3rem 0 0; }
 .tools { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
 .map { position: relative; overflow: hidden; border-radius: 1.1rem; }
+/* 最终稿已含浅青绿水面、淡医学纹理、12 岛与中南医院远岸，直接整图呈现。 */
 .mapArt { aspect-ratio: 1586 / 992; background: url('/pediatric-systems-map.png') center / 100% 100% no-repeat; }
-.island { position: absolute; transform: translate(-50%, -50%); width: 14%; height: 15%; color: transparent; background: transparent; border: 2px solid transparent; border-radius: 1rem; cursor: pointer; }
-.island:hover, .island:focus-visible { border-color: #fff8dd; background: #fff8dd24; outline: 2px solid #175e54; }
+.island {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: end center;
+  padding: 0;
+  color: transparent;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+/* 岛屿光晕：只强化当前岛，不遮盖器官与名称牌。 */
+.island::before {
+  content: '';
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, #fff6d84d 0%, #fff6d826 55%, transparent 72%);
+  box-shadow: 0 0 0 0 transparent;
+  opacity: 0;
+  transition: opacity .18s ease, box-shadow .18s ease;
+  pointer-events: none;
+}
+.island:hover::before, .island:focus-visible::before {
+  opacity: 1;
+  box-shadow: 0 0 26px 10px #fff3c466, 0 0 0 2px #fff8ddcc;
+}
+.island:focus-visible { outline: 3px solid #0f4c44; outline-offset: 2px; }
+.islandLabel {
+  position: absolute;
+  bottom: -4%;
+  left: 50%;
+  transform: translate(-50%, 40%);
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  background: #0f4c44;
+  color: #f3fffa;
+  font-size: .85rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity .18s ease, transform .18s ease;
+  pointer-events: none;
+}
+.island:hover .islandLabel, .island:focus-visible .islandLabel { opacity: 1; transform: translate(-50%, 55%); }
 .levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; padding: 0; list-style: none; }
 .levels a { display: grid; gap: .6rem; height: 100%; padding: 1rem; border: 1px solid #bddbd1; border-radius: .85rem; background: #fff; color: #174b48; overflow-wrap: anywhere; }
 .levels a:hover, .levels a:focus-visible { background: #ebf7f0; }
 .levels span { font-size: .85rem; color: #36675d; }
 @media (max-width: 600px) {
   .map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; overflow: visible; }
-  .mapArt { grid-column: 1 / -1; border-radius: .9rem; }
-  .island { position: static; transform: none; width: auto; height: auto; min-height: 44px; color: #174b48; background: #edf7f2; border: 1px solid #bddbd1; font-size: .85rem; }
+  /* 手机页首只保留远岸医院条带，群岛改由下方三列按钮承载。 */
+  .mapArt {
+    grid-column: 1 / -1;
+    aspect-ratio: auto;
+    height: 84px;
+    border-radius: .9rem;
+    background-size: 170% auto;
+    background-position: 50% 0;
+  }
+  .island {
+    position: static;
+    transform: none;
+    display: grid;
+    place-items: center;
+    width: auto;
+    height: auto;
+    min-height: 44px;
+    padding: .45rem .2rem;
+    border: 1px solid #bddbd1;
+    border-radius: .7rem;
+    background: #edf7f2;
+  }
+  .island::before { display: none; }
+  .island:hover, .island:focus-visible { background: #dcf0e6; }
+  .islandLabel {
+    position: static;
+    transform: none;
+    padding: 0;
+    background: transparent;
+    color: #174b48;
+    font-size: .85rem;
+    opacity: 1;
+    white-space: normal;
+    text-align: center;
+  }
+  .island:hover .islandLabel, .island:focus-visible .islandLabel { transform: none; }
   .levels { gap: .4rem; }
   .levels a { padding: .6rem; font-size: .85rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .island::before, .islandLabel { transition: none; }
 }
