@@ -14,8 +14,8 @@
 
 
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, Plus, RefreshCw, Send, Undo2, RotateCcw } from 'lucide-react';
-import { authedFetch } from '@/lib/authed-api';
+import { ArrowLeft, Download, Plus, RefreshCw, Send, Undo2, RotateCcw } from 'lucide-react';
+import { authedFetch, authedFetchRaw } from '@/lib/authed-api';
 import { ASSESSMENT_SCORE_LEVELS, computeSkillAssessmentTotal } from '@/domain/skill-assessment';
 import type { SkillCatalogItem } from '@/domain/skill-learning';
 import type { SkillAssessmentDetail, SkillAssessmentListItem } from '@/lib/skill-assessment';
@@ -91,6 +91,29 @@ export function SkillAssessmentManager() {
       setAssessments(res.assessments ?? []);
     } catch {
       // 列表静默刷新失败不阻塞当前操作
+    }
+  }, []);
+
+
+  const exportCsv = useCallback(async () => {
+    setActionBusy('export');
+    setErrorMessage('');
+    try {
+      const response = await authedFetchRaw('/api/teacher/skill-assessments/export');
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 10);
+      anchor.href = objectUrl;
+      anchor.download = `现场考核_${stamp}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+      setErrorMessage((e as Error).message || '导出失败，请稍后重试。');
+    } finally {
+      setActionBusy('');
     }
   }, []);
 
@@ -295,9 +318,14 @@ export function SkillAssessmentManager() {
               <h1 className={styles.pageTitle}>现场考核评分</h1>
               <p className={styles.pageLead}>内置统一评分项，逐项三档打分（未观察不计分）；发布后学生可查看成绩。</p>
             </div>
-            <button className="btn btn-primary" type="button" onClick={() => { setErrorMessage(''); setAssessmentAt(nowLocalInputValue()); setView({ kind: 'create' }); }}>
-              <Plus size={15} /> 新建考核
-            </button>
+            <div className={styles.headActions}>
+              <button className="btn btn-quiet" type="button" onClick={() => void exportCsv()} disabled={actionBusy === 'export'}>
+                <Download size={15} /> {actionBusy === 'export' ? '正在导出…' : '导出 CSV'}
+              </button>
+              <button className="btn btn-primary" type="button" onClick={() => { setErrorMessage(''); setAssessmentAt(nowLocalInputValue()); setView({ kind: 'create' }); }}>
+                <Plus size={15} /> 新建考核
+              </button>
+            </div>
           </div>
 
           {assessments.length === 0 ? (

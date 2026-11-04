@@ -55,7 +55,7 @@ export function SharedCaseRecord({
     </div>
     <div className="panel-body shared-case-record-body">
       <section className="record-vitals" aria-labelledby="record-vitals-title">
-        <div className="record-section-head"><h3 id="record-vitals-title">接诊已知</h3><span>初筛生命体征</span></div>
+        <div className="record-section-head"><h3 id="record-vitals-title">接诊已知</h3><span>初筛生命体征（非本轮查体，不替代体温测量等操作）</span></div>
         <div className="vitals">
           <div className="vital"><strong>{session.vitals.temperature ?? '未记录'}</strong><span>体温 ℃</span></div>
           <div className="vital"><strong>{session.vitals.heartRate ?? '未记录'}</strong><span>心率 /min</span></div>

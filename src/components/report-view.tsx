@@ -56,7 +56,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           <p className="eyebrow">{mode}{focusScenario ? ` · ${focusScenario.title}` : ''} · {readonly ? '只读报告' : '训练完成'}</p>
           <h1>{caseTitle}</h1>
           <p>{processReport ? '分数表示训练过程完成度。请根据已获得的记录复盘，诊断和处置的正确性由教师结合具体内容复核。' : report.mode === 'osce' ? '模拟站参考评分依据实际问答、器材操作、临床决策与沟通原文生成，不构成正式考试成绩。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
-          <p style={{ fontSize: 13, opacity: 0.75 }}>评分量表：{rubric ? `${rubric.name}（v${report.rubricVersion}）` : `版本 v${report.rubricVersion ?? '未记录'} 的历史量表定义未存档，按报告快照展示`} · 成绩口径：{evaluationBasisLabels[evaluationBasis]}{report.assessableMaxScore !== undefined && !unscored ? ` · 可评价满分：${report.assessableMaxScore} 分（无法评价/不适用项不计入）` : ''}</p>
+          <p style={{ fontSize: 13, opacity: 0.75 }}>评分量表：{rubric ? `${rubric.name}（v${report.rubricVersion}）` : '历史报告固定六维量表（生成时未单独保存量表版本，按报告快照展示，不重算旧分）'} · 成绩口径：{evaluationBasisLabels[evaluationBasis]}{report.assessableMaxScore !== undefined && !unscored ? ` · 可评价满分：${report.assessableMaxScore} 分（无法评价/不适用项不计入）` : ''}</p>
           {unscoredReason && <p style={{ fontSize: 13, opacity: 0.75 }} role="note">未评分说明：{unscoredReason}</p>}
         </div>
       </section>

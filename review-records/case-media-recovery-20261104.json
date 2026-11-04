@@ -1,0 +1,202 @@
+{
+  "generatedAt": "2026-11-04T14:40:38.851Z",
+  "policy": "only uniquely confirmed current testIds; no historical version deleted; DKA active version untouched",
+  "applied": [
+    {
+      "caseId": "teacher-中枢性尿崩症",
+      "beforeVersion": "077b89b6d78a51b6",
+      "afterVersion": "8399007092abff43",
+      "testMedia": [
+        {
+          "testId": "source-test-3",
+          "fileIds": [
+            "54477d66632578a9a0db7de8aff38f74"
+          ]
+        }
+      ],
+      "examMedia": [],
+      "sha256": "6f50172471eb0e9b36f820ed0099ff708990233b31939989bc6f043533c41435"
+    },
+    {
+      "caseId": "teacher-噬血细胞综合征",
+      "beforeVersion": "588f39a70e5eac5d",
+      "afterVersion": "0fcd716cf9d311cb",
+      "testMedia": [
+        {
+          "testId": "source-test-69",
+          "fileIds": [
+            "ab06c40d0517b6d2ecdcf00c74804d1e"
+          ]
+        },
+        {
+          "testId": "source-test-78",
+          "fileIds": [
+            "047dcd9a6e4d4d0153d2d633571f243e"
+          ]
+        },
+        {
+          "testId": "source-test-80",
+          "fileIds": [
+            "0c1e2e8bfe5090aad329d201682671e1"
+          ]
+        }
+      ],
+      "examMedia": [],
+      "sha256": "7eebf97cadb7d006670602dbad4d03259abe07a7298af9fecb588a3f2fc1b07f"
+    },
+    {
+      "caseId": "teacher-特发性血小板减少性紫癜",
+      "beforeVersion": "9a684e33ae950a33",
+      "afterVersion": "b8c5c9b92a3f6f21",
+      "testMedia": [
+        {
+          "testId": "source-test-10",
+          "fileIds": [
+            "177e3936beda5a2af2da11d114fc48fd"
+          ]
+        },
+        {
+          "testId": "source-test-21",
+          "fileIds": [
+            "b3042b3eeb6facc6171d8d2cf10cc0dc"
+          ]
+        },
+        {
+          "testId": "source-test-6",
+          "fileIds": [
+            "fadb29936d34e168b84b937b0e63e2de",
+            "340b4b39c2943591a260387faa726f70"
+          ]
+        },
+        {
+          "testId": "source-test-7",
+          "fileIds": [
+            "89737fa32800c53653cb52d6e5270d1c"
+          ]
+        },
+        {
+          "testId": "source-test-17",
+          "fileIds": [
+            "528ec77ca2c59967982d2acbd3b6e7a3"
+          ]
+        },
+        {
+          "testId": "source-test-43",
+          "fileIds": [
+            "4821efd4db18801c9f44673333518feb"
+          ]
+        },
+        {
+          "testId": "source-test-25",
+          "fileIds": [
+            "d930021470c32c03c1d459d8a50e3294"
+          ]
+        },
+        {
+          "testId": "source-test-54",
+          "fileIds": [
+            "a6b72b4b681dfdcd7dda268e06fafad0"
+          ]
+        }
+      ],
+      "examMedia": [
+        {
+          "examId": "source-exam-inspection-skin",
+          "media": [
+            {
+              "fileId": "5167a2ade32646b9763e86193ba11145",
+              "caption": "教师原件中的皮肤查体附件；对应本例视诊记录，具体体征待教师复核。"
+            }
+          ]
+        }
+      ],
+      "sha256": "ceae23dc98bb757c16475ecc68bb2af86f702c314aeb4ad204e60c9c82d5e1b5"
+    },
+    {
+      "caseId": "teacher-蚕豆病",
+      "beforeVersion": "af141479aec2da1a",
+      "afterVersion": "7b11b44563484343",
+      "testMedia": [
+        {
+          "testId": "source-test-1",
+          "fileIds": [
+            "5018412cde7e529bb6f9775424629246"
+          ]
+        },
+        {
+          "testId": "source-test-2",
+          "fileIds": [
+            "b1a14e5ded2f0fa44d86da272fded3bc",
+            "1389fcbdd82c89ffb629eecac0ae69f8"
+          ]
+        },
+        {
+          "testId": "source-test-8",
+          "fileIds": [
+            "69878cb2ef713b31d2a4c524cdd0a920"
+          ]
+        },
+        {
+          "testId": "source-test-10",
+          "fileIds": [
+            "1eef94cac215275ff417b813b6ff0dc8"
+          ]
+        },
+        {
+          "testId": "source-test-15",
+          "fileIds": [
+            "c9d1e58102b6b4a1707b12b479cff9c1"
+          ]
+        },
+        {
+          "testId": "source-test-9",
+          "fileIds": [
+            "e190c5f25c0b5cf8716e8ea917f8859a"
+          ]
+        },
+        {
+          "testId": "source-test-11",
+          "fileIds": [
+            "e1f1d425ce89470f5dbeb7d85d9f4edc"
+          ]
+        }
+      ],
+      "examMedia": [],
+      "sha256": "15807c69e4b43e202f08fc75b5ec73206f988eb9200077048c5d235bacec4db5"
+    }
+  ],
+  "blocked": [
+    {
+      "caseId": "teacher-1型糖尿病伴有酮症酸中毒",
+      "reason": "现行两版仅保留两条血气分析；旧版3项媒体（肝胆胰脾超声、两份PDF报告）无对应新版testId，活动版本dcdf43acad052794保持冻结。",
+      "fileIds": [
+        "eada38ddc8b12b62a2b584ce13c94c9a",
+        "dd9e5e70e70e23752acdb145144e9729",
+        "9afe76d7d67b57473df568aa6daf4f2a"
+      ]
+    },
+    {
+      "caseId": "teacher-中枢性尿崩症",
+      "reason": "PET/CT与心电图旧图在现行27项检查中无对应项目；仅MRI垂体平扫+增强可唯一映射。",
+      "fileIds": [
+        "2ff7d1f00984c3b053f97df34fa5fcc6",
+        "ad1d37639b3b682d885342857b50b22f"
+      ]
+    },
+    {
+      "caseId": "teacher-特发性血小板减少性紫癜",
+      "reason": "EBV报告图在现行38项检查中无独立项目；其余10份已逐一确认。",
+      "fileIds": [
+        "12f2560557cc75f432afb5c464c84dfd"
+      ]
+    },
+    {
+      "caseId": "teacher-蚕豆病",
+      "reason": "呼吸道病原图在现行23项检查中无对应项目；颅脑CT图对应的仅剩合并项目source-test-0（同时含血常规/肝功能），绑定会扩大释放范围；其余8份已确认。",
+      "fileIds": [
+        "770d914561e50c83b3479df4157744e8",
+        "bb3bfb8f050150c6a05599c55dab85bf"
+      ]
+    }
+  ]
+}

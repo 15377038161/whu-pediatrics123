@@ -530,10 +530,18 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
     }
   }
   if (source && !focusArea) {
+    // 补充检查可能以原文摘录形式返回（SUPPLEMENT_TEST_*），通过 sourceTestIds 关联回目录项。
+    // 只要报告已取得，就不能因证据码不是 SOURCE_TEST_* 而误报“已申请未取得”。
+    const supplementalBySource = new Map<string, string>();
+    for (const item of session.supplementalTests ?? []) {
+      for (const sourceId of item.sourceTestIds ?? []) supplementalBySource.set(sourceId, item.id);
+    }
     for(const check of session.caseOptions?.tests ?? []) {
       const code=`SOURCE_TEST_${check.id.replace('source-test-','')}`;
-      const obtained=session.unlockedEvidence.includes(code);
-      collectionReview.push({area:'tests',label:check.label,available:1,collected:obtained?1:0,eventIds:eventIdsFor(session,[code]),
+      const supplementId=supplementalBySource.get(check.id);
+      const obtained=session.unlockedEvidence.includes(code)||Boolean(supplementId);
+      const evidenceCodes=supplementId?[code,`SUPPLEMENT_TEST_${supplementId}`]:[code];
+      collectionReview.push({area:'tests',label:check.label,available:1,collected:obtained?1:0,eventIds:eventIdsFor(session,evidenceCodes),
         acquisitionStatus:obtained?'obtained':session.orderedTests.includes(check.id)?'requested_unavailable':'not_requested'});
     }
   }
