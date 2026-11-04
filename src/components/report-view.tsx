@@ -8,7 +8,7 @@ import { ReportEvidenceMedia } from '@/components/report-evidence-media';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
   { key: 'history', label: '儿科问诊', max: 25 },
-  { key: 'examination', label: '规范查体', max: 25 },
+  { key: 'examination', label: '体格检查', max: 25 },
   { key: 'reasoning', label: '临床推理', max: 20 },
   { key: 'safety', label: '感染与安全', max: 15 },
   { key: 'communication', label: '医患沟通', max: 10 },
@@ -41,6 +41,9 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
   };
   const evaluationBasis = report.evaluationBasis ?? (processReport ? 'process_completion' : 'clinical_rubric');
   const focusScenario = report.practiceFocus ? practiceScenarios[report.practiceFocus] : null;
+  const retryHref = report.mode === 'practice' && report.practiceFocus
+    ? `/student/training?mode=practice&focus=${encodeURIComponent(report.practiceFocus)}&case=${encodeURIComponent(report.caseId)}`
+    : `/student/training?mode=guided&case=${encodeURIComponent(report.caseId)}`;
   // C-观察与报告-04：全部计分项均不可评价的报告记「未评分」——总分 0 不代表能力 0 分，
   // 分数环不显示 0 分而显示「未评分」与缺少判据的原因（历史报告按快照推导，不重算）。
   const unscored = isUnscoredReport(report);
@@ -87,7 +90,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           <p>{report.recommendation}</p>
           {report.strengths.length > 0 && <p><strong>{processReport ? '本轮已完成：' : '已经掌握：'}</strong>{report.strengths.join('、')}</p>}
           {report.improvements.length > 0 && <p><strong>重点改进：</strong>{report.improvements.join('、')}</p>}
-          {!readonly && <div className="report-actions"><RandomAdmission excludeCaseId={report.caseId} label="接诊下一位患儿" /><a className="btn btn-secondary" href={`/student/notes/${encodeURIComponent(report.sessionId)}`}><ClipboardPen size={16} /> 书写病历</a><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={`/student/training?mode=guided&case=${encodeURIComponent(report.caseId)}`}>再练一次 <ArrowRight size={14} /></a></div>}
+          {!readonly && <div className="report-actions"><RandomAdmission excludeCaseId={report.caseId} label="接诊下一位患儿" /><a className="btn btn-secondary" href={`/student/notes/${encodeURIComponent(report.sessionId)}`}><ClipboardPen size={16} /> 书写病历</a><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={retryHref}>{report.mode === 'practice' && report.practiceFocus ? '重练本专项' : '再练一次'} <ArrowRight size={14} /></a></div>}
         </section>
       </div>
       <section className="report-section" style={{ marginTop: 14 }}>

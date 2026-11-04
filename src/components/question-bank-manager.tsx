@@ -257,7 +257,7 @@ export function QuestionBankManager() {
     <div className={styles.workspace}>
       <header className={styles.heading}>
         <div>
-          <p className="eyebrow">教学资料 · AI 题库</p>
+          <p className="eyebrow">教学资料 · 知识回顾</p>
           <h1 className="page-title">题集管理</h1>
           <p className="page-lead">
             AI 生成题目草稿 → 逐题审核与编辑 → 发布为版本快照（学生按冻结版本作答）→ 下架或修订再发布。普通教师发布的题集面向本人班级学生；全平台发布仅项目管理员可设置。

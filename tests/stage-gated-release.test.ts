@@ -138,6 +138,7 @@ test('缺省不设置 availableFromStage：既有病例行为不变（向后兼�
   const session = createInitialSession('student-ungated', 'guided');
   const exposure = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '幼儿园同学最近有类似症状吗？' } }, 'ungated-hx');
   assert.ok(exposure.session.unlockedEvidence.includes('HX_EXPOSURE'), '未设释放阶段的问诊事实任何阶段可问出');
+  await runAgentTurn(session, { type: 'NAVIGATE_STAGE', data: { stage: 'exam' } }, 'ungated-enter-exam');
   const cbc = await runAgentTurn(session, { type: 'ORDER_TEST', data: { testId: 'cbc-crp' } }, 'ungated-test');
   assert.ok(cbc.newMessages.some((message) => message.content.includes('白细胞12.6')), '未设回报阶段的检查开单即回报');
 });

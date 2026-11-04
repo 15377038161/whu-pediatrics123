@@ -23,7 +23,7 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('NO_APPROVED_ITEMS')) return { code: 'NO_APPROVED_ITEMS', message: '尚无审核通过的题目，请先在题集中审核通过至少 1 题后再发布。', retryable: false };
   if (message.includes('DUPLICATE_OPTIONS')) return { code: 'DUPLICATE_OPTIONS', message: '存在选项重复的题目，请修正后再发布。', retryable: false };
   if (message.includes('BANK_HAS_VERSIONS')) return { code: 'BANK_HAS_VERSIONS', message: '该题集已发布过版本，不能删除（学生练习记录受保护）；可先下架或继续修订再发布。', retryable: false };
-  if (message.includes('ATTEMPT_CLOSED')) return { code: 'ATTEMPT_CLOSED', message: '本次练习已结束，请返回题库列表重新开始。', retryable: false };
+  if (message.includes('ATTEMPT_CLOSED')) return { code: 'ATTEMPT_CLOSED', message: '本次练习已结束，请返回知识回顾重新开始。', retryable: false };
   if (message.includes('AI_GENERATION_INVALID')) return { code: 'AI_GENERATION_INVALID', message: 'AI 生成结果未通过校验，本次生成已丢弃；请调整主题描述后重试。', retryable: true };
   if (message.includes('INVALID_VISIBILITY')) return { code: 'INVALID_VISIBILITY', message: '可见范围设置无效。', retryable: false };
   if (message.includes('RESOURCE_NOT_FOUND')) return { code: 'RESOURCE_NOT_FOUND', message: '未找到该学习资源（或不在你的可见范围内）。', retryable: false };

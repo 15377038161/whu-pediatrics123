@@ -56,7 +56,7 @@ const sourceExamTools = [
 ];
 
 const focusLabels: Record<PracticeFocus, string> = {
-  history: '儿科病史采集', exam: '肺部规范查体', safety: '儿童危重症识别', communication: '家长焦虑沟通',
+  history: '儿科病史采集', exam: '体格检查专项', safety: '儿童危重症识别', communication: '家长焦虑沟通',
 };
 
 

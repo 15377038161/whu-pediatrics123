@@ -8,7 +8,7 @@ import type { UserContext } from '@/domain/agent';
 const studentNav = [
   { href: '/student', label: '首页', icon: Home, primary: true },
   { href: '/student/practice', label: '临床能力专项', icon: Sparkles, primary: true },
-  { href: '/student/quiz', label: '题库', icon: BookOpenCheck, primary: true },
+  { href: '/student/quiz', label: '知识回顾', icon: BookOpenCheck, primary: true },
   { href: '/student/reports', label: '报告', icon: BarChart3, primary: true },
   { href: '/student/osce', label: 'OSCE', icon: ClipboardCheck, primary: false },
   { href: '/student/skills', label: '技能学习', icon: GraduationCap, primary: false },

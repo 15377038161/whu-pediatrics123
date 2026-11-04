@@ -3,7 +3,7 @@
 /**
  * 教师使用统计页（客户端化，HTML 不含学生数据）：
  * - 明细：学生训练次数/完成/进行中/退出/轮次/有效活跃时长/平均练习分（非正式成绩标识）；
- * - 汇总：去重学生、训练数、完成数、进行中、总轮次、总有效时长 + 日/周活趋势 + 病例/模式分布 + 题库薄弱项；
+ * - 汇总：去重学生、训练数、完成数、进行中、总轮次、总有效时长 + 日/周活趋势 + 病例/模式分布 + 知识回顾薄弱项；
  * - ⑥账号隔离：unknown 账号展示"未验证"徽标（历史无法判定，如实标记）；
  * - 筛选：日期（from/to，严格日历校验）、学生、病例、单学生逐次明细下钻；
  * - 导出：脱敏汇总 CSV（姓名/学号脱敏，公式注入防护，不含明文 user_id、患者数据、对话内容）；
@@ -265,8 +265,8 @@ export default function TeacherUsageStatsPage() {
             )}
 
             {result.weakAreas.length > 0 && (
-              <section aria-label="题库薄弱项" className="trend-section">
-                <h2>题库薄弱项（正确率 &lt; 80%，样本 ≥ 3）</h2>
+              <section aria-label="知识回顾薄弱项" className="trend-section">
+                <h2>知识回顾薄弱项（正确率 &lt; 80%，样本 ≥ 3）</h2>
                 <div className="student-table-wrap">
                   <table className="student-table">
                     <thead>

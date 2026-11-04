@@ -78,7 +78,7 @@ textarea { resize: vertical; }
 .landing-scene { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(145deg, #fffdf6 0%, #f1faf5 44%, #e6f4ef 100%); }
 /* 登录页背景图（温馨儿科诊室实景，主体居中偏右、左侧大片奶白墙留白）：
  * 照片铺满 cover，视口焦点略偏右保留人物主体；左侧叠加白色渐变遮罩保证介绍文案可读。 */
-.landing-photo { object-fit: cover; object-position: 64% center; }
+.landing-photo { object-fit: cover; object-position: 100% center; }
 .landing-photo-veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,253,246,.9) 0%, rgba(255,253,246,.52) 36%, rgba(255,253,246,.04) 68%, rgba(255,253,246,0) 100%); }
 .landing-content { position: relative; z-index: 2; width: min(100%, 1240px); margin: 0 auto; padding: 32px 20px max(28px, env(safe-area-inset-bottom)); color: var(--ink); }
 .landing-intro { min-width: 0; max-width: 760px; }
@@ -90,8 +90,8 @@ textarea { resize: vertical; }
 .landing-copy { min-width: 0; max-width: 650px; margin: 30px 0 26px; }
 .landing-motto { margin: 0 0 10px; color: var(--pine); font-size: 12px; font-weight: 800; letter-spacing: .22em; }
 .landing-copy p { margin: 0; color: var(--muted); max-width: 460px; font-size: clamp(14px, 2vw, 17px); }
-.login-panel { position: relative; padding: 24px; border: 1px solid rgba(25,117,104,.15); border-radius: 20px; background: rgba(255,255,255,.68); color: var(--ink); box-shadow: 0 26px 70px rgba(39,75,71,.13); backdrop-filter: blur(14px); }
-.login-footnote { margin: 16px 0 0; display: flex; justify-content: center; align-items: center; gap: 4px; color: #78908b; font-size: 11px; }
+.login-panel { position: relative; padding: 20px; border: 1px solid rgba(25,117,104,.15); border-radius: 20px; background: rgba(255,255,255,.52); color: var(--ink); box-shadow: 0 26px 70px rgba(39,75,71,.13); backdrop-filter: blur(2px); }
+.login-footnote { margin: 12px 0 0; display: flex; justify-content: center; align-items: center; gap: 4px; color: #78908b; font-size: 11px; }
 .chaoxing-login-entry { display: grid; gap: 12px; }
 .login-stage { margin: 0; padding: 8px 12px; border: 1px solid rgba(25,117,104,.2); border-radius: 10px; background: rgba(240,249,246,.9); color: var(--pine-dark); font-size: 12px; font-weight: 700; }
 .login-stage-hint { margin: 0; color: #9a6b15; font-size: 11px; font-weight: 600; }
@@ -109,7 +109,7 @@ textarea { resize: vertical; }
 .login-panel .login-actions { margin-top: 0; }
 
 /* 登录入口具有可见选择状态；入口不代表权限。 */
-.login-entry-panel { display: grid; gap: 20px; }
+.login-entry-panel { display: grid; gap: 16px; }
 .login-entry-panel .section-title { margin: 0; font-size: 24px; }
 .login-role-switch { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; gap: 4px; border-radius: 12px; background: #edf3f1; }
 .login-role-switch button { min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; }
@@ -117,7 +117,7 @@ textarea { resize: vertical; }
 .login-role-switch button:focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
 .login-role-switch button:disabled { cursor: wait; opacity: .6; }
 .login-account-help { margin: 2px 0 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
-.login-form { display: grid; gap: 12px; }
+.login-form { display: grid; gap: 10px; }
 .login-field input { width: 100%; min-height: var(--tap); border: 1px solid var(--line); border-radius: 12px; background: var(--white); color: var(--ink); padding: 9px 12px; font: inherit; }
 .login-field input:focus-visible { outline: 2px solid rgba(25,117,104,.45); outline-offset: 1px; border-color: var(--pine); }
 
@@ -634,6 +634,9 @@ textarea { resize: vertical; }
 .practice-duration { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 11px; }
 .practice-card h2 { margin: 5px 0 4px; font: 800 21px var(--font-display); }
 .practice-card p { margin: 0; color: var(--muted); font-size: 13px; }
+.practice-card-details { display: grid; gap: 6px; margin-top: 12px; }
+.practice-card-details p { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 6px; line-height: 1.55; }
+.practice-card-details strong { color: var(--pine-dark); font-size: 12px; }
 .osce-hero { display: grid; gap: 22px; align-items: center; }
 .osce-station-bar { min-height: 70px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid #cbe4da; border-radius: 17px; background: rgba(255,255,255,.72); box-shadow: inset 4px 0 0 var(--pine); backdrop-filter: blur(10px); }
 .osce-station-bar > div:first-child { display: grid; gap: 2px; }
@@ -680,13 +683,13 @@ textarea { resize: vertical; }
   .landing-content { max-width: 560px; }
 }
 @media (min-width: 1000px) {
-  .landing-content { display: grid; grid-template-columns: minmax(0,1fr) 390px; gap: 64px; align-items: center; padding: 50px 40px; }
+  .landing-content { display: grid; grid-template-columns: minmax(0,1fr) 400px; gap: 32px; align-items: center; width: 100%; max-width: none; padding: 40px 16px 40px 28px; }
 }
 @media (min-width: 700px) {
   .landing { align-items: center; }
 
   .landing-hero-row { min-height: 170px; }
-  .login-panel { padding: 26px; }
+  .login-panel { padding: 20px; }
   .entry-list { grid-template-columns: repeat(3,1fr); }
   .entry { min-height: 220px; padding: 92px 20px 20px; }
   .entry-mark { left: 20px; top: 20px; }
@@ -702,9 +705,17 @@ textarea { resize: vertical; }
   .topbar-user { gap: 7px; }
   .hint-popover { right: auto; left: 0; width: min(220px, calc(100vw - 156px)); border-radius: 14px 14px 14px 4px; }
   .hint-popover::after { right: auto; left: 15px; }
-  .landing-hero-row { min-height: 150px; display: flex; padding-right: 0; }
-  .landing-photo { object-position: 70% 30%; }
-  .landing-photo-veil { background: linear-gradient(180deg, rgba(255,253,246,.86) 0%, rgba(255,253,246,.68) 45%, rgba(255,253,246,.52) 100%); }
+  .landing { display: block; }
+  .landing-scene { position: relative; inset: auto; height: 210px; }
+  .landing-content { width: 100%; max-width: 100%; padding: 16px 20px max(24px, env(safe-area-inset-bottom)); }
+  .brand-lockup { gap: 10px; }
+  .brand-logo { width: 48px; height: 48px; }
+  .landing-hero-row { min-height: 0; display: flex; padding-right: 0; }
+  .landing-copy { flex: 1 1 auto; width: 100%; max-width: 100%; margin: 14px 0 16px; }
+  .landing-copy p { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .landing-motto { margin-bottom: 6px; }
+  .landing-photo { object-position: 66% 30%; }
+  .landing-photo-veil { background: linear-gradient(180deg, rgba(255,253,246,0) 55%, rgba(255,253,246,.55) 100%); }
   .landing-trust { gap: 8px 13px; }
   .hero-actions .btn { width: 100%; }
 
