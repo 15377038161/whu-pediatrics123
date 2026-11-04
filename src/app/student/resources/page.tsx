@@ -9,8 +9,9 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, Clock, FileText, Film, RefreshCw, Sparkles } from 'lucide-react';
+import { ArrowLeft, Clock, ExternalLink, FileText, Film, RefreshCw, Sparkles } from 'lucide-react';
 import { authedFetch } from '@/lib/authed-api';
+import { parseChaoxingCourseUrl } from '@/lib/chaoxing-course';
 import { MedicalBackdrop } from '@/components/medical-backdrop';
 import type { LearningResourceDetail, LearningResourceKind, LearningResourceSummary } from '@/lib/learning-resource';
 import styles from './resources.module.css';
@@ -27,6 +28,7 @@ type KindFilter = 'all' | LearningResourceKind;
 type SortMode = 'default' | 'recent';
 
 const KIND_LABEL: Record<LearningResourceKind, string> = { video: '教学视频', document: '图文资料' };
+const CHAOXING_COURSE_URL = parseChaoxingCourseUrl(process.env.NEXT_PUBLIC_CHAOXING_COURSE_URL);
 
 function formatDuration(seconds: number | null): string {
   if (!seconds || seconds <= 0) return '';
@@ -135,6 +137,7 @@ function ResourceListWithSelection({ onSelect }: { onSelect: (id: string) => voi
           <Clock size={14} /> {sortMode === 'recent' ? '最近学习' : '默认排序'}
         </button>
         <button className="btn btn-quiet" type="button" onClick={() => void load()} aria-label="刷新列表"><RefreshCw size={14} /></button>
+        {CHAOXING_COURSE_URL ? <a className="btn btn-secondary" href={CHAOXING_COURSE_URL} target="_blank" rel="noopener noreferrer"><ExternalLink size={14} /> 学习通课程直达</a> : null}
       </div>
 
       {filtered.length === 0 ? (

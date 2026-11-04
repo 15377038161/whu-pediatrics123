@@ -142,6 +142,44 @@ export interface ImportDiagnostic {
   cases: CaseImportDiagnostic[];
 }
 
+/** Exact-version diagnostic: a lexicographically newer historical hash must not hide the controlled version. */
+export function reconcileTeacherCaseImportDiagnostic(
+  dbRows: Array<{ case_id: string; version: string }>,
+  localVersionFor: (caseId: string) => string | null = getLocalImportVersion,
+): Omit<ImportDiagnostic, 'counts'> {
+  const dbVersions = new Map<string, Set<string>>();
+  for (const row of dbRows) {
+    const versions = dbVersions.get(row.case_id) ?? new Set<string>();
+    versions.add(row.version);
+    dbVersions.set(row.case_id, versions);
+  }
+  const cases: CaseImportDiagnostic[] = TEACHER_CASE_CATALOG
+    .filter((item) => item.folder)
+    .map((item) => {
+      const localVersion = localVersionFor(item.id);
+      const versions = dbVersions.get(item.id);
+      const hasCurrentVersion = localVersion !== null && versions?.has(localVersion) === true;
+      const sortedVersions = [...(versions ?? [])].sort();
+      const dbVersion = hasCurrentVersion ? localVersion : sortedVersions[sortedVersions.length - 1] ?? null;
+      const status: CaseImportDiagnostic['status'] = hasCurrentVersion
+        ? 'loaded'
+        : localVersion
+          ? 'pending'
+          : versions?.size
+            ? 'missing_local'
+            : 'no_source';
+      return { caseId: item.id, localVersion, dbVersion, status };
+    });
+  return {
+    total: cases.length,
+    loaded: cases.filter((item) => item.status === 'loaded').length,
+    pending: cases.filter((item) => item.status === 'pending').length,
+    missingLocal: cases.filter((item) => item.status === 'missing_local').length,
+    noSource: cases.filter((item) => item.status === 'no_source').length,
+    cases,
+  };
+}
+
 /** 仅教师诊断：本地完整审核版本与 DB 导入版本覆盖对照（不含任何患者原文/密钥，仅版本指纹与状态枚举）。 */
 export async function diagnoseTeacherCaseImport(accessToken: string): Promise<ImportDiagnostic> {
   if (!isDatabaseConfigured()) throw new Error('DATABASE_NOT_CONFIGURED');
@@ -149,11 +187,6 @@ export async function diagnoseTeacherCaseImport(accessToken: string): Promise<Im
   // DB 侧全部已装载版本指纹（教师 RLS 直读，仅 case_id/version 两列）
   const { data: dbRows, error } = await db.from('case_snapshot_facts').select('case_id,version');
   if (error) throw error;
-  const dbLatest = new Map<string, string>();
-  for (const row of (dbRows ?? []) as Array<{ case_id: string; version: string }>) {
-    const current = dbLatest.get(row.case_id);
-    if (!current || row.version > current) dbLatest.set(row.case_id, row.version);
-  }
   // 教师健康计数（收紧后 RPC：app_is_teacher 守卫，非教师返回 null）
   let counts: ImportDiagnostic['counts'] = { persistedFactsVersions: null, persistedAnswerVersions: null, boundTeacherSessions: null };
   try {
@@ -169,27 +202,9 @@ export async function diagnoseTeacherCaseImport(accessToken: string): Promise<Im
   } catch {
     // RPC 异常保持 null，如实显示未知
   }
-  // 本地侧：catalog 53 例逐例解析本地版本指纹
-  const cases: CaseImportDiagnostic[] = TEACHER_CASE_CATALOG
-    .filter((item) => item.folder)
-    .map((item) => {
-      const localVersion = getLocalImportVersion(item.id);
-      const dbVersion = dbLatest.get(item.id) ?? null;
-      const status: CaseImportDiagnostic['status'] =
-        localVersion && dbVersion === localVersion ? 'loaded'
-        : localVersion && !dbVersion ? 'pending'
-        : !localVersion && dbVersion ? 'missing_local'
-        : 'no_source';
-      return { caseId: item.id, localVersion, dbVersion, status };
-    });
   return {
-    total: cases.length,
-    loaded: cases.filter((c) => c.status === 'loaded').length,
-    pending: cases.filter((c) => c.status === 'pending').length,
-    missingLocal: cases.filter((c) => c.status === 'missing_local').length,
-    noSource: cases.filter((c) => c.status === 'no_source').length,
+    ...reconcileTeacherCaseImportDiagnostic((dbRows ?? []) as Array<{ case_id: string; version: string }>),
     counts,
-    cases,
   };
 }
 

@@ -31,12 +31,15 @@ test('教师端统一索引视图：67条、顺序一致、编号+诊断+完整�
   });
 });
 
-test('编号唯一且连续（1..67）', () => {
+test('67 个入口编号唯一，保留已退出入口的 62、64、65 空号', () => {
   const numbers = buildTeacherCaseIndex()
     .map((entry) => entry.indexNumber)
     .filter((value): value is number => value !== null)
     .sort((a, b) => a - b);
-  assert.deepEqual(numbers, Array.from({ length: 67 }, (_, i) => i + 1));
+  assert.deepEqual(
+    numbers,
+    [...Array.from({ length: 61 }, (_, index) => index + 1), 63, 66, 67, 68, 69, 70],
+  );
 });
 
 test('「诊断待确认」回退规则：三槽位独立失联回退（纯函数负测）', () => {

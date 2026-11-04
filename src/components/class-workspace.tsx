@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { ClassWorkspace } from '@/domain/classroom';
 import { authedFetch } from '@/lib/authed-api';
 import { parseRosterText, type RosterRow } from '@/lib/class-roster';
+import { ClassLeaderboardPanel } from '@/components/class-leaderboard';
 import styles from './class-workspace.module.css';
 
 /** 幂等请求键：服务端按（用户，requestId）去重，重复提交不重复执行、不重复扣换班次数 */
@@ -95,6 +96,7 @@ export function ClassWorkspacePanel({ teacher = false }: { teacher?: boolean }) 
       {selected && loadedClass !== selected && <p role="status">正在读取班级详情…</p>}
       {selected && loadedClass === selected && <section className={styles.card}>
         <h2>{data.classes.find((c) => c.id === selected)?.name}</h2>
+        {(teacher || data.state.currentCohortId === selected) && <ClassLeaderboardPanel key={selected} classId={selected} />}
         {teacher ? <>
           <h3>导入学生名单</h3><p>从 Excel 复制并粘贴，或上传 UTF-8 CSV。表头包含姓名，以及 cxid 或学号；编号按文本保存。名单在学生首次登录时自动匹配入班。</p>
           <label className={styles.file}>选择 CSV 文件<input type="file" accept=".csv,.tsv,.txt" disabled={busy} onChange={(e) => { void readFile(e.target.files?.[0]); e.target.value = ''; }} /></label>

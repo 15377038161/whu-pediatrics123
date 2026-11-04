@@ -62,5 +62,22 @@ test('parseNoteReview：非法/不完整输出返回 null（调用方标记 fail
 });
 
 test('提示词版本常量', () => {
-  assert.equal(NOTE_REVIEW_PROMPT_VERSION, 'v1');
+  assert.equal(NOTE_REVIEW_PROMPT_VERSION, 'v2');
+});
+
+test('病历书写五项分值严格为25/35/20/15/5，总分100且禁止单项越界', () => {
+  const review = {
+    summary: '结构完整，事实一致。',
+    sections: [],
+    notableStrengths: [],
+    writingScore: { structure: 25, accuracy: 35, diagnosis: 20, plan: 15, expression: 5 },
+  };
+  const parsed = parseNoteReview(JSON.stringify(review));
+  assert.ok(parsed);
+  assert.deepEqual(parsed.writingScore, review.writingScore);
+  assert.equal(Object.values(parsed.writingScore).reduce((sum, score) => sum + score, 0), 100);
+  assert.equal(parseNoteReview(JSON.stringify({
+    ...review,
+    writingScore: { ...review.writingScore, structure: 26 },
+  })), null);
 });

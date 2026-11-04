@@ -682,10 +682,79 @@ export const TEACHER_CASE_CATALOG: TeacherCaseCatalogItem[] = [
   }
 ];
 
-/** 目录条目稳定编号（按目录数组顺序，从 1 起）：教师端列表展示与问题排查定位的固定锚点，报编号即可唯一定位病例。 */
-export const CASE_INDEX_NUMBER: Readonly<Record<string, number>> = Object.fromEntries(
-  TEACHER_CASE_CATALOG.map((item, index) => [item.id, index + 1] as const),
-);
+/**
+ * 受控 67 入口清单中的稳定编号。
+ * 62、64、65 是已退出入口保留的空号，不能按数组下标重新编号或压缩。
+ */
+export const CASE_INDEX_NUMBER: Readonly<Record<string, number>> = {
+  'teacher-1型糖尿病伴有酮症酸中毒': 1,
+  'teacher-中枢性尿崩症': 2,
+  'teacher-中枢性性早熟': 3,
+  'teacher-中枢神经系统脱髓鞘病': 4,
+  'teacher-传染性单核细胞增多症': 5,
+  'teacher-儿童-肥胖症': 6,
+  'teacher-先天性肌无力': 7,
+  'teacher-先天性肾上腺皮质增生症': 8,
+  'teacher-再生障碍性贫血': 9,
+  'teacher-化脓性脑膜炎': 10,
+  'teacher-发热性惊厥': 11,
+  'teacher-噬血细胞综合征': 12,
+  'teacher-外周性性早熟': 13,
+  'teacher-婴儿胆汁淤积症-巨细胞病毒感染': 14,
+  'teacher-川崎病': 15,
+  'teacher-异物吸入性窒息': 16,
+  'teacher-心律失常-室上性心动过速': 17,
+  'teacher-急性喉炎': 18,
+  'teacher-急性喘息性支气管炎': 19,
+  'teacher-急性毛细支气管炎': 20,
+  'teacher-急性白血病-急性淋巴细胞白血病': 21,
+  'teacher-急性百草枯中毒': 22,
+  'teacher-急性肾小球肾炎': 23,
+  'teacher-急性肾衰竭': 24,
+  'teacher-支气管哮喘': 25,
+  'teacher-新生儿abo溶血性黄疸': 26,
+  'teacher-新生儿rh溶血性黄疸': 27,
+  'teacher-新生儿化脓性脑膜炎': 28,
+  'teacher-新生儿呼吸窘迫综合征': 29,
+  'teacher-新生儿缺血缺氧性脑病': 30,
+  'teacher-新生儿肺炎': 31,
+  'teacher-新生儿胎粪吸入性肺炎': 32,
+  'teacher-新生儿败血症': 33,
+  'teacher-新生儿重度窒息': 34,
+  'teacher-新生儿高胆红素血症': 35,
+  'teacher-暴发性心肌炎': 36,
+  'teacher-泌尿道感染': 37,
+  'teacher-特发性血小板减少性紫癜': 38,
+  'teacher-病毒性脑炎': 39,
+  'teacher-癫痫全面性发作阵挛性发作': 40,
+  'teacher-矮小症': 41,
+  'teacher-糖原贮积病iv型': 42,
+  'teacher-细菌性肠炎': 43,
+  'teacher-结核性脑炎': 44,
+  'teacher-肝豆状核变性': 45,
+  'teacher-肺不张': 46,
+  'teacher-肺炎支原体肺炎': 47,
+  'teacher-肾病综合征': 48,
+  'teacher-蚕豆病': 49,
+  'teacher-轮状病毒性肠炎': 50,
+  'teacher-过敏性紫癜': 51,
+  'teacher-重症肺炎': 52,
+  'teacher-风湿热': 53,
+  'teacher-i型糖尿病伴有酮症酸中毒': 54,
+  'teacher-传染行单核细胞增多症': 55,
+  'teacher-先天性肌无力综合征': 56,
+  'teacher-单纯肥胖症': 57,
+  'teacher-大叶性肺炎': 58,
+  'teacher-婴儿胆汁淤积症-巨细胞病毒': 59,
+  'teacher-心律失常-阵发性室上性心动过速': 60,
+  'teacher-急性白血病': 61,
+  'teacher-新生儿胎粪吸入肺炎': 63,
+  'teacher-毛细支气管炎': 66,
+  'teacher-生长激素缺乏症-矮小症': 67,
+  'teacher-癫痫': 68,
+  'teacher-糖原贮积病': 69,
+  'teacher-肺炎支原体性肺炎': 70,
+};
 
 /** caseId → 病例名称（用于发布管理等仅持 caseId 的视图补显名称）。 */
 export const CASE_NAME_BY_ID: ReadonlyMap<string, string> = new Map(

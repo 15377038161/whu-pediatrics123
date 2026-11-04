@@ -31,6 +31,19 @@ export interface ClassWorkspace {
   memberships: string[];
   state: StudentClassState;
 }
+export interface ClassLeaderboardEntry {
+  rank: number;
+  userId: string;
+  name: string;
+  points: number;
+  sourceCount: number;
+}
+export interface ClassLeaderboard {
+  classId: string;
+  scoreBasis: 'clinical_process';
+  tieRule: 'competition';
+  entries: ClassLeaderboardEntry[];
+}
 export interface TeacherAccount {
   userId: string;
   name: string;
