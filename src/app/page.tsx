@@ -21,7 +21,6 @@ export default function LoginPage() {
           <div className="landing-hero-row">
             <div className="landing-copy">
               <p className="landing-motto">大医精诚 · 敬畏生命</p>
-              <h2>练一次，会接诊</h2>
               <p>从 12 个儿科系统进入病例，完成问诊、查体、诊断与沟通训练；每次接诊保留可回放的证据与反馈。</p>
             </div>
           </div>

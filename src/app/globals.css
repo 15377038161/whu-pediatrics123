@@ -88,10 +88,9 @@ textarea { resize: vertical; }
 .brand-kicker { margin: 4px 0 0; color: #68817d; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; }
 .landing-hero-row { position: relative; min-height: 150px; display: flex; align-items: center; }
 .landing-copy { min-width: 0; max-width: 650px; margin: 30px 0 26px; }
-.landing-motto { margin: 0; color: var(--pine); font-size: 12px; font-weight: 800; letter-spacing: .22em; }
-.landing-copy h2 { max-width: 570px; font-family: var(--font-display); font-size: clamp(34px, 7vw, 52px); line-height: 1.18; margin: 15px 0 12px; font-weight: 800; letter-spacing: .03em; }
+.landing-motto { margin: 0 0 10px; color: var(--pine); font-size: 12px; font-weight: 800; letter-spacing: .22em; }
 .landing-copy p { margin: 0; color: var(--muted); max-width: 460px; font-size: clamp(14px, 2vw, 17px); }
-.login-panel { position: relative; padding: 24px; border: 1px solid rgba(25,117,104,.15); border-radius: 20px; background: rgba(255,255,255,.96); color: var(--ink); box-shadow: 0 26px 70px rgba(39,75,71,.13); backdrop-filter: blur(20px); }
+.login-panel { position: relative; padding: 24px; border: 1px solid rgba(25,117,104,.15); border-radius: 20px; background: rgba(255,255,255,.68); color: var(--ink); box-shadow: 0 26px 70px rgba(39,75,71,.13); backdrop-filter: blur(14px); }
 .login-footnote { margin: 16px 0 0; display: flex; justify-content: center; align-items: center; gap: 4px; color: #78908b; font-size: 11px; }
 .chaoxing-login-entry { display: grid; gap: 12px; }
 .login-stage { margin: 0; padding: 8px 12px; border: 1px solid rgba(25,117,104,.2); border-radius: 10px; background: rgba(240,249,246,.9); color: var(--pine-dark); font-size: 12px; font-weight: 700; }
@@ -686,7 +685,6 @@ textarea { resize: vertical; }
 @media (min-width: 700px) {
   .landing { align-items: center; }
 
-  .landing-copy h2 { white-space: nowrap; }
   .landing-hero-row { min-height: 170px; }
   .login-panel { padding: 26px; }
   .entry-list { grid-template-columns: repeat(3,1fr); }
