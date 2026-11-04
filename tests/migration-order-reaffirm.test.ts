@@ -97,6 +97,12 @@ test('重放最终态：get_test 含已下单验证；list_tests 含白名单 la
   assert.ok(record, '最终态缺少 case_snapshot_record_test_order');
   assert.ok(record.body.includes(IDEMPOTENT_MARKER), 'record 必须幂等原子追加（已存在不重复）');
   assert.ok(record.body.includes('FINISH_SESSION'), 'record 完成态拒绝写入保留');
+
+  const { history } = replay();
+  for (const name of [NAMES.record, NAMES.getTest, NAMES.listTests]) {
+    assert.equal(history.get(name)?.at(-1)?.file, '20261105010000_case_explicit_test_definitions.sql', `${name} 最终版必须优先读取显式检查契约`);
+    assert.ok(final.get(name)?.body.includes("testDefinitions"), `${name} 最终版缺少 testDefinitions 契约分支`);
+  }
 });
 
 test('中间态取证：20261015100000 重放后 get_facts 确为泄露形态（证明收口必要性）', () => {
@@ -165,5 +171,5 @@ test('重放解析包含大写与命名dollar quote，不能漏掉后续迁移',
  const defs=extractFunctionDefs('CREATE OR REPLACE FUNCTION latest_fn(a text) RETURNS text LANGUAGE sql AS $function$ SELECT a; $function$;');
  assert.deepEqual(defs,[{name:'latest_fn',args:'a text',body:' SELECT a; '}]);
  const {history}=replay();
- for(const name of [NAMES.getTest,NAMES.listTests])assert.equal(history.get(name)?.at(-1)?.file,'20261028033510_case_pet_ct_test_label.sql');
+ for(const name of [NAMES.getTest,NAMES.listTests])assert.equal(history.get(name)?.at(-1)?.file,'20261105010000_case_explicit_test_definitions.sql');
 });

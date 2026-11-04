@@ -3,7 +3,7 @@ import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { requireAuth } from '@/lib/request-auth';
 import { isDatabaseConfigured } from '@/lib/supabase-client';
 import { isTeacherByWhitelist } from '@/lib/case-draft-import';
-import { getCasePublicationOverview, setCasePublication } from '@/lib/case-publication';
+import { getCasePublicationOverview, setCaseActiveVersion, setCasePublication } from '@/lib/case-publication';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +13,8 @@ export const dynamic = 'force-dynamic';
  *   的 catalog-only 条目，missingSource 标记"缺少原始接诊资料"；无行=已发布缺省开放）
  * - POST /api/teacher/case-publication  body: { caseId, published, reason? }
  *   下架插入/更新 published=false 行；重新上架置 true（保留行作审计痕迹）。
+ *   或 body: { caseId, activeVersion, reason? }：目标双表快照齐全后固定新会话版本，
+ *   保留原 published 状态，不改写既有会话的版本绑定。
  *
  * 安全边界（与 case-drafts/case-import 路由同一模式）：
  * - 严格交集：应用层教师角色（requireAuth 'teacher'）AND 数据库白名单（app_is_teacher RPC）；
@@ -56,21 +58,35 @@ export async function POST(request: NextRequest) {
   try {
     const gate = await requireTeacher(request);
     if (gate instanceof Response) return gate;
-    let body: { caseId?: unknown; published?: unknown; reason?: unknown };
+    let body: { caseId?: unknown; published?: unknown; activeVersion?: unknown; reason?: unknown };
     try {
       body = (await request.json()) as typeof body;
     } catch {
       return fail({ code: 'INVALID_REQUEST', message: '请求体无效。', retryable: false }, undefined, 422);
     }
-    if (typeof body.caseId !== 'string' || typeof body.published !== 'boolean') {
-      return fail({ code: 'INVALID_REQUEST', message: 'caseId 与 published 为必填。', retryable: false }, undefined, 422);
+    if (typeof body.caseId !== 'string') {
+      return fail({ code: 'INVALID_REQUEST', message: 'caseId 为必填。', retryable: false }, undefined, 422);
     }
     const reason = typeof body.reason === 'string' ? body.reason.slice(0, 200) : '';
+    if (body.activeVersion !== undefined) {
+      if (typeof body.activeVersion !== 'string') {
+        return fail({ code: 'INVALID_REQUEST', message: 'activeVersion 必须是 16 位版本指纹。', retryable: false }, undefined, 422);
+      }
+      const row = await setCaseActiveVersion(gate.accessToken, gate.id, body.caseId, body.activeVersion, reason);
+      return ok({ caseId: row.caseId, published: row.published, activeVersion: row.activeVersion, updatedAt: row.updatedAt });
+    }
+    if (typeof body.published !== 'boolean') {
+      return fail({ code: 'INVALID_REQUEST', message: 'published 为必填。', retryable: false }, undefined, 422);
+    }
     const row = await setCasePublication(gate.accessToken, gate.id, body.caseId, body.published, reason);
     return ok({ caseId: row.caseId, published: row.published, updatedAt: row.updatedAt });
   } catch (error) {
     const detail = errorFromUnknown(error);
-    const status = detail.code === 'AUTH_REQUIRED' ? 401 : detail.code === 'FORBIDDEN' ? 403 : detail.code === 'CASE_NOT_FOUND' ? 404 : 500;
+    const status = detail.code === 'AUTH_REQUIRED' ? 401
+      : detail.code === 'FORBIDDEN' ? 403
+        : detail.code === 'CASE_NOT_FOUND' ? 404
+          : detail.code === 'CASE_VERSION_SNAPSHOT_INCOMPLETE' ? 409
+            : detail.code === 'INVALID_ACTIVE_VERSION' ? 422 : 500;
     return fail(detail, undefined, status);
   }
 }

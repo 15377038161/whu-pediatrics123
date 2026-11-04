@@ -21,6 +21,7 @@ interface PublicationRow {
   updatedAt: string | null;
   updatedBy: string | null;
   reason: string;
+  activeVersion: string | null;
   /** true = 目录条目缺少原始接诊资料（folder=null，catalog-only）。 */
   missingSource?: boolean;
 }
@@ -36,6 +37,8 @@ export function CasePublicationPanel() {
   const [overview, setOverview] = useState<PublicationOverview | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [activationCaseId, setActivationCaseId] = useState('');
+  const [activationVersion, setActivationVersion] = useState('');
 
   const load = useCallback(async () => {
     setBusy('load');
@@ -80,6 +83,32 @@ export function CasePublicationPanel() {
     }
   }
 
+  async function activateVersion() {
+    const caseId = activationCaseId.trim();
+    const activeVersion = activationVersion.trim();
+    if (!caseId || !/^[a-f0-9]{16}$/.test(activeVersion)) {
+      setError('请输入有效病例 ID 和 16 位小写版本指纹。');
+      return;
+    }
+    if (!confirm(`确认将「${caseId}」的新会话切换到版本 ${activeVersion}？既有会话、报告和上下架状态不变。`)) return;
+    setBusy('activate');
+    setError('');
+    setNotice('');
+    try {
+      await authedFetch('/api/teacher/case-publication', {
+        method: 'POST',
+        body: JSON.stringify({ caseId, activeVersion, reason: '受控病例双表回读后切换新会话版本' }),
+      });
+      setNotice(`已激活新版本：${caseId} → ${activeVersion}；仅新会话生效。`);
+      setActivationVersion('');
+      await load();
+    } catch (e) {
+      setError(`版本激活失败：${(e as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <section className="case-publication">
       <h2>病例发布状态（单例上下架）</h2>
@@ -90,6 +119,23 @@ export function CasePublicationPanel() {
         <button className="btn btn-secondary" onClick={() => void load()} disabled={busy !== null}>
           {busy === 'load' ? '读取中…' : '刷新发布状态'}
         </button>
+      </div>
+      <div className="case-import-diagnostic">
+        <h3>新会话版本激活</h3>
+        <p>仅用于已通过双表回读的受控版本；激活不改变上下架状态，既有会话与报告仍使用原版本。</p>
+        <div className="case-import-actions">
+          <label>
+            病例 ID
+            <input value={activationCaseId} onChange={(event) => setActivationCaseId(event.target.value)} placeholder="teacher-病例名" autoComplete="off" />
+          </label>
+          <label>
+            版本指纹
+            <input value={activationVersion} onChange={(event) => setActivationVersion(event.target.value)} placeholder="16 位小写十六进制" maxLength={16} autoComplete="off" spellCheck={false} />
+          </label>
+          <button className="btn btn-primary" onClick={() => void activateVersion()} disabled={busy !== null}>
+            {busy === 'activate' ? '激活中…' : '激活新版本'}
+          </button>
+        </div>
       </div>
       {error && <div className="empty-state" role="alert"><p>{error}</p></div>}
       {notice && <div className="empty-state" role="status"><p>{notice}</p></div>}
@@ -113,7 +159,10 @@ export function CasePublicationPanel() {
                         <span className="publication-missing-source" title="该目录条目缺少原始接诊资料（folder=null），下架不影响既有训练记录">缺少原始接诊资料</span>
                       )}
                     </td>
-                    <td>{row.published ? '已发布' : '已下架'}</td>
+                    <td>
+                      {row.published ? '已发布' : '已下架'}
+                      <span className="publication-case-name">新会话版本：{row.activeVersion ?? '默认选择链'}</span>
+                    </td>
                     <td>{row.updatedAt ? formatDateTime(row.updatedAt) : '—'}</td>
                     <td>{row.reason || '—'}</td>
                     <td>

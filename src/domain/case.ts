@@ -300,7 +300,7 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
     return applyTestMetadata({ id: `source-test-${index}`, label, indication: '选择后查看本病例提供的检查结果', result: line, evidenceCode: `SOURCE_TEST_${index}`, appropriate: null });
   });
   // 恢复态投影剥离（未开单 sections.tests 为空串）时，目录来自会话作用域目录缓存
-  // （case_snapshot_list_tests 注入，无答案仅 id/label）：保证学生可见可下单目录（死锁修复）。
+  // （case_snapshot_list_tests 注入，无答案仅 id/label/aliases）：保证学生可见可下单目录（死锁修复）。
   if(source?.testDefinitions?.length){
     tests.splice(0,tests.length,...source.testDefinitions.map(item=>applyTestMetadata({id:item.testId,label:item.label,aliases:item.aliases,
       indication:'根据临床问题申请后查看本病例原始记录',result:item.result,evidenceCode:`SOURCE_TEST_${item.testId.slice('source-test-'.length)}`,appropriate:null})));
@@ -311,7 +311,7 @@ function createSourceCase(caseId: string, version?: string | null, sessionId?: s
   if (catalog && tests.length === 0) {
     for (const item of catalog) {
       const index = Number(item.id.replace(/^source-test-/, ''));
-      tests.push(applyTestMetadata({ id: item.id, label: item.label, indication: '选择后查看本病例提供的检查结果', result: '', evidenceCode: Number.isFinite(index) ? `SOURCE_TEST_${index}` : `SOURCE_TEST_${item.id}`, appropriate: null }));
+      tests.push(applyTestMetadata({ id: item.id, label: item.label, aliases: item.aliases, indication: '选择后查看本病例提供的检查结果', result: '', evidenceCode: Number.isFinite(index) ? `SOURCE_TEST_${index}` : `SOURCE_TEST_${item.id}`, appropriate: null }));
     }
   }
   return {

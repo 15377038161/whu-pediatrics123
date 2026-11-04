@@ -1,6 +1,7 @@
 import { getSupabaseUserClient, isDatabaseConfigured } from '@/lib/supabase-client';
 import { isTeacherByWhitelist } from '@/lib/case-draft-import';
 import { TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
+import { getTeacherSourceId } from '@/lib/teacher-case-data';
 
 /**
  * 教师单例上下架（发布状态）读取与守卫：
@@ -17,6 +18,8 @@ export interface CasePublicationRow {
   updatedAt: string | null;
   updatedBy: string | null;
   reason: string;
+  /** 新会话显式绑定的来源版本；null 表示沿用既有版本选择链。 */
+  activeVersion: string | null;
   /** 缺少原始接诊资料（folder=null 目录条目）：教师列表展示提示，不影响上下架能力。 */
   missingSource: boolean;
 }
@@ -49,9 +52,9 @@ export async function assertCasePublishedForNewSession(caseId: string | undefine
  *  未知 ID（不在目录中）仍由 setCasePublication 拒绝。 */
 export async function getCasePublicationOverview(accessToken: string): Promise<CasePublicationRow[]> {
   const db = getSupabaseUserClient(accessToken);
-  const { data, error } = await db.from('case_publication').select('case_id,published,updated_at,updated_by,reason');
+  const { data, error } = await db.from('case_publication').select('case_id,published,updated_at,updated_by,reason,active_version');
   if (error) throw error;
-  const byId = new Map(((data ?? []) as Array<{ case_id: string; published: boolean; updated_at: string | null; updated_by: string | null; reason: string }>).map((row) => [row.case_id, row]));
+  const byId = new Map(((data ?? []) as Array<{ case_id: string; published: boolean; updated_at: string | null; updated_by: string | null; reason: string; active_version: string | null }>).map((row) => [row.case_id, row]));
   return TEACHER_CASE_CATALOG.map((item) => {
     const row = byId.get(item.id);
     return {
@@ -60,6 +63,7 @@ export async function getCasePublicationOverview(accessToken: string): Promise<C
       updatedAt: row?.updated_at ?? null,
       updatedBy: row?.updated_by ?? null,
       reason: row?.reason ?? '',
+      activeVersion: row?.active_version ?? null,
       missingSource: !item.folder,
     };
   });
@@ -69,7 +73,7 @@ export async function getCasePublicationOverview(accessToken: string): Promise<C
  *  目录有效性 = 存在于教师病例目录；folder=null 的 catalog-only 条目同样可上下架
  *  （缺原始资料的目录病例需要可恢复停用）。未知 ID（不在目录中）拒绝 CASE_NOT_FOUND。
  *  该放宽仅适用于发布管理，不适用于病例导入（无资料病例依旧不能导入）。 */
-export async function setCasePublication(accessToken: string, teacherId: string, caseId: string, published: boolean, reason: string): Promise<CasePublicationRow> {
+export async function setCasePublication(accessToken: string, teacherId: string, caseId: string, published: boolean, reason: string): Promise<Omit<CasePublicationRow, 'activeVersion'>> {
   const inCatalog = TEACHER_CASE_CATALOG.some((item) => item.id === caseId);
   if (!inCatalog) throw new Error('CASE_NOT_FOUND');
   const db = getSupabaseUserClient(accessToken);
@@ -79,4 +83,30 @@ export async function setCasePublication(accessToken: string, teacherId: string,
   );
   if (error) throw error;
   return { caseId, published, updatedAt: new Date().toISOString(), updatedBy: teacherId, reason, missingSource: TEACHER_CASE_CATALOG.find((item) => item.id === caseId)?.folder == null };
+}
+
+/** Pin new sessions to an exact verified snapshot pair without changing publication visibility. */
+export async function setCaseActiveVersion(accessToken: string, teacherId: string, caseId: string, activeVersion: string, reason: string): Promise<CasePublicationRow> {
+  const item = TEACHER_CASE_CATALOG.find((entry) => entry.id === caseId);
+  if (!item) throw new Error('CASE_NOT_FOUND');
+  if (!/^[a-f0-9]{16}$/.test(activeVersion)) throw new Error('INVALID_ACTIVE_VERSION');
+  const sourceId = getTeacherSourceId(caseId);
+  const db = getSupabaseUserClient(accessToken);
+  const [facts, answers, current] = await Promise.all([
+    db.from('case_snapshot_facts').select('case_id').eq('case_id', sourceId).eq('version', activeVersion).maybeSingle(),
+    db.from('case_snapshot_answers').select('case_id').eq('case_id', sourceId).eq('version', activeVersion).maybeSingle(),
+    db.from('case_publication').select('published').eq('case_id', caseId).maybeSingle(),
+  ]);
+  if (facts.error) throw facts.error;
+  if (answers.error) throw answers.error;
+  if (current.error) throw current.error;
+  if (!facts.data || !answers.data) throw new Error('CASE_VERSION_SNAPSHOT_INCOMPLETE');
+  const published = (current.data as { published?: boolean } | null)?.published ?? true;
+  const updatedAt = new Date().toISOString();
+  const { error } = await db.from('case_publication').upsert(
+    { case_id: caseId, published, active_version: activeVersion, updated_by: teacherId, updated_at: updatedAt, reason },
+    { onConflict: 'case_id' },
+  );
+  if (error) throw error;
+  return { caseId, published, activeVersion, updatedAt, updatedBy: teacherId, reason, missingSource: item.folder == null };
 }

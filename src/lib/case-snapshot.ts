@@ -499,22 +499,27 @@ export async function refreshProjectedFacts(caseId: string, version: string, ses
   await restoreCaseSnapshotFacts(caseId, version, accessToken, 'student', sessionId);
 }
 
-/** 会话作用域检查目录缓存（无答案，仅 id/label）：
+/** 会话作用域检查目录缓存（无答案，仅 id/label/aliases）：
  *  恢复态投影剥离 sections.tests（未开单）时，目录经 case_snapshot_list_tests 注入，
  *  保证学生可见可下单目录（目录/结果分离死锁修复）。目录不含结果文本，缓存无泄露面。 */
+export interface CaseTestCatalogItem {
+  id: string;
+  label: string;
+  aliases?: string[];
+}
 interface SessionTestsCatalogEntry {
   version: string;
-  items: Array<{ id: string; label: string }>;
+  items: CaseTestCatalogItem[];
   expiresAt: number;
 }
 const testsCatalogStore = new Map<string, SessionTestsCatalogEntry>();
 const TESTS_CATALOG_TTL_MS = 30 * 60_000;
 
-export function setSessionTestsCatalog(sessionId: string, version: string, items: Array<{ id: string; label: string }>): void {
+export function setSessionTestsCatalog(sessionId: string, version: string, items: CaseTestCatalogItem[]): void {
   testsCatalogStore.set(sessionId, { version, items, expiresAt: Date.now() + TESTS_CATALOG_TTL_MS });
 }
 
-export function getSessionTestsCatalog(caseId: string, version: string | null | undefined, sessionId: string | null | undefined): Array<{ id: string; label: string }> | null {
+export function getSessionTestsCatalog(caseId: string, version: string | null | undefined, sessionId: string | null | undefined): CaseTestCatalogItem[] | null {
   if (!sessionId) return null;
   const entry = testsCatalogStore.get(sessionId);
   if (!entry || entry.expiresAt <= Date.now()) return null;
@@ -523,8 +528,8 @@ export function getSessionTestsCatalog(caseId: string, version: string | null | 
 }
 
 /** 读取本人会话的无答案检查目录（case_snapshot_list_tests，门控：归属+版本+病例）。
- *  失败返回 null（fail-closed，不编造目录）。 */
-export async function listCaseTests(caseId: string, version: string, sessionId: string, accessToken: string | null): Promise<Array<{ id: string; label: string }> | null> {
+ *  失败返回 null（fail-closed，不编造目录）；客户端只投影身份与别名，不信任额外答案字段。 */
+export async function listCaseTests(caseId: string, version: string, sessionId: string, accessToken: string | null): Promise<CaseTestCatalogItem[] | null> {
   const sourceId = getTeacherSourceId(caseId);
   if (!accessToken || !isDatabaseConfigured()) return null;
   try {
@@ -532,7 +537,13 @@ export async function listCaseTests(caseId: string, version: string, sessionId: 
     const { data, error } = await db.rpc('case_snapshot_list_tests', { p_case_id: decodeURIComponent(caseId), p_version: version, p_session_id: sessionId });
     if (error) throw error;
     if (!Array.isArray(data)) return null;
-    return data.filter((item): item is { id: string; label: string } => Boolean(item && typeof (item as { id?: unknown }).id === 'string' && typeof (item as { label?: unknown }).label === 'string'));
+    return data.flatMap((item: unknown): CaseTestCatalogItem[] => {
+      if (!item || typeof item !== 'object') return [];
+      const candidate = item as Record<string, unknown>;
+      if (typeof candidate.id !== 'string' || typeof candidate.label !== 'string') return [];
+      const aliases = Array.isArray(candidate.aliases) ? candidate.aliases.filter((alias): alias is string => typeof alias === 'string') : undefined;
+      return [{ id: candidate.id, label: candidate.label, ...(aliases ? { aliases } : {}) }];
+    });
   } catch (error) {
     if (process.env.LOG_LEVEL === 'debug') console.warn('[case-snapshot] list tests failed', sourceId, (error as Error).message);
     return null;

@@ -10,6 +10,7 @@ import {
   getUnpublishedCaseIds,
   assertCasePublishedForNewSession,
   getCasePublicationOverview,
+  setCaseActiveVersion,
   setCasePublication,
 } from '../src/lib/case-publication';
 import { eligibleAdmissions, selectAdmission } from '../src/lib/case-admission';
@@ -39,6 +40,8 @@ interface MockSupabaseOptions {
   unpublishedRows?: Array<{ case_id: string }>;
   allRows?: Array<Record<string, unknown>>;
   isTeacher?: boolean;
+  snapshotFacts?: boolean;
+  snapshotAnswers?: boolean;
 }
 
 interface MockSupabase {
@@ -56,12 +59,21 @@ function startMockSupabase(options: MockSupabaseOptions = {}): Promise<MockSupab
       res.end(JSON.stringify(options.isTeacher ?? false));
       return;
     }
+    if (req.method === 'GET' && ['/rest/v1/case_snapshot_facts', '/rest/v1/case_snapshot_answers'].includes(url.pathname)) {
+      const available = url.pathname.endsWith('_facts') ? options.snapshotFacts !== false : options.snapshotAnswers !== false;
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(available ? { case_id: url.searchParams.get('case_id')?.replace(/^eq\./, '') ?? 'teacher-蚕豆病' } : null));
+      return;
+    }
     if (req.method === 'GET' && url.pathname === '/rest/v1/case_publication') {
       const select = url.searchParams.get('select') ?? '';
       res.writeHead(200, { 'content-type': 'application/json' });
       // getUnpublishedCaseIds: select=case_id（published=eq.false 过滤）；overview: 全字段 select。
       if (select === 'case_id') {
         res.end(JSON.stringify(options.unpublishedRows ?? []));
+      } else if (select === 'published') {
+        const caseId = url.searchParams.get('case_id')?.replace(/^eq\./, '');
+        res.end(JSON.stringify(options.allRows?.find((row) => row.case_id === caseId) ?? null));
       } else {
         res.end(JSON.stringify(options.allRows ?? []));
       }
@@ -150,6 +162,47 @@ test('有来源病例：目录校验通过并可下架/重新上架（保留审�
     await mock.close();
     clearSupabaseEnv();
   }
+});
+
+test('版本激活：双表快照齐全时写入精确版本并保留下架状态', async () => {
+  const mock = await startMockSupabase({
+    allRows: [{ case_id: 'teacher-蚕豆病', published: false, updated_at: null, updated_by: 'teacher-x', reason: '保持下架', active_version: null }],
+  });
+  overrideSupabaseEnv(mock.url);
+  try {
+    const row = await setCaseActiveVersion('token', 'teacher-x', 'teacher-蚕豆病', 'abcdef0123456789', '双表回读通过');
+    assert.equal(row.published, false);
+    assert.equal(row.activeVersion, 'abcdef0123456789');
+    assert.equal(mock.upserts.length, 1);
+    assert.equal(mock.upserts[0]?.published, false);
+    assert.equal(mock.upserts[0]?.active_version, 'abcdef0123456789');
+  } finally {
+    await mock.close();
+    clearSupabaseEnv();
+  }
+});
+
+test('版本激活：任一快照表缺行时失败关闭且不写发布表', async () => {
+  const mock = await startMockSupabase({ snapshotAnswers: false });
+  overrideSupabaseEnv(mock.url);
+  try {
+    await assert.rejects(
+      setCaseActiveVersion('token', 'teacher-x', 'teacher-蚕豆病', '1111111111111111', ''),
+      /CASE_VERSION_SNAPSHOT_INCOMPLETE/,
+    );
+    assert.equal(mock.upserts.length, 0);
+  } finally {
+    await mock.close();
+    clearSupabaseEnv();
+  }
+});
+
+test('版本激活：非法指纹在数据库访问前拒绝', async () => {
+  clearSupabaseEnv();
+  await assert.rejects(
+    setCaseActiveVersion('token', 'teacher-x', 'teacher-蚕豆病', 'not-a-version', ''),
+    /INVALID_ACTIVE_VERSION/,
+  );
 });
 
 test('学生新建守卫：已下架病例抛 CASE_UNPUBLISHED', async () => {
