@@ -15,12 +15,13 @@ export default function LoginPage() {
             <Image className="brand-logo" src="/media/brand/wuhan-university-logo.png" alt="武汉大学校徽" width={1796} height={1795} priority sizes="64px" />
             <div>
               <h1 className="brand-name">珞珈儿科智训</h1>
+              <p className="brand-kicker">Luojia Pediatric Intelligent Training</p>
               <p className="brand-kicker">Wuhan University Pediatrics</p>
             </div>
           </div>
           <div className="landing-hero-row">
             <div className="landing-copy">
-              <p className="landing-motto">大医精诚 · 敬畏生命</p>
+              <p className="landing-motto">大医精诚敬畏生命</p>
               <p>从 12 个儿科系统进入病例，完成问诊、查体、诊断与沟通训练；每次接诊保留可回放的证据与反馈。</p>
             </div>
           </div>

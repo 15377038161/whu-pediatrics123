@@ -3,6 +3,59 @@
 .heading h1 { margin: 0; color: #174b48; font-size: clamp(1.4rem, 3vw, 2rem); }
 .heading p { margin: .3rem 0 0; }
 .tools { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
+/* 首页大标语：老师要求讲清目的、功能与训练技能（2026-10-29 会议）。 */
+.slogan {
+  display: grid;
+  gap: .6rem;
+  padding: 1.1rem 1.2rem 1.2rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(135deg, #10594f 0%, #197568 58%, #2c8a76 100%);
+  color: #f2fffa;
+  box-shadow: 0 10px 26px -18px #0b3f38;
+}
+.sloganKicker { margin: 0; color: #cdeee2; font-size: .85rem; letter-spacing: .06em; }
+.sloganTitle { margin: 0; font-size: clamp(1.35rem, 4.4vw, 1.95rem); font-weight: 700; line-height: 1.3; }
+.sloganPurpose { margin: 0; color: #e6f7f0; font-size: .95rem; line-height: 1.65; }
+.sloganList { display: grid; gap: .55rem; margin: .35rem 0 0; padding: 0; }
+.sloganList > div {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  gap: .6rem;
+  align-items: start;
+  padding: .55rem .7rem;
+  border-radius: .7rem;
+  background: #ffffff1f;
+}
+.sloganList dt {
+  margin: 0;
+  padding: .15rem 0;
+  border-radius: 999px;
+  background: #f2fffa;
+  color: #10594f;
+  font-size: .85rem;
+  font-weight: 700;
+  text-align: center;
+}
+.sloganList dd { margin: 0; color: #f2fffa; font-size: .9rem; line-height: 1.6; }
+/* 积分榜入口置顶：手机底栏是写死的 5 列（4 主项 + 更多），排行榜放不进底栏，改由首页卡片承载醒目度。 */
+.shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
+.pointsCard, .continueCard {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: .85rem 1rem;
+  border: 1px solid #bddbd1;
+  border-radius: .9rem;
+  background: #fff;
+  color: #174b48;
+}
+.pointsCard { border-color: #f0dcae; background: #fffaf0; }
+.pointsCard svg { flex: none; width: 1.6rem; height: 1.6rem; color: #b8862b; }
+.pointsCard:hover, .pointsCard:focus-visible { border-color: #e0b866; background: #fff4dd; }
+.continueCard:hover, .continueCard:focus-visible { border-color: #78b7a4; background: #ebf7f0; }
+.shortcuts span { display: grid; gap: .18rem; min-width: 0; }
+.shortcuts strong { font-size: 1rem; }
+.shortcuts small { color: #36675d; font-size: .85rem; line-height: 1.5; }
 .map { position: relative; overflow: hidden; border-radius: 1.1rem; }
 /* 最终稿已含浅青绿水面、淡医学纹理、12 岛与中南医院远岸，直接整图呈现。 */
 .mapArt { aspect-ratio: 1586 / 992; background: url('/pediatric-systems-map.png') center / 100% 100% no-repeat; }
@@ -95,6 +148,11 @@
     text-align: center;
   }
   .island:hover .islandLabel, .island:focus-visible .islandLabel { transform: none; }
+  .slogan { padding: .95rem 1rem 1rem; border-radius: .95rem; }
+  .sloganList > div { grid-template-columns: minmax(0, 1fr); gap: .3rem; }
+  .sloganList dt { justify-self: start; padding: .12rem .6rem; }
+  .shortcuts { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
+  .pointsCard, .continueCard { padding: .75rem .85rem; }
   .levels { gap: .4rem; }
   .levels a { padding: .6rem; font-size: .85rem; }
 }

@@ -1,4 +1,4 @@
-import { ArrowRight, Clock3, HeartHandshake, ListChecks, ShieldAlert, Sparkles, Stethoscope } from 'lucide-react';
+import { ArrowRight, Calculator, Clock3, HeartHandshake, ListChecks, ShieldAlert, Sparkles, Stethoscope } from 'lucide-react';
 import { MedicalBackdrop } from '@/components/medical-backdrop';
 import { practiceScenarios } from '@/domain/practice-scenarios';
 
@@ -17,6 +17,11 @@ export default function PracticePage() {
       <div className="practice-grid">
         {practices.map(({ id, scenario, icon: Icon, method, feedback, minutes, tone }) => <a className="practice-card" data-tone={tone} href={`/student/training?mode=practice&focus=${id}`} key={id}><span className="practice-icon"><Icon /></span><div><span className="practice-duration"><Clock3 size={13} /> 约 {minutes} 分钟</span><h2>{scenario.title}</h2><p>{scenario.goal}</p><div className="practice-card-details"><p><strong>练习</strong>{method}</p><p><strong>反馈</strong>{feedback}</p></div><span className="entry-meta">开始专项 <ArrowRight size={14} /></span></div></a>)}
       </div>
+      <section className="report-section" style={{ marginTop: 20 }}>
+        <h2>第二站计算工具</h2>
+        <p style={{ margin: '6px 0 12px', fontSize: 14, lineHeight: 1.8 }}>对标执业医师实践技能考试第二站：剂量按实测体重与月龄确定性计算，逐步展示手算过程与封顶核对，不经模型生成；未收录药品直接拒绝。</p>
+        <div className="hero-actions"><a className="btn btn-primary" href="/student/dosing"><Calculator size={16} /> 用药剂量计算</a></div>
+      </section>
     </MedicalBackdrop>
   );
 }

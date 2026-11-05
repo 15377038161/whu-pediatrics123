@@ -248,15 +248,51 @@ const AGE_PATTERN = String.raw`(\d+(?:\.\d+)?\s*(?:岁(?:\s*\d+\s*(?:个)?月)?(
  * 性别兼容「患者」句式（肝豆状核变性来源文本）；性别字后允许 性/婴/童（男性、男婴、男童/女童）或分隔符，
  * 拒绝"患者女儿"类误命中（女后跟随儿不匹配；儿不在允许集合内，童在集合内不影响该拒绝）。
  */
-export function extractSnapshotDemographics(historyHead: string): { age?: string; sex?: string } {
+function demographicsTiers(historyHead: string) {
   const demo = new RegExp(`(?:患儿|患者)[，,\\s]*(男|女)?[性婴童]?\\s*[，,]?\\s*${AGE_PATTERN}`).exec(historyHead);
   const sexDecl = /性别\s*[:：]?\s*(男|女)(?=[，,。；;、\s\d性婴童]|$)/.exec(historyHead);
   const ageDecl = new RegExp(`年龄\\s*[:：]?\\s*${AGE_PATTERN}`).exec(historyHead);
   const sexInline = /(?:患儿|患者)[，,\s]*(男|女)(?=[，,。；;、\s\d性婴童]|$)/.exec(historyHead);
   const ageAny = new RegExp(AGE_PATTERN).exec(historyHead);
+  return { demo, sexDecl, ageDecl, sexInline, ageAny };
+}
+
+export function extractSnapshotDemographics(historyHead: string): { age?: string; sex?: string } {
+  const { demo, sexDecl, ageDecl, sexInline, ageAny } = demographicsTiers(historyHead);
   return {
     age: (demo?.[2] ?? ageDecl?.[1] ?? ageAny?.[1])?.replace(/\s/g, ''),
     sex: demo?.[1] ?? sexDecl?.[1] ?? sexInline?.[1],
+  };
+}
+
+/** 高置信人口学：人口学句同源或显式「年龄：」声明；不含最左年龄兜底——
+ *  兜底会把病程时长（「发热3天」）误当年龄，读取态修复只补形象不得引入错龄。 */
+export function confidentSnapshotDemographics(historyHead: string): { age?: string; sex?: string } {
+  const { demo, sexDecl, ageDecl, sexInline } = demographicsTiers(historyHead);
+  return {
+    age: (demo?.[2] ?? ageDecl?.[1])?.replace(/\s/g, ''),
+    sex: demo?.[1] ?? sexDecl?.[1] ?? sexInline?.[1],
+  };
+}
+
+/** 顶层人口学占位串：建快照时病史头窗口漏句即落库为这些字面值，读取时不得当真值信任。 */
+const DEMOGRAPHIC_PLACEHOLDERS = new Set(['', '年龄未记录', '性别未记录']);
+
+/**
+ * 读取态人口学修复：顶层 age/sex 在建快照时只取病史头 500 字窗口（部署环境读库快照），
+ * 窗口漏掉人口学句就把占位串当真值落库，人物形象随之回落占位剪影；而同一快照的
+ * sections.history 仍含人口学句。此处以高置信口径（confidentSnapshotDemographics，
+ * 不含最左年龄兜底）回读重推，仅填补占位项——不覆盖真实值、正文确无时保持占位不猜不造。
+ * 不改动 record 本身，版本指纹（含 age/sex）语义保持不变。
+ */
+export function repairSnapshotDemographics(record: { age?: string; sex?: string; sections?: { history?: string } }): { age?: string; sex?: string } {
+  const ageMissing = record.age === undefined || DEMOGRAPHIC_PLACEHOLDERS.has(record.age);
+  const sexMissing = record.sex === undefined || DEMOGRAPHIC_PLACEHOLDERS.has(record.sex);
+  if (!ageMissing && !sexMissing) return { age: record.age, sex: record.sex };
+  const derived = confidentSnapshotDemographics(record.sections?.history ?? '');
+  return {
+    age: ageMissing ? derived.age ?? record.age : record.age,
+    sex: sexMissing ? derived.sex ?? record.sex : record.sex,
   };
 }
 

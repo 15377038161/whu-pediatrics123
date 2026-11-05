@@ -621,7 +621,7 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
   for (const request of requests) {
     // 未匹配：记录申请与「资料未提供」，不记下单、不解锁证据（fail-closed，不编造）
     if (!request.test) {
-      const detail = request.status === 'ambiguous' ? '请说明检查部位或具体项目，当前申请尚未匹配。' : '检查申请已记录，当前报告暂未取得，请重试；如为影像检查，请写明部位。';
+      const detail = request.status === 'ambiguous' ? '请说明检查部位或具体项目，当前申请尚未匹配。' : '检查申请已记录（做/不做计入本次诊疗思路）；本病例原始资料未提供该项结果，平台不生成模拟结果。';
       session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `「${request.requested}」：${detail}`, null, []));
       const unmatchedMessage = message('system', `「${request.requested}」：${detail}`, { kind: 'navigation' });
       session.messages.push(unmatchedMessage);

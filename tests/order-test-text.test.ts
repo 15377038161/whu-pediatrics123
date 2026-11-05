@@ -44,7 +44,7 @@ test('文本申请：匹配项返回真实结果，模型不可用时保留未�
   // 匹配项：结果消息返回（真实病例资料）
   assert.ok(result.newMessages.some((message) => message.content.includes('尿蛋白+++')), '匹配项应返回病例真实结果');
   // 未匹配项：明确「资料未提供」，不编造结果
-  assert.ok(result.newMessages.some((message) => message.content.includes('基因检测') && message.content.includes('报告暂未取得')), '未匹配项应明确资料未提供');
+  assert.ok(result.newMessages.some((message) => message.content.includes('基因检测') && message.content.includes('资料未提供')), '未匹配项应明确资料未提供');
   // 只解锁匹配项证据；未匹配项不产生证据（caseOptions.tests 无 evidenceCode，从病例目录取）
   const matchedCatalogTest = getCase(session.caseId).tests.find((item) => item.id === orderedId)!;
   assert.ok(session.unlockedEvidence.includes(matchedCatalogTest.evidenceCode));
@@ -52,7 +52,7 @@ test('文本申请：匹配项返回真实结果，模型不可用时保留未�
   // 事件：一条匹配结果事件 + 一条未匹配事件
   const orderEvents = session.events.filter((event) => event.type === 'ORDER_TEST');
   assert.equal(orderEvents.length, 2);
-  assert.ok(orderEvents.some((event) => event.summary.includes('报告暂未取得')));
+  assert.ok(orderEvents.some((event) => event.summary.includes('资料未提供')));
   // trace：确定性匹配说明 + 申请理由
   assert.ok(result.trace.some((item) => item.label.includes('确定性别名匹配')));
   assert.ok(result.trace.some((item) => item.label.includes('明确蛋白尿程度')));

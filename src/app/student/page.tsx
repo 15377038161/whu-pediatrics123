@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Trophy } from 'lucide-react';
 import type { PublicCaseProfile } from '@/domain/case-catalog';
 import type { SessionState } from '@/domain/agent';
+import type { ClassLeaderboard, ClassWorkspace } from '@/domain/classroom';
 import { normalizeCategory } from '@/domain/case-classification';
+import { useGateUser } from '@/components/auth-gate';
 import { authedFetch } from '@/lib/authed-api';
 import styles from './student-home.module.css';
 
@@ -26,11 +29,13 @@ const systems = [
 ];
 
 export default function StudentHome() {
+  const me = useGateUser();
   const [selected, setSelected] = useState<number | null>(null);
   const [catalog, setCatalog] = useState<PublicCaseProfile[] | null>(null);
   const [sessions, setSessions] = useState<SessionState[]>([]);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [standing, setStanding] = useState<{ rank: number; points: number; sourceCount: number; total: number; className: string } | null>(null);
   useEffect(() => {
     let current = true;
     void authedFetch<PublicCaseProfile[]>('/api/cases')
@@ -41,21 +46,58 @@ export default function StudentHome() {
       .catch(() => {});
     return () => { current = false; };
   }, [attempt]);
+  useEffect(() => {
+    let current = true;
+    void (async () => {
+      try {
+        const workspace = await authedFetch<ClassWorkspace>('/api/classes');
+        const classId = workspace.state.currentCohortId ?? workspace.memberships[0] ?? null;
+        if (!classId) return;
+        const board = await authedFetch<ClassLeaderboard>(`/api/classes/leaderboard?classId=${encodeURIComponent(classId)}`);
+        const mine = board.entries.find((entry) => entry.userId === me.id);
+        if (!current || !mine) return;
+        setStanding({
+          rank: mine.rank, points: mine.points, sourceCount: mine.sourceCount, total: board.entries.length,
+          className: workspace.classes.find((item) => item.id === classId)?.name ?? '我的班级',
+        });
+      } catch { /* 积分榜读取失败不阻塞首页其余内容，入口仍在 */ }
+    })();
+    return () => { current = false; };
+  }, [me.id]);
   const system = selected === null ? null : systems[selected];
   const active = sessions.find((session) => session.status === 'active');
   let level = 0;
 
   return <div className={styles.home}>
+    {!system && <section className={styles.slogan}>
+      <p className={styles.sloganKicker}>珞珈儿科智训 · 武汉大学儿科学</p>
+      <h2 className={styles.sloganTitle}>大医精诚敬畏生命，练一次，会接诊</h2>
+      <p className={styles.sloganPurpose}>把真实儿科病历变成可反复训练的接诊过程：每一次问诊、查体、检查与沟通都留下可回放的证据与反馈。</p>
+      <dl className={styles.sloganList}>
+        <div><dt>功能</dt><dd>12 个系统真实病例接诊 · 查体与辅助检查 · 病历书写与 AI 点评 · 知识回顾题库 · OSCE 考站 · 班级积分榜</dd></div>
+        <div><dt>技能</dt><dd>病史采集 · 体格检查与技能操作 · 辅助检查判读 · 诊断与鉴别 · 处理原则 · 医患沟通（对标执业医师实践技能三站）</dd></div>
+      </dl>
+    </section>}
+    <section className={styles.shortcuts} aria-label="积分与继续训练">
+      <Link className={styles.pointsCard} href="/student/classes">
+        <Trophy aria-hidden="true" />
+        <span>
+          <strong>{standing ? `第 ${standing.rank} 名 · ${standing.points} 积分` : '班级积分榜'}</strong>
+          <small>{standing ? `${standing.className}（共 ${standing.total} 人）· 已完成 ${standing.sourceCount} 个来源病例` : '积分口径：每个来源病例取最高临床过程分，累加为总积分'}</small>
+        </span>
+      </Link>
+      {active && <Link className={styles.continueCard} href={`/student/training?session=${encodeURIComponent(active.id)}`}>
+        <span><strong>继续上次接诊</strong><small>会话已保留，可从当前阶段接着完成。</small></span>
+      </Link>}
+    </section>
     <header className={styles.heading}>
       <div>
-        <h1>{system ? system.name : '儿科病例闯关'}</h1>
+        <h1>{system ? system.name : '儿科病例训练'}</h1>
         <p>{system ? '选择病例，开始接诊。' : '选择一个系统，进入病例训练。'}</p>
       </div>
-      <div className={styles.tools}>
-        {system && <button className="btn btn-secondary" onClick={() => setSelected(null)}>返回系统地图</button>}
-        {active && <Link href={`/student/training?session=${encodeURIComponent(active.id)}`}>继续上次</Link>}
-        <Link href="/student/classes">我的班级</Link>
-      </div>
+      {system && <div className={styles.tools}>
+        <button className="btn btn-secondary" onClick={() => setSelected(null)}>返回系统地图</button>
+      </div>}
     </header>
     {!system ? <nav className={styles.map} aria-label="选择儿科系统">
       {/* Coordinates use the original artwork's aspect ratio. */}

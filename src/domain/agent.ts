@@ -110,8 +110,9 @@ export interface VitalSigns {
   spo2: number | null;
 }
 
-/** Session-only teaching reports. Never imported into the real source snapshot. */
+/** Session-only verbatim extractions from the bound source reports. Never imported into the real source snapshot. */
 export interface SupplementalTest {
+  // 'generated' 只存在于 2026-11-05 之前落库的历史记录；新记录一律 'source'，历史合成结果不再复用。
   id:string; requested:string; label:string; result:string; origin:'source'|'generated';
   sourceTestIds:string[]; sourceQuotes:string[]; model:string; createdAt:string;
   sourceSnapshotVersion:string|null;

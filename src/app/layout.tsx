@@ -3,8 +3,8 @@ import '@/app/globals.css';
 import { OAuthCallbackHandler } from '@/app/components/oauth-callback-handler';
 
 export const metadata: Metadata = {
-  title: '珞珈儿科智训',
-  description: '武汉大学儿科学统一教学智能体',
+  title: '珞珈儿科智训 Luojia Pediatric Intelligent Training',
+  description: '武汉大学儿科学统一教学智能体 Wuhan University Pediatrics',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

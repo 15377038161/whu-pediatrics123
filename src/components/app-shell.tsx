@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart3, BookOpenCheck, BookOpenText, ClipboardCheck, GraduationCap, Home, LibraryBig, LogOut, MonitorPlay, MoreHorizontal, Sparkles, Users } from 'lucide-react';
+import { BarChart3, BookOpenCheck, BookOpenText, ClipboardCheck, GraduationCap, Home, LibraryBig, LogOut, MonitorPlay, MoreHorizontal, Sparkles, Trophy, Users } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { UserContext } from '@/domain/agent';
@@ -10,9 +10,10 @@ const studentNav = [
   { href: '/student/practice', label: '临床能力专项', icon: Sparkles, primary: true },
   { href: '/student/quiz', label: '知识回顾', icon: BookOpenCheck, primary: true },
   { href: '/student/reports', label: '报告', icon: BarChart3, primary: true },
+  { href: '/student/classes', label: '排行榜', icon: Trophy, primary: false },
   { href: '/student/osce', label: 'OSCE', icon: ClipboardCheck, primary: false },
   { href: '/student/skills', label: '技能学习', icon: GraduationCap, primary: false },
-  { href: '/student/resources', label: '学习资源', icon: MonitorPlay, primary: false },
+  { href: '/student/resources', label: '教学视频', icon: MonitorPlay, primary: false },
 ];
 
 const teacherNav = [
