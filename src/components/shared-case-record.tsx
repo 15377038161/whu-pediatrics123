@@ -93,7 +93,10 @@ export function SharedCaseRecord({
                   {entry.category !== 'history' && <p className="record-result-text">{entry.event.summary}</p>}
                   {entry.answers.length > 0 ? <div className="record-answer-list">{entry.answers.map((answer, index) => <p key={`${entry.event.id}-${index}`}><span>{answer.actor === 'parent' ? '家长回答' : '患儿回答'}</span>{answer.content}</p>)}</div> : null}
                   {entry.category === 'history' && entry.answers.length === 0 ? <p className="record-detail-muted">未关联到可展示的家长或患儿回答。</p> : null}
-                  {entry.event.media && entry.event.media.length > 0 ? <CaseMediaGallery sessionId={session.id} media={entry.event.media} /> : null}
+                  {entry.event.media && entry.event.media.length > 0
+                    ? <CaseMediaGallery sessionId={session.id} media={entry.event.media} />
+                    // 查体无实拍图时如实说明，避免留白被误读为图片加载失败（病例素材库只有辅助检查类图像，无体征照片）
+                    : entry.category === 'exam' ? <p className="record-detail-muted">本例未提供实拍图。</p> : null}
                 </div>
               </details>
             </li>)}</ol>
