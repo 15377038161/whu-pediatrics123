@@ -16,6 +16,7 @@ import { getUnpublishedCaseIds } from '@/lib/case-publication';
 import { creationSessionId, creationFingerprint, type SessionCreationOptions } from '@/lib/session-creation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getCase } from '@/domain/case';
+import { isPlaceholderDemographic } from '@/domain/demographics';
 import { buildClinicalOperationRows } from '@/lib/clinical-operation-rows';
 import { hydrateReleasedExamMedia } from '@/lib/case-media';
 import { NOTE_TEMPLATE_VERSION, normalizeNoteContent, type NoteDraftRecord, type NoteReviewResult, type NoteReviewStatus, type NoteSubmissionRecord } from '@/domain/medical-note';
@@ -277,6 +278,23 @@ export class AgentRepository {
     return getSupabaseUserClient(this.actor.accessToken);
   }
 
+  /**
+   * 旧会话兼容：caseOptions 是建会话时写进会话状态的快照值，若当时落库的是占位串
+   * （「年龄未记录/性别未记录」），此后即使病例已能解析出真实年龄性别，界面仍会显示未记录、
+   * 人物形象回落到占位剪影。这里在读出会话时用病例当前解析结果补齐，只影响展示，不回写数据库。
+   */
+  private repairCaseOptionsDemographics(session: SessionState): SessionState {
+    const options = session.caseOptions;
+    if (!options) return session;
+    if (!isPlaceholderDemographic(options.age) && !isPlaceholderDemographic(options.sex)) return session;
+    try {
+      const resolved = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
+      return { ...session, caseOptions: { ...options, age: resolved.age, sex: resolved.sex } };
+    } catch {
+      return session;
+    }
+  }
+
   async createRequestedSession(options: SessionCreationOptions): Promise<SessionState> {
     options = { ...options, caseId: options.caseId ? resolveCaseId(options.caseId) : undefined, excludeCaseId: options.excludeCaseId ? resolveCaseId(options.excludeCaseId) : undefined };
     const fingerprint = creationFingerprint(options);
@@ -423,7 +441,7 @@ export class AgentRepository {
       if (!session) throw new Error('SESSION_NOT_FOUND');
       if (this.actor.role !== 'teacher' && session.userId !== this.actor.id) throw new Error('FORBIDDEN');
       if (session.caseId.startsWith('teacher-')) await ensureCaseSnapshot(session.caseId);
-      return refreshSourceSession(clone(session));
+      return this.repairCaseOptionsDemographics(refreshSourceSession(clone(session)));
     }
     const db = this.db();
     const { data } = await withDatabaseRetry(async () => {
@@ -466,7 +484,7 @@ export class AgentRepository {
     if (refreshed.caseId.startsWith('teacher-') && refreshed.sourceSnapshotVersion) {
       hydrateReleasedExamMedia(refreshed,getCase(refreshed.caseId,refreshed.sourceSnapshotVersion,refreshed.id).exams);
     }
-    return refreshed;
+    return this.repairCaseOptionsDemographics(refreshed);
   }
 
   async saveSession(session: SessionState): Promise<void> {

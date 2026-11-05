@@ -1,3 +1,4 @@
+import { isPlaceholderDemographic } from '@/domain/demographics';
 import { sourceTestDefinitionsSchema, type SourceTestDefinition } from '@/domain/source-test-contract';
 import { sourceExamRulesSchema, type SourceExamRule } from '@/domain/source-exam-contract';
 import { createHash } from 'node:crypto';
@@ -275,8 +276,8 @@ export function confidentSnapshotDemographics(historyHead: string): { age?: stri
   };
 }
 
-/** 顶层人口学占位串：建快照时病史头窗口漏句即落库为这些字面值，读取时不得当真值信任。 */
-const DEMOGRAPHIC_PLACEHOLDERS = new Set(['', '年龄未记录', '性别未记录']);
+/** 顶层人口学占位串：建快照时病史头窗口漏句即落库为这些字面值，读取时不得当真值信任。
+ *  判定与客户端共用 src/domain/demographics.ts，避免两处口径漂移。 */
 
 /**
  * 读取态人口学修复：顶层 age/sex 在建快照时只取病史头 500 字窗口（部署环境读库快照），
@@ -286,8 +287,8 @@ const DEMOGRAPHIC_PLACEHOLDERS = new Set(['', '年龄未记录', '性别未记�
  * 不改动 record 本身，版本指纹（含 age/sex）语义保持不变。
  */
 export function repairSnapshotDemographics(record: { age?: string; sex?: string; sections?: { history?: string } }): { age?: string; sex?: string } {
-  const ageMissing = record.age === undefined || DEMOGRAPHIC_PLACEHOLDERS.has(record.age);
-  const sexMissing = record.sex === undefined || DEMOGRAPHIC_PLACEHOLDERS.has(record.sex);
+  const ageMissing = isPlaceholderDemographic(record.age);
+  const sexMissing = isPlaceholderDemographic(record.sex);
   if (!ageMissing && !sexMissing) return { age: record.age, sex: record.sex };
   const derived = confidentSnapshotDemographics(record.sections?.history ?? '');
   return {
