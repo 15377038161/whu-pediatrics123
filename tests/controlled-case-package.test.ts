@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   inspectControlledCasePackage,
@@ -11,7 +11,15 @@ import {
 import { getKnowledgeRoot } from '@/lib/teacher-case-data';
 import type { ImportSummary } from '@/lib/teacher-case-import';
 
-test('固定候选包：53 源病例、67 入口，全部通过哈希/schema/教学完整性校验', () => {
+// knowledge/ 整体 gitignore，清单只由教师鉴权的快照恢复（POST /api/teacher/case-snapshot-archive）
+// 按数据库双表重算后写盘，因此新检出/未跑过恢复的环境必然没有它。缺清单时跳过而不是判红：
+// 指纹是「教师已核对的那个包」的凭据，本地重新生成会得到另一个包，不能冒充。
+const manifestFile = path.join(getKnowledgeRoot(), 'case-package-manifest.json');
+const skipReason = existsSync(manifestFile)
+  ? false
+  : 'knowledge/case-package-manifest.json 不存在：需先以教师身份运行受控快照恢复生成清单';
+
+test('固定候选包：53 源病例、67 入口，全部通过哈希/schema/教学完整性校验', { skip: skipReason }, () => {
   const item = inspectControlledCasePackage();
   assert.equal(item.sourceCount, 53);
   assert.equal(item.entryCount, 67);
@@ -23,7 +31,7 @@ test('固定候选包：53 源病例、67 入口，全部通过哈希/schema/教
   for (const version of Object.values(item.versions)) assert.match(version, /^[a-f0-9]{16}$/);
 });
 
-test('manifest 边界：重复入口、来源错配和额外哈希路径均拒绝', () => {
+test('manifest 边界：重复入口、来源错配和额外哈希路径均拒绝', { skip: skipReason }, () => {
   const raw = JSON.parse(readFileSync(path.join(getKnowledgeRoot(), 'case-package-manifest.json'), 'utf8')) as {
     entries: Array<Record<string, unknown>>;
     sha256: Record<string, string>;
@@ -43,7 +51,7 @@ test('manifest 边界：重复入口、来源错配和额外哈希路径均拒�
   assert.throws(() => parseControlledCasePackageManifest(extraPath), /CASE_PACKAGE_INVALID/);
 });
 
-test('导入输入：只接受当前包指纹与包内病例 ID，拒绝空选择、未知 ID 和额外字段', () => {
+test('导入输入：只接受当前包指纹与包内病例 ID，拒绝空选择、未知 ID 和额外字段', { skip: skipReason }, () => {
   const item = inspectControlledCasePackage();
   assert.deepEqual(parseControlledCaseImportRequest({ packageFingerprint: item.fingerprint }, item), { only: undefined });
   const selected = item.sourceCaseIds[0]!;
