@@ -618,14 +618,25 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
 
   // 同批重复申请同一项目只处理一次（record 幂等，重复申请不重复反馈）
   const processedIds = new Set<string>();
+  // 跨次重复提交去重：未匹配申请与「待回报／资料未提供」不会解锁证据，若只靠上面的
+  // orderedTests+unlockedEvidence 判断，同一项每提交一次就会再往病例记录追加一条相同信息。
+  // 这里按「事件摘要完全相同」判重——只阻止重复追加，不改变首次记录与后续真实结果释放。
+  const pushOrderEventOnce = (summary: string) => {
+    if (session.events.some((event) => event.type === 'ORDER_TEST' && event.summary === summary)) return;
+    session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', summary, null, []));
+  };
+  const pushMessageOnce = (text: string) => {
+    if (session.messages.some((item) => item.content === text)) return;
+    const onceMessage = message('system', text, { kind: 'navigation' });
+    session.messages.push(onceMessage);
+    newMessages.push(onceMessage);
+  };
   for (const request of requests) {
     // 未匹配：记录申请与「资料未提供」，不记下单、不解锁证据（fail-closed，不编造）
     if (!request.test) {
       const detail = request.status === 'ambiguous' ? '请说明检查部位或具体项目，当前申请尚未匹配。' : '检查申请已记录（做/不做计入本次诊疗思路）；本病例原始资料未提供该项结果，平台不生成模拟结果。';
-      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `「${request.requested}」：${detail}`, null, []));
-      const unmatchedMessage = message('system', `「${request.requested}」：${detail}`, { kind: 'navigation' });
-      session.messages.push(unmatchedMessage);
-      newMessages.push(unmatchedMessage);
+      pushOrderEventOnce(`「${request.requested}」：${detail}`);
+      pushMessageOnce(`「${request.requested}」：${detail}`);
       feedbackParts.push(`「${request.requested}」：${detail}`);
       continue;
     }
@@ -645,10 +656,8 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
       }
       session.orderedTests = uniq([...session.orderedTests, test.id]);
       const note = test.resultDelayNote ?? '标本已送检，结果待回报。';
-      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：已开单送检，结果待回报`, null, []));
-      const pendingMessage = message('system', `${test.label}已开出。${note}`, { kind: 'navigation' });
-      session.messages.push(pendingMessage);
-      newMessages.push(pendingMessage);
+      pushOrderEventOnce(`${test.label}：已开单送检，结果待回报`);
+      pushMessageOnce(`${test.label}已开出。${note}`);
       feedbackParts.push(`${test.label}已开单送检，结果待回报。`);
       traceItems.push(trace('病例状态', '分时点释放：结果待回报，暂不解锁证据'));
       continue;
@@ -665,9 +674,8 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
       if (fetched?.pending) {
         session.orderedTests = uniq([...session.orderedTests, test.id]);
         const note = fetched.resultDelayNote ?? '标本已送检，结果待回报。';
-        session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：已开单送检，结果待回报`, null, []));
-        const pendingMessage = message('system', `${test.label}已开出。${note}`, {kind:'navigation'});
-        session.messages.push(pendingMessage); newMessages.push(pendingMessage);
+        pushOrderEventOnce(`${test.label}：已开单送检，结果待回报`);
+        pushMessageOnce(`${test.label}已开出。${note}`);
         feedbackParts.push(`${test.label}已开单送检，结果待回报。`);
         traceItems.push(trace('病例状态', '绑定版本的数据库释放规则：暂不解锁结果或媒体'));
         continue;
@@ -686,10 +694,8 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     // fail-closed：下单记录保留，行级结果不可得时明确「资料未提供」，不编造检查结果
     if (!test.result) {
       session.orderedTests = uniq([...session.orderedTests, test.id]);
-      session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：检查已开出，本病例资料未提供该项结果`, null, []));
-      const pendingMessage = message('system', `${test.label}已开出，本病例资料未提供该项结果。`, { kind: 'navigation' });
-      session.messages.push(pendingMessage);
-      newMessages.push(pendingMessage);
+      pushOrderEventOnce(`${test.label}：检查已开出，本病例资料未提供该项结果`);
+      pushMessageOnce(`${test.label}已开出，本病例资料未提供该项结果。`);
       feedbackParts.push(`${test.label}检查已开出，本病例资料未提供该项结果。`);
       traceItems.push(trace('病例状态', '记录检查选择；资料未提供的结果不编造'));
       continue;

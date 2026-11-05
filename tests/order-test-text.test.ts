@@ -116,3 +116,25 @@ test('exam 无需完成查体操作即可一格开单；后续阶段回看开单
   assert.equal(fromLaterStage.session.stage, 'assessment', '后续阶段回看开单不得回退业务阶段');
   assert.equal(fromLaterStage.session.events.some((event) => event.type === 'ORDER_TEST' && event.summary.includes('C反应蛋白')), true);
 });
+
+test('跨次重复提交同一未匹配申请，不重复追加记录', async (t) => {
+  const { session, restore } = await withSourceCase();
+  t.after(() => void restore());
+  const first = await runAgentTurn(session, { type: 'ORDER_TEST', data: { requestedTests: '基因检测' } }, 'dedupe-text-1');
+  assert.ok(first.newMessages.some((item) => item.content.includes('资料未提供')), '首次提交应记录资料未提供');
+
+  const second = await runAgentTurn(session, { type: 'ORDER_TEST', data: { requestedTests: '基因检测' } }, 'dedupe-text-2');
+  assert.equal(session.events.filter((event) => event.type === 'ORDER_TEST').length, 1, '重复提交不得重复追加检查事件');
+  assert.equal(session.messages.filter((item) => item.content.includes('基因检测')).length, 1, '重复提交不得重复追加系统消息');
+  assert.equal(second.newMessages.length, 0, '重复提交不产生新的系统消息');
+});
+
+test('跨次重复提交同一「资料未提供」的目录项，不重复追加记录', async (t) => {
+  const { session, restore } = await withSourceCase();
+  t.after(() => void restore());
+  const label = session.caseOptions!.tests[0].label;
+  await runAgentTurn(session, { type: 'ORDER_TEST', data: { requestedTests: label } }, 'dedupe-result-1');
+  const eventsAfterFirst = session.events.filter((event) => event.type === 'ORDER_TEST').length;
+  await runAgentTurn(session, { type: 'ORDER_TEST', data: { requestedTests: label } }, 'dedupe-result-2');
+  assert.equal(session.events.filter((event) => event.type === 'ORDER_TEST').length, eventsAfterFirst, '已出结果的检查重复申请不再追加事件');
+});
