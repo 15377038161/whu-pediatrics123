@@ -2,6 +2,7 @@
 
 import { CaseRecordDrawer } from '@/components/case-record-drawer';
 import { DirectionHint } from '@/components/direction-hint';
+import { ExpandableNote } from '@/components/expandable-note';
 import { EXAM_LOCATIONS } from '@/domain/source-exam-contract';
 import { NoteWriting, type NoteWritingHandle } from '@/components/note-writing';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
@@ -12,7 +13,7 @@ import { ageBandLabel, bindingGapNote, patientAssetByKey, sexPresentationLabel }
 import { SharedCaseRecord } from '@/components/shared-case-record';
 
 import {
-  Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home, Info,
+  Activity, ArrowLeft, Check, ChevronRight, Clock3, Eye, Hammer, Hand, Home,
   ClipboardList, LoaderCircle, MessageCircle, Send, Stethoscope, UserRound, Volume2, VolumeX, X,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -533,11 +534,20 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
 
         {practiceCompletion === 'exam_observation' && (
           <form className="clinical-form practice-summary-form" onSubmit={async (event) => { event.preventDefault(); if (examFindingsText.trim().length < 10 || examLinkedEvidence.length === 0) return; await sendEvent({ type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: examFindingsText.trim(), interpretation: examInterpretationText.trim() || undefined, linkedEvidence: examLinkedEvidence } }); }}>
-            <div className="form-field"><label>关联的查体结果（必选，本次观察所依据）</label>{obtainedExamResultItems.map((item) => <label key={item.code} className="checkbox-row"><input type="checkbox" checked={examLinkedEvidence.includes(item.code)} onChange={(e) => { setExamLinkedEvidence(e.target.checked ? [...new Set([...examLinkedEvidence, item.code])] : examLinkedEvidence.filter((code) => code !== item.code)); }} disabled={busy} /> <span>{item.summary}</span></label>)}<small>选项来自本会话已实际获得结果的查体项（手卫生等准备操作不计入）；服务端按本会话原查体事件与解锁结果核验关联。</small></div>
+            <div className="form-field">
+              <div className="field-label-row">
+                <label>关联的查体结果（必选，本次观察所依据）</label>
+                <ExpandableNote label="选项从哪来？" align="start">
+                  <p>选项来自本会话已实际获得结果的查体项，手卫生等准备操作不计入。</p>
+                  <p>提交时服务端按本会话的原查体事件与解锁结果核验关联，没做过的查体勾不上。</p>
+                </ExpandableNote>
+              </div>
+              {obtainedExamResultItems.map((item) => <label key={item.code} className="checkbox-row"><input type="checkbox" checked={examLinkedEvidence.includes(item.code)} onChange={(e) => { setExamLinkedEvidence(e.target.checked ? [...new Set([...examLinkedEvidence, item.code])] : examLinkedEvidence.filter((code) => code !== item.code)); }} disabled={busy} /> <span>{item.summary}</span></label>)}
+            </div>
             <div className="form-field"><label htmlFor="exam-findings">查体观察记录（专项结束条件）</label><textarea id="exam-findings" required minLength={10} rows={3} value={examFindingsText} onChange={(e) => setExamFindingsText(e.target.value)} placeholder="你实际观察到的查体所见：阳性体征、重要阴性发现…（不要求答中评分点，可修订重交）" /></div>
             <div className="form-field"><label htmlFor="exam-interpretation">观察解释（可选）</label><textarea id="exam-interpretation" rows={2} value={examInterpretationText} onChange={(e) => setExamInterpretationText(e.target.value)} placeholder="这些所见提示什么？与病史如何联系？（原文保留在报告快照待教师复核，不做机器计分）" /></div>
             <button className="btn btn-secondary" type="submit" disabled={busy || examEvidenceCount === 0 || examFindingsText.trim().length < 10 || examLinkedEvidence.length === 0}>{session.examObservation ? '修订重交观察与解释' : '提交查体观察与解释'}</button>
-            {examEvidenceCount === 0 && <p className="form-hint" role="note">完成至少一项有效查体操作并勾选关联项后才能提交观察（服务端按本会话原查体事件与解锁结果核验）。</p>}
+            {examEvidenceCount === 0 && <p className="form-hint" role="note">完成至少一项有效查体操作并勾选关联项后才能提交观察。</p>}
           </form>
         )}
         <div className="form-actions">{practiceCompletion === 'exam_observation' ? <button className="btn btn-primary" type="button" disabled={busy || !session.examObservation} onClick={finish}>{session.examObservation ? '完成查体，生成专项报告' : '提交观察与解释后可结束'} <ChevronRight size={16} /></button> : <><button className="btn btn-primary exam-open-patient" onClick={() => setMobileView('patient')}><UserRound size={16} /> 打开患儿模型</button></>}</div>
@@ -555,7 +565,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="form-field"><label htmlFor="summary">病情摘要</label><textarea id="summary" required minLength={10} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="年龄、主诉、重要阳性与阴性信息、危险信号…" /></div>
         <div className="form-field"><label htmlFor="diagnosis">初步诊断</label><input id="diagnosis" required value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="输入诊断与病情严重程度" /></div>
         <div className="form-field"><label htmlFor="diagnosis-basis">诊断依据（必填）</label><textarea id="diagnosis-basis" required minLength={10} value={diagnosisBasis} onChange={(e) => setDiagnosisBasis(e.target.value)} placeholder="支撑该诊断的病史、体征与检查证据：哪些阳性发现支持诊断？关键阴性发现排除了什么？" /></div>
-        <fieldset className="form-field"><legend>关联诊断依据的记录（可选）</legend><p>选择你实际使用的记录，并在诊断依据中说明它支持或排除了什么，无需全选。</p>{decisionEvidenceItems.length?<details><summary>选择本轮已获得的记录</summary>{decisionEvidenceItems.map(item=><label className="checkbox-row" key={item.id}><input type="checkbox" checked={decisionEvidenceIds.includes(item.id)} disabled={busy} onChange={event=>setDecisionEvidenceIds(event.target.checked?[...decisionEvidenceIds,item.id]:decisionEvidenceIds.filter(id=>id!==item.id))}/><span>{item.summary}</span></label>)}</details>:<small>本轮尚无可关联的问诊、查体或检查记录；仍可在诊断依据中说明接诊时已知的信息。</small>}</fieldset>
+        <fieldset className="form-field"><legend>关联诊断依据的记录（可选）</legend><ExpandableNote label="怎么关联？" align="start"><p>选择你实际使用的记录，并在诊断依据中说明它支持或排除了什么，无需全选。</p></ExpandableNote>{decisionEvidenceItems.length?<details><summary>选择本轮已获得的记录</summary>{decisionEvidenceItems.map(item=><label className="checkbox-row" key={item.id}><input type="checkbox" checked={decisionEvidenceIds.includes(item.id)} disabled={busy} onChange={event=>setDecisionEvidenceIds(event.target.checked?[...decisionEvidenceIds,item.id]:decisionEvidenceIds.filter(id=>id!==item.id))}/><span>{item.summary}</span></label>)}</details>:<small>本轮尚无可关联的问诊、查体或检查记录；仍可在诊断依据中说明接诊时已知的信息。</small>}</fieldset>
         <div className="form-field"><label htmlFor="differentials">鉴别诊断</label><textarea id="differentials" value={differentials} onChange={(e) => setDifferentials(e.target.value)} placeholder="列出需要鉴别的疾病及理由" /></div>
         <button className="btn btn-primary btn-block" disabled={busy}>提交诊断并继续</button>
       </form>;
@@ -582,7 +592,10 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="training-toolbar">
           <button className="icon-btn" type="button" onClick={leaveTraining} aria-label="暂时退出训练"><ArrowLeft size={18} /></button>
           <div className="training-title"><strong>{caseProfile.title}</strong></div>
-          <details className="training-info"><summary aria-label="教学说明"><Info size={16}/></summary><p>本平台用于教学训练，原病例未提供的检查可由AI补全；资料不用于真实临床诊疗。</p></details>
+          <ExpandableNote variant="icon" label="教学说明">
+            <p>本平台用于教学训练，虚拟患儿与病例资料不用于真实临床诊疗。</p>
+            <p>查体所见与辅助检查结果只取自本病例绑定的原始资料；资料没有提供的项目不由 AI 生成，界面会如实说明「本病例资料未提供该项结果」。</p>
+          </ExpandableNote>
           {session.mode === 'osce' ? <div className="timer"><Clock3 size={14} /> {String(Math.floor((remaining ?? 0) / 60)).padStart(2,'0')}:{String((remaining ?? 0) % 60).padStart(2,'0')}</div> : <button className="icon-btn" type="button" onClick={leaveTraining} aria-label="回到首页"><Home size={17} /></button>}
         </div>
         <div className="workspace-stage-row">

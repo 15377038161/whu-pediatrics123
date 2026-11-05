@@ -249,7 +249,7 @@ textarea { resize: vertical; }
 .training-head { position: sticky; top: 0; z-index: 45; background: rgba(250,253,251,.96); border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); }
 .training-toolbar { height: 62px; padding: 0 12px; display: grid; grid-template-columns: var(--tap) minmax(0, 1fr) auto auto; align-items: center; gap: 8px; }
 .training-title { min-width: 0; text-align: center; }
-.training-toolbar > .training-info,
+.training-toolbar > .expandable-note,
 .training-toolbar > .timer,
 .training-toolbar > .icon-btn:last-child { justify-self: end; }
 .training-title strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
@@ -1182,10 +1182,23 @@ textarea { resize: vertical; }
  .training-shell .composer textarea { min-height:48px; }
 }
 
-.training-info { position:relative; flex:none; }
-.training-info summary { display:grid; place-items:center; width:30px; height:30px; color:var(--muted); cursor:pointer; list-style:none; }
-.training-info summary::-webkit-details-marker { display:none; }
-.training-info p { position:absolute; z-index:60; top:100%; right:0; width:min(300px,80vw); margin:8px 0; padding:12px; border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:var(--shadow-soft); font-size:12px; line-height:1.7; }
+/* C3：说明类小字统一收纳（components/expandable-note.tsx）——触发器常显，浮层点击/悬停展开，
+   绝对定位不改变周边版面；正文 13px 起，比原先散落各处 10-12px 的说明更易读。 */
+.expandable-note { position:relative; display:inline-flex; flex:none; }
+.note-trigger { display:inline-flex; align-items:center; gap:4px; min-height:28px; padding:3px 10px; border:1px solid var(--line); border-radius:999px; background:var(--paper,#fffdf8); color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; }
+.note-trigger:hover,.note-trigger:focus-visible { border-color:#cde4db; background:#eff9f5; color:var(--pine-dark); }
+.note-trigger svg { flex:none; }
+.note-trigger:not(.note-trigger-icon)[aria-expanded="true"] svg:last-child { transform:rotate(180deg); }
+.note-trigger-icon { width:30px; height:30px; min-height:30px; padding:0; display:grid; place-items:center; border:0; background:transparent; }
+.note-trigger-icon:hover,.note-trigger-icon:focus-visible { background:transparent; color:var(--pine-dark); }
+.note-panel-wrap { position:absolute; z-index:70; top:100%; right:0; width:min(320px,calc(100vw - 28px)); padding-top:8px; }
+.note-panel-start { right:auto; left:0; }
+.note-panel { max-height:min(58vh,420px); overflow:auto; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:var(--shadow-soft); color:var(--ink-2,#426663); font-size:13px; line-height:1.75; }
+.note-panel p { margin:0 0 8px; }
+.note-panel p:last-child { margin-bottom:0; }
+.note-panel strong { color:var(--ink); }
+.field-label-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 8px; }
+.note-spaced { margin-top:8px; }
 
 .training-shell .record-timeline-section { flex:1; min-height:160px; display:flex; flex-direction:column; gap:8px; overflow:hidden; }
 .training-shell .record-vitals,.training-shell .case-record-tools,.training-shell .record-section-head,.training-shell .shared-record-note-entry { flex-shrink:0; }
