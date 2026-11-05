@@ -90,6 +90,7 @@ export function LearningResourceManager() {
   const [visibility, setVisibility] = useState<string[]>([]);
   const [edit, setEdit] = useState<EditState | null>(null);
   const [files, setFiles] = useState<StorageFileBrief[] | null>(null);
+  const [fileQuery, setFileQuery] = useState('');
   const [skills, setSkills] = useState<SkillCatalogItem[]>([]);
   const [pickerTarget, setPickerTarget] = useState<'file' | 'cover' | null>(null);
   const [platformScope, setPlatformScope] = useState(false);
@@ -299,10 +300,16 @@ export function LearningResourceManager() {
     if (!pickerTarget || !edit) return;
     setEdit(pickerTarget === 'file' ? { ...edit, fileId } : { ...edit, coverFileId: fileId });
     setPickerTarget(null);
+    setFileQuery('');
   }, [pickerTarget, edit]);
 
   const ownedClasses = classes;
   const skillTitleById = new Map(skills.map((s) => [s.skillId, s.title]));
+  const normalizedFileQuery = fileQuery.trim().toLocaleLowerCase();
+  const matchingFiles = (files ?? []).filter((file) =>
+    !normalizedFileQuery
+    || file.fileName.toLocaleLowerCase().includes(normalizedFileQuery)
+    || file.fileId.toLocaleLowerCase().includes(normalizedFileQuery));
 
   if (!list) {
     return (
@@ -525,15 +532,27 @@ export function LearningResourceManager() {
           <div className={styles.pickerPanel}>
             <div className={styles.actions}>
               <h2>{pickerTarget === 'file' ? '选择资源文件' : '选择封面图'}</h2>
-              <button className="btn btn-quiet" type="button" onClick={() => setPickerTarget(null)}>关闭</button>
+              <button className="btn btn-quiet" type="button" onClick={() => { setPickerTarget(null); setFileQuery(''); }}>关闭</button>
             </div>
+            {files ? (
+              <input
+                type="search"
+                value={fileQuery}
+                onChange={(event) => setFileQuery(event.target.value)}
+                placeholder="按文件名或 fileId 搜索"
+                aria-label="搜索对象存储文件"
+                autoFocus
+              />
+            ) : null}
             {!files ? (
               <p className={styles.hint}>正在读取对象存储清单…</p>
             ) : files.length === 0 ? (
               <p className={styles.hint}>对象存储暂无文件。请先在平台项目详情页「对象存储」中上传。</p>
+            ) : matchingFiles.length === 0 ? (
+              <p className={styles.hint}>未找到匹配文件，请更换关键词。</p>
             ) : (
               <div className={styles.fileList}>
-                {files.map((file) => (
+                {matchingFiles.map((file) => (
                   <button key={file.fileId} type="button" className={styles.fileOption} onClick={() => pickFile(file.fileId)}>
                     <span className={styles.fileOptionName}>{file.fileName}</span>
                     <span className={styles.fileOptionMeta}>{formatSize(file.fileSize)} · {file.updateTime}</span>
