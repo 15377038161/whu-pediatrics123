@@ -1,0 +1,37 @@
+.progressRow { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; margin: 4px 0 14px; color: var(--muted); font-size: 13px; }
+.disclaimer { flex: 1; min-width: 240px; color: #7a5410; }
+.form { display: grid; gap: 14px; }
+.sectionCard { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255, 255, 255, .94); }
+.sectionHead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.sectionHead h2 { margin: 0; font-size: 17px; }
+.sectionHead span { color: var(--muted); font-size: 12px; }
+.hintList { margin: 10px 0 12px; padding: 0; list-style: none; display: grid; gap: 6px; }
+.hintList li { display: grid; gap: 1px; padding-left: 10px; border-left: 3px solid var(--line); font-size: 13px; line-height: 1.55; }
+.hintList li[data-required="true"] { border-left-color: var(--pine); }
+.hintList strong { color: var(--ink); }
+.hintList span { color: var(--muted); }
+.answerField textarea { width: 100%; min-height: 76px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: var(--ink); font: inherit; font-size: 14px; line-height: 1.6; resize: vertical; }
+.answerField textarea:focus-visible { outline: 2px solid var(--moss); outline-offset: 1px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.resultCard { margin-top: 20px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255, 255, 255, .96); }
+.resultCard h2 { margin: 0 0 12px; font-size: 18px; }
+.resultCard h3 { margin: 0 0 8px; font-size: 15px; color: #8d3327; }
+.scoreGrid { display: grid; gap: 10px; }
+.scoreItem { padding: 10px 12px; border-radius: 12px; background: var(--paper); }
+.scoreItem strong { display: block; font-size: 14px; }
+.scoreItem span { color: var(--pine-dark); font-size: 13px; font-weight: 800; }
+.hitLine, .missLine { margin: 4px 0 0; font-size: 12px; line-height: 1.5; }
+.hitLine { color: #1c5f4f; }
+.missLine { color: #8d3327; }
+.missingCard { margin-top: 14px; padding: 12px; border-radius: 12px; background: #fdf6e7; }
+.missingCard ul { margin: 0; padding-left: 18px; color: #6c4f12; font-size: 13px; line-height: 1.8; }
+.fullMark { margin: 14px 0 0; color: #1c5f4f; font-size: 13px; }
+
+@media (min-width: 1024px) {
+  .sectionCard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-areas: "head answer" "hints answer"; column-gap: 18px; align-items: start; }
+  .sectionHead { grid-area: head; }
+  .hintList { grid-area: hints; margin-bottom: 0; }
+  .answerField { grid-area: answer; display: flex; }
+  .answerField textarea { min-height: 150px; height: 100%; }
+  .scoreGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

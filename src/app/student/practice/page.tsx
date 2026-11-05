@@ -1,4 +1,4 @@
-import { ArrowRight, Baby, Calculator, ClipboardList, Clock3, HeartHandshake, ListChecks, ShieldAlert, Sparkles, Stethoscope } from 'lucide-react';
+import { ArrowRight, Baby, Calculator, ClipboardList, Clock3, FileText, HeartHandshake, ListChecks, ShieldAlert, Sparkles, Stethoscope } from 'lucide-react';
 import { MedicalBackdrop } from '@/components/medical-backdrop';
 import { practiceScenarios } from '@/domain/practice-scenarios';
 
@@ -19,8 +19,9 @@ export default function PracticePage() {
       </div>
       <section className="report-section" style={{ marginTop: 20 }}>
         <h2>技能操作要点与儿科计算工具</h2>
-        <p style={{ margin: '6px 0 12px', fontSize: 14, lineHeight: 1.8 }}>技能操作正文对应执业医师实践技能第二站「体格检查与基本操作」，逐条给出适应证、禁忌症、穿刺点与分步操作；剂量与发育评估为儿科教学计算工具，按实测体重、月龄与体格值确定性计算并展示手算过程。全部不经模型生成，超出教材适用范围或未收录的输入直接拒绝，不外推。</p>
+        <p style={{ margin: '6px 0 12px', fontSize: 14, lineHeight: 1.8 }}>病史采集为第一站的结构化书面练习，按问诊要点判分并列出漏问项；技能操作正文对应第二站「体格检查与基本操作」，逐条给出适应证、禁忌症、穿刺点与分步操作；剂量与发育评估为儿科教学计算工具，按实测体重、月龄与体格值确定性计算并展示手算过程。全部不经模型生成，超出教材适用范围或未收录的输入直接拒绝，不外推。</p>
         <div className="hero-actions">
+          <a className="btn btn-primary" href="/student/history-taking"><FileText size={16} /> 病史采集提纲</a>
           <a className="btn btn-primary" href="/student/procedures"><ClipboardList size={16} /> 技能操作要点</a>
           <a className="btn btn-primary" href="/student/dosing"><Calculator size={16} /> 用药剂量计算</a>
           <a className="btn btn-primary" href="/student/growth"><Baby size={16} /> 生长发育评估</a>
