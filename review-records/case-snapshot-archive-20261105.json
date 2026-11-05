@@ -1,0 +1,460 @@
+{
+  "generatedAt": "2026-11-05T01:50:40.708Z",
+  "policy": {
+    "source": "teacher-visible case_snapshot_facts + case_snapshot_answers",
+    "verification": "recomputed case-content-v2 fingerprint equals both stored row versions",
+    "overwrite": "only absent current files; different verified current versions are reported as conflicts",
+    "activeVersion": "prefer the exact active version only when its snapshot is verifiable; otherwise keep the binding unchanged and select the latest verified version",
+    "databaseMutation": "none"
+  },
+  "warnings": [
+    "teacher-1型糖尿病伴有酮症酸中毒:active-version-unverified; using latest verified version"
+  ],
+  "package": {
+    "fingerprint": "951f60a5947c164f530c45e630255408e05fb44421e739f0b83d857997bee169",
+    "entryCount": 67,
+    "sourceCount": 53,
+    "aliasCount": 6,
+    "subtypeCount": 8
+  },
+  "snapshots": {
+    "facts": 122,
+    "answers": 122,
+    "verified": 61,
+    "rejected": 61
+  },
+  "cases": [
+    {
+      "caseId": "teacher-1型糖尿病伴有酮症酸中毒",
+      "currentVersion": "85de76a667884e12",
+      "verifiedVersions": [
+        "85de76a667884e12",
+        "cc656a82a3d279cb"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-中枢性尿崩症",
+      "currentVersion": "8399007092abff43",
+      "verifiedVersions": [
+        "077b89b6d78a51b6",
+        "8399007092abff43"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-中枢性性早熟",
+      "currentVersion": "3d16322f3d6a38ef",
+      "verifiedVersions": [
+        "3d16322f3d6a38ef"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-中枢神经系统脱髓鞘病",
+      "currentVersion": "7e0d077f7910d3ad",
+      "verifiedVersions": [
+        "7e0d077f7910d3ad"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-传染性单核细胞增多症",
+      "currentVersion": "4a2f23d986deb6bf",
+      "verifiedVersions": [
+        "4a2f23d986deb6bf"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-儿童-肥胖症",
+      "currentVersion": "5f48641f7627155a",
+      "verifiedVersions": [
+        "5f48641f7627155a"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-先天性肌无力",
+      "currentVersion": "f17f17fcdaeaa3c6",
+      "verifiedVersions": [
+        "f17f17fcdaeaa3c6"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-先天性肾上腺皮质增生症",
+      "currentVersion": "99d2910de3c8c18e",
+      "verifiedVersions": [
+        "99d2910de3c8c18e"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-再生障碍性贫血",
+      "currentVersion": "643f8495b534a333",
+      "verifiedVersions": [
+        "643f8495b534a333"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-化脓性脑膜炎",
+      "currentVersion": "b7afa2eb7fea5588",
+      "verifiedVersions": [
+        "b7afa2eb7fea5588"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-发热性惊厥",
+      "currentVersion": "a8a74b096101d2f9",
+      "verifiedVersions": [
+        "a8a74b096101d2f9"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-噬血细胞综合征",
+      "currentVersion": "0fcd716cf9d311cb",
+      "verifiedVersions": [
+        "0fcd716cf9d311cb",
+        "588f39a70e5eac5d"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-外周性性早熟",
+      "currentVersion": "3c2153d1ca7728c2",
+      "verifiedVersions": [
+        "3c2153d1ca7728c2"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-婴儿胆汁淤积症-巨细胞病毒感染",
+      "currentVersion": "63b9499d525c9971",
+      "verifiedVersions": [
+        "63b9499d525c9971"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-川崎病",
+      "currentVersion": "e4da92f85a02862f",
+      "verifiedVersions": [
+        "e4da92f85a02862f"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-异物吸入性窒息",
+      "currentVersion": "7838e2aa1c4c53af",
+      "verifiedVersions": [
+        "7838e2aa1c4c53af",
+        "b47a8f92f2211284"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-心律失常-室上性心动过速",
+      "currentVersion": "e4f426ece906a139",
+      "verifiedVersions": [
+        "e4f426ece906a139"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-急性喉炎",
+      "currentVersion": "ca4b32d174d66a95",
+      "verifiedVersions": [
+        "a91c8582fbaca194",
+        "ca4b32d174d66a95"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-急性喘息性支气管炎",
+      "currentVersion": "5be48bfd5e9b58c7",
+      "verifiedVersions": [
+        "5be48bfd5e9b58c7"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-急性毛细支气管炎",
+      "currentVersion": "7e85f01ebd51bd0c",
+      "verifiedVersions": [
+        "7e85f01ebd51bd0c"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-急性白血病-急性淋巴细胞白血病",
+      "currentVersion": "0a7529b8860f2faa",
+      "verifiedVersions": [
+        "0a7529b8860f2faa"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-急性百草枯中毒",
+      "currentVersion": "851b18dd4400c01c",
+      "verifiedVersions": [
+        "851b18dd4400c01c"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-急性肾小球肾炎",
+      "currentVersion": "4440187c4775fe50",
+      "verifiedVersions": [
+        "4440187c4775fe50"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-急性肾衰竭",
+      "currentVersion": "540f318b2df4e925",
+      "verifiedVersions": [
+        "540f318b2df4e925"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-支气管哮喘",
+      "currentVersion": "48df9bf06dd03b94",
+      "verifiedVersions": [
+        "48df9bf06dd03b94"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿abo溶血性黄疸",
+      "currentVersion": "f11dfe9acfb61137",
+      "verifiedVersions": [
+        "f11dfe9acfb61137"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿rh溶血性黄疸",
+      "currentVersion": "e15510ecda00cba7",
+      "verifiedVersions": [
+        "e15510ecda00cba7"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿化脓性脑膜炎",
+      "currentVersion": "d84429e7d8849c68",
+      "verifiedVersions": [
+        "d84429e7d8849c68"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿呼吸窘迫综合征",
+      "currentVersion": "8651193aac23a7d5",
+      "verifiedVersions": [
+        "8651193aac23a7d5"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿缺血缺氧性脑病",
+      "currentVersion": "ff9c2777e168fa11",
+      "verifiedVersions": [
+        "ff9c2777e168fa11"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿肺炎",
+      "currentVersion": "9781895ad6f581a1",
+      "verifiedVersions": [
+        "9781895ad6f581a1"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿胎粪吸入性肺炎",
+      "currentVersion": "e1781ec12aa49479",
+      "verifiedVersions": [
+        "e1781ec12aa49479"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿败血症",
+      "currentVersion": "fff889dba9233f1b",
+      "verifiedVersions": [
+        "fff889dba9233f1b"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿重度窒息",
+      "currentVersion": "827194cdee9b00ae",
+      "verifiedVersions": [
+        "827194cdee9b00ae"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-新生儿高胆红素血症",
+      "currentVersion": "1f57511b96db9b5a",
+      "verifiedVersions": [
+        "1f57511b96db9b5a"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-暴发性心肌炎",
+      "currentVersion": "4c21a6b619afa522",
+      "verifiedVersions": [
+        "4c21a6b619afa522"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-泌尿道感染",
+      "currentVersion": "0f7c93b95d8e0521",
+      "verifiedVersions": [
+        "0f7c93b95d8e0521"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-特发性血小板减少性紫癜",
+      "currentVersion": "b8c5c9b92a3f6f21",
+      "verifiedVersions": [
+        "9a684e33ae950a33",
+        "b8c5c9b92a3f6f21"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-病毒性脑炎",
+      "currentVersion": "2594bcad9fa89a45",
+      "verifiedVersions": [
+        "2594bcad9fa89a45"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-癫痫全面性发作阵挛性发作",
+      "currentVersion": "1ef60beab8ee1416",
+      "verifiedVersions": [
+        "1ef60beab8ee1416"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-矮小症",
+      "currentVersion": "1863d7e5de5bfc26",
+      "verifiedVersions": [
+        "1863d7e5de5bfc26"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-糖原贮积病iv型",
+      "currentVersion": "dd824540193c3650",
+      "verifiedVersions": [
+        "dd824540193c3650"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-细菌性肠炎",
+      "currentVersion": "19eb3bb732d3b723",
+      "verifiedVersions": [
+        "19eb3bb732d3b723"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-结核性脑炎",
+      "currentVersion": "391083ecf68525b8",
+      "verifiedVersions": [
+        "391083ecf68525b8"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-肝豆状核变性",
+      "currentVersion": "2d6343846c472bf9",
+      "verifiedVersions": [
+        "2d6343846c472bf9",
+        "9b70aea646fc0423"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-肺不张",
+      "currentVersion": "e69753018532427a",
+      "verifiedVersions": [
+        "e69753018532427a"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-肺炎支原体肺炎",
+      "currentVersion": "56e26c1ac1156c5f",
+      "verifiedVersions": [
+        "56e26c1ac1156c5f"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-肾病综合征",
+      "currentVersion": "dff734ae57cde6dd",
+      "verifiedVersions": [
+        "dff734ae57cde6dd"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-蚕豆病",
+      "currentVersion": "7b11b44563484343",
+      "verifiedVersions": [
+        "7b11b44563484343",
+        "af141479aec2da1a"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-轮状病毒性肠炎",
+      "currentVersion": "22f64934f6199683",
+      "verifiedVersions": [
+        "22f64934f6199683"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-过敏性紫癜",
+      "currentVersion": "3d64ffa02809860c",
+      "verifiedVersions": [
+        "3d64ffa02809860c"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-重症肺炎",
+      "currentVersion": "3307b61547d5d316",
+      "verifiedVersions": [
+        "3307b61547d5d316"
+      ],
+      "action": "written"
+    },
+    {
+      "caseId": "teacher-风湿热",
+      "currentVersion": "fb48cf0c165e8d37",
+      "verifiedVersions": [
+        "fb48cf0c165e8d37"
+      ],
+      "action": "written"
+    }
+  ]
+}

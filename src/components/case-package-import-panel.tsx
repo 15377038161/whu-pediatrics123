@@ -25,6 +25,20 @@ interface PreflightResult {
   diagnostic: ImportDiagnostic;
 }
 
+interface RestoreResult {
+  complete: boolean;
+  package: PackageMetadata;
+  snapshots: { facts: number; answers: number; verified: number; rejected: number };
+  files: { archiveWritten: number; archiveUnchanged: number; currentWritten: number; currentUnchanged: number };
+  warnings: string[];
+  cases: Array<{
+    caseId: string;
+    currentVersion: string | null;
+    verifiedVersions: string[];
+    action: 'written' | 'unchanged' | 'conflict' | 'missing';
+  }>;
+}
+
 interface ControlledImportResult {
   package: PackageMetadata;
   summary: {
@@ -59,9 +73,10 @@ const statusLabels = {
 } as const;
 
 export function CasePackageImportPanel() {
-  const [busy, setBusy] = useState<'load' | 'import' | null>(null);
+  const [busy, setBusy] = useState<'load' | 'import' | 'restore' | null>(null);
   const [preflight, setPreflight] = useState<PreflightResult | null>(null);
   const [result, setResult] = useState<ControlledImportResult | null>(null);
+  const [restore, setRestore] = useState<RestoreResult | null>(null);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -78,6 +93,25 @@ export function CasePackageImportPanel() {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- load 的 setState 均在异步 fetch 返回后执行
   useEffect(() => { void load(); }, [load]);
+
+  async function restoreSources() {
+    if (!confirm('确认从教师双表快照恢复服务器受控源文件？系统只写入内容指纹与两表版本完全一致的病例；旧版本进入版本档案，不覆盖不同的当前版本，不修改数据库快照。')) return;
+    setBusy('restore');
+    setError('');
+    setRestore(null);
+    try {
+      const recovered = await authedFetch<RestoreResult>('/api/teacher/case-snapshot-archive', {
+        method: 'POST',
+        body: JSON.stringify({ confirmation: 'RESTORE_CASE_SOURCES' }),
+      });
+      setRestore(recovered);
+      await load();
+    } catch (reason) {
+      setError(`受控恢复未完成：${(reason as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function runImport() {
     if (!preflight) return;
@@ -111,8 +145,50 @@ export function CasePackageImportPanel() {
         <button className="btn btn-primary" onClick={() => void runImport()} disabled={busy !== null || !preflight}>
           {busy === 'import' ? '导入并回查中…' : '执行固定包导入'}
         </button>
+        <button className="btn btn-secondary" onClick={() => void restoreSources()} disabled={busy !== null}>
+          {busy === 'restore' ? '核验快照并恢复中…' : '从双表快照恢复受控源文件'}
+        </button>
       </div>
+      <p className="case-import-hint">
+        恢复操作只读取当前教师可见的双表快照；逐版本重算内容指纹，核验一致后才写入源文件与版本档案。不接收病例正文，不修改数据库，不覆盖版本不同的当前文件。
+      </p>
       {error && <div className="empty-state" role="alert"><p>{error}</p></div>}
+      {restore && (
+        <div className="case-import-diagnostic" role="status">
+          <p>
+            快照核验：事实表 {restore.snapshots.facts} 行、答案表 {restore.snapshots.answers} 行，
+            通过 {restore.snapshots.verified} 个版本，拒绝 {restore.snapshots.rejected} 行。
+          </p>
+          <p>
+            文件恢复：新增版本档案 {restore.files.archiveWritten}，已有 {restore.files.archiveUnchanged}；
+            写入当前源文件 {restore.files.currentWritten}，未变 {restore.files.currentUnchanged}。
+          </p>
+          <p>
+            固定包：{restore.package.sourceCount} 份源病例、{restore.package.entryCount} 个入口；清单指纹 {restore.package.fingerprint ?? '待补齐'}。
+          </p>
+          {restore.warnings.length > 0 && (
+            <p>
+              不可核验激活版本 {restore.warnings.length} 例：{restore.warnings.join('；')}。已保留原激活绑定，源文件采用最新可核验版本。
+            </p>
+          )}
+          <details>
+            <summary>查看逐例脱敏恢复状态（{restore.cases.length} 例）</summary>
+            <table>
+              <thead><tr><th>病例</th><th>当前版本</th><th>已核验版本</th><th>结果</th></tr></thead>
+              <tbody>
+                {restore.cases.map((row) => (
+                  <tr key={row.caseId}>
+                    <td>{row.caseId}</td>
+                    <td>{row.currentVersion ?? '—'}</td>
+                    <td>{row.verifiedVersions.join('、') || '—'}</td>
+                    <td>{row.action === 'written' ? '已恢复' : row.action === 'unchanged' ? '已存在' : row.action === 'conflict' ? '冲突' : '缺失'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
+        </div>
+      )}
       {preflight && (
         <div className="case-import-diagnostic" role="status">
           <p>
