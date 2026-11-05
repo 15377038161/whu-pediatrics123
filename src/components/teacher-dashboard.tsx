@@ -31,8 +31,8 @@ export function TeacherDashboard({ workspace, referenceTime, caseCatalog, caseIn
   const totalReportCount = students.reduce((sum, student) => sum + student.reportCount, 0);
   const activeThisWeek = students.filter((student) => student.lastActiveAt && Date.parse(referenceTime) - Date.parse(student.lastActiveAt) < 7 * 86_400_000).length;
 
-  /** 批次5·导出学情总表 CSV：fetch+blob 下载（与 usage-stats 导出同模式，跨域安全）。 */
-  function exportStudentsCsv() {
+  /** 批次5·导出学情总表 Excel：fetch+blob 下载（与 usage-stats 导出同模式，跨域安全）。 */
+  function exportStudentsExcel() {
     setExporting(true);
     setExportError(null);
     void (async () => {
@@ -43,7 +43,7 @@ export function TeacherDashboard({ workspace, referenceTime, caseCatalog, caseIn
         const objectUrl = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = objectUrl;
-        anchor.download = `student-summary-${new Date().toISOString().slice(0, 10)}.csv`;
+        anchor.download = `学情总表_${new Date().toISOString().slice(0, 10).replaceAll('-', '')}.xlsx`;
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
@@ -90,7 +90,7 @@ export function TeacherDashboard({ workspace, referenceTime, caseCatalog, caseIn
           <div><strong>{staleStudents.length}</strong><span>超 14 天未训练</span></div>
         </div>
         <div className="term-summary-actions">
-          <button type="button" className="btn btn-primary" disabled={exporting} onClick={exportStudentsCsv}><Download size={15} /> {exporting ? '导出中…' : '导出学情总表 CSV'}</button>
+          <button type="button" className="btn btn-primary" disabled={exporting} onClick={exportStudentsExcel}><Download size={15} /> {exporting ? '导出中…' : '导出学情总表 Excel'}</button>
           {exportError && <span role="alert" style={{ color: 'var(--danger)', fontSize: 13 }}>{exportError}</span>}
         </div>
       </details>

@@ -35,7 +35,7 @@ export function maskStudentName(name: string): string {
   return `${Array.from(trimmed)[0]}**`;
 }
 
-function formatDateTime(value: string | null): string {
+export function formatDateTime(value: string | null): string {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';

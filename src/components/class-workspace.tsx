@@ -14,6 +14,10 @@ function newRequestId(): string {
   return `req-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/** 与 parseRosterText / parseRosterXlsx 的服务端上限一致，先在浏览器挡掉超大文件 */
+const TEXT_MAX_BYTES = 500_000;
+const XLSX_MAX_BYTES = 5_000_000;
+
 export function ClassWorkspacePanel({ teacher = false }: { teacher?: boolean }) {
   const [data, setData] = useState<ClassWorkspace | null>(null);
   const [selected, setSelected] = useState('');
@@ -47,9 +51,20 @@ export function ClassWorkspacePanel({ teacher = false }: { teacher?: boolean }) 
   async function readFile(file?: File) {
     if (!file) return;
     setPreview(null); setError('');
-    if (file.size > 500_000) { setError('名单文件过大，请分批导入'); return; }
-    try { const text = await file.text(); setRosterText(text); setPreview(parseRosterText(text)); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : '读取名单失败'); }
+    try {
+      // .xlsx 交服务端解析（exceljs 不进浏览器包），返回的行与粘贴/CSV 走同一套校验，仍在这里预览后确认导入
+      if (/\.xlsx$/i.test(file.name)) {
+        if (file.size > XLSX_MAX_BYTES) { setError('名单文件过大（超过 5MB），请分批导入'); return; }
+        const form = new FormData();
+        form.append('file', file);
+        const parsed = await authedFetch<{ rows: RosterRow[] }>('/api/teacher/roster-parse', { method: 'POST', body: form });
+        setRosterText('');
+        setPreview(parsed.rows);
+        return;
+      }
+      if (file.size > TEXT_MAX_BYTES) { setError('名单文件过大，请分批导入'); return; }
+      const text = await file.text(); setRosterText(text); setPreview(parseRosterText(text));
+    } catch (reason) { setError(reason instanceof Error ? reason.message : '读取名单失败'); }
   }
   const currentClass = data?.classes.find((item) => item.id === data.state.currentCohortId) ?? null;
   const onboarding = data?.state.onboardingDone !== false;
@@ -98,8 +113,8 @@ export function ClassWorkspacePanel({ teacher = false }: { teacher?: boolean }) 
         <h2>{data.classes.find((c) => c.id === selected)?.name}</h2>
         {(teacher || data.state.currentCohortId === selected) && <ClassLeaderboardPanel key={selected} classId={selected} />}
         {teacher ? <>
-          <h3>导入学生名单</h3><p>从 Excel 复制并粘贴，或上传 UTF-8 CSV。表头包含姓名，以及 cxid 或学号；编号按文本保存。名单在学生首次登录时自动匹配入班。</p>
-          <label className={styles.file}>选择 CSV 文件<input type="file" accept=".csv,.tsv,.txt" disabled={busy} onChange={(e) => { void readFile(e.target.files?.[0]); e.target.value = ''; }} /></label>
+          <h3>导入学生名单</h3><p>直接上传 Excel 名单（.xlsx），或从 Excel 复制粘贴、上传 UTF-8 CSV。表头包含姓名，以及 cxid 或学号；编号按文本保存。名单在学生首次登录时自动匹配入班。</p>
+          <label className={styles.file}>选择 Excel / CSV 文件<input type="file" accept=".xlsx,.csv,.tsv,.txt" disabled={busy} onChange={(e) => { void readFile(e.target.files?.[0]); e.target.value = ''; }} /></label>
           <label>学生名单<textarea rows={5} disabled={busy} value={rosterText} placeholder={'姓名\tcxid\t学号\n张同学\t123456\t\n李同学\t\t001234'} onChange={(e) => { setRosterText(e.target.value); setPreview(null); }} /></label>
           <div className={styles.actions}><button className="btn btn-secondary" type="button" disabled={busy || !rosterText.trim()} onClick={() => { try { setPreview(parseRosterText(rosterText)); setError(''); } catch (reason) { setError(reason instanceof Error ? reason.message : '名单格式错误'); } }}>预览名单</button>
           {preview && <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void mutate({ action: 'import', classId: selected, rows: preview }, `已导入 ${preview.length} 条名单；未能验证的编号留待老师核对。`)}>确认导入 {preview.length} 人</button>}</div>

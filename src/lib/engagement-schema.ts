@@ -36,7 +36,7 @@ export const usageStatsQuerySchema = z
     to: calendarDate.optional(),
     userId: z.string().uuid().optional(),
     caseId: z.string().trim().min(1).max(160).optional(),
-    format: z.enum(['json', 'csv']).optional(),
+    format: z.enum(['json', 'csv', 'xlsx']).optional(),
   })
   .refine((data) => !data.from || !data.to || data.from <= data.to, {
     message: '开始日期不能晚于结束日期',

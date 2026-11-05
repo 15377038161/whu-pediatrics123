@@ -95,7 +95,7 @@ export function SkillAssessmentManager() {
   }, []);
 
 
-  const exportCsv = useCallback(async () => {
+  const exportExcel = useCallback(async () => {
     setActionBusy('export');
     setErrorMessage('');
     try {
@@ -103,9 +103,9 @@ export function SkillAssessmentManager() {
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
-      const stamp = new Date().toISOString().slice(0, 10);
+      const stamp = new Date().toISOString().slice(0, 10).replaceAll('-', '');
       anchor.href = objectUrl;
-      anchor.download = `现场考核_${stamp}.csv`;
+      anchor.download = `现场考核_${stamp}.xlsx`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -319,8 +319,8 @@ export function SkillAssessmentManager() {
               <p className={styles.pageLead}>内置统一评分项，逐项三档打分（未观察不计分）；发布后学生可查看成绩。</p>
             </div>
             <div className={styles.headActions}>
-              <button className="btn btn-quiet" type="button" onClick={() => void exportCsv()} disabled={actionBusy === 'export'}>
-                <Download size={15} /> {actionBusy === 'export' ? '正在导出…' : '导出 CSV'}
+              <button className="btn btn-quiet" type="button" onClick={() => void exportExcel()} disabled={actionBusy === 'export'}>
+                <Download size={15} /> {actionBusy === 'export' ? '正在导出…' : '导出 Excel'}
               </button>
               <button className="btn btn-primary" type="button" onClick={() => { setErrorMessage(''); setAssessmentAt(nowLocalInputValue()); setView({ kind: 'create' }); }}>
                 <Plus size={15} /> 新建考核

@@ -27,12 +27,22 @@ export function parseRosterText(source: string): RosterRow[] {
     } else if (c !== undefined) field += c;
   }
   if (quoted) throw new Error('名单引号未闭合');
+  return parseRosterGrid(rows);
+}
+
+/**
+ * 名单校验唯一入口：粘贴文本、CSV 与 .xlsx 三条来路都汇到这里，
+ * 保证表头识别、必填校验、行号提示与编号去重口径完全一致（xlsx 由服务端解析成同样的二维文本）。
+ * grid 首行为表头，行号提示按表格软件的显示行号（表头为第 1 行）。
+ */
+export function parseRosterGrid(grid: readonly (readonly string[])[]): RosterRow[] {
+  const rows = grid.slice();
   const header = rows.shift() ?? [];
   const column = (names: string[]) => header.findIndex((h) => names.includes(h.toLowerCase()));
   const name = column(['姓名', 'name', '学生姓名']);
   const cxid = column(['cxid', 'uid', '超星号']);
   const studentNo = column(['学号', '工号', 'studentno', 'student_no']);
-  if (name < 0 || (cxid < 0 && studentNo < 0)) throw new Error('表头需要“姓名”和“cxid”或“学号”');
+  if (name < 0 || (cxid < 0 && studentNo < 0)) throw new Error('第一行需要是表头：姓名，以及 cxid 或学号');
   if (!rows.length || rows.length > 500) throw new Error('每次请导入 1 至 500 名学生');
   const seenCxid = new Set<string>(), seenNo = new Set<string>();
   return rows.map((cells, i) => {

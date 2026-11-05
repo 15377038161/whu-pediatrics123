@@ -2,6 +2,9 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // exceljs 只在服务端 API route 内动态 import；显式列为外部包，避免被打进 server chunk
+  // （它带可选原生依赖，bundling 后体积与解析都不可控）。
+  serverExternalPackages: ['exceljs'],
   // Clinical assets are mounted privately at runtime, never bundled as application files.
   outputFileTracingExcludes: { '*': ['./knowledge/**/*'] },
   experimental: {

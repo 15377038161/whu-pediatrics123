@@ -8,13 +8,13 @@ import { csvEscape, maskName, maskStudentNo } from '@/lib/usage-stats-csv';
  * （caseId/班级名等可能受学生侧或外部数据影响的文本字段同样受保护）。
  */
 
-const modeLabel = (mode: string | null | undefined): string =>
+export const modeLabel = (mode: string | null | undefined): string =>
   mode === 'osce' ? 'OSCE 模拟站' : mode === 'practice' ? '专项训练' : mode === 'immersive' ? '沉浸式病例教学' : mode === 'guided' ? '引导训练' : '—';
 
-const formatDateTime = (value: string | null | undefined): string =>
+export const formatDateTime = (value: string | null | undefined): string =>
   value ? value.slice(0, 19).replace('T', ' ') : '';
 
-const scoreBasisLabel = (basis: string | null | undefined): string => (basis === 'process' ? '过程完成度' : '临床量表');
+export const scoreBasisLabel = (basis: string | null | undefined): string => (basis === 'process' ? '过程完成度' : '临床量表');
 
 /** 学情总表（学生级汇总）：trainCount/reportCount/最近得分（未评分与过程分口径见注释）/待复核/最近活跃。 */
 export function buildStudentsCsv(students: TeacherStudentSummary[]): string {

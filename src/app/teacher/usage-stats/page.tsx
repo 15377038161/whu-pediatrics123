@@ -6,7 +6,7 @@
  * - 汇总：去重学生、训练数、完成数、进行中、总轮次、总有效时长 + 日/周活趋势 + 病例/模式分布 + 知识回顾薄弱项；
  * - ⑥账号隔离：unknown 账号展示"未验证"徽标（历史无法判定，如实标记）；
  * - 筛选：日期（from/to，严格日历校验）、学生、病例、单学生逐次明细下钻；
- * - 导出：脱敏汇总 CSV（姓名/学号脱敏，公式注入防护，不含明文 user_id、患者数据、对话内容）；
+ * - 导出：脱敏 Excel（.xlsx，多工作表 + 数字列；姓名/学号脱敏，不含明文 user_id、患者数据、对话内容）；
  * - 空数据诚实展示"暂无数据"（预览身份不伪造演示统计）；
  * - ⑤口径声明：本统计基于学生端学习行为埋点，非防篡改学习证据，正式成绩以考核记录为准。
  */
@@ -55,7 +55,7 @@ const EMPTY_RESULT: UsageStatsResult = {
   scoreBasis: 'practice-only',
 };
 
-function buildQuery(filters: Filters, detailUserId?: string, format?: 'csv'): string {
+function buildQuery(filters: Filters, detailUserId?: string, format?: 'csv' | 'xlsx'): string {
   const params = new URLSearchParams();
   if (filters.from) params.set('from', filters.from);
   if (filters.to) params.set('to', filters.to);
@@ -129,9 +129,9 @@ export default function TeacherUsageStatsPage() {
 
   const maxTrend = useMemo(() => Math.max(1, ...(result?.dailyTrend ?? []).map((item) => item.sessions)), [result]);
 
-  const exportCsv = useCallback(() => {
+  const exportExcel = useCallback(() => {
     // fetch + blob 模式下载（跨域资源直接 <a download> 会被浏览器忽略 Content-Disposition）
-    const url = buildQuery(filters, undefined, 'csv');
+    const url = buildQuery(filters, undefined, 'xlsx');
     void (async () => {
       try {
         const response = await authedFetchRaw(url);
@@ -140,7 +140,8 @@ export default function TeacherUsageStatsPage() {
         const objectUrl = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = objectUrl;
-        anchor.download = `usage-stats-${formatDate(new Date()).replaceAll('/', '-')}.csv`;
+        // 文件名日期与服务端 Content-Disposition 用同一算法，避免两端各写一套
+        anchor.download = `使用统计_${new Date().toISOString().slice(0, 10).replaceAll('-', '')}.xlsx`;
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
@@ -197,8 +198,8 @@ export default function TeacherUsageStatsPage() {
             <button type="button" className="filter-chip" data-active onClick={() => void load(filters)}>
               {loading ? <LoaderCircle size={14} className="spin" aria-hidden="true" /> : <Filter size={14} aria-hidden="true" />} 应用筛选
             </button>
-            <button type="button" className="filter-chip" onClick={exportCsv} disabled={!result || result.perStudent.length === 0 && result.overall.sessionCount === 0}>
-              <Download size={14} aria-hidden="true" /> 导出脱敏 CSV
+            <button type="button" className="filter-chip" onClick={exportExcel} disabled={!result || result.perStudent.length === 0 && result.overall.sessionCount === 0}>
+              <Download size={14} aria-hidden="true" /> 导出脱敏 Excel
             </button>
           </div>
         </section>

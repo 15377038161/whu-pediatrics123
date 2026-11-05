@@ -46,8 +46,8 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
   const scored = sessions.filter((session) => session.totalScore !== null && session.scoreBasis !== 'process');
   const average = scored.length ? Math.round(scored.reduce((sum, session) => sum + (session.totalScore ?? 0), 0) / scored.length) : null;
 
-  /** 批次5·导出学生档案 CSV（训练明细+病例进度两段）：fetch+blob 下载，与工作台导出同模式。 */
-  async function exportProfileCsv() {
+  /** 批次5·导出学生档案 Excel（概要 + 训练明细 + 病例进度三张表）：fetch+blob 下载，与工作台导出同模式。 */
+  async function exportProfileExcel() {
     setExporting(true);
     setExportError(null);
     try {
@@ -57,7 +57,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = objectUrl;
-      anchor.download = `student-profile-${new Date().toISOString().slice(0, 10)}.csv`;
+      anchor.download = `学生档案_${new Date().toISOString().slice(0, 10).replaceAll('-', '')}.xlsx`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -87,7 +87,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
       <div><strong>{caseProgress.length}</strong><span>覆盖病例（训练过）</span></div>
     </section>
     <div className="profile-export-row">
-      <button type="button" className="btn btn-primary" disabled={exporting} onClick={() => { void exportProfileCsv(); }}><Download size={15} /> {exporting ? '导出中…' : '导出档案 CSV（训练明细 + 病例进度）'}</button>
+      <button type="button" className="btn btn-primary" disabled={exporting} onClick={() => { void exportProfileExcel(); }}><Download size={15} /> {exporting ? '导出中…' : '导出档案 Excel（概要 + 训练明细 + 病例进度）'}</button>
       {exportError && <span role="alert" style={{ color: 'var(--danger)', fontSize: 13 }}>{exportError}</span>}
     </div>
     <div className="case-progress-groups">

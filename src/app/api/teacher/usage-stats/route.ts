@@ -4,6 +4,8 @@ import { usageStatsQuerySchema } from '@/lib/engagement-schema';
 import { requireAuth } from '@/lib/request-auth';
 import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client';
 import { buildCsv } from '@/lib/usage-stats-csv';
+import { buildUsageStatsSheets } from '@/lib/usage-stats-xlsx';
+import { XLSX_CONTENT_TYPE, contentDisposition, writeXlsx } from '@/lib/xlsx-writer';
 
 /** 学生使用明细行（教师统计口径，练习成绩非正式成绩，输出须带标识） */
 export interface StudentUsageRow {
@@ -51,7 +53,8 @@ export interface UsageStatsResult {
  * - 统计范围由 teacher_stats_* RPC 内 app_is_teacher 白名单二次校验（fail-closed）；
  * - 筛选：from/to（严格日历日期，from<=to）、userId（学生）、caseId（病例，含时长口径）、
  *   detailUserId（单学生逐次训练下钻），全部可选；
- * - 导出：?format=csv 输出脱敏汇总（不含个人明文身份，公式注入防护）。
+ * - 导出：?format=xlsx 输出脱敏 Excel（默认导出格式，多工作表 + 数字列），?format=csv 为次选
+ *   （两者均不含个人明文身份；CSV 侧公式注入防护，xlsx 侧一律写字面字符串不写公式）。
  */
 export async function GET(request: NextRequest) {
   try {
@@ -125,6 +128,18 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': `attachment; filename="usage-stats-${new Date().toISOString().slice(0, 10)}.csv"`,
+        },
+      });
+    }
+    // 老师日常导出走 Excel（双击即开，分数为可计算数字列）；CSV 仅在显式 ?format=csv 时保留
+    if (params.data.format === 'xlsx') {
+      const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      return new NextResponse(await writeXlsx(buildUsageStatsSheets(result)), {
+        status: 200,
+        headers: {
+          'Content-Type': XLSX_CONTENT_TYPE,
+          'Content-Disposition': contentDisposition(`使用统计_${stamp}.xlsx`, `usage-stats-${stamp}.xlsx`),
+          'Cache-Control': 'no-store',
         },
       });
     }

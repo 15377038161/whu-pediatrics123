@@ -3,8 +3,10 @@ import { errorFromUnknown, fail } from '@/lib/api-result';
 import { AgentRepository } from '@/lib/repository';
 import { requireAuth } from '@/lib/request-auth';
 import { buildProfileCsv, buildStudentsCsv } from '@/lib/teacher-export-csv';
+import { buildProfileSheets, buildStudentsSheets } from '@/lib/teacher-export-xlsx';
+import { XLSX_CONTENT_TYPE, contentDisposition, writeXlsx, type XlsxSheetSpec } from '@/lib/xlsx-writer';
 
-/** CSV 附件响应（usage-stats 导出同款响应头）。 */
+/** CSV 附件响应（仅在显式 ?format=csv 时使用；老师日常拿到的默认是 Excel）。 */
 function csvResponse(content: string, filename: string): NextResponse {
   return new NextResponse(content, {
     status: 200,
@@ -15,26 +17,43 @@ function csvResponse(content: string, filename: string): NextResponse {
   });
 }
 
+async function xlsxResponse(sheets: readonly XlsxSheetSpec[], filename: string, asciiFilename: string): Promise<NextResponse> {
+  const body = await writeXlsx(sheets);
+  return new NextResponse(body, {
+    status: 200,
+    headers: {
+      'Content-Type': XLSX_CONTENT_TYPE,
+      'Content-Disposition': contentDisposition(filename, asciiFilename),
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+
 /**
  * 批次5·教师分模块导出：GET /api/teacher/export?module=students（学情总表）
- * 或 ?module=profile&userId=...（学生档案：训练明细+病例进度两段）。
- * 教师鉴权；身份列脱敏（沿用 usage-stats 导出口径）；行级可见性由既有聚合方法与 RLS 保证；
- * CSV 公式注入防护由 csvEscape 统一处理。
+ * 或 ?module=profile&userId=...（学生档案：概要 + 训练明细 + 病例进度）。
+ * 教师鉴权；身份列脱敏（沿用 usage-stats 导出口径）；行级可见性由既有聚合方法与 RLS 保证。
+ * 默认返回 .xlsx（老师双击即开，分数为可计算的数字列）；?format=csv 保留为次选，
+ * CSV 的公式注入防护由 csvEscape 处理，xlsx 侧由「一律写字面字符串、绝不写公式」结构性免疫。
  */
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth(request, 'teacher');
     const moduleName = request.nextUrl.searchParams.get('module') ?? '';
-    const stamp = new Date().toISOString().slice(0, 10);
+    const asCsv = request.nextUrl.searchParams.get('format') === 'csv';
+    const date = new Date().toISOString().slice(0, 10);
+    const stamp = date.replace(/-/g, '');
     if (moduleName === 'students') {
       const workspace = await new AgentRepository(user).listTeacherStudents();
-      return csvResponse(buildStudentsCsv(workspace.students), `student-summary-${stamp}.csv`);
+      if (asCsv) return csvResponse(buildStudentsCsv(workspace.students), `student-summary-${date}.csv`);
+      return await xlsxResponse(buildStudentsSheets(workspace.students), `学情总表_${stamp}.xlsx`, `student-summary-${stamp}.xlsx`);
     }
     if (moduleName === 'profile') {
       const userId = request.nextUrl.searchParams.get('userId') ?? '';
       if (!userId) return fail({ code: 'INVALID_REQUEST', message: '缺少 userId 参数。', retryable: false }, undefined, 422);
       const profile = await new AgentRepository(user).getStudentProfile(userId);
-      return csvResponse(buildProfileCsv(profile), `student-profile-${stamp}.csv`);
+      if (asCsv) return csvResponse(buildProfileCsv(profile), `student-profile-${date}.csv`);
+      return await xlsxResponse(buildProfileSheets(profile), `学生档案_${stamp}.xlsx`, `student-profile-${stamp}.xlsx`);
     }
     return fail({ code: 'INVALID_REQUEST', message: '未知导出模块，仅支持 students/profile。', retryable: false }, undefined, 422);
   } catch (error) {
