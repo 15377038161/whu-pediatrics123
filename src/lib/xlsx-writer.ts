@@ -42,6 +42,17 @@ export function contentDisposition(filename: string, asciiFallback: string): str
   return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 }
 
+/**
+ * exceljs 的 load(buffer) 用的是 @types/node 里非泛型的旧 Buffer 声明，
+ * 而 Buffer.from() 在 TS 5.7+ 下返回 Buffer<ArrayBufferLike>，两者互不赋值（只是类型层面，运行时就是 Buffer）。
+ * 因此返回类型直接取 exceljs 的形参类型，集中桥接一次，避免每个读表调用点各写一遍断言。
+ */
+type ExcelJsLoadBuffer = Parameters<import('exceljs').Workbook['xlsx']['load']>[0];
+
+export function toExcelJsBuffer(bytes: ArrayBuffer | Uint8Array): ExcelJsLoadBuffer {
+  return Buffer.from(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)) as unknown as ExcelJsLoadBuffer;
+}
+
 /** Excel 工作表名限制：不含 []:*?/\，最长 31 字符。 */
 function sheetName(name: string): string {
   const cleaned = name.replace(/[[\]:*?/\\]/g, ' ').trim() || 'Sheet';

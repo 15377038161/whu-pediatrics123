@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import ExcelJS from 'exceljs';
-import { contentDisposition, writeXlsx, XLSX_CONTENT_TYPE, type XlsxSheetSpec } from '@/lib/xlsx-writer';
+import { contentDisposition, toExcelJsBuffer, writeXlsx, XLSX_CONTENT_TYPE, type XlsxSheetSpec } from '@/lib/xlsx-writer';
 
 async function readBack(bytes: ArrayBuffer): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(Buffer.from(bytes));
+  await workbook.xlsx.load(toExcelJsBuffer(bytes));
   return workbook;
 }
 

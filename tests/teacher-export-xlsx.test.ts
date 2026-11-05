@@ -7,7 +7,7 @@ import type { SkillAssessmentCsvRow } from '@/lib/skill-assessment-csv';
 import { buildSkillAssessmentSheets } from '@/lib/skill-assessment-xlsx';
 import { buildProfileSheets, buildStudentsSheets } from '@/lib/teacher-export-xlsx';
 import { buildUsageStatsSheets } from '@/lib/usage-stats-xlsx';
-import { writeXlsx } from '@/lib/xlsx-writer';
+import { toExcelJsBuffer, writeXlsx } from '@/lib/xlsx-writer';
 
 const student = (overrides: Partial<TeacherStudentSummary> = {}): TeacherStudentSummary => ({
   id: 'user-internal-uuid-001',
@@ -152,7 +152,7 @@ test('使用统计 Excel：四表对应页面区块，中途退出为派生差�
 test('Excel 导出端到端：四张使用统计表可被真实 xlsx 读回，分数是数字、说明行在表头之上', async () => {
   const bytes = await writeXlsx(buildUsageStatsSheets(usage()));
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(Buffer.from(bytes));
+  await workbook.xlsx.load(toExcelJsBuffer(bytes));
   assert.deepEqual(workbook.worksheets.map((sheet) => sheet.name), ['汇总', '学生明细', '病例分布', '题库薄弱项']);
   const detail = workbook.getWorksheet('学生明细');
   assert.ok(detail);
@@ -171,7 +171,7 @@ test('Excel 导出端到端：学情总表 / 学生档案 / 现场考核三份�
   ];
   for (const item of cases) {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(Buffer.from(await writeXlsx(item.sheets)));
+    await workbook.xlsx.load(toExcelJsBuffer(await writeXlsx(item.sheets)));
     assert.deepEqual(workbook.worksheets.map((sheet) => sheet.name), item.expected, `${item.name} 工作表清单`);
     const first = workbook.worksheets[0];
     assert.ok(first && first.rowCount > 1, `${item.name} 有说明行与数据行`);

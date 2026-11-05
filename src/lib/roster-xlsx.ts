@@ -1,4 +1,5 @@
 import { parseRosterGrid, type RosterRow } from '@/lib/class-roster';
+import { toExcelJsBuffer } from '@/lib/xlsx-writer';
 
 /**
  * 学生名单 .xlsx 解析（服务端专用）。
@@ -51,7 +52,7 @@ export async function parseRosterXlsx(bytes: Uint8Array): Promise<RosterRow[]> {
   const ExcelJS = await loadExcelJs();
   const workbook = new ExcelJS.Workbook();
   try {
-    await workbook.xlsx.load(Buffer.from(bytes));
+    await workbook.xlsx.load(toExcelJsBuffer(bytes));
   } catch {
     throw new Error('无法读取该文件，请确认为 .xlsx（Excel 2007 及以上）格式；.xls 请另存为 .xlsx 后重试');
   }
