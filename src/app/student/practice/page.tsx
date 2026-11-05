@@ -1,4 +1,4 @@
-import { ArrowRight, Calculator, Clock3, HeartHandshake, ListChecks, ShieldAlert, Sparkles, Stethoscope } from 'lucide-react';
+import { ArrowRight, Baby, Calculator, Clock3, HeartHandshake, ListChecks, ShieldAlert, Sparkles, Stethoscope } from 'lucide-react';
 import { MedicalBackdrop } from '@/components/medical-backdrop';
 import { practiceScenarios } from '@/domain/practice-scenarios';
 
@@ -19,8 +19,11 @@ export default function PracticePage() {
       </div>
       <section className="report-section" style={{ marginTop: 20 }}>
         <h2>第二站计算工具</h2>
-        <p style={{ margin: '6px 0 12px', fontSize: 14, lineHeight: 1.8 }}>对标执业医师实践技能考试第二站：剂量按实测体重与月龄确定性计算，逐步展示手算过程与封顶核对，不经模型生成；未收录药品直接拒绝。</p>
-        <div className="hero-actions"><a className="btn btn-primary" href="/student/dosing"><Calculator size={16} /> 用药剂量计算</a></div>
+        <p style={{ margin: '6px 0 12px', fontSize: 14, lineHeight: 1.8 }}>对标执业医师实践技能考试第二站：按实测体重、月龄与实测体格值确定性计算，逐步展示手算过程与封顶核对，不经模型生成；超出教材适用范围或未收录的输入直接拒绝，不外推。</p>
+        <div className="hero-actions">
+          <a className="btn btn-primary" href="/student/dosing"><Calculator size={16} /> 用药剂量计算</a>
+          <a className="btn btn-primary" href="/student/growth"><Baby size={16} /> 生长发育评估</a>
+        </div>
       </section>
     </MedicalBackdrop>
   );
