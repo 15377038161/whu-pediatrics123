@@ -31,19 +31,19 @@ export function sourceExamDefinitions(text: string): string[][] {
     ['bp-cuff', 'upper-arm', '血压测量', snippets(/\bBP|血压/i)],
     ['stethoscope', 'chest', '心肺听诊', snippets(/呼吸音|啰音|罗音|哮鸣音|痰鸣音|心音|心律|杂音/)],
     ['tongue-depressor', 'mouth', '口咽检查', snippets(/口|咽|扁桃体|舌|牙龈/)],
-    ['flashlight', 'forehead', '头面与瞳孔检查', snippets(/前囟|瞳孔|眼|结膜|巩膜|耳|鼻|头/).split('，').filter(part => !LYMPH_MAIN.test(part)).join('，')],
+    ['flashlight', 'forehead', '头面与瞳孔检查', snippets(/前囟|瞳孔|对光反射|光反射|眼|结膜|巩膜|耳|鼻|头/).split('，').filter(part => !LYMPH_MAIN.test(part)).join('，')],
     ['inspection', 'neck', '颈部视诊', snippets(/颈.{0,3}(软|僵|抵抗|强直)|甲状腺|无抵抗/)],
     ['palpation', 'neck', '颈部及浅表淋巴结触诊', parts.filter((part, index) => absorbed.has(index) || LYMPH_MAIN.test(part)).join('，')],
     ['inspection', 'skin', '皮肤与一般状态视诊', snippets(/皮肤|黄染|皮疹|出血点|瘀点|瘀斑|精神|神清|面色|青紫|反应/)],
     ['inspection', 'chest', '胸部视诊', snippets(/胸廓|三凹征|胸壁|呼吸费力|呼吸(?:稍|急)?促|气促|乳房.{0,6}发育|乳晕|Tanner/i)],
     ['palpation', 'chest', '胸部触诊', snippets(/乳房.{0,8}结节|胸壁.{0,5}压痛|震颤/)],
     ['inspection', 'abdomen', '腹部视诊', snippets(/腹.{0,3}(胀|平坦|膨隆|凹陷)|腹型/)],
-    ['palpation', 'abdomen', '腹部触诊', snippets(/压痛|反跳痛|肌紧张|腹.{0,3}(软|硬)|肝脾|肝.{0,3}肋下|脾.{0,3}肋下/)],
+    ['palpation', 'abdomen', '腹部触诊', snippets(/压痛|反跳痛|肌紧张|腹.{0,3}(软|硬)|肝脾|脾|肝[^，。]{0,4}(肋下|肿大|不大|未及|未触及|触诊|质)/)],
     ['percussion', 'abdomen', '腹部叩诊', snippets(/移动.{0,2}浊音|叩诊|鼓音/)],
     ['stethoscope', 'abdomen', '腹部听诊', snippets(/肠鸣音|血管杂音/)],
     ['inspection', 'limbs', '四肢视诊', snippets(/四肢|双下肢|双上肢|肢体/).split('，').filter(part => !/反射|肌张力|神经/.test(part)).join('，')],
     ['palpation', 'limbs', '四肢触诊', snippets(/凹陷性水肿|肢体温度|末梢.{0,3}(凉|冷|温)|关节.{0,4}压痛/)],
-    ['reflex-hammer', 'limbs', '神经系统与反射检查', snippets(/腱反射|膝反射|踝反射|病理反射|巴氏|克氏|布氏|神经系统|肌力|肌张力/)],
+    ['reflex-hammer', 'limbs', '神经系统与反射检查', snippets(/腱反射|膝反射|踝反射|腹壁反射|提睾反射|病理反射|巴氏|克氏|布氏|神经系统|肌力|肌张力|(?:拥抱|吸吮|握持|觅食|颈肢|抬颈|原始)反射/)],
   ];
 }
 

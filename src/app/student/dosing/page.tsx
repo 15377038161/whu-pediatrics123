@@ -12,7 +12,7 @@ export const metadata = { title: '用药剂量计算 · 珞珈儿科智训' };
 export default function DosingPage() {
   return (
     <MedicalBackdrop>
-      <p className="eyebrow">执业医师实践技能 · 第二站</p>
+      <p className="eyebrow">儿科用药计算 · 教学工具</p>
       <h1 className="page-title"><Calculator size={22} aria-hidden="true" /> 儿科用药剂量计算</h1>
       <p className="page-lead">按实测体重与月龄给出教材与说明书口径的剂量范围，并逐步展示手算过程；封顶项逐条列出，被禁用或超范围的情形直接拒绝，不外推、不猜剂量。</p>
 

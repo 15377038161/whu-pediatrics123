@@ -1,0 +1,61 @@
+/* 技能操作正文：手机单列，长正文用原生 details 折叠，避免满屏小字批注。 */
+.jump { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 14px; }
+.jump a {
+  padding: .45rem .8rem;
+  border: 1px solid #bddbd1;
+  border-radius: 999px;
+  background: #fff;
+  color: #2c5a51;
+  font-size: .9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.jump a:hover, .jump a:focus-visible { border-color: var(--pine); background: #e8f5ee; color: var(--pine-dark); }
+
+.group { display: grid; gap: .8rem; margin-top: 18px; }
+.groupTitle { margin: 0; color: var(--pine-dark); font-size: 1.05rem; }
+.groupNote { margin: 0; color: #4a6a62; font-size: .92rem; line-height: 1.75; }
+
+.card { padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); scroll-margin-top: 76px; }
+.cardHead { display: grid; gap: .35rem; }
+.cardHead h3 { margin: 0; font-size: 1.1rem; color: var(--ink); }
+.cardHead p { margin: 0; color: #4a6a62; font-size: .95rem; line-height: 1.75; }
+
+.params { display: grid; gap: .4rem; margin: 12px 0 0; }
+.params > div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: .5rem; padding: .5rem .65rem; border-radius: .6rem; background: #f6fbf8; font-size: .9rem; line-height: 1.65; }
+.params dt { margin: 0; color: #3d6b62; font-weight: 700; }
+.params dd { margin: 0; color: #24463f; }
+
+.block { margin-top: 12px; border-top: 1px dashed #d8e6de; padding-top: 10px; }
+.block summary { cursor: pointer; color: var(--pine-dark); font-size: .98rem; font-weight: 700; list-style: none; }
+.block summary::-webkit-details-marker { display: none; }
+.block summary::before { content: '▸ '; color: var(--moss); }
+.block[open] summary::before { content: '▾ '; }
+.block summary:focus-visible { outline: 2px solid #78b7a455; outline-offset: 2px; border-radius: 4px; }
+
+.list { margin: 8px 0 0; padding-left: 1.25rem; font-size: .93rem; line-height: 1.85; color: #2c4a43; }
+.list li { margin-bottom: .25rem; }
+.list.danger { color: #8a3a24; }
+.steps { margin: 8px 0 0; padding-left: 0; list-style: none; counter-reset: step; display: grid; gap: .55rem; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: 1.9rem minmax(0, 1fr); gap: .5rem; padding: .6rem .7rem; border-radius: .7rem; background: #fafdfb; }
+.steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: var(--pine);
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 700;
+}
+.steps strong { display: block; color: var(--ink); font-size: .95rem; }
+.steps span { color: #46655d; font-size: .92rem; line-height: 1.75; }
+
+.sources { margin: 8px 0 0; padding-left: 1.25rem; color: #667875; font-size: .88rem; line-height: 1.8; }
+.notice { margin: 16px 0 0; padding: .8rem .9rem; border: 1px solid #ead58e; border-radius: .9rem; background: #fffaf0; color: #684f16; font-size: .9rem; line-height: 1.8; }
+
+@media (min-width: 700px) {
+  .params > div { grid-template-columns: 9rem minmax(0, 1fr); }
+  .card { padding: 20px; }
+}

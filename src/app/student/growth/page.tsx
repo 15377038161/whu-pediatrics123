@@ -20,7 +20,7 @@ export const metadata = { title: '生长发育评估 · 珞珈儿科智训' };
 export default function GrowthAssessmentPage() {
   return (
     <MedicalBackdrop>
-      <p className="eyebrow">执业医师实践技能 · 第二站</p>
+      <p className="eyebrow">儿科生长发育评估 · 教学工具</p>
       <h1 className="page-title"><Baby size={22} aria-hidden="true" /> 生长发育评估</h1>
       <p className="page-lead">按月龄推算体重、身高、头围、胸围、乳牙与前囟的教材典型值，逐步展示公式手算；也可反过来按实测值内插月龄区间。超出教材适用范围一律拒绝，不外推。</p>
 

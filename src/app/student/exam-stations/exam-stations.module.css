@@ -1,0 +1,28 @@
+.stationList { display: grid; gap: 16px; margin-top: 8px; }
+.stationCard { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255, 255, 255, .94); }
+.stationHead h2 { margin: 0 0 10px; display: flex; align-items: center; gap: 8px; font-size: 18px; }
+.officialInfo { margin: 0 0 12px; display: grid; gap: 8px; }
+.officialInfo div { display: grid; gap: 2px; }
+.officialInfo dt { color: var(--pine-dark); font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+.officialInfo dd { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.entryList { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.entryLink { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink); font-weight: 700; }
+.entryLink:hover, .entryLink:focus-visible { border-color: var(--moss); background: var(--mint); }
+.entryLabel { min-width: 0; }
+.entryDetail { margin: 6px 2px 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.statusBadge { flex: none; padding: 3px 9px; border-radius: 999px; border: 1px solid transparent; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.statusReady { color: #1c5f4f; background: #e4f5ec; border-color: #b6ddc9; }
+.statusPartial { color: #7a5410; background: #fdf3dc; border-color: #e8d29a; }
+.statusMissing { color: #8d3327; background: #fbe9e5; border-color: #e6b8af; }
+.gapNote { margin: 14px 0 0; display: flex; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #fdf6e7; color: #6c4f12; font-size: 13px; line-height: 1.65; }
+.gapNote svg { flex: none; margin-top: 2px; }
+.extraSection, .gapSection { margin-top: 22px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255, 255, 255, .94); }
+.extraSection h2, .gapSection h2 { margin: 0 0 8px; font-size: 18px; }
+.extraNote { margin: 0 0 12px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.gapSection ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+
+@media (min-width: 1024px) {
+  .stationList { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  .officialInfo div { grid-template-columns: 64px minmax(0, 1fr); gap: 8px; }
+  .officialInfo dt { padding-top: 2px; }
+}

@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, ChevronDown, Film, FileText, RefreshCw } from 'lucide-react';
+import { Calculator, CheckCircle2, ChevronDown, ClipboardList, Film, FileText, RefreshCw } from 'lucide-react';
 import { authedFetch } from '@/lib/authed-api';
 import type { LearningResourceSummary, SkillCatalogItem } from '@/lib/learning-resource';
 import { StudentSkillScores } from '@/components/student-skill-scores';
@@ -129,6 +129,11 @@ export default function StudentSkillsPage() {
         儿科 OSCE 八项核心技能：每项技能下有教学视频与图文资料；看完视频（达时长 90%）会标记「已看完」。
         观看进度只用于断点续播与完成标记，不作为掌握程度评价。
       </p>
+
+      <div className="hero-actions" style={{ marginTop: 12 }}>
+        <a className="btn btn-primary" href="/student/procedures"><ClipboardList size={16} /> 技能操作要点（适应证·禁忌症·分步操作）</a>
+        <a className="btn btn-quiet" href="/student/dosing"><Calculator size={16} /> 用药剂量计算</a>
+      </div>
 
 
       <div className={styles.actions}>

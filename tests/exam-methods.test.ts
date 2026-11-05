@@ -80,6 +80,27 @@ test('神经系统阴性体征归入神经系统与反射检查，不丢失关�
   assert.equal(records.find(row => row[0] === 'inspection' && row[1] === 'limbs')?.[3] ?? '', '');
 });
 
+test('对光反射归头面与瞳孔检查，淋巴结/扁桃体/肝脾/肠鸣音/神经系统各归其位（DKA 原文形态）', () => {
+  const records = sourceExamDefinitions('双侧瞳孔等大等圆，对光反射灵敏，浅表淋巴结未扪及肿大，双侧扁桃体I°大，肝脾肋下未及，肠鸣音正常，神经系统检查无异常。');
+  assert.equal(records.find(row => row[0] === 'flashlight')?.[3], '双侧瞳孔等大等圆，对光反射灵敏');
+  assert.equal(records.find(row => row[0] === 'tongue-depressor')?.[3], '双侧扁桃体I°大');
+  assert.equal(records.find(row => row[0] === 'palpation' && row[1] === 'neck')?.[3], '浅表淋巴结未扪及肿大');
+  assert.equal(records.find(row => row[0] === 'palpation' && row[1] === 'abdomen')?.[3], '肝脾肋下未及');
+  assert.equal(records.find(row => row[0] === 'stethoscope' && row[1] === 'abdomen')?.[3], '肠鸣音正常');
+  assert.equal(records.find(row => row[0] === 'reflex-hammer')?.[3], '神经系统检查无异常');
+  // 对光反射是头面证据，不得被神经系统条目重复吸收
+  assert.ok(!(records.find(row => row[0] === 'reflex-hammer')?.[3] ?? '').includes('对光反射'));
+});
+
+test('原始反射与腹壁反射不丢，裸「脾」触诊记录归腹部触诊', () => {
+  assert.equal(sourceExamDefinitions('拥抱反射不完全，吸吮反射弱。').find(row => row[0] === 'reflex-hammer')?.[3], '拥抱反射不完全，吸吮反射弱');
+  assert.equal(sourceExamDefinitions('腹壁反射减弱，腱反射减弱。').find(row => row[0] === 'reflex-hammer')?.[3], '腹壁反射减弱，腱反射减弱');
+  assert.equal(sourceExamDefinitions('脾无肿大。').find(row => row[0] === 'palpation' && row[1] === 'abdomen')?.[3], '脾无肿大');
+  assert.equal(sourceExamDefinitions('脾脏肋下约7cm。').find(row => row[0] === 'palpation' && row[1] === 'abdomen')?.[3], '脾脏肋下约7cm');
+  // 无相应记录时不补正常值
+  assert.equal(sourceExamDefinitions('双肺呼吸音清。').find(row => row[0] === 'reflex-hammer')?.[3], '');
+});
+
 test('没有记录不补正常值；腹部新请求需仰卧，历史请求保留兼容', () => {
   assert.ok(sourceExamDefinitions('').every(row => !row[3]));
   assert.equal(postureAllows('abdomen', 'standing'), false);
