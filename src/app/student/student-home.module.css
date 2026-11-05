@@ -110,6 +110,10 @@
 .levels a { display: grid; gap: .6rem; height: 100%; padding: 1rem; border: 1px solid #bddbd1; border-radius: .85rem; background: #fff; color: #174b48; overflow-wrap: anywhere; }
 .levels a:hover, .levels a:focus-visible { background: #ebf7f0; }
 .levels span { font-size: .85rem; color: #36675d; }
+.lockedLevel { display: grid; gap: .6rem; height: 100%; padding: 1rem; border: 1px dashed #cfd9d4; border-radius: .85rem; background: #f6f8f6; color: #6b7a75; overflow-wrap: anywhere; cursor: not-allowed; }
+.lockedLevel span { display: inline-flex; align-items: center; gap: 4px; }
+.lockedLevel strong { color: #5c6b66; }
+.lockedLevel small { color: #8a9791; font-size: .78rem; }
 @media (max-width: 600px) {
   .map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; overflow: visible; }
   /* 手机页首只保留远岸医院条带，群岛改由下方三列按钮承载。 */

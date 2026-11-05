@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trophy } from 'lucide-react';
+import { Lock, Trophy } from 'lucide-react';
 import type { PublicCaseProfile } from '@/domain/case-catalog';
 import type { SessionState } from '@/domain/agent';
 import type { ClassLeaderboard, ClassWorkspace } from '@/domain/classroom';
 import { normalizeCategory } from '@/domain/case-classification';
+import { buildLevelLocks } from '@/domain/case-progression';
 import { useGateUser } from '@/components/auth-gate';
 import { authedFetch } from '@/lib/authed-api';
 import styles from './student-home.module.css';
@@ -66,7 +67,13 @@ export default function StudentHome() {
   }, [me.id]);
   const system = selected === null ? null : systems[selected];
   const active = sessions.find((session) => session.status === 'active');
-  let level = 0;
+  // 关卡顺序按系统内全部病例的展示顺序（跨分类连续编号）；门控只出现在系统内这一层，
+  // 顶层 12 个系统始终全开，不设锁。
+  const systemGroups = system && catalog
+    ? system.categories.map((category) => ({ category, cases: catalog.filter((item) => normalizeCategory(item.category) === category) }))
+    : [];
+  const orderedCases = systemGroups.flatMap((group) => group.cases);
+  const lockOf = new Map(buildLevelLocks(orderedCases.map((item) => item.id), sessions).map((lock) => [lock.caseId, lock]));
 
   return <div className={styles.home}>
     {!system && <section className={styles.slogan}>
@@ -110,21 +117,29 @@ export default function StudentHome() {
       </button>)}
     </nav> : error ? <div role="alert">病例目录加载失败。 <button type="button" onClick={() => { setError(false); setAttempt(attempt + 1); }}>重试</button></div>
       : !catalog ? <p role="status">正在加载病例目录…</p>
-      : system.categories.map((category) => {
-        const cases = catalog.filter((item) => normalizeCategory(item.category) === category);
+      : systemGroups.map(({ category, cases }) => {
         return <section key={category} aria-label={category}>
           {system.categories.length > 1 && <h2>{category}</h2>}
           {!cases.length && <p>当前暂无开放病例。</p>}
           <ol className={styles.levels}>
             {cases.map((item) => {
-              level += 1;
-              const completed = sessions.some((session) => session.caseId === item.id && session.status === 'completed');
-              const ongoing = sessions.find((session) => session.caseId === item.id && session.status === 'active');
-              const target = ongoing ? `session=${encodeURIComponent(ongoing.id)}` : `mode=guided&case=${encodeURIComponent(item.id)}`;
-              return <li key={item.id}><Link href={`/student/training?${target}`}>
-                <span>第 {level} 关 · {completed ? '已完成' : ongoing ? '进行中' : '开始接诊'}</span>
-                <strong>{item.title}</strong>
-              </Link></li>;
+              const lock = lockOf.get(item.id);
+              const ongoingSession = sessions.find((session) => session.caseId === item.id && session.status === 'active');
+              const completed = Boolean(lock?.completed);
+              const unlocked = lock?.unlocked ?? true;
+              const levelNumber = lock?.level ?? 1;
+              const target = ongoingSession ? `session=${encodeURIComponent(ongoingSession.id)}` : `mode=guided&case=${encodeURIComponent(item.id)}`;
+              const statusText = completed ? '已完成' : ongoingSession ? '进行中' : unlocked ? '开始接诊' : '未解锁';
+              return <li key={item.id}>
+                {unlocked ? <Link href={`/student/training?${target}`}>
+                  <span>第 {levelNumber} 关 · {statusText}</span>
+                  <strong>{item.title}</strong>
+                </Link> : <div className={styles.lockedLevel} aria-disabled="true">
+                  <span>第 {levelNumber} 关 · {statusText} <Lock size={12} aria-hidden="true" /></span>
+                  <strong>{item.title}</strong>
+                  <small>完成上一关后解锁</small>
+                </div>}
+              </li>;
             })}
           </ol>
         </section>;
