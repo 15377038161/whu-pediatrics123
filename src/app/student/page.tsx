@@ -76,15 +76,6 @@ export default function StudentHome() {
   const lockOf = new Map(buildLevelLocks(orderedCases.map((item) => item.id), sessions).map((lock) => [lock.caseId, lock]));
 
   return <div className={styles.home}>
-    {!system && <section className={styles.slogan}>
-      <p className={styles.sloganKicker}>珞珈儿科智训 · 武汉大学儿科学</p>
-      <h2 className={styles.sloganTitle}>大医精诚敬畏生命，练一次，会接诊</h2>
-      <p className={styles.sloganPurpose}>把真实儿科病历变成可反复训练的接诊过程：每一次问诊、查体、检查与沟通都留下可回放的证据与反馈。</p>
-      <dl className={styles.sloganList}>
-        <div><dt>功能</dt><dd>12 个系统真实病例接诊 · 查体与辅助检查 · 病历书写与 AI 点评 · 知识回顾题库 · OSCE 考站 · 班级积分榜</dd></div>
-        <div><dt>技能</dt><dd>病史采集 · 体格检查与技能操作 · 辅助检查判读 · 诊断与鉴别 · 处理原则 · 医患沟通（对标执业医师实践技能三站）</dd></div>
-      </dl>
-    </section>}
     <section className={styles.shortcuts} aria-label="积分与继续训练">
       <Link className={styles.pointsCard} href="/student/classes">
         <Trophy aria-hidden="true" />

@@ -88,7 +88,7 @@ textarea { resize: vertical; }
 .brand-kicker { margin: 4px 0 0; color: #68817d; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; }
 .landing-hero-row { position: relative; min-height: 150px; display: flex; align-items: center; }
 .landing-copy { min-width: 0; max-width: 650px; margin: 30px 0 26px; }
-.landing-motto { margin: 0 0 10px; color: var(--pine); font-size: 12px; font-weight: 800; letter-spacing: .22em; }
+.landing-copy .landing-motto { margin: 0 0 10px; color: var(--pine); font-size: clamp(20px, 2.2vw, 28px); font-weight: 800; line-height: 1.35; letter-spacing: .22em; }
 .landing-copy p { margin: 0; color: var(--muted); max-width: 460px; font-size: clamp(14px, 2vw, 17px); }
 .login-panel { position: relative; padding: 20px; border: 1px solid rgba(25,117,104,.15); border-radius: 20px; background: rgba(255,255,255,.52); color: var(--ink); box-shadow: 0 26px 70px rgba(39,75,71,.13); backdrop-filter: blur(2px); }
 .login-footnote { margin: 12px 0 0; display: flex; justify-content: center; align-items: center; gap: 4px; color: #78908b; font-size: 11px; }
