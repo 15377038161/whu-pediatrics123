@@ -28,6 +28,7 @@ export function errorFromUnknown(error: unknown): ApiError {
   if (message.includes('INVALID_VISIBILITY')) return { code: 'INVALID_VISIBILITY', message: '可见范围设置无效。', retryable: false };
   if (message.includes('RESOURCE_NOT_FOUND')) return { code: 'RESOURCE_NOT_FOUND', message: '未找到该学习资源（或不在你的可见范围内）。', retryable: false };
   if (message.includes('FILE_UNAVAILABLE')) return { code: 'FILE_UNAVAILABLE', message: '资源文件暂时无法访问，请稍后重试。', retryable: true };
+  if (message.includes('PLAYBACK_URL_INVALID')) return { code: 'PLAYBACK_URL_INVALID', message: '播放链接无效或已过期，请重新进入资源详情。', retryable: true };
   if (message.includes('FILE_REQUIRED')) return { code: 'FILE_REQUIRED', message: '该资源尚未绑定文件，请先在管理端补充文件后再发布。', retryable: false };
   if (message.includes('VISIBILITY_REQUIRED')) return { code: 'VISIBILITY_REQUIRED', message: '发布前请至少为本班授予一个可见班级。', retryable: false };
   if (message.includes('OWNER_PROTECTED')) return { code: 'OWNER_PROTECTED', message: '资源维护者不可变更。', retryable: false };

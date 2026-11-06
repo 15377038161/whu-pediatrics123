@@ -3,6 +3,7 @@ import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { requireAuth } from '@/lib/request-auth';
 import { getSupabaseUserClient, isDatabaseConfigured } from '@/lib/supabase-client';
 import { getResourcePlaybackLink, getVisibleLearningResource } from '@/lib/learning-resource';
+import { createPlaybackStreamUrl } from '@/lib/learning-resource-playback-stream';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,12 +24,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const detail = await getVisibleLearningResource(db, id);
     if (!detail.fileId) return fail({ code: 'FILE_REQUIRED', message: '该资源尚未绑定文件，暂时无法播放。', retryable: false }, undefined, 409);
     const link = await getResourcePlaybackLink(detail.fileId);
+    const stream = detail.kind === 'video' ? createPlaybackStreamUrl(id, detail.fileId) : null;
     return ok({
       kind: detail.kind,
       title: detail.title,
       fileName: link.fileName,
-      url: link.url,
-      expiresAt: link.expiresAt,
+      url: stream?.url ?? link.url,
+      expiresAt: stream?.expiresAt ?? link.expiresAt,
     });
   } catch (error) {
     const detail = errorFromUnknown(error);
