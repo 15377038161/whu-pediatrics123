@@ -25,6 +25,12 @@ test('源记录中的结膜和巩膜证据可由眼部检查取得，不混入�
   assert.equal(at('结膜无充血。', 'flashlight', 'eyes'), '结膜无充血');
 });
 
+test('口咽检查保留扁桃体分度及局部分泌物续段，不吸收心肺结果', () => {
+  const records = sourceExamDefinitions('咽充血，扁桃体Ⅱ度肿大，表面可见脓点，口腔黏膜无溃疡，双肺呼吸音清。');
+  assert.equal(result(records, 'tongue-depressor', 'mouth'), '咽充血，扁桃体Ⅱ度肿大，表面可见脓点，口腔黏膜无溃疡');
+  assert.equal(result(records, 'stethoscope', 'chest-lung'), '双肺呼吸音清');
+});
+
 test('浅表淋巴结记录由淋巴结触诊取得，阳性阴性均保留，不混入头面检查', () => {
   // 川崎病原文形态：淋巴结肿大连同质地/触痛续段描述完整吸收，不被其他查体截走
   const records = sourceExamDefinitions('T 36.5℃，颈软，颈部及腹股沟浅表淋巴结可触及肿大，质韧活动可，无触痛，结膜充血，咽红。');

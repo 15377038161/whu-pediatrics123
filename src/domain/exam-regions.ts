@@ -28,8 +28,8 @@ export const EXAM_REGIONS: readonly ExamRegion[] = [
   { id: 'rg-head-neck', label: '头面颈部', side: 'left', anchorTop: [20, 22], parts: ['forehead', 'eyes', 'ears', 'nose', 'mouth', 'neck', 'lymph-nodes'] },
   { id: 'rg-chest', label: '胸部', side: 'right', anchorTop: [30, 32], parts: ['chest', 'chest-lung', 'chest-heart', 'breast'] },
   { id: 'rg-abdomen', label: '腹部', side: 'right', anchorTop: [52, 54], parts: ['abdomen', 'liver-spleen', 'groin'] },
-  { id: 'rg-vitals-prep', label: '体征准备', side: 'left', anchorTop: [48, 48], parts: ['upper-arm', 'finger', 'hands'] },
-  { id: 'rg-skin-general', label: '皮肤全身', side: 'left', anchorTop: [76, 74], parts: ['skin', 'general-state', 'nails'] },
+  { id: 'rg-vitals-prep', label: '生命体征', side: 'left', anchorTop: [48, 48], parts: ['upper-arm', 'finger', 'hands'] },
+  { id: 'rg-skin-general', label: '皮肤与一般状态', side: 'left', anchorTop: [76, 74], parts: ['skin', 'general-state', 'nails'] },
   { id: 'rg-limbs-neuro', label: '四肢神经', side: 'right', anchorTop: [76, 76], parts: ['limbs', 'joints', 'spine', 'neuro'] },
 ] as const;
 

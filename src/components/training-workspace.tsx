@@ -31,11 +31,12 @@ import { ConversationThread, type PendingConversation } from '@/components/conve
 import { reportSessionEvent } from '@/lib/engagement-tracker';
 import { fetchSpeechCapabilities } from '@/lib/speech';
 import { resolveSpeechTurnMeta, type SpeechCapabilities, type SpeechTurnMeta, type VoiceRecordingResult } from '@/domain/speech-contract';
+import { appendVoiceTranscript } from '@/domain/voice-draft';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
   { id: 'triage', label: '接诊与分诊', short: '接诊' }, { id: 'history', label: '问诊与沟通', short: '交流' },
   { id: 'exam', label: '可视化体格检查', short: '查体' }, { id: 'tests', label: '辅助检查选择', short: '检查' },
-  { id: 'assessment', label: '病情摘要与诊断', short: '诊断' }, { id: 'plan', label: '治疗及处置计划', short: '处置' },
+  { id: 'assessment', label: '病情摘要与诊断', short: '诊断' }, { id: 'plan', label: '治疗计划', short: '治疗' },
   { id: 'communication', label: '患儿与家长沟通', short: '沟通' }, { id: 'report', label: '训练报告', short: '报告' },
 ];
 
@@ -615,14 +616,14 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         </div>
         <div className="form-field"><label htmlFor="diagnosis-basis">诊断依据（必填）</label><textarea id="diagnosis-basis" required minLength={10} value={diagnosisBasis} onChange={(e) => setDiagnosisBasis(e.target.value)} placeholder="支撑该诊断的病史、体征与检查证据：哪些阳性发现支持诊断？关键阴性发现排除了什么？" /></div>
         <fieldset className="form-field"><legend>关联诊断依据的记录（可选）</legend><ExpandableNote label="怎么关联？" align="start"><p>选择你实际使用的记录，并在诊断依据中说明它支持或排除了什么，无需全选。</p></ExpandableNote>{decisionEvidenceItems.length?<details><summary>选择本轮已获得的记录</summary>{decisionEvidenceItems.map(item=><label className="checkbox-row" key={item.id}><input type="checkbox" checked={decisionEvidenceIds.includes(item.id)} disabled={busy} onChange={event=>setDecisionEvidenceIds(event.target.checked?[...decisionEvidenceIds,item.id]:decisionEvidenceIds.filter(id=>id!==item.id))}/><span>{item.summary}</span></label>)}</details>:<small>本轮尚无可关联的问诊、查体或检查记录；仍可在诊断依据中说明接诊时已知的信息。</small>}</fieldset>
-        <div className="form-field"><label htmlFor="differentials">鉴别诊断</label><textarea id="differentials" value={differentials} onChange={(e) => setDifferentials(e.target.value)} placeholder="列出需要鉴别的疾病及理由" /></div>
+        <div className="form-field"><div className="field-label-row"><label htmlFor="differentials">鉴别诊断</label><button className="btn btn-quiet" type="button" disabled={busy || !differentials} onClick={() => setDifferentials('')}>清空鉴别诊断</button></div><textarea id="differentials" value={differentials} onChange={(e) => setDifferentials(e.target.value)} placeholder="列出需要鉴别的疾病及理由" /></div>
         <button className="btn btn-primary btn-block" disabled={busy}>提交诊断并继续</button>
       </form>;
       case 'plan': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_PLAN', data: { priority, detail: planDetail } }); if (result) { if (session.mode === 'osce') await navigate('communication'); else if (session.mode === 'practice') await finish(); else await navigate('history'); } }}>
-        <div className="stage-intro"><p className="eyebrow">患者安全优先</p><h2>治疗及处置计划</h2><p>明确首要处置，再说明监测、进一步评估和后续安排。</p></div>
-        <div className="form-field"><label htmlFor="priority">首要处置</label><input id="priority" required value={priority} onChange={(e) => setPriority(e.target.value)} placeholder="此刻最先做什么？" /></div>
-        <div className="form-field"><label htmlFor="plan-detail">完整计划</label><textarea id="plan-detail" required minLength={5} value={planDetail} onChange={(e) => setPlanDetail(e.target.value)} placeholder="生命体征稳定、检查、治疗、复评或转诊计划…" /></div>
-        <button className="btn btn-primary btn-block" disabled={busy}>{session.caseOptions ? '保存处置计划并继续' : '安全校验并继续'}</button>
+        <div className="stage-intro"><p className="eyebrow">患者安全优先</p><h2>治疗计划</h2><p>明确首要治疗，再说明检查、药物、剂量、疗程、监测与复评；未提交的项目不计分。</p></div>
+        <div className="form-field"><label htmlFor="priority">首要治疗</label><input id="priority" required value={priority} onChange={(e) => setPriority(e.target.value)} placeholder="此刻最先做什么？" /><div className="voice-draft-row"><span>识别文本只追加到首要治疗，可继续编辑后再提交。</span><VoiceHoldButton sessionId={session.id} disabled={busy} onResult={result=>setPriority(current=>appendVoiceTranscript(current,result.text))}/></div></div>
+        <div className="form-field"><label htmlFor="plan-detail">完整治疗计划</label><textarea id="plan-detail" required minLength={5} value={planDetail} onChange={(e) => setPlanDetail(e.target.value)} placeholder="生命体征稳定、检查、治疗、复评或转诊计划…" /><div className="voice-draft-row"><span>识别文本只追加到完整治疗计划，不自动提交。</span><VoiceHoldButton sessionId={session.id} disabled={busy} onResult={result=>setPlanDetail(current=>appendVoiceTranscript(current,result.text))}/></div></div>
+        <button className="btn btn-primary btn-block" disabled={busy}>{session.caseOptions ? '保存治疗计划并继续' : '安全校验并继续'}</button>
       </form>;
       case 'communication': return activeScenario?.focus === 'communication'
         // 阶段 D：家长焦虑沟通专项使用模拟通话界面（AI 模拟标识、通话时长、静音、停止播报、结束确认）；

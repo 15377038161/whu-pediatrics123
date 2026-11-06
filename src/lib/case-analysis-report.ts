@@ -36,7 +36,8 @@ function toSubmission(session: SessionState): DiagnosisAnswerInput {
 
 /**
  * 给报告附加病例分析影子分：
- * - 开关关闭、非灰度病例、没有完整诊断提交时，原报告一个字节都不改；
+ * - 开关关闭或非灰度病例时，原报告一个字节都不改；
+ * - 未提交的诊断或治疗字段以空文本进入逐点判分，由确定性执行器判零；
  * - 标答缺失/表未迁移/AI 失败时只附加 not_assessable 说明，绝不让报告生成失败；
  * - 分数只写入 caseAnalysis，不修改 report.totalScore 与旧统计。
  */
@@ -45,7 +46,7 @@ export async function attachCaseAnalysis(
   session: SessionState,
   deps: CaseAnalysisReportDeps = {},
 ): Promise<TrainingReport> {
-  if (!isCaseAnalysisEnabled() || !isCaseAnalysisCase(session.caseId) || !session.decision) return report;
+  if (!isCaseAnalysisEnabled() || !isCaseAnalysisCase(session.caseId)) return report;
 
   let input: CaseAnalysisCaseInput;
   try {

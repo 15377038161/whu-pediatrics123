@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>临时视口验收</title>
+  <style>
+    html, body { margin: 0; min-height: 100%; overflow-x: hidden; background: #dfe8e4; }
+    #stage { position: relative; }
+    iframe { display: block; border: 0; background: #fff; transform-origin: top left; }
+    pre { margin: 0; padding: 12px; white-space: pre-wrap; background: #fff; font: 14px/1.5 monospace; }
+    pre:empty { display: none; }
+  </style>
+</head>
+<body>
+  <pre id="results" aria-live="polite"></pre>
+  <div id="stage"><iframe id="viewport" title="指定宽度下的学生首页"></iframe></div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const width = Math.min(1600, Math.max(320, Number(params.get('width')) || 390));
+    const height = Math.min(2200, Math.max(600, Number(params.get('height')) || 1600));
+    const scale = Math.min(1, window.innerWidth / width);
+    const stage = document.getElementById('stage');
+    const frame = document.getElementById('viewport');
+    const results = document.getElementById('results');
+    const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    stage.style.width = `${width * scale}px`;
+    stage.style.height = `${height * scale}px`;
+    frame.style.width = `${width}px`;
+    frame.style.height = `${height}px`;
+    frame.style.transform = `scale(${scale})`;
+    frame.addEventListener('load', async () => {
+      if (params.get('run') !== '1') return;
+      const doc = frame.contentDocument;
+      const win = frame.contentWindow;
+      const lines = [];
+      try {
+        let buttons = [];
+        for (let attempt = 0; attempt < 100; attempt += 1) {
+          buttons = [...doc.querySelectorAll('button[data-system]')].filter((item) => item.offsetParent !== null);
+          if (buttons.length === 13) break;
+          await pause(100);
+        }
+        lines.push(`VIEWPORT ${width} SCALE ${scale.toFixed(3)} VISIBLE ${buttons.length}`);
+        const keys = buttons.map((button) => button.dataset.system);
+        for (const key of keys) {
+          const button = [...doc.querySelectorAll('button[data-system]')].find((item) => item.dataset.system === key && item.offsetParent !== null);
+          if (!button) {
+            lines.push(`FAIL ${key} hit=false title=按钮未重新出现`);
+            continue;
+          }
+          const expected = button.getAttribute('aria-label').replace(/^进入/, '').replace(/病例$/, '');
+          const rect = button.getBoundingClientRect();
+          const clientX = rect.left + rect.width / 2;
+          const clientY = rect.top + rect.height / 2;
+          const hit = doc.elementFromPoint(clientX, clientY);
+          const hitButton = hit && hit.closest('button[data-system]');
+          const coordinateHit = hitButton === button;
+          button.dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true, view: win, clientX, clientY, button: 0 }));
+          await pause(100);
+          const title = doc.querySelector('h1') && doc.querySelector('h1').textContent.trim();
+          const back = [...doc.querySelectorAll('button')].find((item) => item.textContent.trim() === '返回系统地图');
+          const pass = coordinateHit && title === expected && Boolean(back);
+          lines.push(`${pass ? 'PASS' : 'FAIL'} ${key} hit=${coordinateHit} title=${title}`);
+          if (back) {
+            back.click();
+            await pause(80);
+          }
+        }
+        lines.push(`SUMMARY ${lines.filter((line) => line.startsWith('PASS')).length}/13`);
+      } catch (error) {
+        lines.push(`ERROR ${error && error.message ? error.message : String(error)}`);
+      }
+      results.textContent = lines.join('\n');
+    }, { once: true });
+    frame.src = '/student';
+  </script>
+</body>
+</html>

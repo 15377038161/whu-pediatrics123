@@ -202,7 +202,7 @@ export default function QuizPage() {
   return (
     <>
       <p className="eyebrow">儿科知识巩固</p>
-      <h1 className="page-title">知识回顾</h1>
+      <h1 className="page-title">知识点回顾</h1>
       <p className="page-lead">
         {mode === 'banks'
           ? '练习老师发布的题集：按冻结版本作答，首次提交结果即锁定，解析在作答后展开；支持中断续答、重练与错题复盘。'

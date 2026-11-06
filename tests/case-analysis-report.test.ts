@@ -125,6 +125,25 @@ test('DKA 开启时附加影子分，不改旧总分', async () => {
   });
 });
 
+test('诊断与治疗均未提交时仍附加零分明细，不改旧总分', async () => {
+  await withEnv({ CASE_ANALYSIS_ENABLED: '1', CASE_ANALYSIS_CASE_IDS: undefined }, async () => {
+    const report = makeReport();
+    const session = { ...makeSession(), decision: null, plan: null };
+    await attachCaseAnalysis(report, session, {
+      getKey: async () => makeRecord(),
+      readCase: () => makeInput(),
+      grade: (key, submission) => gradeCaseAnalysis(key, submission, {
+        judgements: dkaFullJudgements as PointJudgementMap,
+      }),
+    });
+    assert.equal(report.totalScore, 55);
+    assert.equal(report.caseAnalysis?.status, 'scored');
+    assert.equal(report.caseAnalysis?.percent, 0);
+    assert.equal(report.caseAnalysis?.rawScore, 0);
+    assert.ok(report.caseAnalysis?.points?.some((point) => point.stage === 'plan' && point.status === 'missing'));
+  });
+});
+
 test('非白名单病例不附加影子分', async () => {
   await withEnv({ CASE_ANALYSIS_ENABLED: '1', CASE_ANALYSIS_CASE_IDS: 'teacher-川崎病' }, async () => {
     const report = makeReport();
@@ -167,6 +186,7 @@ test('影子分组件渲染试点分、逐点状态与漏项', () => {
   assert.ok(html.includes('病例分析 · 试点分'));
   assert.ok(html.includes('46'));
   assert.ok(html.includes('查看漏掉的得分点'));
+  assert.ok(html.includes('诊断阶段'));
   assert.ok(html.includes('命中'));
   assert.ok(html.includes('未命中'));
   assert.ok(html.includes('不影响主分数'));

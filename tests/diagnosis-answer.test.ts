@@ -149,6 +149,36 @@ test('AI 逐点判分：命中/部分/未命中按比例计分，且不超过该
   assert.equal(grade.points.find((p) => p.id === 'mg-followup')?.status, 'missing');
 });
 
+test('空提交不能被外部判定送分，治疗不足按部分命中扣分并标记阶段', () => {
+  const covered = {
+    'evidence:ev-fever': { status: 'covered', evidence: '空提交不应有证据' },
+    'evidence:ev-rales': { status: 'covered', evidence: '空提交不应有证据' },
+    'evidence:ev-xray': { status: 'covered', evidence: '空提交不应有证据' },
+    'differential:0': { status: 'covered', evidence: '空提交不应有证据' },
+    'management:mg-antibiotic': { status: 'covered', evidence: '空提交不应有证据' },
+    'management:mg-oxygen': { status: 'covered', evidence: '空提交不应有证据' },
+    'management:mg-followup': { status: 'covered', evidence: '空提交不应有证据' },
+  } as const;
+  const empty = gradeDiagnosisAnswer(key, {}, covered);
+  assert.equal(empty.evidence.score, 0);
+  assert.equal(empty.differential.score, 0);
+  assert.equal(empty.management.score, 0);
+  assert.ok(empty.points.filter((point) => ['evidence', 'differential', 'management'].includes(point.section)).every((point) => point.status === 'missing' && !point.evidence));
+
+  const partial = gradeDiagnosisAnswer(key, {
+    primary: '支气管肺炎',
+    management: '抗感染治疗，必要时吸氧',
+  }, {
+    'management:mg-antibiotic': { status: 'covered', evidence: '抗感染治疗' },
+    'management:mg-oxygen': { status: 'partial', evidence: '必要时吸氧' },
+    'management:mg-followup': { status: 'missing' },
+  });
+  assert.equal(partial.management.score, Math.round(((1 + 0.5 + 0) / 3) * 25));
+  assert.ok(partial.missingPoints.includes('处理原则：「氧疗与呼吸支持」部分命中，需补充完整'));
+  assert.equal(partial.points.find((point) => point.id === 'mg-oxygen')?.stage, 'plan');
+  assert.equal(partial.points.find((point) => point.id === 'primary')?.stage, 'assessment');
+});
+
 test('逐点判分全部命中时该段拿满，全部缺失时该段为 0', () => {
   const allHit = gradeDiagnosisAnswer(key, {
     primary: '支气管肺炎',

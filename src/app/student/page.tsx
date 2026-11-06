@@ -8,30 +8,29 @@ import type { SessionState } from '@/domain/agent';
 import type { ClassLeaderboard, ClassWorkspace } from '@/domain/classroom';
 import { normalizeCategory } from '@/domain/case-classification';
 import { buildLevelLocks } from '@/domain/case-progression';
+import {
+  DESKTOP_SYSTEM_HOTSPOTS,
+  MOBILE_SYSTEM_HOTSPOTS,
+  PEDIATRIC_SYSTEMS,
+  type PediatricSystemHotspot,
+  type PediatricSystemKey,
+} from '@/domain/pediatric-system-map';
 import { useGateUser } from '@/components/auth-gate';
 import { authedFetch } from '@/lib/authed-api';
 import styles from './student-home.module.css';
 
-// 热区坐标基于最终稿 pediatric-systems-map.png（1586×992）逐岛核对，
-// w/h 略小于视觉轮廓，避免相邻岛屿重叠误触。
-const systems = [
-  { name: '呼吸系统', categories: ['呼吸系统疾病'], x: 16, y: 32, w: 20, h: 20 },
-  { name: '心血管系统', categories: ['心血管系统疾病'], x: 41, y: 22, w: 19, h: 20 },
-  { name: '消化系统', categories: ['消化系统疾病', '急性中毒'], x: 65, y: 23, w: 17, h: 19 },
-  { name: '神经系统', categories: ['神经系统'], x: 90, y: 21, w: 16, h: 18 },
-  { name: '泌尿系统', categories: ['泌尿系统疾病'], x: 13, y: 53, w: 20, h: 20 },
-  { name: '血液系统', categories: ['造血系统疾病'], x: 36, y: 47, w: 16, h: 20 },
-  { name: '内分泌', categories: ['内分泌疾病'], x: 61, y: 45, w: 18, h: 23 },
-  { name: '新生儿', categories: ['新生儿与新生儿疾病'], x: 84, y: 42, w: 18, h: 20 },
-  { name: '营养', categories: ['营养性疾病'], x: 17, y: 77, w: 21, h: 20 },
-  { name: '感染', categories: ['感染性疾病'], x: 42, y: 76, w: 19, h: 20 },
-  { name: '免疫', categories: ['免疫性疾病'], x: 63, y: 71, w: 18, h: 19 },
-  { name: '遗传', categories: ['遗传性疾病'], x: 87, y: 68, w: 19, h: 20 },
-];
+function hotspotStyle(hotspot: PediatricSystemHotspot) {
+  return {
+    left: `${hotspot.x}%`,
+    top: `${hotspot.y}%`,
+    width: `${hotspot.w}%`,
+    height: `${hotspot.h}%`,
+  };
+}
 
 export default function StudentHome() {
   const me = useGateUser();
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<PediatricSystemKey | null>(null);
   const [catalog, setCatalog] = useState<PublicCaseProfile[] | null>(null);
   const [sessions, setSessions] = useState<SessionState[]>([]);
   const [error, setError] = useState(false);
@@ -65,15 +64,13 @@ export default function StudentHome() {
     })();
     return () => { current = false; };
   }, [me.id]);
-  const system = selected === null ? null : systems[selected];
+  const system = PEDIATRIC_SYSTEMS.find((item) => item.key === selected) ?? null;
   const active = sessions.find((session) => session.status === 'active');
-  // 关卡顺序按系统内全部病例的展示顺序（跨分类连续编号）；门控只出现在系统内这一层，
-  // 顶层 12 个系统始终全开，不设锁。
-  const systemGroups = system && catalog
-    ? system.categories.map((category) => ({ category, cases: catalog.filter((item) => normalizeCategory(item.category) === category) }))
+  // 门控只出现在分类病例层；顶层 13 个系统始终全开，不设锁。
+  const cases = system && catalog
+    ? catalog.filter((item) => normalizeCategory(item.category) === system.category)
     : [];
-  const orderedCases = systemGroups.flatMap((group) => group.cases);
-  const lockOf = new Map(buildLevelLocks(orderedCases.map((item) => item.id), sessions).map((lock) => [lock.caseId, lock]));
+  const lockOf = new Map(buildLevelLocks(cases.map((item) => item.id), sessions).map((lock) => [lock.caseId, lock]));
 
   return <div className={styles.home}>
     <section className={styles.shortcuts} aria-label="积分与继续训练">
@@ -90,50 +87,71 @@ export default function StudentHome() {
     </section>
     <header className={styles.heading}>
       <div>
-        <h1>{system ? system.name : '儿科病例训练'}</h1>
-        <p>{system ? '选择病例，开始接诊。' : '选择一个系统，进入病例训练。'}</p>
+        {!system && <p className={styles.hospital}>武汉大学中南医院</p>}
+        <h1>{system ? system.label : '儿科病例训练'}</h1>
+        <p>{system ? '选择病例，开始接诊。' : '从儿科各系统进入病例，完成问诊、查体、诊断、治疗与沟通训练。'}</p>
+        {!system && <>
+          <p className={styles.trainingPurpose}>通过病例接诊训练，提升病史采集、体格检查、辅助检查判读、临床诊断、治疗决策和医患沟通能力。</p>
+          <p className={styles.motto}><span>大医精诚</span><span>敬畏生命，练一次，会接诊</span></p>
+        </>}
       </div>
       {system && <div className={styles.tools}>
         <button className="btn btn-secondary" onClick={() => setSelected(null)}>返回系统地图</button>
       </div>}
     </header>
     {!system ? <nav className={styles.map} aria-label="选择儿科系统">
-      {/* Coordinates use the original artwork's aspect ratio. */}
-      <div className={styles.mapArt} aria-hidden="true" />
-      {systems.map((item, index) => <button key={item.name} type="button"
-        className={styles.island} aria-label={`进入${item.name}病例`}
-        style={{ left: `${item.x}%`, top: `${item.y}%`, width: `${item.w}%`, height: `${item.h}%` }}
-        onClick={() => setSelected(index)}>
-        <span className={styles.islandLabel}>{item.name}</span>
-      </button>)}
+      <picture>
+        <source media="(max-width: 600px)" srcSet="/pediatric-systems-map-mobile.png" />
+        <img
+          className={styles.mapArt}
+          src="/pediatric-systems-map-desktop.png"
+          alt="武汉大学中南医院与儿科各系统群岛地图"
+          width={1586}
+          height={992}
+          fetchPriority="high"
+        />
+      </picture>
+      <div className={styles.desktopHotspots}>
+        {PEDIATRIC_SYSTEMS.map((item) => <button key={item.key} type="button"
+          className={styles.island} data-system={item.key} aria-label={`进入${item.label}病例`}
+          style={hotspotStyle(DESKTOP_SYSTEM_HOTSPOTS[item.key])}
+          onClick={() => setSelected(item.key)}>
+          <span className={styles.islandLabel}>{item.label}</span>
+        </button>)}
+      </div>
+      <div className={styles.mobileHotspots}>
+        {PEDIATRIC_SYSTEMS.map((item) => <button key={item.key} type="button"
+          className={styles.island} data-system={item.key} aria-label={`进入${item.label}病例`}
+          style={hotspotStyle(MOBILE_SYSTEM_HOTSPOTS[item.key])}
+          onClick={() => setSelected(item.key)}>
+          <span className={styles.islandLabel}>{item.label}</span>
+        </button>)}
+      </div>
     </nav> : error ? <div role="alert">病例目录加载失败。 <button type="button" onClick={() => { setError(false); setAttempt(attempt + 1); }}>重试</button></div>
       : !catalog ? <p role="status">正在加载病例目录…</p>
-      : systemGroups.map(({ category, cases }) => {
-        return <section key={category} aria-label={category}>
-          {system.categories.length > 1 && <h2>{category}</h2>}
-          {!cases.length && <p>当前暂无开放病例。</p>}
-          <ol className={styles.levels}>
-            {cases.map((item) => {
-              const lock = lockOf.get(item.id);
-              const ongoingSession = sessions.find((session) => session.caseId === item.id && session.status === 'active');
-              const completed = Boolean(lock?.completed);
-              const unlocked = lock?.unlocked ?? true;
-              const levelNumber = lock?.level ?? 1;
-              const target = ongoingSession ? `session=${encodeURIComponent(ongoingSession.id)}` : `mode=guided&case=${encodeURIComponent(item.id)}`;
-              const statusText = completed ? '已完成' : ongoingSession ? '进行中' : unlocked ? '开始接诊' : '未解锁';
-              return <li key={item.id}>
-                {unlocked ? <Link href={`/student/training?${target}`}>
-                  <span>第 {levelNumber} 关 · {statusText}</span>
-                  <strong>{item.title}</strong>
-                </Link> : <div className={styles.lockedLevel} aria-disabled="true">
-                  <span>第 {levelNumber} 关 · {statusText} <Lock size={12} aria-hidden="true" /></span>
-                  <strong>{item.title}</strong>
-                  <small>完成上一关后解锁</small>
-                </div>}
-              </li>;
-            })}
-          </ol>
-        </section>;
-      })}
+      : <section aria-label={`${system.label}病例`}>
+        {!cases.length && <p>当前暂无开放病例。</p>}
+        <ol className={styles.levels}>
+          {cases.map((item) => {
+            const lock = lockOf.get(item.id);
+            const ongoingSession = sessions.find((session) => session.caseId === item.id && session.status === 'active');
+            const completed = Boolean(lock?.completed);
+            const unlocked = lock?.unlocked ?? true;
+            const levelNumber = lock?.level ?? 1;
+            const target = ongoingSession ? `session=${encodeURIComponent(ongoingSession.id)}` : `mode=guided&case=${encodeURIComponent(item.id)}`;
+            const statusText = completed ? '已完成' : ongoingSession ? '进行中' : unlocked ? '开始接诊' : '未解锁';
+            return <li key={item.id}>
+              {unlocked ? <Link href={`/student/training?${target}`}>
+                <span>第 {levelNumber} 关 · {statusText}</span>
+                <strong>{item.title}</strong>
+              </Link> : <div className={styles.lockedLevel} aria-disabled="true">
+                <span>第 {levelNumber} 关 · {statusText} <Lock size={12} aria-hidden="true" /></span>
+                <strong>{item.title}</strong>
+                <small>完成上一关后解锁</small>
+              </div>}
+            </li>;
+          })}
+        </ol>
+      </section>}
   </div>;
 }

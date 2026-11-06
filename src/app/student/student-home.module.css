@@ -1,7 +1,10 @@
 .home { display: grid; gap: 1rem; padding: 1rem 0; }
 .heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; }
-.heading h1 { margin: 0; color: #174b48; font-size: clamp(1.4rem, 3vw, 2rem); }
-.heading p { margin: .3rem 0 0; }
+.heading h1 { margin: 0; color: #174b48; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 750; }
+.heading p { margin: .3rem 0 0; font-weight: 400; line-height: 1.65; }
+.heading .hospital { margin: 0 0 .25rem; color: #36675d; font-size: .85rem; font-weight: 650; letter-spacing: .08em; }
+.heading .trainingPurpose { max-width: 62rem; color: #36675d; }
+.heading .motto { display: flex; flex-wrap: wrap; gap: .2rem 1.25rem; color: #174b48; font-weight: 650; letter-spacing: .04em; }
 .tools { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
 /* 积分榜入口置顶：手机底栏是写死的 5 列（4 主项 + 更多），排行榜放不进底栏，改由首页卡片承载醒目度。 */
 .shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
@@ -22,9 +25,11 @@
 .shortcuts span { display: grid; gap: .18rem; min-width: 0; }
 .shortcuts strong { font-size: 1rem; }
 .shortcuts small { color: #36675d; font-size: .85rem; line-height: 1.5; }
-.map { position: relative; overflow: hidden; border-radius: 1.1rem; }
-/* 最终稿已含浅青绿水面、淡医学纹理、12 岛与中南医院远岸，直接整图呈现。 */
-.mapArt { aspect-ratio: 1586 / 992; background: url('/pediatric-systems-map.png') center / 100% 100% no-repeat; }
+.map { position: relative; width: 100%; aspect-ratio: 793 / 496; overflow: hidden; border-radius: 1.1rem; }
+.map picture { display: block; width: 100%; height: 100%; }
+.mapArt { display: block; width: 100%; height: 100%; object-fit: contain; }
+.desktopHotspots, .mobileHotspots { position: absolute; inset: 0; }
+.mobileHotspots { display: none; }
 .island {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -81,43 +86,11 @@
 .lockedLevel strong { color: #5c6b66; }
 .lockedLevel small { color: #8a9791; font-size: .78rem; }
 @media (max-width: 600px) {
-  .map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; overflow: visible; }
-  /* 手机页首只保留远岸医院条带，群岛改由下方三列按钮承载。 */
-  .mapArt {
-    grid-column: 1 / -1;
-    aspect-ratio: auto;
-    height: 84px;
-    border-radius: .9rem;
-    background-size: 170% auto;
-    background-position: 50% 0;
-  }
-  .island {
-    position: static;
-    transform: none;
-    display: grid;
-    place-items: center;
-    width: auto;
-    height: auto;
-    min-height: 44px;
-    padding: .45rem .2rem;
-    border: 1px solid #bddbd1;
-    border-radius: .7rem;
-    background: #edf7f2;
-  }
-  .island::before { display: none; }
-  .island:hover, .island:focus-visible { background: #dcf0e6; }
-  .islandLabel {
-    position: static;
-    transform: none;
-    padding: 0;
-    background: transparent;
-    color: #174b48;
-    font-size: .85rem;
-    opacity: 1;
-    white-space: normal;
-    text-align: center;
-  }
-  .island:hover .islandLabel, .island:focus-visible .islandLabel { transform: none; }
+  .map { aspect-ratio: 3 / 4; border-radius: .85rem; }
+  .desktopHotspots { display: none; }
+  .mobileHotspots { display: block; }
+  .island::before { inset: 3%; }
+  .islandLabel { bottom: 2%; font-size: .8rem; }
   .shortcuts { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
   .pointsCard, .continueCard { padding: .75rem .85rem; }
   .levels { gap: .4rem; }

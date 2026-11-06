@@ -13,6 +13,11 @@ const LYMPH_NEGATIVE = /未扪及|未触及|未及|无肿大|不大/;
 /** 其他查体规则的主关键词；命中即归属该查体，淋巴结续段吸收不得越过。 */
 const OTHER_EXAM_MARKERS = /体温|\bT\s*[:：]?\s*\d|spo[₂2]|血氧|氧饱和度|\bBP|血压|呼吸音|啰音|罗音|哮鸣音|痰鸣音|心音|心律|杂音|震颤|语颤|口|咽|扁桃体|舌|牙龈|黏膜|唇|前囟|颅|头围|瞳孔|眼|结膜|巩膜|鼓膜|外耳道|耳|鼻|颈|甲状腺|气管|皮肤|黄染|黄疸|皮疹|出血点|瘀点|瘀斑|紫癜|咖啡斑|精神|神志|神清|嗜睡|昏睡|昏迷|意识|面色|青紫|反应|胸廓|三凹征|胸壁|呼吸费力|气促|乳房|乳晕|乳核|Tanner|腹|脐|反跳痛|肌紧张|肝|脾|腹股沟|疝|阴囊|睾丸|移动.{0,2}浊音|叩诊|鼓音|肠鸣音|四肢|双下肢|双上肢|肢体|关节|脊柱|指甲|甲床|杵状|反射|肌张力|肌力|抽搐|惊厥|瘫痪|神经|巴氏|巴宾斯基|克氏|布氏|水肿/i;
 
+const MOUTH_MAIN = /口|咽|扁桃体|舌|牙龈|黏膜|疱疹|溃疡|鹅口疮|Koplik/i;
+/** 仅吸收紧跟口咽原文的分度、侧别与局部分泌物续段，不跨到其他器官。 */
+const MOUTH_CONTINUATION = /^(?:表面|左侧|右侧|双侧|可见|伴|充血|肿胀|无(?:脓|溃疡|疱疹|斑膜)|有(?:脓|溃疡|疱疹|斑膜)|[ⅠⅡⅢ]+度)/;
+const MOUTH_BOUNDARY = /^(?:双?肺|心|腹|皮肤|精神|结膜|巩膜|颈|四肢|神经|鼻|耳|眼|前囟|血压|体温|血氧)/;
+
 /** 腹部触诊/叩诊的关键词（压痛、叩诊）是裸词，必须挡掉带其他部位标记的片段，
  *  否则「棘突压痛」「膝关节压痛」「右下肺叩诊浊音」会串进腹部结果。 */
 const NON_ABDOMINAL_SITE = /棘突|脊柱|腰骶|关节|肢体|四肢|胸|肺|心|乳房|颈|咽|扁桃|耳|眼|鼻|唇|睾丸|阴囊|颅|前囟/;
@@ -37,7 +42,20 @@ export function sourceExamDefinitions(text: string): string[][] {
       absorbed.add(j);
     }
   }
+  const mouthContinuations = new Set<number>();
+  for (let i = 0; i < parts.length; i += 1) {
+    if (!MOUTH_MAIN.test(parts[i]) || absorbed.has(i)) continue;
+    for (let j = i + 1; j < parts.length; j += 1) {
+      const next = parts[j].trim();
+      if (absorbed.has(j) || MOUTH_BOUNDARY.test(next) || !MOUTH_CONTINUATION.test(next)) break;
+      absorbed.add(j);
+      mouthContinuations.add(j);
+    }
+  }
   const snippets = (pattern: RegExp, exclude?: RegExp) => pick(parts, pattern, absorbed, exclude);
+  const mouthSnippets = () => parts
+    .filter((part, index) => (MOUTH_MAIN.test(part) && !absorbed.has(index)) || mouthContinuations.has(index))
+    .join('，');
   return [
     // 头面颈部
     ['thermometer', 'forehead', '体温测量', snippets(/体温|\bT\s*[:：]?\s*\d/i)],
@@ -46,7 +64,7 @@ export function sourceExamDefinitions(text: string): string[][] {
     ['flashlight', 'eyes', '眼部与瞳孔检查', snippets(/眼|结膜|巩膜|瞳孔|对光反射|光反射/, LYMPH_MAIN)],
     ['otoscope', 'ears', '耳镜检查', snippets(/鼓膜|外耳道|耳|听力/, LYMPH_MAIN)],
     ['inspection', 'nose', '鼻部视诊', snippets(/鼻/, LYMPH_MAIN)],
-    ['tongue-depressor', 'mouth', '口咽检查', snippets(/口|咽|扁桃体|舌|牙龈|黏膜|疱疹|溃疡|鹅口疮|Koplik/i)],
+    ['tongue-depressor', 'mouth', '口咽检查', mouthSnippets()],
     ['inspection', 'neck', '颈部视诊', snippets(/颈[^，。]{0,3}(软|僵|抵抗|强直)|无抵抗|颈静脉|气管/)],
     ['palpation', 'neck', '颈部触诊', snippets(/甲状腺|颈[^，。]{0,4}(肿块|包块|压痛)/)],
     ['palpation', 'lymph-nodes', '浅表淋巴结触诊', parts.filter((part, index) => absorbed.has(index) || LYMPH_MAIN.test(part)).join('，')],

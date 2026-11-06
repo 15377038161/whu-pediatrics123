@@ -69,7 +69,7 @@ export const EXAM_STATIONS: ExamStation[] = [
     officialMethod: '计算机呈现音视频与图像素材，考生判读作答，系统或考官按要点给分。',
     entries: [
       { href: '/student/practice?focus=communication', label: '临床能力专项 · 沟通能力', status: 'ready', detail: '围绕患儿情境与家长模拟沟通，解释风险、回应顾虑并确认理解；保留沟通原文与目标覆盖情况供教师复核。' },
-      { href: '/student/quiz', label: '知识回顾（辅助检查与安全题库）', status: 'partial', detail: '43 题安全题库覆盖辅助检查与处置知识；尚无按考试形式的心电图、影像判读题组。' },
+      { href: '/student/quiz', label: '知识点回顾（辅助检查与安全题库）', status: 'partial', detail: '43 题安全题库覆盖辅助检查与处置知识；尚无按考试形式的心电图、影像判读题组。' },
       { href: '/student/resources', label: '教学视频（听诊音与影像讲解）', status: 'partial', detail: '查体真实音效（啰音、哮鸣音）已在训练内可用；独立的听诊音与影像判读素材库尚未建立。' },
     ],
     gap: '辅助检查判读题库（心电图、影像、听诊音判读）与医德医风情景题尚未实现；平台内的辅助检查环节只做「申请/不申请」并从绑定原始资料逐项摘录结果，资料未提供时如实提示「本病例资料未提供该项结果」，不编造数据。',

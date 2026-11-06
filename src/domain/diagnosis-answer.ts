@@ -63,6 +63,8 @@ export type PointJudgementMap = Record<string, PointJudgement>;
 
 export type DiagnosisPointResult = {
   section: 'primary' | 'secondary' | 'evidence' | 'differential' | 'management';
+  /** 新增接诊阶段归属；历史报告缺省时由 section 推导。 */
+  stage?: 'assessment' | 'plan';
   id: string;
   label: string;
   status: PointJudgementStatus;
@@ -186,7 +188,7 @@ export function gradeDiagnosisAnswer(
   for (const point of key.evidence) {
     const judgement = judgements?.[`evidence:${point.id}`];
     const fallbackHit = hitsAnyKeyword(evidenceText, point.keywords);
-    const status: PointJudgementStatus = judgement?.status ?? (fallbackHit ? 'covered' : 'missing');
+    const status: PointJudgementStatus = !evidenceText.trim() ? 'missing' : judgement?.status ?? (fallbackHit ? 'covered' : 'missing');
     evidenceFractions += STATUS_FRACTION[status];
     if (status !== 'missing') evidenceHits.push(point.label);
     else {
@@ -201,8 +203,8 @@ export function gradeDiagnosisAnswer(
       status,
       score: roundPoint(STATUS_FRACTION[status] * evidencePointMax),
       maxScore: roundPoint(evidencePointMax),
-      ...(judgement?.evidence ? { evidence: judgement.evidence } : {}),
-      ...(judgement?.reason ? { reason: judgement.reason } : {}),
+      ...(status !== 'missing' && judgement?.evidence ? { evidence: judgement.evidence } : {}),
+      ...(status !== 'missing' && judgement?.reason ? { reason: judgement.reason } : {}),
     });
   }
   const evidenceScore = key.evidence.length > 0
@@ -219,7 +221,7 @@ export function gradeDiagnosisAnswer(
     const id = item.id ?? String(index);
     const judgement = judgements?.[`differential:${id}`] ?? judgements?.[`differential:${item.name}`];
     const fallbackHit = matchesDiagnosisName(item, differentialText);
-    const status: PointJudgementStatus = judgement?.status ?? (fallbackHit ? 'covered' : 'missing');
+    const status: PointJudgementStatus = !differentialText.trim() ? 'missing' : judgement?.status ?? (fallbackHit ? 'covered' : 'missing');
     differentialFractions += STATUS_FRACTION[status];
     if (status !== 'missing') differentialHits.push(item.name);
     else {
@@ -234,8 +236,8 @@ export function gradeDiagnosisAnswer(
       status,
       score: roundPoint(STATUS_FRACTION[status] * differentialPointMax),
       maxScore: roundPoint(differentialPointMax),
-      ...(judgement?.evidence ? { evidence: judgement.evidence } : {}),
-      ...(judgement?.reason ? { reason: judgement.reason } : {}),
+      ...(status !== 'missing' && judgement?.evidence ? { evidence: judgement.evidence } : {}),
+      ...(status !== 'missing' && judgement?.reason ? { reason: judgement.reason } : {}),
     });
   }
   const differentialScore = differentialItems.length > 0
@@ -250,7 +252,7 @@ export function gradeDiagnosisAnswer(
   for (const point of key.management) {
     const judgement = judgements?.[`management:${point.id}`];
     const fallbackHit = hitsAnyKeyword(managementText, point.keywords);
-    const status: PointJudgementStatus = judgement?.status ?? (fallbackHit ? 'covered' : 'missing');
+    const status: PointJudgementStatus = !managementText.trim() ? 'missing' : judgement?.status ?? (fallbackHit ? 'covered' : 'missing');
     managementFractions += STATUS_FRACTION[status];
     if (status !== 'missing') managementHits.push(point.label);
     else {
@@ -265,8 +267,8 @@ export function gradeDiagnosisAnswer(
       status,
       score: roundPoint(STATUS_FRACTION[status] * managementPointMax),
       maxScore: roundPoint(managementPointMax),
-      ...(judgement?.evidence ? { evidence: judgement.evidence } : {}),
-      ...(judgement?.reason ? { reason: judgement.reason } : {}),
+      ...(status !== 'missing' && judgement?.evidence ? { evidence: judgement.evidence } : {}),
+      ...(status !== 'missing' && judgement?.reason ? { reason: judgement.reason } : {}),
     });
   }
   const managementScore = key.management.length > 0
@@ -289,7 +291,7 @@ export function gradeDiagnosisAnswer(
       maxScore: maxDifferential,
     },
     management: { hits: managementHits, misses: managementMisses, score: managementScore, maxScore: maxManagement },
-    points,
+    points: points.map((point) => ({ ...point, stage: point.section === 'management' ? 'plan' : 'assessment' })),
     missingPoints,
   };
 }

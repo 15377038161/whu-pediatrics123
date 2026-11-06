@@ -12,7 +12,7 @@ import { authedFetch } from '@/lib/authed-api';
 
 /**
  * 学情报告列表（客户端化）：数据经 authedFetch，页面 HTML 不含用户数据。
- * 阶段 F：知识回顾批次（quiz_attempt_list_mine）并入本页统一展示——
+ * 阶段 F：知识点回顾批次（quiz_attempt_list_mine）并入本页统一展示——
  * 独立分区、独立正确率口径，不与临床训练分混算；点击回到题库页续答/复盘。
  */
 export default function ReportsPage() {
@@ -64,12 +64,12 @@ export default function ReportsPage() {
         <><div className="section-head"><h2 className="section-title"><TrendingUp size={18} /> 最近记录</h2><span className="eyebrow"><Sparkles size={13} /> 证据可回放</span></div><div className="report-card-list">{reports.map((report) => { const caseProfile = findPublicCase(report.caseId); const caseTitle = report.caseTitle ?? caseProfile?.title ?? `病例 ${report.caseId}`; const unscored = isUnscoredReport(report); return <a className="report-card-link" key={report.id} href={`/student/reports/${report.id}`}><span className="report-card-score" title={unscored ? unscoredReasonForDisplay(report) : undefined}>{unscored ? <small>未评分</small> : <>{report.totalScore}<small>分</small></>}</span><div><span className="report-mode">{report.mode === 'osce' ? 'OSCE 模拟站' : report.mode === 'practice' ? '临床能力专项' : report.mode === 'immersive' ? '沉浸式病例教学' : '引导训练'}</span><strong>{caseTitle}</strong><small>{formatDateTime(report.createdAt)} · {unscored ? '未评分：缺少可评价判据，待教师复核' : '查看证据与补练建议'}</small></div><ArrowRight size={17} /></a> })}</div></>
       )}
 
-      {/* 阶段 F：知识回顾批次并入统一报告页——独立分区与正确率口径，不计入上方临床训练统计 */}
+      {/* 阶段 F：知识点回顾批次并入统一报告页——独立分区与正确率口径，不计入上方临床训练统计 */}
       {quizAttempts !== null && (
         <>
-          <div className="section-head"><h2 className="section-title"><TrendingUp size={18} /> 知识回顾记录</h2><span className="eyebrow">不计入临床评分统计</span></div>
+          <div className="section-head"><h2 className="section-title"><TrendingUp size={18} /> 知识点回顾记录</h2><span className="eyebrow">不计入临床评分统计</span></div>
           {quizAttempts.length === 0 ? (
-            <div className="empty-state"><p>还没有知识回顾记录。到「知识回顾」开始一轮老师发布的题集吧。</p><a className="btn btn-primary" href="/student/quiz">去知识回顾</a></div>
+            <div className="empty-state"><p>还没有知识点回顾记录。到「知识点回顾」开始一轮老师发布的题集吧。</p><a className="btn btn-primary" href="/student/quiz">去知识点回顾</a></div>
           ) : (
             <div className="report-card-list">
               {quizAttempts.map((attempt) => {
@@ -82,7 +82,7 @@ export default function ReportsPage() {
                       {attempt.status === 'completed' && rate !== null ? <>{rate}<small>%</small></> : <small>{statusText}</small>}
                     </span>
                     <div>
-                      <span className="report-mode">知识回顾 · {attempt.topic || '综合'} · v{attempt.version}</span>
+                      <span className="report-mode">知识点回顾 · {attempt.topic || '综合'} · v{attempt.version}</span>
                       <strong>{attempt.bankTitle}</strong>
                       <small>
                         {formatDateTime(attempt.startedAt)} · 已答 {answered}/{attempt.itemCount} 题

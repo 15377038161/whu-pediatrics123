@@ -366,8 +366,8 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           <p className="preserve-lines"><strong>病情摘要：</strong>{report.studentSubmissions.decision?.summary || '未提交'}</p>
           {report.studentSubmissions.decision?.diagnosisBasis && <p className="preserve-lines"><strong>诊断依据：</strong>{report.studentSubmissions.decision.diagnosisBasis}</p>}
           {report.studentSubmissions.decision?.differentials && <p className="preserve-lines"><strong>鉴别诊断：</strong>{report.studentSubmissions.decision.differentials}</p>}
-          <p className="preserve-lines"><strong>处置优先级：</strong>{report.studentSubmissions.plan?.priority || '未提交'}</p>
-          <p className="preserve-lines"><strong>处置计划：</strong>{report.studentSubmissions.plan?.detail || '未提交'}</p>
+          <p className="preserve-lines"><strong>首要治疗：</strong>{report.studentSubmissions.plan?.priority || '未提交'}</p>
+          <p className="preserve-lines"><strong>治疗计划：</strong>{report.studentSubmissions.plan?.detail || '未提交'}</p>
           {report.studentSubmissions.communication && <p className="preserve-lines"><strong>家长沟通原文：</strong>{report.studentSubmissions.communication}</p>}
           {report.studentSubmissions.historySummary && <p className="preserve-lines"><strong>病史摘要：</strong>{report.studentSubmissions.historySummary}</p>}
           {report.studentSubmissions.examObservation && <p className="preserve-lines"><strong>查体观察记录：</strong>{report.studentSubmissions.examObservation.findings}{report.studentSubmissions.examObservation.interpretation && <>；<strong>观察解释：</strong>{report.studentSubmissions.examObservation.interpretation}</>}{report.studentSubmissions.examObservation.linkedEvidence && <>；<strong>关联查体结果：</strong>{report.studentSubmissions.examObservation.linkedEvidence.join('、')}</>}{report.studentSubmissions.examObservation.caseVersion !== undefined && <>（病例版本 v{report.studentSubmissions.examObservation.caseVersion}）</>}</p>}

@@ -6,8 +6,13 @@ const SECTION_LABELS = {
   secondary: '并列诊断',
   evidence: '诊断依据',
   differential: '鉴别诊断',
-  management: '处理原则',
+  management: '治疗计划',
 } as const;
+const STAGE_LABELS = { assessment: '诊断阶段', plan: '治疗阶段' } as const;
+type AnalysisPoint = NonNullable<CaseAnalysisBlock['points']>[number];
+function stageForPoint(point: AnalysisPoint): keyof typeof STAGE_LABELS {
+  return point.stage ?? (point.section === 'management' ? 'plan' : 'assessment');
+}
 
 /** 病例分析影子分：只展示试点分与逐点结果，不参与旧总分的任何计算。 */
 export function CaseAnalysisSection({ block }: { block: CaseAnalysisBlock }) {
@@ -31,8 +36,9 @@ export function CaseAnalysisSection({ block }: { block: CaseAnalysisBlock }) {
               <summary>查看逐点命中</summary>
               <ul style={{ margin: '8px 0 0', paddingLeft: 20, lineHeight: 1.8 }}>
                 {block.points.map((point) => <li key={`${point.section}:${point.id}`}>
-                  <strong>{SECTION_LABELS[point.section]}</strong> · {point.label} · {STATUS_LABELS[point.status]}（{point.score}/{point.maxScore} 分）
+                  <strong>{STAGE_LABELS[stageForPoint(point)]} · {SECTION_LABELS[point.section]}</strong> · {point.label} · {STATUS_LABELS[point.status]}（{point.score}/{point.maxScore} 分）
                   {point.evidence ? <span style={{ opacity: 0.75 }}>：{point.evidence}</span> : null}
+                  {point.reason ? <span style={{ opacity: 0.75 }}>；{point.reason}</span> : null}
                 </li>)}
               </ul>
             </details>
