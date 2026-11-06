@@ -5,6 +5,7 @@ import { runAgentTurn } from '@/lib/agent-engine';
 import { AgentRepository } from '@/lib/repository';
 import { requireAuth } from '@/lib/request-auth';
 import { buildReport } from '@/lib/scoring';
+import { attachCaseAnalysis } from '@/lib/case-analysis-report';
 import {projectReportForRole} from '@/lib/report-projection';
 import { isUnscoredReport } from '@/domain/training-rubric';
 import { restoreCaseSnapshotReference } from '@/lib/case-snapshot';
@@ -27,6 +28,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       ? await restoreCaseSnapshotReference(session.caseId, session.sourceSnapshotVersion, user.accessToken, user.role, session.id)
       : null;
     const report = buildReport(session, session.id, reference ?? undefined);
+    // 灰度影子分：只附加 caseAnalysis，不改 totalScore；失败不阻塞报告生成。
+    await attachCaseAnalysis(report, session);
     session.reportId = report.id;
     session.stage = 'report';
     session.updatedAt = new Date().toISOString();

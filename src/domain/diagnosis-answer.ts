@@ -10,17 +10,23 @@
  *   training-rubric 的 REASONING_DIFFERENTIAL）保持不动，本模块只补分级诊断与处理原则。
  */
 
+export type DiagnosisSourceMeta = {
+  /** 生成该得分点时引用的原件连续片段；用于审计，不参与匹配。 */
+  sourceQuote?: string;
+  sourceSection?: 'history' | 'exam' | 'tests' | 'diagnosis' | 'plan';
+};
+
 export type DiagnosisItem = {
   name: string;
   /** 教师确认可接受的同义写法（如「支气管肺炎」与「小叶性肺炎」）。 */
   aliases?: string[];
-};
+} & DiagnosisSourceMeta;
 
-export type EvidencePoint = { id: string; label: string; keywords: string[] };
+export type EvidencePoint = { id: string; label: string; keywords: string[] } & DiagnosisSourceMeta;
 
-export type DifferentialItem = { name: string; aliases?: string[] };
+export type DifferentialItem = { id?: string; name: string; aliases?: string[] } & DiagnosisSourceMeta;
 
-export type ManagementPoint = { id: string; label: string; keywords: string[] };
+export type ManagementPoint = { id: string; label: string; keywords: string[] } & DiagnosisSourceMeta;
 
 export type DiagnosisAnswerKey = {
   /** 第一诊断（主要诊断）。 */
@@ -41,6 +47,31 @@ export type DiagnosisAnswerInput = {
   management?: string;
 };
 
+export type PointJudgementStatus = 'covered' | 'partial' | 'missing';
+
+/** AI 只判断「学生有没有答到这个已确认的得分点」，不新增得分点、不直接给总分。 */
+export type PointJudgement = {
+  status: PointJudgementStatus;
+  /** 学生原文中支撑该判断的连续片段；展示与审计用。 */
+  evidence?: string;
+  confidence?: number;
+  reason?: string;
+};
+
+/** key 形式：`primary`、`secondary:<name>`、`evidence:<id>`、`differential:<id|index>`、`management:<id>`。 */
+export type PointJudgementMap = Record<string, PointJudgement>;
+
+export type DiagnosisPointResult = {
+  section: 'primary' | 'secondary' | 'evidence' | 'differential' | 'management';
+  id: string;
+  label: string;
+  status: PointJudgementStatus;
+  score: number;
+  maxScore: number;
+  evidence?: string;
+  reason?: string;
+};
+
 export type DiagnosisGrade = {
   totalScore: number;
   maxScore: number;
@@ -54,6 +85,8 @@ export type DiagnosisGrade = {
   evidence: { hits: string[]; misses: string[]; score: number; maxScore: number };
   differential: { applicable: boolean; hits: string[]; misses: string[]; score: number; maxScore: number };
   management: { hits: string[]; misses: string[]; score: number; maxScore: number };
+  /** 逐点结果：报告展示命中/部分/未命中与原文证据；总分仍以各段汇总为准。 */
+  points: DiagnosisPointResult[];
   /** 直接可展示给学生的补答提示（不含医学结论）。 */
   missingPoints: string[];
 };
@@ -94,71 +127,169 @@ function splitEntries(value: string | string[] | undefined): string[] {
   return list.map((item) => item.trim()).filter(Boolean).slice(0, 20);
 }
 
-export function gradeDiagnosisAnswer(key: DiagnosisAnswerKey, input: DiagnosisAnswerInput): DiagnosisGrade {
-  const maxSecondary = key.secondary.length * (WEIGHTS.secondary / 2);
-  const maxEvidence = WEIGHTS.evidence;
+const STATUS_FRACTION: Record<PointJudgementStatus, number> = { covered: 1, partial: 0.5, missing: 0 };
+
+function roundPoint(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+export function gradeDiagnosisAnswer(
+  key: DiagnosisAnswerKey,
+  input: DiagnosisAnswerInput,
+  judgements?: PointJudgementMap,
+): DiagnosisGrade {
+  // 空段不计入满分：标答没有诊断依据/处理原则/并列诊断时，学生不该为不存在的段白丢分，
+  // 也不该为空的并列诊断白拿 20 分。
+  const maxSecondary = key.secondary.length > 0 ? WEIGHTS.secondary : 0;
+  const maxEvidence = key.evidence.length > 0 ? WEIGHTS.evidence : 0;
   const differentialApplicable = (key.differentials?.length ?? 0) > 0;
   const maxDifferential = differentialApplicable ? WEIGHTS.differential : 0;
+  const maxManagement = key.management.length > 0 ? WEIGHTS.management : 0;
 
+  const points: DiagnosisPointResult[] = [];
+  const missingPoints: string[] = [];
+
+  // 诊断名走确定性别名匹配，不接受 AI 改判：写错诊断不能因为“说得像”而得分。
   const primaryHit = Boolean(input.primary) && matchesDiagnosisName(key.primary, input.primary!);
+  const primaryStatus: PointJudgementStatus = primaryHit ? 'covered' : 'missing';
   const primaryScore = primaryHit ? WEIGHTS.primary : 0;
+  points.push({ section: 'primary', id: 'primary', label: key.primary.name, status: primaryStatus, score: primaryScore, maxScore: WEIGHTS.primary });
+  if (!primaryHit) missingPoints.push(`第一诊断：需给出「${key.primary.name}」或教师确认的同义写法`);
 
   const secondaryInput = (input.secondary ?? []).slice(0, MAX_SECONDARY);
   const secondaryHits: string[] = [];
   const secondaryMisses: string[] = [];
+  const secondaryStatus = new Map<string, PointJudgementStatus>();
+  const secondaryPointMax = key.secondary.length > 0 ? maxSecondary / key.secondary.length : 0;
   for (const item of key.secondary) {
-    if (secondaryInput.some((candidate) => matchesDiagnosisName(item, candidate))) secondaryHits.push(item.name);
-    else secondaryMisses.push(item.name);
+    const status: PointJudgementStatus = secondaryInput.some((candidate) => matchesDiagnosisName(item, candidate))
+      ? 'covered'
+      : 'missing';
+    secondaryStatus.set(item.name, status);
+    if (status === 'covered') secondaryHits.push(item.name);
+    else {
+      secondaryMisses.push(item.name);
+      missingPoints.push(`并列诊断：需写出「${item.name}」`);
+    }
+    points.push({ section: 'secondary', id: item.name, label: item.name, status, score: roundPoint(status === 'covered' ? secondaryPointMax : 0), maxScore: roundPoint(secondaryPointMax) });
   }
-  const secondaryScore = key.secondary.length === 0
-    ? WEIGHTS.secondary
-    : Math.round((secondaryHits.length / Math.max(key.secondary.length, 1)) * WEIGHTS.secondary);
+  const secondaryFractions = key.secondary.reduce((sum, item) => sum + STATUS_FRACTION[secondaryStatus.get(item.name) ?? 'missing'], 0);
+  const secondaryScore = key.secondary.length > 0
+    ? Math.round((secondaryFractions / key.secondary.length) * maxSecondary)
+    : 0;
 
   const evidenceText = input.evidence ?? '';
-  const evidenceHits = key.evidence.filter((point) => hitsAnyKeyword(evidenceText, point.keywords));
-  const evidenceMisses = key.evidence.filter((point) => !evidenceHits.includes(point));
-  const evidenceScore = key.evidence.length === 0
-    ? 0
-    : Math.round((evidenceHits.length / key.evidence.length) * maxEvidence);
+  const evidenceHits: string[] = [];
+  const evidenceMisses: string[] = [];
+  const evidencePointMax = key.evidence.length > 0 ? maxEvidence / key.evidence.length : 0;
+  let evidenceFractions = 0;
+  for (const point of key.evidence) {
+    const judgement = judgements?.[`evidence:${point.id}`];
+    const fallbackHit = hitsAnyKeyword(evidenceText, point.keywords);
+    const status: PointJudgementStatus = judgement?.status ?? (fallbackHit ? 'covered' : 'missing');
+    evidenceFractions += STATUS_FRACTION[status];
+    if (status !== 'missing') evidenceHits.push(point.label);
+    else {
+      evidenceMisses.push(point.label);
+      missingPoints.push(`诊断依据：缺少「${point.label}」`);
+    }
+    if (status === 'partial') missingPoints.push(`诊断依据：「${point.label}」部分命中，需补充完整`);
+    points.push({
+      section: 'evidence',
+      id: point.id,
+      label: point.label,
+      status,
+      score: roundPoint(STATUS_FRACTION[status] * evidencePointMax),
+      maxScore: roundPoint(evidencePointMax),
+      ...(judgement?.evidence ? { evidence: judgement.evidence } : {}),
+      ...(judgement?.reason ? { reason: judgement.reason } : {}),
+    });
+  }
+  const evidenceScore = key.evidence.length > 0
+    ? Math.round((evidenceFractions / key.evidence.length) * maxEvidence)
+    : 0;
 
   const differentialText = input.differentials ?? '';
   const differentialItems = key.differentials ?? [];
-  const differentialHits = differentialItems.filter((item) => matchesDiagnosisName(item, differentialText));
-  const differentialMisses = differentialItems.filter((item) => !differentialHits.includes(item));
-  const differentialScore = differentialApplicable && differentialItems.length > 0
-    ? Math.round((differentialHits.length / differentialItems.length) * maxDifferential)
+  const differentialHits: string[] = [];
+  const differentialMisses: string[] = [];
+  const differentialPointMax = differentialItems.length > 0 ? maxDifferential / differentialItems.length : 0;
+  let differentialFractions = 0;
+  for (const [index, item] of differentialItems.entries()) {
+    const id = item.id ?? String(index);
+    const judgement = judgements?.[`differential:${id}`] ?? judgements?.[`differential:${item.name}`];
+    const fallbackHit = matchesDiagnosisName(item, differentialText);
+    const status: PointJudgementStatus = judgement?.status ?? (fallbackHit ? 'covered' : 'missing');
+    differentialFractions += STATUS_FRACTION[status];
+    if (status !== 'missing') differentialHits.push(item.name);
+    else {
+      differentialMisses.push(item.name);
+      missingPoints.push(`鉴别诊断：需写「${item.name}」`);
+    }
+    if (status === 'partial') missingPoints.push(`鉴别诊断：「${item.name}」部分命中，需补充完整`);
+    points.push({
+      section: 'differential',
+      id,
+      label: item.name,
+      status,
+      score: roundPoint(STATUS_FRACTION[status] * differentialPointMax),
+      maxScore: roundPoint(differentialPointMax),
+      ...(judgement?.evidence ? { evidence: judgement.evidence } : {}),
+      ...(judgement?.reason ? { reason: judgement.reason } : {}),
+    });
+  }
+  const differentialScore = differentialItems.length > 0
+    ? Math.round((differentialFractions / differentialItems.length) * maxDifferential)
     : 0;
 
   const managementText = input.management ?? '';
-  const managementHits = key.management.filter((point) => hitsAnyKeyword(managementText, point.keywords));
-  const managementMisses = key.management.filter((point) => !managementHits.includes(point));
-  const managementScore = key.management.length === 0
-    ? 0
-    : Math.round((managementHits.length / key.management.length) * WEIGHTS.management);
-
-  const missingPoints: string[] = [];
-  if (!primaryHit) missingPoints.push(`第一诊断：需给出「${key.primary.name}」或教师确认的同义写法`);
-  for (const name of secondaryMisses) missingPoints.push(`并列诊断：需写出「${name}」`);
-  for (const point of evidenceMisses) missingPoints.push(`诊断依据：缺少「${point.label}」`);
-  for (const item of differentialMisses) missingPoints.push(`鉴别诊断：需写「${item.name}」`);
-  for (const point of managementMisses) missingPoints.push(`处理原则：缺少「${point.label}」`);
+  const managementHits: string[] = [];
+  const managementMisses: string[] = [];
+  const managementPointMax = key.management.length > 0 ? maxManagement / key.management.length : 0;
+  let managementFractions = 0;
+  for (const point of key.management) {
+    const judgement = judgements?.[`management:${point.id}`];
+    const fallbackHit = hitsAnyKeyword(managementText, point.keywords);
+    const status: PointJudgementStatus = judgement?.status ?? (fallbackHit ? 'covered' : 'missing');
+    managementFractions += STATUS_FRACTION[status];
+    if (status !== 'missing') managementHits.push(point.label);
+    else {
+      managementMisses.push(point.label);
+      missingPoints.push(`处理原则：缺少「${point.label}」`);
+    }
+    if (status === 'partial') missingPoints.push(`处理原则：「${point.label}」部分命中，需补充完整`);
+    points.push({
+      section: 'management',
+      id: point.id,
+      label: point.label,
+      status,
+      score: roundPoint(STATUS_FRACTION[status] * managementPointMax),
+      maxScore: roundPoint(managementPointMax),
+      ...(judgement?.evidence ? { evidence: judgement.evidence } : {}),
+      ...(judgement?.reason ? { reason: judgement.reason } : {}),
+    });
+  }
+  const managementScore = key.management.length > 0
+    ? Math.round((managementFractions / key.management.length) * maxManagement)
+    : 0;
 
   const totalScore = primaryScore + secondaryScore + evidenceScore + differentialScore + managementScore;
-  const maxScore = WEIGHTS.primary + WEIGHTS.secondary + maxEvidence + maxDifferential + WEIGHTS.management;
+  const maxScore = WEIGHTS.primary + maxSecondary + maxEvidence + maxDifferential + maxManagement;
 
   return {
     totalScore,
     maxScore,
     diagnosis: { primaryHit, primaryScore, secondaryHits, secondaryMisses, secondaryScore },
-    evidence: { hits: evidenceHits.map((p) => p.label), misses: evidenceMisses.map((p) => p.label), score: evidenceScore, maxScore: maxEvidence },
+    evidence: { hits: evidenceHits, misses: evidenceMisses, score: evidenceScore, maxScore: maxEvidence },
     differential: {
       applicable: differentialApplicable,
-      hits: differentialHits.map((item) => item.name),
-      misses: differentialMisses.map((item) => item.name),
+      hits: differentialHits,
+      misses: differentialMisses,
       score: differentialScore,
       maxScore: maxDifferential,
     },
-    management: { hits: managementHits.map((p) => p.label), misses: managementMisses.map((p) => p.label), score: managementScore, maxScore: WEIGHTS.management },
+    management: { hits: managementHits, misses: managementMisses, score: managementScore, maxScore: maxManagement },
+    points,
     missingPoints,
   };
 }

@@ -739,7 +739,14 @@ function handleDecision(session: SessionState, data: Extract<AgentEvent, { type:
     const obtained=new Set(diagnosticEvidenceEvents(session).map(event=>event.id));
     if(linkedEventIds.some(id=>!obtained.has(id)))throw new Error('DECISION_EVIDENCE_NOT_OBTAINED');
   }
-  session.decision = {...data,...(linkedEventIds!==undefined?{linkedEventIds}:{})};
+  const secondaryDiagnosis = data.secondaryDiagnosis
+    ? uniq(data.secondaryDiagnosis.map((item) => item.trim()).filter(Boolean)).slice(0, 2)
+    : undefined;
+  session.decision = {
+    ...data,
+    ...(secondaryDiagnosis !== undefined ? { secondaryDiagnosis } : {}),
+    ...(linkedEventIds !== undefined ? { linkedEventIds } : {}),
+  };
   session.events.push(clinicalEvent(clientEventId, 'SUBMIT_DECISION', 'assessment', `提交初步诊断：${data.diagnosis}`, null, ['DECISION']));
   advanceStageTo(session, 'assessment');
   session.updatedAt = now();

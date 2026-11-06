@@ -53,6 +53,17 @@ export function getSupabaseUserClient(accessToken: string): SupabaseClient {
   return createSupabaseClient(anonKey, accessToken);
 }
 
+/**
+ * service role 客户端：绕过 RLS，仅允许服务端模块使用（标答生成/缓存、教师预热）。
+ * 禁止从任何客户端组件或浏览器 bundle 引用；密钥只从平台/环境变量读取。
+ */
+export function getSupabaseServiceClient(): SupabaseClient {
+  const { url } = getSupabaseCredentials();
+  const serviceKey = envValue('CODER_SUPABASE_SERVICE_ROLE_KEY', 'COZE_SUPABASE_SERVICE_ROLE_KEY');
+  if (!url || !serviceKey) throw new Error('DATABASE_NOT_CONFIGURED');
+  return createSupabaseClient(serviceKey);
+}
+
 interface DatabaseRetryOptions {
   maxAttempts?: number;
   baseDelayMs?: number;

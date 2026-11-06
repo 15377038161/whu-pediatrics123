@@ -4,6 +4,7 @@ import type { PracticeFocus, TrainingReport } from '@/domain/agent';
 import { findPublicCase } from '@/domain/case-catalog';
 import { RandomAdmission } from '@/components/random-admission';
 import { ExpandableNote } from '@/components/expandable-note';
+import { CaseAnalysisSection } from '@/components/case-analysis-section';
 import { findRubricForReport, isUnscoredReport, rubricStatusForDisplay, unscoredReasonForDisplay, type RubricItem } from '@/domain/training-rubric';
 import { practiceScenarios } from '@/domain/practice-scenarios';
 import { ReportEvidenceMedia } from '@/components/report-evidence-media';
@@ -248,6 +249,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           {unscoredReason && <p style={{ fontSize: 13, opacity: 0.75 }} role="note">未评分说明：{unscoredReason}</p>}
         </div>
       </section>
+      {report.caseAnalysis && <CaseAnalysisSection block={report.caseAnalysis} />}
       <section style={ui.focus} aria-labelledby="report-focus-heading">
         <header>
           <p className="eyebrow">优先补练</p>
@@ -293,7 +295,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           <span style={ui.summaryMeta}>诊断依据、各维度得分、评分证据与提交原文（默认收起）</span>
         </summary>
         <div style={ui.grid}>
-        <section className="report-section"><h2>你的诊断与依据</h2><p><strong>初步诊断：</strong>{report.studentDecision?.diagnosis || '历史报告未保存此项'}</p><p className="preserve-lines"><strong>诊断依据：</strong>{report.studentDecision?.diagnosisBasis || '历史记录未填写诊断依据'}</p></section>
+        <section className="report-section"><h2>你的诊断与依据</h2><p><strong>初步诊断：</strong>{report.studentDecision?.diagnosis || '历史报告未保存此项'}</p>{report.studentDecision?.secondaryDiagnosis?.length ? <p><strong>并列诊断：</strong>{report.studentDecision.secondaryDiagnosis.join('；')}</p> : null}<p className="preserve-lines"><strong>诊断依据：</strong>{report.studentDecision?.diagnosisBasis || '历史记录未填写诊断依据'}</p></section>
         {report.decisionEvidenceReview&&<section className="report-section"><h2>诊断依据的记录关联</h2>{report.decisionEvidenceReview.status==='unlinked'?<p>本次未关联具体记录，暂时无法定位诊断依据。下次训练可关联已获得的记录并说明推理关系。</p>:<>{report.decisionEvidenceReview.status==='unavailable'&&<p>部分关联记录无法还原，不能据此判断临床推理的正确性。</p>}<ol>{report.decisionEvidenceReview.items.map(item=><li className="preserve-lines" key={item.eventId} data-event-id={item.eventId}>{item.summary}</li>)}</ol></>}<p>关联记录用于追溯依据，不因勾选数量加减分，也不自动判定诊断或证据解释正确。</p></section>}
         <section className="report-section">
           <h2>{processReport ? (focusScenario ? '专项过程记录' : '六环节完成度') : rubric?.scope === 'focused' ? '专项能力画像' : '六维能力画像'}</h2>

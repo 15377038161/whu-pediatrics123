@@ -1,3 +1,5 @@
+import type { DiagnosisPointResult } from './diagnosis-answer';
+
 export type AppRole = 'student' | 'teacher';
 export type SessionMode = 'guided' | 'practice' | 'osce' | 'immersive';
 /** 专项能力项单一来源：请求校验（lib/validation）、训练页 ?focus= 白名单与场景目录都从这里取值，
@@ -162,6 +164,8 @@ export interface SessionState {
   supplementalTests?: SupplementalTest[];
   decision: {
     diagnosis: string;
+    /** 并列诊断（最多 2 条）：病例分析评分需要，历史会话无此字段。 */
+    secondaryDiagnosis?: string[];
     summary: string;
     /** 诊断依据（任务3 必填）：历史会话可能缺失，读取方需可选访问。 */
     diagnosisBasis?: string;
@@ -222,7 +226,7 @@ export type AgentEvent =
   | { type: 'DOCTOR_INTERVENTION'; data: { action: 'child_answer' | 'pause_parent' | 'comfort_child' } }
   | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string; posture?: 'standing' | 'supine' } }
   | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
-  | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; summary: string; diagnosisBasis: string; differentials: string; linkedEventIds?:string[] } }
+  | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; secondaryDiagnosis?: string[]; summary: string; diagnosisBasis: string; differentials: string; linkedEventIds?:string[] } }
   | { type: 'SUBMIT_HISTORY_SUMMARY'; data: { summary: string } }
   | { type: 'SUBMIT_EXAM_OBSERVATION'; data: { findings: string; interpretation?: string; linkedEvidence: string[] } }
   | { type: 'SUBMIT_PLAN'; data: { priority: string; detail: string } }
@@ -295,6 +299,23 @@ export interface TeacherReviewEntry {
   comment: string;
 }
 
+/** 病例分析影子分：单独展示，不参与旧 totalScore 与统计，确认后再切主分数。 */
+export interface CaseAnalysisBlock {
+  status: 'scored' | 'not_assessable';
+  /** 报告用百分制。 */
+  percent?: number;
+  rawScore?: number;
+  rawMaxScore?: number;
+  model?: string;
+  promptVersion?: string;
+  keyVersion?: string;
+  usedFallback?: boolean;
+  points?: DiagnosisPointResult[];
+  missingPoints?: string[];
+  reason?: string;
+  disclaimer: string;
+}
+
 export interface TrainingReport {
   /** Frozen source version for evidence/media replay; absent historical reports do not guess. */
   sourceSnapshotVersion?: string | null;
@@ -356,6 +377,8 @@ export interface TrainingReport {
     /** 查体专项观察/解释提交（C-观察与报告-04）：历史报告无此字段时显示未提交。 */
     examObservation: SessionState['examObservation'];
   };
+  /** 病例分析影子分（灰度）：存在时报告单独展示，不改变 totalScore。 */
+  caseAnalysis?: CaseAnalysisBlock;
   createdAt: string;
 }
 

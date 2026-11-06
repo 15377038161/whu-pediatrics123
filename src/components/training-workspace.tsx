@@ -164,6 +164,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [examObservation, setExamObservation] = useState<ExamObservation | null>(null);
   const [diagnosis, setDiagnosis] = useState('');
+  const [secondaryDiagnosis, setSecondaryDiagnosis] = useState<string[]>([]);
   const [summary, setSummary] = useState('');
   const [diagnosisBasis, setDiagnosisBasis] = useState('');
   const [decisionEvidenceIds,setDecisionEvidenceIds]=useState<string[]>([]);
@@ -222,6 +223,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     if (draftSession.current === next.id) return;
     draftSession.current = next.id;
     setDiagnosis(next.decision?.diagnosis ?? '');
+    setSecondaryDiagnosis(next.decision?.secondaryDiagnosis ?? []);
     setSummary(next.decision?.summary ?? '');
     setDiagnosisBasis(next.decision?.diagnosisBasis ?? '');
     setDecisionEvidenceIds(next.decision?.linkedEventIds ?? []);
@@ -292,7 +294,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     (historySummaryText.trim() && historySummaryText !== (session?.historySummary ?? '')) ||
     (examFindingsText.trim() && (examFindingsText !== (session?.examObservation?.findings ?? '') || examInterpretationText !== (session?.examObservation?.interpretation ?? ''))) ||
     (examLinkedEvidence.length > 0 && examLinkedEvidence.join(',') !== (session?.examObservation?.linkedEvidence ?? []).join(',')) ||
-    (session && (diagnosis !== (session.decision?.diagnosis ?? '') || summary !== (session.decision?.summary ?? '') ||
+    (session && (diagnosis !== (session.decision?.diagnosis ?? '') || secondaryDiagnosis.join('|') !== (session.decision?.secondaryDiagnosis ?? []).join('|') || summary !== (session.decision?.summary ?? '') ||
     diagnosisBasis !== (session.decision?.diagnosisBasis ?? '') || decisionEvidenceIds.join(',')!==(session.decision?.linkedEventIds??[]).join(',') || differentials !== (session.decision?.differentials ?? '') ||
     priority !== (session.plan?.priority ?? '') || planDetail !== (session.plan?.detail ?? ''))));
   useEffect(() => {
@@ -585,10 +587,32 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
           <button className="btn btn-primary btn-block" disabled={busy || !requestedTests.trim()}>提交检查申请 <ChevronRight size={15}/></button>
         </form>
       </>;
-      case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, summary, diagnosisBasis, differentials,linkedEventIds:decisionEvidenceIds } }); if (result) await navigate('plan'); }}>
+      case 'assessment': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_DECISION', data: { diagnosis, secondaryDiagnosis: secondaryDiagnosis.map((item) => item.trim()).filter(Boolean), summary, diagnosisBasis, differentials,linkedEventIds:decisionEvidenceIds } }); if (result) await navigate('plan'); }}>
         <div className="stage-intro"><p className="eyebrow">证据整合</p><h2>病情摘要与初步诊断</h2><p>只使用你在本次会话中实际获得的信息，体现儿科年龄特点和危险信号判断。</p></div>
         <div className="form-field"><label htmlFor="summary">病情摘要</label><textarea id="summary" required minLength={10} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="年龄、主诉、重要阳性与阴性信息、危险信号…" /></div>
         <div className="form-field"><label htmlFor="diagnosis">初步诊断</label><input id="diagnosis" required value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="输入诊断与病情严重程度" /></div>
+        <div className="form-field">
+          <label htmlFor="secondary-diagnosis-1">并列诊断（可选，最多 2 条）</label>
+          <input
+            id="secondary-diagnosis-1"
+            value={secondaryDiagnosis[0] ?? ''}
+            onChange={(e) => {
+              const next = [e.target.value, secondaryDiagnosis[1] ?? ''];
+              setSecondaryDiagnosis(next);
+            }}
+            placeholder="并列诊断 1；没有就留空"
+          />
+          <input
+            aria-label="并列诊断 2"
+            value={secondaryDiagnosis[1] ?? ''}
+            onChange={(e) => {
+              const next = [secondaryDiagnosis[0] ?? '', e.target.value];
+              setSecondaryDiagnosis(next);
+            }}
+            placeholder="并列诊断 2；没有就留空"
+          />
+          <small>每条写一个诊断；病例分析会按第一诊断和并列诊断分别计分。</small>
+        </div>
         <div className="form-field"><label htmlFor="diagnosis-basis">诊断依据（必填）</label><textarea id="diagnosis-basis" required minLength={10} value={diagnosisBasis} onChange={(e) => setDiagnosisBasis(e.target.value)} placeholder="支撑该诊断的病史、体征与检查证据：哪些阳性发现支持诊断？关键阴性发现排除了什么？" /></div>
         <fieldset className="form-field"><legend>关联诊断依据的记录（可选）</legend><ExpandableNote label="怎么关联？" align="start"><p>选择你实际使用的记录，并在诊断依据中说明它支持或排除了什么，无需全选。</p></ExpandableNote>{decisionEvidenceItems.length?<details><summary>选择本轮已获得的记录</summary>{decisionEvidenceItems.map(item=><label className="checkbox-row" key={item.id}><input type="checkbox" checked={decisionEvidenceIds.includes(item.id)} disabled={busy} onChange={event=>setDecisionEvidenceIds(event.target.checked?[...decisionEvidenceIds,item.id]:decisionEvidenceIds.filter(id=>id!==item.id))}/><span>{item.summary}</span></label>)}</details>:<small>本轮尚无可关联的问诊、查体或检查记录；仍可在诊断依据中说明接诊时已知的信息。</small>}</fieldset>
         <div className="form-field"><label htmlFor="differentials">鉴别诊断</label><textarea id="differentials" value={differentials} onChange={(e) => setDifferentials(e.target.value)} placeholder="列出需要鉴别的疾病及理由" /></div>
