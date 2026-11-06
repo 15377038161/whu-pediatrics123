@@ -3,7 +3,10 @@
 --   status = 'auto'           AI 从原件生成并通过自动原文回校，可用于判分
 --   status = 'not_assessable' 生成/回校失败，不产出标答；调用方必须回退过程分并明确标注
 -- 学生不直读本表：标答只在服务端判分时使用，报告只下发逐点命中/漏项结果。
-create table public.case_answer_keys (
+--
+-- 平台 SQL 校验要求表名不带 schema 前缀（按当前租户 search_path 建表），
+-- 且会拦截 COMMENT ON 语句；因此本迁移不使用 public. 前缀，表说明放在这里。
+create table case_answer_keys (
   case_id text not null,
   version text not null check (version ~ '^[a-f0-9]{16}$'),
   status text not null check (status in ('auto', 'not_assessable')),
@@ -22,16 +25,12 @@ create table public.case_answer_keys (
   )
 );
 
-alter table public.case_answer_keys enable row level security;
+alter table case_answer_keys enable row level security;
 
--- 教师可读（后续做抽查/改判界面用）；写入只走服务端 service role，不开放 authenticated 写策略。
-create policy case_answer_keys_teacher_select on public.case_answer_keys
+-- 教师可读（后续做抽查/改判界面用）；写入只走服务端 service role。
+-- 学生没有任何直读权限；报告只下发判分结果，不下发 key_json。
+grant select on case_answer_keys to authenticated;
+
+create policy case_answer_keys_teacher_select on case_answer_keys
   for select to authenticated
   using (app_is_teacher());
-
-comment on table public.case_answer_keys is
-  '病例分析标答：AI 从原始病例生成、经原文回校后按 case_id + 内容指纹缓存；学生不直读，判分结果随报告下发。';
-comment on column public.case_answer_keys.key_json is
-  '五段标答 JSON（primary/secondary/evidence/differentials/management）；not_assessable 时必须为 null。';
-comment on column public.case_answer_keys.dropped is
-  '被自动质量闸门丢弃的候选及原因，供追溯；不影响已通过的得分点。';
