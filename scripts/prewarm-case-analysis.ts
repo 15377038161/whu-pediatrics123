@@ -8,9 +8,13 @@
 import { CASE_ANALYSIS_DEFAULT_CASE_ID } from '../src/lib/case-analysis-config';
 import { generateCaseAnswerKey } from '../src/lib/case-analysis-ai';
 import { saveCaseAnswerKey } from '../src/lib/case-answer-key-store';
+import { ensureCaseSnapshot } from '../src/lib/case-snapshot';
 
 async function main(): Promise<void> {
   const caseId = process.argv[2]?.trim() || CASE_ANALYSIS_DEFAULT_CASE_ID;
+  // 部署环境 knowledge/ 不入库：先按知识库召回预热进程内快照，再生成标答。
+  // 召回失败时 generateCaseAnswerKey 会返回 CASE_NOT_FOUND，不伪造标答。
+  await ensureCaseSnapshot(caseId);
   const record = await generateCaseAnswerKey(caseId);
   await saveCaseAnswerKey(record);
   console.log(`case=${record.caseId}`);
