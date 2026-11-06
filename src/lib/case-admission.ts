@@ -1,7 +1,8 @@
-import { resolveCaseId } from '@/lib/case-identity';
+import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
 // 服务端接诊信息：只从受控病例事实取主诉，不把诊断目录导入客户端。
 import { CASE_CATALOG, type PublicCaseProfile } from '@/domain/case-catalog';
 import { getCase } from '@/domain/case';
+import { isScorableCase } from '@/domain/case-classification';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 export { verifiedComplaint } from '@/lib/admission-complaint';
 import { getTeacherSourceId, readTeacherCaseData } from '@/lib/teacher-case-data';
@@ -27,6 +28,17 @@ export function eligibleAdmissions(unpublished: ReadonlySet<string>): AdmissionC
       !source.sections.history.trim() || !source.sections.exam.trim() || !source.sections.tests.trim() ||
       !source.sections.diagnosis.trim() || !source.sections.plan.trim())) return [];
     return [{ caseId: resolveCaseId(profile.id), sourceId: getTeacherSourceId(resolveCaseId(profile.id)) }];
+  });
+}
+
+// 随机抽取前先滤除资料不足病例，把 OSCE/专项的可评分守卫前移，避免学生抽中后才死路（CASE_INSUFFICIENT）。
+export function scorableAdmissions(candidates: AdmissionCandidate[]): AdmissionCandidate[] {
+  return candidates.filter(candidate => {
+    try {
+      return isScorableCase(getPublicCase(candidate.caseId));
+    } catch {
+      return false;
+    }
   });
 }
 

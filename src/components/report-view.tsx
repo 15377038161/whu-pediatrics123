@@ -1,6 +1,6 @@
 import { ArrowRight, BookOpenCheck, CheckCircle2, CircleAlert, ClipboardPen, ListChecks, RotateCcw } from 'lucide-react';
 import type { CSSProperties } from 'react';
-import type { TrainingReport } from '@/domain/agent';
+import type { PracticeFocus, TrainingReport } from '@/domain/agent';
 import { findPublicCase } from '@/domain/case-catalog';
 import { RandomAdmission } from '@/components/random-admission';
 import { ExpandableNote } from '@/components/expandable-note';
@@ -33,10 +33,33 @@ interface FocusItem {
   title: string;
   level: FocusLevel;
   stage: string | null;
+  dimension: DimensionKey | null;
   scoreText: string | null;
   conclusion: string;
   advice: string;
   lost: number;
+}
+
+// 六维里只有四项存在对应专项；临床推理与职业素养没有专项，不带 focus 以免把学生送进不相干的训练。
+const practiceFocusByDimension: Partial<Record<DimensionKey, PracticeFocus>> = {
+  history: 'history',
+  examination: 'exam',
+  safety: 'safety',
+  communication: 'communication',
+};
+
+/**
+ * 「去做专项补练」深链：带上原病例与最该补的那一项，专项页据此高亮对应卡片并深链回同一例，
+ * 学生不必自己找是哪个病例、练哪一项（此前该按钮指向裸 /student/practice，两个信息全丢）。
+ * dimensions 按报告排名从高到低传入，取第一个存在对应专项的维度；全都没有就只带病例。
+ * 纯函数：ReportView 在非 readonly 下会渲染 RandomAdmission（客户端 useRouter），
+ * SSR 标记测试无法直接渲染，深链规则只能从这里单独校验。
+ */
+export function practiceDeepLink(caseId: string, dimensions: ReadonlyArray<DimensionKey | null>): string {
+  const focus = dimensions
+    .map((dimension) => (dimension ? practiceFocusByDimension[dimension] : undefined))
+    .find((candidate): candidate is PracticeFocus => Boolean(candidate));
+  return `/student/practice?case=${encodeURIComponent(caseId)}${focus ? `&focus=${focus}` : ''}`;
 }
 
 // 报告证据项没有环节字段，环节只能由既有维度字段映射（六维与接诊环节一一对应）。
@@ -155,6 +178,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         title: text,
         level: 'suggest',
         stage: stageLabels.history,
+        dimension: 'history',
         scoreText: record && record.available > 0 ? `${record.collected}/${record.available}` : null,
         conclusion: `本例资料里「${label}」确有对应记录，本次病史摘要尚未覆盖；该项只核对采集覆盖，不加减分。`,
         advice: `下次围绕“${label}”补充追问，并在摘要中记录实际问到的信息。`,
@@ -169,6 +193,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         title: text,
         level: 'suggest',
         stage: null,
+        dimension: null,
         scoreText: null,
         conclusion: '本项在报告快照中没有对应的评分证据，明细区只保留原文。',
         advice: '下次训练对照「全部明细」中的评分证据与提交原文复核该项。',
@@ -190,6 +215,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
       title: text,
       level,
       stage,
+      dimension,
       scoreText,
       conclusion,
       advice: evidence.status === 'incorrect' && rubricItem && rubricItem.feedback !== conclusion
@@ -204,6 +230,8 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
     .sort((left, right) => focusLevels[left.level].rank - focusLevels[right.level].rank || right.lost - left.lost);
   const focusItems = rankedFocusItems.slice(0, 3);
   const hiddenFocusCount = rankedFocusItems.length - focusItems.length;
+  // 「去做专项补练」深链规则见 practiceDeepLink：病例 + 排名最高且有对应专项的那一项。
+  const practiceHref = practiceDeepLink(report.caseId, rankedFocusItems.map((item) => item.dimension));
   return (
     <div>
       <section className="report-hero">
@@ -257,7 +285,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         <h2><BookOpenCheck size={18} style={{ verticalAlign: -4, marginRight: 6 }} />下一步补练</h2>
         <p>{report.recommendation}</p>
         {report.strengths.length > 0 && <p><strong>{processReport ? '本轮已完成：' : '已经掌握：'}</strong>{report.strengths.join('、')}</p>}
-        {!readonly && <div className="report-actions"><RandomAdmission excludeCaseId={report.caseId} label="接诊下一位患儿" /><a className="btn btn-secondary" href={`/student/notes/${encodeURIComponent(report.sessionId)}`}><ClipboardPen size={16} /> 书写病历</a><a className="btn btn-primary" href="/student/practice"><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={retryHref}>{report.mode === 'practice' && report.practiceFocus ? '重练本专项' : '再练一次'} <ArrowRight size={14} /></a></div>}
+        {!readonly && <div className="report-actions"><RandomAdmission excludeCaseId={report.caseId} label="接诊下一位患儿" /><a className="btn btn-secondary" href={`/student/notes/${encodeURIComponent(report.sessionId)}`}><ClipboardPen size={16} /> 书写病历</a><a className="btn btn-primary" href={practiceHref}><RotateCcw size={16} /> 去做专项补练</a><a className="text-link" href={retryHref}>{report.mode === 'practice' && report.practiceFocus ? '重练本专项' : '再练一次'} <ArrowRight size={14} /></a></div>}
       </section>
       <details style={ui.details}>
         <summary style={ui.summary}>

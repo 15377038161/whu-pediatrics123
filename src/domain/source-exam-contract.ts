@@ -1,14 +1,23 @@
 import { z } from 'zod';
 
-/** Neutral anatomy is independent of the selected tool and of a case's answer matrix. */
+/** Neutral anatomy is independent of the selected tool and of a case's answer matrix.
+ *  旧部位 id 一律不改名：在飞会话的 unlockedEvidence 与已存报告快照按原证据码读取。 */
 export const EXAM_LOCATIONS = [
-  ['forehead','头面'], ['mouth','口咽'], ['neck','颈部'], ['chest','胸部'],
-  ['upper-arm','上臂'], ['skin','皮肤'], ['abdomen','腹部'], ['finger','手指'], ['hands','双手'], ['limbs','四肢'],
+  ['forehead','头面前囟'], ['eyes','眼与结膜'], ['ears','耳'], ['nose','鼻'], ['mouth','口咽'], ['neck','颈部'], ['lymph-nodes','浅表淋巴结'],
+  ['chest','胸廓胸壁'], ['chest-lung','肺野'], ['chest-heart','心前区'], ['breast','乳房'],
+  ['abdomen','腹部'], ['liver-spleen','肝脾'], ['groin','腹股沟'],
+  ['limbs','四肢'], ['joints','关节'], ['spine','脊柱'], ['neuro','神经系统'],
+  ['skin','皮肤'], ['general-state','一般状态'], ['nails','指甲'],
+  ['upper-arm','上臂'], ['finger','手指'], ['hands','双手'],
 ] as const;
-export const SOURCE_EXAM_TOOL_IDS = ['stethoscope','thermometer','oximeter','bp-cuff','tongue-depressor','flashlight','inspection','palpation','percussion','reflex-hammer'] as const;
+export type ExamLocationId = (typeof EXAM_LOCATIONS)[number][0];
+const [firstLocation, ...restLocations] = EXAM_LOCATIONS.map(([id]) => id);
+/** 由 EXAM_LOCATIONS 派生，避免再维护一份会漂移的部位字面量清单。 */
+export const EXAM_LOCATION_IDS: [ExamLocationId, ...ExamLocationId[]] = [firstLocation, ...restLocations];
+export const SOURCE_EXAM_TOOL_IDS = ['stethoscope','thermometer','oximeter','bp-cuff','tongue-depressor','flashlight','otoscope','measuring-tape','inspection','palpation','percussion','reflex-hammer'] as const;
 export const sourceExamRuleSchema = z.object({
   toolId: z.enum(SOURCE_EXAM_TOOL_IDS),
-  bodyPartId: z.enum(['forehead','mouth','neck','chest','upper-arm','skin','abdomen','finger','hands','limbs']),
+  bodyPartId: z.enum(EXAM_LOCATION_IDS),
   label: z.string().trim().min(1).max(80),
   result: z.string().trim().min(1).max(5000),
   postures: z.array(z.enum(['standing','supine'])).min(1).max(2),

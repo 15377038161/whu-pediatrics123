@@ -377,56 +377,49 @@ textarea { resize: vertical; }
 /* 婴儿素材为512×512方图；按实际画布定位，避免套用竖版儿童容器产生留白及热区错位。 */
 .patient-stage[data-avatar="newborn-boy"] .patient-figure,
 .patient-stage[data-avatar="newborn-girl"] .patient-figure { aspect-ratio: 1; }
-.patient-stage[data-avatar="newborn-boy"], .patient-stage[data-avatar="newborn-girl"] { --hs-supine-forehead: 25%; --hs-supine-mouth: 32%; --hs-supine-neck: 37%; --hs-supine-chest: 43%; --hs-supine-arm: 45%; --hs-supine-skin: 46%; --hs-supine-abdomen: 53%; --hs-supine-finger: 54%; --hs-supine-hands: 54%; --hs-supine-limbs: 65%; }
-.patient-stage[data-posture="supine"] .hotspot-forehead { top: var(--hs-supine-forehead, 12%); }
-.patient-stage[data-posture="supine"] .hotspot-mouth { top: var(--hs-supine-mouth, 22%); }
-.patient-stage[data-posture="supine"] .hotspot-neck { top: var(--hs-supine-neck, 27%); }
-.patient-stage[data-posture="supine"] .hotspot-chest { top: var(--hs-supine-chest, 36%); }
-.patient-stage[data-posture="supine"] .hotspot-arm { top: var(--hs-supine-arm, 43%); }
-.patient-stage[data-posture="supine"] .hotspot-skin { top: var(--hs-supine-skin, 27%); }
-.patient-stage[data-posture="supine"] .hotspot-abdomen { top: var(--hs-supine-abdomen, 45%); }
-.patient-stage[data-posture="supine"] .hotspot-finger { top: var(--hs-supine-finger, 55%); }
-.patient-stage[data-posture="supine"] .hotspot-hands { top: var(--hs-supine-hands, 55%); }
-.patient-stage[data-posture="supine"] .hotspot-limbs { top: var(--hs-supine-limbs, 70%); }
 /* 2026-10-23 独立项 C：幼儿/学龄/青少年分档素材为 832×1216（与既有学龄前 957×1644 不同），
-   按 data-avatar 覆盖容器比例，contain 下无 letterbox，热点容器百分比=图像百分比。 */
+   按 data-avatar 覆盖容器比例，contain 下无 letterbox。 */
 .patient-stage[data-avatar="toddler-boy"] .patient-figure, .patient-stage[data-avatar="toddler-girl"] .patient-figure,
 .patient-stage[data-avatar="school-boy"] .patient-figure, .patient-stage[data-avatar="school-girl"] .patient-figure,
 .patient-stage[data-avatar="adolescent-boy"] .patient-figure, .patient-stage[data-avatar="adolescent-girl"] .patient-figure { aspect-ratio: 832/1216; }
-/* 分档素材热点按 read_image 实测解剖位置逐 avatar 标定（outputs/case-library-review/20261023/
-   asset-identity-check-20261023.md），同栏相邻按钮纵向间距 ≥5% 防重叠；--hs-* 为站姿，
-   --hs-supine-* 为仰卧。 */
-.patient-stage[data-avatar="toddler-boy"] { --hs-forehead: 21%; --hs-mouth: 28%; --hs-neck: 33%; --hs-chest: 40%; --hs-arm: 53%; --hs-skin: 33%; --hs-abdomen: 51%; --hs-finger: 59%; --hs-hands: 58%; --hs-limbs: 70%; --hs-supine-forehead: 19%; --hs-supine-mouth: 26%; --hs-supine-neck: 31%; --hs-supine-chest: 34%; --hs-supine-arm: 41%; --hs-supine-skin: 28%; --hs-supine-abdomen: 41%; --hs-supine-finger: 48%; --hs-supine-hands: 47%; --hs-supine-limbs: 59%; }
-.patient-stage[data-avatar="toddler-girl"] { --hs-forehead: 20%; --hs-mouth: 28%; --hs-neck: 33%; --hs-chest: 39%; --hs-arm: 55%; --hs-skin: 32%; --hs-abdomen: 51%; --hs-finger: 61%; --hs-hands: 60%; --hs-limbs: 73%; --hs-supine-forehead: 16%; --hs-supine-mouth: 24%; --hs-supine-neck: 29%; --hs-supine-chest: 33%; --hs-supine-arm: 46%; --hs-supine-skin: 27%; --hs-supine-abdomen: 41%; --hs-supine-finger: 54%; --hs-supine-hands: 52%; --hs-supine-limbs: 65%; }
-.patient-stage[data-avatar="school-boy"] { --hs-forehead: 10%; --hs-mouth: 16%; --hs-neck: 21%; --hs-chest: 28%; --hs-arm: 48%; --hs-skin: 22%; --hs-abdomen: 41%; --hs-finger: 55%; --hs-hands: 54%; --hs-limbs: 68%; --hs-supine-forehead: 17%; --hs-supine-mouth: 22%; --hs-supine-neck: 27%; --hs-supine-chest: 31%; --hs-supine-arm: 43%; --hs-supine-skin: 25%; --hs-supine-abdomen: 38%; --hs-supine-finger: 49%; --hs-supine-hands: 48%; --hs-supine-limbs: 60%; }
-.patient-stage[data-avatar="school-girl"] { --hs-forehead: 14%; --hs-mouth: 21%; --hs-neck: 26%; --hs-chest: 32%; --hs-arm: 50%; --hs-skin: 25%; --hs-abdomen: 43%; --hs-finger: 57%; --hs-hands: 56%; --hs-limbs: 67%; --hs-supine-forehead: 12%; --hs-supine-mouth: 18%; --hs-supine-neck: 23%; --hs-supine-chest: 27%; --hs-supine-arm: 43%; --hs-supine-skin: 21%; --hs-supine-abdomen: 34%; --hs-supine-finger: 50%; --hs-supine-hands: 48%; --hs-supine-limbs: 62%; }
-.patient-stage[data-avatar="adolescent-boy"] { --hs-forehead: 11%; --hs-mouth: 16%; --hs-neck: 21%; --hs-chest: 28%; --hs-arm: 50%; --hs-skin: 21%; --hs-abdomen: 42%; --hs-finger: 57%; --hs-hands: 56%; --hs-limbs: 69%; --hs-supine-forehead: 10%; --hs-supine-mouth: 15%; --hs-supine-neck: 20%; --hs-supine-chest: 23%; --hs-supine-arm: 38%; --hs-supine-skin: 17%; --hs-supine-abdomen: 30%; --hs-supine-finger: 45%; --hs-supine-hands: 44%; --hs-supine-limbs: 52%; }
-.patient-stage[data-avatar="adolescent-girl"] { --hs-forehead: 11%; --hs-mouth: 16%; --hs-neck: 21%; --hs-chest: 28%; --hs-arm: 49%; --hs-skin: 21%; --hs-abdomen: 42%; --hs-finger: 56%; --hs-hands: 55%; --hs-limbs: 68%; --hs-supine-forehead: 11%; --hs-supine-mouth: 16%; --hs-supine-neck: 21%; --hs-supine-chest: 26%; --hs-supine-arm: 41%; --hs-supine-skin: 20%; --hs-supine-abdomen: 35%; --hs-supine-finger: 48%; --hs-supine-hands: 46%; --hs-supine-limbs: 61%; }
 .posture-selector { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-block: 14px; }
 .posture-selector [aria-pressed="true"] { background: var(--ink); color: var(--paper, #fffdf8); }
 .posture-selector small { color: var(--muted); }
 .patient-breath { transform-origin: center; animation: breathing 1.15s ease-in-out infinite; }
-.hotspot { position: absolute; min-width: 62px; min-height: 44px; border: 1px solid rgba(23,60,60,.25); border-radius: 999px; background: rgba(255,253,248,.94); color: var(--ink); box-shadow: 0 6px 16px rgba(23,60,60,.12); font-size: 12px; font-weight: 800; backdrop-filter: blur(7px); }
-.hotspot span { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--brick); box-shadow: 0 0 0 4px rgba(170,73,58,.14); }
-.hotspot::after { content: ""; position: absolute; top: 50%; width: 32px; border-top: 1px solid rgba(23,60,60,.5); }
-.hotspot:hover, .hotspot:focus-visible { border-color: var(--brick); color: var(--brick); transform: translateY(-1px); }
-.hotspot:disabled { opacity: .55; }
-.hotspot[data-observed="success"] { color: #064d43; border-color: #75c9ad; background: #effbf6; box-shadow: 0 0 0 7px rgba(72,177,141,.16), 0 7px 18px rgba(23,60,60,.18); animation: observed-pulse 1.15s ease-out 2; }
-.hotspot[data-observed="blocked"] { color: #7d3930; border-color: #eba99e; background: #fff1ee; animation: observed-shake .34s ease-in-out; }
-.hotspot-forehead, .hotspot-mouth, .hotspot-neck, .hotspot-arm, .hotspot-hands { left: 3%; }
-.hotspot-chest, .hotspot-finger, .hotspot-skin, .hotspot-abdomen, .hotspot-limbs { right: 3%; }
-.hotspot-forehead { top: var(--hs-forehead, 12%); }
-.hotspot-mouth { top: var(--hs-mouth, 21%); }
-.hotspot-neck { top: var(--hs-neck, 28%); }
-.hotspot-chest { top: var(--hs-chest, 38%); }
-.hotspot-arm { top: var(--hs-arm, 44%); }
-.hotspot-finger { top: var(--hs-finger, 56%); }
-.hotspot-hands { top: var(--hs-hands, 58%); }
-.hotspot-skin { top: var(--hs-skin, 29%); }
-.hotspot-abdomen { top: var(--hs-abdomen, 47%); }
-.hotspot-limbs { top: var(--hs-limbs, 66%); }
-.hotspot-forehead::after, .hotspot-mouth::after, .hotspot-neck::after, .hotspot-arm::after, .hotspot-hands::after { left: 100%; }
-.hotspot-chest::after, .hotspot-finger::after, .hotspot-skin::after, .hotspot-abdomen::after, .hotspot-limbs::after { right: 100%; }
+/* 查体两级选位：常驻 6 个大区贴边，点开后就地放射出该区子部位（24 个部位平铺必然互相压住）。
+   锚点百分比、弧心角、半径、按钮尺寸全部来自 src/domain/exam-regions.ts 的同一组常量，
+   tests/exam-regions.test.ts 已按真实图框尺寸逐档校验「不越界 / 不重叠 / 不压住触发器」；
+   这里只负责把这套几何画出来，改任一侧都必须同步另一侧，否则单测与实机渲染会分家。 */
+.exam-region { position: absolute; z-index: 3; height: 44px; }
+/* 展开的那个大区连同扇形抬到最上层：查体反馈卡（z-index 4）与人物背景面板（z-index 6）都不能挡住正在点的子部位。 */
+.exam-region[data-open] { z-index: 8; }
+.exam-region-trigger { width: 100%; height: 100%; display: inline-flex; align-items: center; gap: 5px; padding: 0 7px; border: 1px solid rgba(23,60,60,.28); border-radius: 999px; background: rgba(255,253,248,.95); color: var(--ink); box-shadow: 0 6px 16px rgba(23,60,60,.14); font-size: 11px; font-weight: 800; line-height: 1.15; white-space: nowrap; backdrop-filter: blur(7px); cursor: pointer; }
+.exam-region-trigger span { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--brick); box-shadow: 0 0 0 4px rgba(170,73,58,.14); }
+.exam-region-trigger:hover, .exam-region-trigger:focus-visible { border-color: var(--brick); color: var(--brick); }
+.exam-region-trigger:disabled { opacity: .55; cursor: progress; }
+.exam-region-trigger[data-observed="success"] { border-color: #75c9ad; background: #effbf6; color: #064d43; animation: observed-pulse 1.15s ease-out 2; }
+.exam-region-trigger[data-observed="success"] span { background: var(--pine); box-shadow: 0 0 0 4px rgba(72,177,141,.18); }
+.exam-region-trigger[data-observed="blocked"] { border-color: #eba99e; background: #fff1ee; color: #7d3930; animation: observed-shake .34s ease-in-out; }
+.exam-region[data-open] .exam-region-trigger { border-color: var(--brick); color: var(--brick); background: #fff; }
+/* 扇形原点 = 大区按钮中心（.exam-region 宽 76px 高 44px，与 domain 的 regionAnchor 逐项对齐）。 */
+.exam-region-fan { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.exam-fan-item { position: absolute; left: 0; top: 0; height: 44px; min-width: 48px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #9bcfbd; border-radius: 999px; background: rgba(255,253,248,.97); color: var(--pine-dark); box-shadow: 0 8px 18px rgba(23,60,60,.18); font-size: 11px; font-weight: 800; white-space: nowrap; cursor: pointer; transform: translate(-50%,-50%) rotate(var(--fan-angle)) translate(var(--fan-r)) rotate(calc(var(--fan-angle) * -1)); animation: fan-item-in .18s ease-out backwards; }
+.exam-fan-item:hover, .exam-fan-item:focus-visible { border-color: var(--brick); color: var(--brick); }
+.exam-fan-item:disabled { opacity: .55; cursor: progress; }
+/* 扇形按钮的定位全靠 transform，不能套 observed-pulse/shake（它们改 transform 会把按钮拉回原点）。 */
+.exam-fan-item[data-observed="success"] { border-color: #75c9ad; background: #effbf6; color: #064d43; animation: fan-observed-pulse 1.15s ease-out 2; }
+.exam-fan-item[data-observed="blocked"] { border-color: #eba99e; background: #fff1ee; color: #7d3930; }
+/* 展开一个大区时其余大区淡出但未遮住处仍可点，可直接切换而不用先收起。
+   扇形按钮偶尔会盖住某颗淡出的大区按钮（tests/exam-regions.test.ts 把这个数量锁成棘轮），
+   此时上层按钮 z-index 更高、自带部位名，点到的就是它显示的那个部位，不会静默走成另一项。 */
+.patient-figure[data-fan-open] .exam-region:not([data-open]) { opacity: .38; }
+/* 图框窄到扇形放不下时（小窗桌面），宁可让按钮探出图框也不能被 overflow:hidden 裁成点不到；
+   探出的余量上限就是 .patient-stage 的内边距（上 10–14px、下 60–78px），与 exam-regions 的
+   STAGE_TOP_SLACK/STAGE_BOTTOM_SLACK 同源，超出舞台仍会被裁掉。 */
+/* container-type 只在展开时挂上：扇形半径用 cqw 按图框宽度同比缩放（固定 px 是窄图框下
+   按钮横穿中线、压住对侧大区的根因），未展开的图框不引入 inline-size 容器以免波及观察模式。 */
+.patient-figure[data-fan-open] { overflow: visible; container-type: inline-size; }
+.patient-figure[data-fan-open] .patient-photo, .patient-figure[data-fan-open] .patient-unspecified { border-radius: 20px; }
 .patient-caption { position: absolute; bottom: 13px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 11px; background: rgba(255,253,248,.9); font-size: 12px; backdrop-filter: blur(10px); }
 .exam-observation { position: absolute; z-index: 4; left: 18px; right: 18px; bottom: 58px; padding: 12px; overflow: hidden; border: 1px solid #b9dfd0; border-radius: 15px; background: rgba(240,251,246,.96); box-shadow: 0 14px 32px rgba(23,94,79,.2); backdrop-filter: blur(14px); animation: observation-in .3s ease-out; }
 .exam-observation[data-status="blocked"] { border-color: #efb9ae; background: rgba(255,244,241,.97); }
@@ -441,8 +434,12 @@ textarea { resize: vertical; }
 .exam-observation-head button svg { width: 16px; }
 .exam-observation-detail { margin: 9px 0 5px; color: #183f3a; font-size: 13px; line-height: 1.65; font-weight: 700; }
 .exam-observation[data-status="blocked"] .exam-observation-detail { color: #74352f; }
-.exam-observation-note { display: block; color: #70827e; font-size: 9px; line-height: 1.5; }
-.exam-observation-note a { color: var(--pine-dark); text-decoration: underline; text-underline-offset: 2px; }
+/* 第二层「通用要领」：客户端静态查表，永远带未审核徽标，不进会话事件/报告快照/评分证据链。 */
+.exam-technique-note { margin-top: 9px; padding-top: 8px; border-top: 1px dashed #b9dfd0; display: grid; gap: 5px; }
+.exam-observation[data-status="blocked"] .exam-technique-note { border-top-color: #efb9ae; }
+.exam-technique-badge { justify-self: start; padding: 2px 7px; border-radius: 999px; background: #e6eee9; color: #5b6d64; font-size: 9px; font-weight: 800; letter-spacing: .02em; }
+.exam-technique-note p { margin: 0; display: grid; gap: 1px; color: #52665f; font-size: 11px; line-height: 1.6; }
+.exam-technique-note strong { color: #2f4c46; font-size: 10px; font-weight: 800; }
 .exam-auscultation { height: 34px; margin: 9px 0 2px; padding: 0 10px; display: flex; gap: 6px; align-items: center; border-radius: 10px; color: #2b8e78; background: rgba(255,255,255,.72); }
 .exam-auscultation svg { width: 17px; flex: 0 0 auto; }
 .exam-auscultation span { width: 3px; height: 9px; border-radius: 3px; background: #55af98; animation: lung-wave 1.05s ease-in-out infinite; }
@@ -605,6 +602,12 @@ textarea { resize: vertical; }
 .practice-card-details { display: grid; gap: 6px; margin-top: 12px; }
 .practice-card-details p { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 6px; line-height: 1.55; }
 .practice-card-details strong { color: var(--pine-dark); font-size: 12px; }
+/* 卡片既可能是深链（带 ?case=）也可能是随机抽例按钮，两种形态共用一套卡片样式。 */
+.practice-card-slot { display: grid; gap: 8px; align-content: start; }
+.practice-card-slot[data-active] .practice-card { border-color: var(--pine); box-shadow: inset 4px 0 0 var(--pine), var(--shadow-soft); }
+.practice-card-button { width: 100%; font: inherit; text-align: left; cursor: pointer; }
+.practice-card-button:disabled { opacity: .62; cursor: progress; transform: none; }
+.practice-card-error { margin: 0; color: #9b3c31; font-size: 13px; }
 .osce-hero { display: grid; gap: 22px; align-items: center; }
 .osce-station-bar { min-height: 70px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid #cbe4da; border-radius: 17px; background: rgba(255,255,255,.72); box-shadow: inset 4px 0 0 var(--pine); backdrop-filter: blur(10px); }
 .osce-station-bar > div:first-child { display: grid; gap: 2px; }
@@ -644,6 +647,9 @@ textarea { resize: vertical; }
 @keyframes observed-pulse { 50% { transform: scale(1.06); box-shadow: 0 0 0 13px rgba(72,177,141,.05), 0 7px 18px rgba(23,60,60,.18); } }
 @keyframes observed-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 @keyframes observation-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+/* 扇形按钮的 transform 已被用来定位，进场与命中反馈只能动 opacity/box-shadow。 */
+@keyframes fan-item-in { from { opacity: 0; } }
+@keyframes fan-observed-pulse { 50% { box-shadow: 0 0 0 9px rgba(72,177,141,.16), 0 8px 18px rgba(23,60,60,.18); } }
 @keyframes drawer-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes lung-wave { 50% { transform: scaleY(.35); opacity: .45; } }
 
@@ -1068,14 +1074,10 @@ textarea { resize: vertical; }
 .training-shell .patient-background { z-index:6; }
 .training-shell .exam-observation { max-height:42%; overflow-y:auto; }
 .training-shell .patient-caption { padding:8px; font-size:10px; }
-.training-shell .hotspot { min-width:54px; min-height:34px; font-size:11px; background:rgba(255,253,248,.9); }
-.training-shell .hotspot span { background:#75958a; box-shadow:none; width:6px; height:6px; }
-.training-shell .hotspot-neck { top:29%; }
-.training-shell .hotspot-arm { top:43%; }
-.training-shell .hotspot-hands { top:66%; }
-.training-shell .hotspot-finger { top:57%; }
-.training-shell .hotspot-skin { top:26%; }
-.training-shell .hotspot-limbs { top:73%; }
+/* 工作台里患儿图更窄，但大区/扇形按钮一律保持 44px 点击目标不缩小：exam-regions 的几何校验就是按
+   44px 算的，旧热区在工作台被压到 min-height:34px 正是相邻按钮互相重叠、手机误触的直接原因。
+   图框窄到扇形放不下时由 .patient-figure[data-fan-open]{overflow:visible} 让按钮探出图框兜底。 */
+.training-shell .exam-region-trigger { background: rgba(255,253,248,.92); }
 .training-shell .test-order-form { padding:18px; border:1px solid #dce8e1; border-radius:16px; background:#f5faf6; margin-bottom:20px; }
 .training-shell .tests-intro h2 { font-size:24px; }
 .training-shell .test-order-form textarea { min-height:110px; background:#fff; }

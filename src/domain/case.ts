@@ -338,7 +338,13 @@ export function identifyHistoryIntents(caseId: string, question: string, version
 }
 
 export function findExamRule(caseId: string, toolId: string, bodyPartId: string, version?: string | null, sessionId?: string | null): ExamRule | null {
-  return getCase(caseId, version, sessionId).exams.find((item) => item.toolId === toolId && item.bodyPartId === bodyPartId) ?? null;
+  const exams = getCase(caseId, version, sessionId).exams;
+  const exact = exams.find((item) => item.toolId === toolId && item.bodyPartId === bodyPartId);
+  if (exact) return exact;
+  // 肺/心听诊拆分后，改造前已开始、浏览器仍持旧 JS 的在飞会话还会发 stethoscope×chest；
+  // 不回退就会得到「本病例资料未提供」的误导提示（本例其实有肺部听诊记录）。
+  if (toolId === 'stethoscope' && bodyPartId === 'chest') return exams.find((item) => item.toolId === 'stethoscope' && item.bodyPartId === 'chest-lung') ?? null;
+  return null;
 }
 
 export function findTest(caseId: string, testId: string, version?: string | null, sessionId?: string | null): AuxiliaryTest | null {

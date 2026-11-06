@@ -23,8 +23,10 @@ export interface OsceTechnicalInterruptionPolicy {
 export interface OsceStation {
   stationId: string;
   version: number;
-  caseId: string;
-  caseVersion: number;
+  /** 绑定病例；null 表示站点不绑定具体病例（会话创建时随机抽取）。 */
+  caseId: string | null;
+  /** 绑定病例版本；null 表示站点不绑定具体病例（会话创建时随机抽取）。 */
+  caseVersion: number | null;
   title: string;
   /** 能力目标（开始前展示）。 */
   capabilityGoals: string[];
@@ -42,9 +44,6 @@ export interface OsceStation {
 }
 
 export const OSCE_STATION_CONFIG_VERSION = 1;
-
-/** 教师病例/历史病例的 OSCE 会话未定义专用站点时的默认时限（保持旧 8 分钟行为）。 */
-export const DEFAULT_OSCE_TIME_LIMIT_SECONDS = 480;
 
 export const osceStations: OsceStation[] = [
   {
@@ -83,14 +82,59 @@ export const osceStations: OsceStation[] = [
   },
 ];
 
+/**
+ * 随机病例 OSCE 站：OSCE 由「固定一病例」改为「系统随机抽取目录病例」，
+ * 随机抽取无法绑定具体 caseId/caseVersion，站点契约与病例解耦。
+ */
+export const RANDOM_OSCE_STATION: OsceStation = {
+  stationId: 'osce-station-random',
+  version: 1,
+  caseId: null,
+  caseVersion: null,
+  title: '随机病例闭卷模拟站',
+  capabilityGoals: [
+    '结构化采集儿科病史，覆盖危险信号与一般状态',
+    '按「器材 × 部位」逻辑完成规范体格检查',
+    '基于已获得的记录形成病情摘要、初步诊断与鉴别诊断',
+    '确定处置优先级，并向家长说明风险与后续安排',
+  ],
+  timeLimitSeconds: 900,
+  allowedActions: [
+    'ASK_QUESTION',
+    'DOCTOR_INTERVENTION',
+    'EXAM_ACTION',
+    'ORDER_TEST',
+    'SUBMIT_DECISION',
+    'SUBMIT_PLAN',
+    'SEND_COMMUNICATION',
+    'NAVIGATE_STAGE',
+    'FINISH_SESSION',
+  ],
+  requiredStages: ['history', 'exam', 'tests', 'assessment', 'plan', 'communication'],
+  rubricId: 'rubric-clinical-flagship',
+  rubricVersion: 1,
+  technicalInterruptionPolicy: {
+    pausesTimerOnInterruption: false,
+    expiryAction: 'freeze',
+    recordsTechnicalInterruptions: true,
+  },
+  ready: true,
+};
+
 export function getOsceStation(caseId: string): OsceStation | null {
   // 站点定义绑定 caseId；同病例不同版本快照仍属同一站点。
   return osceStations.find((station) => station.caseId === caseId) ?? null;
 }
 
+/** 会话用站点解析：有绑定站点用绑定的（历史会话仍可精确匹配），否则落到随机站。 */
+export function resolveOsceStation(caseId: string): OsceStation {
+  return getOsceStation(caseId) ?? RANDOM_OSCE_STATION;
+}
+
 /** 可用站点列表（页面展示用）：只有 ready 站点可作为可用站点发布（方案 15）。 */
 export function listReadyStations(): OsceStation[] {
-  return osceStations.filter((station) => station.ready);
+  // 随机站不绑定病例，始终处于已发布状态。
+  return [...osceStations, RANDOM_OSCE_STATION].filter((station) => station.ready);
 }
 
 /** 时限展示（mm:ss），页面与服务端共用同一格式。 */

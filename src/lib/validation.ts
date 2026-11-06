@@ -1,17 +1,20 @@
 import { z } from 'zod';
+import { PRACTICE_FOCUS_VALUES } from '@/domain/agent';
 
 const stage = z.enum(['triage', 'history', 'exam', 'tests', 'assessment', 'plan', 'communication', 'report']);
 
 export const createSessionSchema = z.object({
   mode: z.enum(['guided', 'practice', 'osce', 'immersive']),
   caseId: z.string().trim().min(1).max(160).optional(),
-  focus: z.enum(['history', 'exam', 'safety', 'communication']).optional(),
+  focus: z.enum(PRACTICE_FOCUS_VALUES).optional(),
   random: z.boolean().optional(),
   excludeCaseId: z.string().trim().min(1).max(160).optional(),
   allowRepeat: z.boolean().optional(),
   clientRequestId: z.string().uuid().optional(),
 }).strict().superRefine((value, context) => {
-  if (value.random && (value.caseId || !value.clientRequestId || !['guided', 'immersive'].includes(value.mode))) context.addIssue({ code: 'custom', message: '随机接诊需请求标识且不能指定病例或考核模式' });
+  // 四种模式都允许服务端随机抽例：专项与 OSCE 的入口不再自带 caseId，
+  // 否则默认病例指向已退役合成旗舰，两个入口 100% 抛 CASE_NOT_FOUND。
+  if (value.random && (value.caseId || !value.clientRequestId)) context.addIssue({ code: 'custom', message: '随机接诊需请求标识且不能同时指定病例' });
   if (!value.random && (value.excludeCaseId || value.allowRepeat)) context.addIssue({ code: 'custom', message: '排除与重练参数仅适用于随机接诊' });
 });
 

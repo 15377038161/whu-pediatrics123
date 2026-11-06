@@ -11,7 +11,7 @@ import { assertCasePublishedForNewSession } from '@/lib/case-publication';
 import { isScorableCase } from '@/domain/case-classification';
 import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
 import { CASE_INDEX_NUMBER, TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
-import { eligibleAdmissions, selectAdmission } from '@/lib/case-admission';
+import { eligibleAdmissions, scorableAdmissions, selectAdmission } from '@/lib/case-admission';
 import { getUnpublishedCaseIds } from '@/lib/case-publication';
 import { creationSessionId, creationFingerprint, type SessionCreationOptions } from '@/lib/session-creation';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -308,8 +308,11 @@ export class AgentRepository {
         if (!(error instanceof Error && error.message === 'SESSION_NOT_FOUND')) throw error;
       }
     }
+    const admissionPool = eligibleAdmissions(await getUnpublishedCaseIds(this.actor.accessToken));
+    // 专项/OSCE 的可评分守卫前移：抽例前就滤掉资料不足病例，学生不会抽中后才被 CASE_INSUFFICIENT 打回死路。
+    // 随机性不变（不做定向指派），guided/immersive 沿用全量池以保留历史行为。
     const caseId = options.random
-      ? selectAdmission(eligibleAdmissions(await getUnpublishedCaseIds(this.actor.accessToken)), options.excludeCaseId, options.allowRepeat)
+      ? selectAdmission(options.mode === 'practice' || options.mode === 'osce' ? scorableAdmissions(admissionPool) : admissionPool, options.excludeCaseId, options.allowRepeat)
       : options.caseId;
     try {
       const created = await this.createSession(options.mode, caseId, options.focus, id, fingerprint);

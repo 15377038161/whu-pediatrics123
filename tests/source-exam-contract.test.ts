@@ -5,7 +5,7 @@ import { computeCaseDataVersion } from '@/lib/case-data-version';
 import { buildBindingConfigForInit,buildFactsPayloadForInit } from '@/lib/teacher-case-import';
 import { registerControlledCase } from '@/lib/controlled-case-store';
 import { createInitialSession,runAgentTurn } from '@/lib/agent-engine';
-import { EXAM_LOCATIONS } from '@/domain/source-exam-contract';
+import { EXAM_LOCATIONS, sourceExamRuleSchema } from '@/domain/source-exam-contract';
 
 const bare={caseId:'teacher-川崎病',sourceName:'synthetic',sourceDocument:'fixture',age:'6岁',sex:'女',complaint:'合成测试主诉',sections:{history:'合成测试病史',exam:'',tests:'',diagnosis:'合成诊断',plan:'合成计划'},vitals:{temperature:null,heartRate:null,respiratoryRate:null,spo2:null},documents:[]};
 const rule={toolId:'palpation',bodyPartId:'abdomen',label:'合成腹部触诊',result:'仅供测试的原始片段',postures:['supine'],sourceLocator:'fixture/体检段'};
@@ -21,7 +21,9 @@ test('reviewed posture/result edits change version; private rules stay out of st
  assert.notEqual(computeCaseDataVersion({...record,examRules:[{...record.examRules![0],result:'合成修订'}]}),computeCaseDataVersion(record));
  assert.equal('examRules' in buildFactsPayloadForInit(record),false);
  assert.deepEqual(buildBindingConfigForInit(record)?.examRules,record.examRules);
- assert.equal(new Set(EXAM_LOCATIONS.map(([id])=>id)).size,10);
+ assert.equal(new Set(EXAM_LOCATIONS.map(([id])=>id)).size,24);
+ // 部位枚举必须由 EXAM_LOCATIONS 派生；再出现第二份字面量清单就会漂移。
+ assert.deepEqual([...sourceExamRuleSchema.shape.bodyPartId.options],EXAM_LOCATIONS.map(([id])=>id));
 });
 test('server blocks wrong and omitted posture before releasing a configured result',async()=>{
  const record=recordSchema.parse({...bare,examRules:[rule,{...rule,toolId:'inspection',bodyPartId:'limbs',label:'合成站立观察',postures:['standing']}]});

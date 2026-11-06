@@ -25,7 +25,7 @@ import { matchRequestedTest, splitRequestedTests } from '@/lib/test-name-matcher
 import { canChildSpeak } from '@/domain/communication-profile';
 import { resolveAuditedCommunicationProfile } from '@/lib/communication-profile-overrides';
 import { getPracticeScenario, PROVIDED_HISTORY_INTENT_IDS } from '@/domain/practice-scenarios';
-import { DEFAULT_OSCE_TIME_LIMIT_SECONDS, getOsceStation } from '@/domain/osce-stations';
+import { resolveOsceStation } from '@/domain/osce-stations';
 import { renderRoleReply } from '@/lib/role-agent';
 import { findSupplementalTest, supplementalTestDefinition, resolveTestSupplements, uniqueModalityTest, type TestSupplementInvoke } from '@/lib/test-result-supplement';
 
@@ -93,9 +93,9 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
   getPublicCase(caseId);
   const pediatricCase = getCase(caseId, sourceSnapshotVersion, sessionId);
   const startedAt = now();
-  // OSCE 时限单一来源（方案 15）：按站点契约配置设定；教师病例/历史路径未定义站点时保持默认时限。
-  const osceStation = mode === 'osce' ? getOsceStation(pediatricCase.id) : null;
-  const expiresAt = mode === 'osce' ? new Date(Date.now() + (osceStation?.timeLimitSeconds ?? DEFAULT_OSCE_TIME_LIMIT_SECONDS) * 1000).toISOString() : null;
+  // OSCE 时限单一来源（方案 15）：按站点契约配置设定；随机站不与病例绑定，教师病例也能解析出站点。
+  const osceStation = mode === 'osce' ? resolveOsceStation(pediatricCase.id) : null;
+  const expiresAt = osceStation ? new Date(Date.now() + osceStation.timeLimitSeconds * 1000).toISOString() : null;
   // 专项训练任务化（方案 5.2）：practice 模式按 focus 配置设定初始阶段、目标简报与 provided 事实；
   // 配置版本与 providedEvidence 写入会话，评分按 provided/elicited 区分来源。
   const scenario = mode === 'practice' ? getPracticeScenario(practiceFocus ?? 'history') : null;
@@ -244,9 +244,9 @@ function validateEventStage(session: SessionState, event: AgentEvent): boolean {
   }
   if (session.mode !== 'osce') return true;
   // OSCE 站点契约（方案 15）：按站点定义的 allowedActions 白名单门控；
-  // 教师病例/历史路径未定义站点时走下方阶段门控（保持旧行为）。
-  const station = getOsceStation(session.caseId);
-  if (station && !station.allowedActions.includes(event.type)) return false;
+  // 随机站不绑定病例，教师病例会话同样受白名单约束（此前 getOsceStation 恒 null，白名单形同虚设）。
+  const station = resolveOsceStation(session.caseId);
+  if (!station.allowedActions.includes(event.type)) return false;
   const order = getCase(session.caseId, session.sourceSnapshotVersion, session.id).stages.map((stage) => stage.id);
   const currentIndex = order.indexOf(session.stage);
   switch (event.type) {

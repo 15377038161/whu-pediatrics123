@@ -1,7 +1,7 @@
 import './fixtures/legacy-engine-catalog';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { selectAdmission, verifiedComplaint } from '../src/lib/case-admission';
+import { eligibleAdmissions, scorableAdmissions, selectAdmission, verifiedComplaint } from '../src/lib/case-admission';
 import { creationSessionId } from '../src/lib/session-creation';
 import { AgentRepository } from '../src/lib/repository';
 import { createSessionSchema } from '../src/lib/validation';
@@ -20,6 +20,32 @@ test('随机资格选择：零例、一例、当前病例、同源别名、多�
   assert.equal(selectAdmission([...pool, { caseId: 'other', sourceId: 'other' }], pool[0].caseId), 'other');
 });
 
+test('专项/OSCE 随机池：可评分守卫前移，取不到的病例不进池，真实目录一例都不能被误滤', () => {
+  const pool = eligibleAdmissions(new Set());
+  if (pool.length === 0) return; // 受控病例包不入库，缺件环境跳过而不是判成回归
+  const kept = scorableAdmissions([...pool, { caseId: 'no-such-case', sourceId: 'no-such-case' }]);
+  assert.equal(kept.length, pool.length, '真实目录病例被误滤会缩小随机池，最坏直接 NO_ELIGIBLE_CASE');
+  for (const candidate of pool) assert.ok(kept.includes(candidate), `${candidate.caseId} 被误滤`);
+  assert.ok(!kept.some((candidate) => candidate.caseId === 'no-such-case'), '取不到的病例进了随机池，学生抽中即 CASE_NOT_FOUND');
+  assert.deepEqual(scorableAdmissions([]), []);
+  assert.throws(() => selectAdmission(scorableAdmissions([])), /NO_ELIGIBLE_CASE/);
+});
+
+test('OSCE 随机开例走通：抽到病例、按随机站 15:00 计时、站点写进会话供门控复用', async () => {
+  const repo = new AgentRepository({ id: 'preview-osce-random', role: 'student', displayName: '合成验收学生', studentNo: null, provider: 'preview', chaoxingUid: null, accessToken: null });
+  const pool = eligibleAdmissions(new Set());
+  if (pool.length === 0) return;
+  const session = await repo.createRequestedSession({ mode: 'osce', random: true, clientRequestId: crypto.randomUUID() });
+  assert.equal(session.mode, 'osce');
+  assert.ok(session.caseId.trim().length > 0, 'osce 随机没抽到病例，入口点进去就是空会话');
+  assert.ok(pool.some((candidate) => candidate.caseId === session.caseId), `${session.caseId} 不在资格池里，说明抽例绕过了守卫`);
+  assert.equal(session.osceStation?.stationId, 'osce-station-random');
+  assert.equal(session.osceStation?.timeLimitSeconds, 900);
+  assert.ok(session.expiresAt, '没有截止时间，服务端就无法在时间到后拒绝新增临床操作');
+  const remaining = Date.parse(session.expiresAt) - Date.now();
+  assert.ok(remaining > 890_000 && remaining <= 900_000, `倒计时不是 15:00：${remaining}ms`);
+});
+
 test('接诊不补造主诉、不泄漏病种，不接受缺省占位', () => {
   const source = (complaint: string) => ({ complaint } as TeacherCaseData);
   assert.equal(verifiedComplaint(null), null);
@@ -30,7 +56,13 @@ test('接诊不补造主诉、不泄漏病种，不接受缺省占位', () => {
 
 test('创建请求：互斥参数、请求身份隔离、重试返回同一会话', async () => {
   assert.equal(createSessionSchema.safeParse({ mode: 'guided', random: true }).success, false);
-  assert.equal(createSessionSchema.safeParse({ mode: 'osce', random: true, clientRequestId: crypto.randomUUID() }).success, false);
+  // 四种模式都可服务端随机抽例（专项/OSCE 入口不再自带 caseId），但仍需请求标识、仍不得同时指定病例。
+  for (const mode of ['guided', 'practice', 'osce', 'immersive'] as const) {
+    assert.equal(createSessionSchema.safeParse({ mode, random: true, clientRequestId: crypto.randomUUID() }).success, true, mode);
+    assert.equal(createSessionSchema.safeParse({ mode, random: true }).success, false, mode);
+    assert.equal(createSessionSchema.safeParse({ mode, random: true, caseId: 'case-1', clientRequestId: crypto.randomUUID() }).success, false, mode);
+    assert.equal(createSessionSchema.safeParse({ mode, allowRepeat: true, clientRequestId: crypto.randomUUID() }).success, false, mode);
+  }
   assert.notEqual(creationSessionId('one', 'req'), creationSessionId('two', 'req'));
   const repo = new AgentRepository({ id: 'preview-admission-test', role: 'student', displayName: '合成验收学生', studentNo: null, provider: 'preview', chaoxingUid: null, accessToken: null });
   const options = { mode: 'guided' as const, caseId: 'peds-respiratory-001', clientRequestId: crypto.randomUUID() };

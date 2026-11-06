@@ -1,6 +1,9 @@
 export type AppRole = 'student' | 'teacher';
 export type SessionMode = 'guided' | 'practice' | 'osce' | 'immersive';
-export type PracticeFocus = 'history' | 'exam' | 'safety' | 'communication';
+/** 专项能力项单一来源：请求校验（lib/validation）、训练页 ?focus= 白名单与场景目录都从这里取值，
+ *  三处各写一份字面量时，漏改一处就表现为「卡片点得动、服务端静默丢弃 focus」。 */
+export const PRACTICE_FOCUS_VALUES = ['history', 'exam', 'safety', 'communication'] as const;
+export type PracticeFocus = (typeof PRACTICE_FOCUS_VALUES)[number];
 export type Stage =
   | 'triage'
   | 'history'
