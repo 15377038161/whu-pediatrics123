@@ -28,6 +28,7 @@ import { getPracticeScenario, PROVIDED_HISTORY_INTENT_IDS } from '@/domain/pract
 import { resolveOsceStation } from '@/domain/osce-stations';
 import { renderRoleReply } from '@/lib/role-agent';
 import { findSupplementalTest, supplementalTestDefinition, resolveTestSupplements, uniqueModalityTest, type TestSupplementInvoke } from '@/lib/test-result-supplement';
+import { extractVitalSigns } from '@/domain/vital-signs';
 
 /** 开单 RPC 注入缝：生产默认指向 case-snapshot 封装；仅测试注入 503/守卫拒绝失败路径，
  *  不改变业务判定与守卫逻辑（不绕过归属/版本/已下单校验）。 */
@@ -552,6 +553,13 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   session.unlockedEvidence = uniq([...session.unlockedEvidence, rule.evidenceCode]);
   if (rule.id === 'prep-hygiene') session.preparationActions = uniq([...session.preparationActions, rule.id]);
   if (rule.evidenceCode === 'EX_SPO2' && getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts === undefined) session.vitals.spo2 = 92;
+  // 实测值回写：体温/心率/呼吸/血氧等测量类查体成功后，生命体征卡片与报告跟随最新实测；
+  // 只提取结果原文中的明确数值，提取不到不改动既有记录。
+  const measuredVitals = extractVitalSigns(rule.result);
+  if (measuredVitals.temperature !== undefined) session.vitals.temperature = measuredVitals.temperature;
+  if (measuredVitals.heartRate !== undefined) session.vitals.heartRate = measuredVitals.heartRate;
+  if (measuredVitals.respiratoryRate !== undefined) session.vitals.respiratoryRate = measuredVitals.respiratoryRate;
+  if (measuredVitals.spo2 !== undefined) session.vitals.spo2 = measuredVitals.spo2;
   // 结果释放：随事件挂载该查体项绑定的病例媒体（如有；仅图核通过媒体可登记进病例配置）
   session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}：${rule.result}`, true, [rule.evidenceCode], rule.media));
   advanceStageTo(session, 'exam');

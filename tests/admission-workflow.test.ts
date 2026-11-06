@@ -1,7 +1,7 @@
 import './fixtures/legacy-engine-catalog';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { eligibleAdmissions, scorableAdmissions, selectAdmission, verifiedComplaint } from '../src/lib/case-admission';
+import { eligibleAdmissions, hasResolvableCaseSource, scorableAdmissions, selectAdmission, verifiedComplaint } from '../src/lib/case-admission';
 import { creationSessionId } from '../src/lib/session-creation';
 import { AgentRepository } from '../src/lib/repository';
 import { createSessionSchema } from '../src/lib/validation';
@@ -22,13 +22,43 @@ test('随机资格选择：零例、一例、当前病例、同源别名、多�
 
 test('专项/OSCE 随机池：可评分守卫前移，取不到的病例不进池，真实目录一例都不能被误滤', () => {
   const pool = eligibleAdmissions(new Set());
-  if (pool.length === 0) return; // 受控病例包不入库，缺件环境跳过而不是判成回归
+  assert.ok(pool.length > 0, '部署环境 localFiles=missing 时目录级资格池仍不能为空');
   const kept = scorableAdmissions([...pool, { caseId: 'no-such-case', sourceId: 'no-such-case' }]);
   assert.equal(kept.length, pool.length, '真实目录病例被误滤会缩小随机池，最坏直接 NO_ELIGIBLE_CASE');
   for (const candidate of pool) assert.ok(kept.includes(candidate), `${candidate.caseId} 被误滤`);
   assert.ok(!kept.some((candidate) => candidate.caseId === 'no-such-case'), '取不到的病例进了随机池，学生抽中即 CASE_NOT_FOUND');
   assert.deepEqual(scorableAdmissions([]), []);
   assert.throws(() => selectAdmission(scorableAdmissions([])), /NO_ELIGIBLE_CASE/);
+});
+
+test('资格池不依赖本地病例事实；可玩性探测按本地/缓存/DB 判断，缺件病例不会被假装可玩', async () => {
+  const synthetic = {
+    id: 'case-catalog-only-without-source' as const,
+    version: 1,
+    title: '目录可评分但事实缺失',
+    subtitle: '测试夹具',
+    category: '测试',
+    presentingSymptoms: [],
+    age: '待核验',
+    sex: '待核验' as const,
+    difficulty: '真实案例学习',
+    expectedMinutes: 0,
+    patientName: '小朋友',
+    patientImage: '',
+    patientAlt: '',
+    contentStatus: 'teacher-materials-indexed' as const,
+    sourceRelation: null,
+    mediaCount: 0,
+    documentCount: 0,
+  };
+  CASE_CATALOG.push(synthetic);
+  try {
+    const pool = eligibleAdmissions(new Set());
+    assert.ok(pool.some((candidate) => candidate.caseId === synthetic.id), '目录里可评分但本地无事实的病例被同步过滤，部署环境会整池为空');
+    assert.equal(await hasResolvableCaseSource({ caseId: synthetic.id, sourceId: synthetic.id }, null), false, '缺件病例不应被探测为可玩');
+  } finally {
+    CASE_CATALOG.pop();
+  }
 });
 
 test('OSCE 随机开例走通：抽到病例、按随机站 15:00 计时、站点写进会话供门控复用', async () => {

@@ -287,6 +287,7 @@ textarea { resize: vertical; }
 .vital { padding: 9px 4px; text-align: center; background: #f0f8f4; border-radius: 11px; }
 .vital strong { display: block; font: 800 16px ui-monospace, monospace; }
 .vital span { color: #6c7e7a; font-size: 10px; }
+.vital em { display: block; margin-top: 2px; color: #879995; font-size: 9px; font-style: normal; line-height: 1.2; }
 .message-list { min-height: 250px; max-height: 440px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 2px 2px 14px; }
 .history-chat { min-height: 320px; padding: 16px 14px 12px; border: 0; border-radius: 0; background: linear-gradient(180deg, #fcfefd 0%, #f6fbf8 100%); scrollbar-width: thin; scrollbar-color: #cfe3da transparent; }
 .history-chat::-webkit-scrollbar { width: 8px; }
@@ -386,12 +387,9 @@ textarea { resize: vertical; }
 .posture-selector [aria-pressed="true"] { background: var(--ink); color: var(--paper, #fffdf8); }
 .posture-selector small { color: var(--muted); }
 .patient-breath { transform-origin: center; animation: breathing 1.15s ease-in-out infinite; }
-/* 查体两级选位：常驻 6 个大区贴边，点开后就地放射出该区子部位（24 个部位平铺必然互相压住）。
-   锚点百分比、弧心角、半径、按钮尺寸全部来自 src/domain/exam-regions.ts 的同一组常量，
-   tests/exam-regions.test.ts 已按真实图框尺寸逐档校验「不越界 / 不重叠 / 不压住触发器」；
-   这里只负责把这套几何画出来，改任一侧都必须同步另一侧，否则单测与实机渲染会分家。 */
+/* 查体两级选位：常驻 6 个大区贴边；点开后由底部面板给出该区子部位，不再沿大弧散落。 */
 .exam-region { position: absolute; z-index: 3; height: 44px; }
-/* 展开的那个大区连同扇形抬到最上层：查体反馈卡（z-index 4）与人物背景面板（z-index 6）都不能挡住正在点的子部位。 */
+/* 展开的大区抬到最上层：人物背景面板（z-index 6）不能挡住触发器。 */
 .exam-region[data-open] { z-index: 8; }
 .exam-region-trigger { width: 100%; height: 100%; display: inline-flex; align-items: center; gap: 5px; padding: 0 7px; border: 1px solid rgba(23,60,60,.28); border-radius: 999px; background: rgba(255,253,248,.95); color: var(--ink); box-shadow: 0 6px 16px rgba(23,60,60,.14); font-size: 11px; font-weight: 800; line-height: 1.15; white-space: nowrap; backdrop-filter: blur(7px); cursor: pointer; }
 .exam-region-trigger span { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--brick); box-shadow: 0 0 0 4px rgba(170,73,58,.14); }
@@ -401,25 +399,22 @@ textarea { resize: vertical; }
 .exam-region-trigger[data-observed="success"] span { background: var(--pine); box-shadow: 0 0 0 4px rgba(72,177,141,.18); }
 .exam-region-trigger[data-observed="blocked"] { border-color: #eba99e; background: #fff1ee; color: #7d3930; animation: observed-shake .34s ease-in-out; }
 .exam-region[data-open] .exam-region-trigger { border-color: var(--brick); color: var(--brick); background: #fff; }
-/* 扇形原点 = 大区按钮中心（.exam-region 宽 76px 高 44px，与 domain 的 regionAnchor 逐项对齐）。 */
-.exam-region-fan { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
-.exam-fan-item { position: absolute; left: 0; top: 0; height: 44px; min-width: 48px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #9bcfbd; border-radius: 999px; background: rgba(255,253,248,.97); color: var(--pine-dark); box-shadow: 0 8px 18px rgba(23,60,60,.18); font-size: 11px; font-weight: 800; white-space: nowrap; cursor: pointer; transform: translate(-50%,-50%) rotate(var(--fan-angle)) translate(var(--fan-r)) rotate(calc(var(--fan-angle) * -1)); animation: fan-item-in .18s ease-out backwards; }
-.exam-fan-item:hover, .exam-fan-item:focus-visible { border-color: var(--brick); color: var(--brick); }
-.exam-fan-item:disabled { opacity: .55; cursor: progress; }
-/* 扇形按钮的定位全靠 transform，不能套 observed-pulse/shake（它们改 transform 会把按钮拉回原点）。 */
-.exam-fan-item[data-observed="success"] { border-color: #75c9ad; background: #effbf6; color: #064d43; animation: fan-observed-pulse 1.15s ease-out 2; }
-.exam-fan-item[data-observed="blocked"] { border-color: #eba99e; background: #fff1ee; color: #7d3930; }
-/* 展开一个大区时其余大区淡出但未遮住处仍可点，可直接切换而不用先收起。
-   扇形按钮偶尔会盖住某颗淡出的大区按钮（tests/exam-regions.test.ts 把这个数量锁成棘轮），
-   此时上层按钮 z-index 更高、自带部位名，点到的就是它显示的那个部位，不会静默走成另一项。 */
+/* 第二级部位面板：固定在图框底部，等宽网格；比原来的放射扇形更紧凑、位置稳定。 */
+.exam-region-panel { position: absolute; z-index: 9; left: 10px; right: 10px; bottom: 10px; padding: 10px; border: 1px solid #b9dfd0; border-radius: 15px; background: rgba(255,253,248,.98); box-shadow: 0 14px 32px rgba(23,94,79,.22); backdrop-filter: blur(14px); animation: observation-in .22s ease-out; }
+.exam-region-panel-head { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.exam-region-panel-head strong { color: var(--pine-dark); font-size: 13px; }
+.exam-region-panel-head span { color: var(--muted); font-size: 10px; }
+.exam-region-panel-close { margin-left: auto; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--muted); cursor: pointer; }
+.exam-region-panel-close:hover, .exam-region-panel-close:focus-visible { border-color: var(--brick); color: var(--brick); }
+.exam-region-panel-close:disabled { opacity: .55; cursor: progress; }
+.exam-region-panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 6px; max-height: 168px; overflow-y: auto; scrollbar-width: thin; }
+.exam-part-item { min-height: 44px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #9bcfbd; border-radius: 999px; background: #fff; color: var(--pine-dark); font-size: 12px; font-weight: 800; white-space: nowrap; cursor: pointer; }
+.exam-part-item:hover, .exam-part-item:focus-visible { border-color: var(--brick); color: var(--brick); }
+.exam-part-item:disabled { opacity: .55; cursor: progress; }
+.exam-part-item[data-observed="success"] { border-color: #75c9ad; background: #effbf6; color: #064d43; animation: fan-observed-pulse 1.15s ease-out 2; }
+.exam-part-item[data-observed="blocked"] { border-color: #eba99e; background: #fff1ee; color: #7d3930; }
+/* 展开一个大区时其余大区淡出但未遮住处仍可点，可直接切换而不用先收起。 */
 .patient-figure[data-fan-open] .exam-region:not([data-open]) { opacity: .38; }
-/* 图框窄到扇形放不下时（小窗桌面），宁可让按钮探出图框也不能被 overflow:hidden 裁成点不到；
-   探出的余量上限就是 .patient-stage 的内边距（上 10–14px、下 60–78px），与 exam-regions 的
-   STAGE_TOP_SLACK/STAGE_BOTTOM_SLACK 同源，超出舞台仍会被裁掉。 */
-/* container-type 只在展开时挂上：扇形半径用 cqw 按图框宽度同比缩放（固定 px 是窄图框下
-   按钮横穿中线、压住对侧大区的根因），未展开的图框不引入 inline-size 容器以免波及观察模式。 */
-.patient-figure[data-fan-open] { overflow: visible; container-type: inline-size; }
-.patient-figure[data-fan-open] .patient-photo, .patient-figure[data-fan-open] .patient-unspecified { border-radius: 20px; }
 .patient-caption { position: absolute; bottom: 13px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 11px; background: rgba(255,253,248,.9); font-size: 12px; backdrop-filter: blur(10px); }
 .exam-observation { position: absolute; z-index: 4; left: 18px; right: 18px; bottom: 58px; padding: 12px; overflow: hidden; border: 1px solid #b9dfd0; border-radius: 15px; background: rgba(240,251,246,.96); box-shadow: 0 14px 32px rgba(23,94,79,.2); backdrop-filter: blur(14px); animation: observation-in .3s ease-out; }
 .exam-observation[data-status="blocked"] { border-color: #efb9ae; background: rgba(255,244,241,.97); }
@@ -618,6 +613,8 @@ textarea { resize: vertical; }
 .osce-station-timer span { grid-area: label; }
 .osce-station-timer strong { grid-area: time; color: var(--brick-dark); font: 900 21px ui-monospace, monospace; line-height: 1.1; }
 .osce-hero-copy { max-width: 760px; }
+/* 抽例失败时错误行会把 .random-admission 撑高；按钮组顶部对齐，避免右侧「先做专项」被拉到底部。 */
+.osce-hero-copy .hero-actions { align-items: flex-start; }
 .readiness-card { margin-top: 14px; padding: 17px; border: 1px solid var(--line); border-radius: 18px; background: white; }
 .readiness-card h2 { margin: 0 0 11px; font-size: 15px; }
 .readiness-card div { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -648,7 +645,6 @@ textarea { resize: vertical; }
 @keyframes observed-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 @keyframes observation-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 /* 扇形按钮的 transform 已被用来定位，进场与命中反馈只能动 opacity/box-shadow。 */
-@keyframes fan-item-in { from { opacity: 0; } }
 @keyframes fan-observed-pulse { 50% { box-shadow: 0 0 0 9px rgba(72,177,141,.16), 0 8px 18px rgba(23,60,60,.18); } }
 @keyframes drawer-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes lung-wave { 50% { transform: scaleY(.35); opacity: .45; } }
@@ -1074,9 +1070,8 @@ textarea { resize: vertical; }
 .training-shell .patient-background { z-index:6; }
 .training-shell .exam-observation { max-height:42%; overflow-y:auto; }
 .training-shell .patient-caption { padding:8px; font-size:10px; }
-/* 工作台里患儿图更窄，但大区/扇形按钮一律保持 44px 点击目标不缩小：exam-regions 的几何校验就是按
-   44px 算的，旧热区在工作台被压到 min-height:34px 正是相邻按钮互相重叠、手机误触的直接原因。
-   图框窄到扇形放不下时由 .patient-figure[data-fan-open]{overflow:visible} 让按钮探出图框兜底。 */
+/* 工作台里患儿图更窄，但大区与部位按钮一律保持 44px 点击目标不缩小；
+   部位面板固定在图框底部，窄图框自动降为两列并可滚动，不会再压住相邻按钮。 */
 .training-shell .exam-region-trigger { background: rgba(255,253,248,.92); }
 .training-shell .test-order-form { padding:18px; border:1px solid #dce8e1; border-radius:16px; background:#f5faf6; margin-bottom:20px; }
 .training-shell .tests-intro h2 { font-size:24px; }

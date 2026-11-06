@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ClipboardPen, Search, Volume2, X } from 'lucide-react';
 import type { SessionState } from '@/domain/agent';
 import { getCaseRecordEntries, searchCaseRecordEntries, type CaseRecordCategory } from '@/domain/case-record';
+import { resolveDisplayedVitals, VITAL_SOURCE_LABELS } from '@/domain/vital-signs';
 import { CaseMediaGallery } from '@/components/case-media-gallery';
 
 const categoryLabels: Record<CaseRecordCategory, string> = {
@@ -35,6 +36,7 @@ export function SharedCaseRecord({
   const timelineRef = useRef<HTMLDivElement>(null);
   const entries = useMemo(() => getCaseRecordEntries(session), [session]);
   const records = useMemo(() => searchCaseRecordEntries(entries, category, query), [entries, category, query]);
+  const vitals = useMemo(() => resolveDisplayedVitals(session), [session]);
   const latestRecordId = entries.at(-1)?.event.id ?? '';
 
   useEffect(() => {
@@ -55,12 +57,12 @@ export function SharedCaseRecord({
     </div>
     <div className="panel-body shared-case-record-body">
       <section className="record-vitals" aria-labelledby="record-vitals-title">
-        <div className="record-section-head"><h3 id="record-vitals-title">接诊已知</h3><span>初筛生命体征（非本轮查体，不替代体温测量等操作）</span></div>
+        <div className="record-section-head"><h3 id="record-vitals-title">生命体征</h3><span>接诊记录与本轮问诊/查体已获得；未获得的项目如实显示未记录</span></div>
         <div className="vitals">
-          <div className="vital"><strong>{session.vitals.temperature ?? '未记录'}</strong><span>体温 ℃</span></div>
-          <div className="vital"><strong>{session.vitals.heartRate ?? '未记录'}</strong><span>心率 /min</span></div>
-          <div className="vital"><strong>{session.vitals.respiratoryRate ?? '未记录'}</strong><span>呼吸 /min</span></div>
-          <div className="vital"><strong>{session.vitals.spo2 === null ? '未记录' : `${session.vitals.spo2}%`}</strong><span>SpO₂</span></div>
+          <div className="vital"><strong>{vitals.temperature.value ?? '未记录'}</strong><span>体温 ℃</span>{vitals.temperature.source && <em>{VITAL_SOURCE_LABELS[vitals.temperature.source]}</em>}</div>
+          <div className="vital"><strong>{vitals.heartRate.value ?? '未记录'}</strong><span>心率 /min</span>{vitals.heartRate.source && <em>{VITAL_SOURCE_LABELS[vitals.heartRate.source]}</em>}</div>
+          <div className="vital"><strong>{vitals.respiratoryRate.value ?? '未记录'}</strong><span>呼吸 /min</span>{vitals.respiratoryRate.source && <em>{VITAL_SOURCE_LABELS[vitals.respiratoryRate.source]}</em>}</div>
+          <div className="vital"><strong>{vitals.spo2.value === null ? '未记录' : `${vitals.spo2.value}%`}</strong><span>SpO₂</span>{vitals.spo2.source && <em>{VITAL_SOURCE_LABELS[vitals.spo2.source]}</em>}</div>
         </div>
       </section>
       <section className="record-timeline-section" aria-labelledby="record-timeline-title">

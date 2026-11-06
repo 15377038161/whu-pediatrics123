@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Stethoscope, Volume2, X } from 'lucide-react';
 import type { CSSProperties } from 'react';
-import { REGION_EDGE_INSET, REGION_TRIGGER_WIDTH, fanAngle, fanRadiusPercent, partLabel, type ExamRegion } from '@/domain/exam-regions';
+import { REGION_EDGE_INSET, REGION_TRIGGER_WIDTH, partLabel, type ExamRegion } from '@/domain/exam-regions';
 import { TECHNIQUE_NOTE_BADGE, examTechniqueNote } from '@/domain/exam-technique-notes';
 
 /**
@@ -21,16 +21,12 @@ export type ExamObservation = {
 };
 
 /**
- * 大区按钮 + 就地放射扇形（决策 2）：常驻只显示 6 个大区，点开后才在原位散射出该区子部位。
- * 24 个部位一次性平铺会互相重叠、手机上必然误触，所以把「选哪个部位」拆成两步。
- * 同时只允许一个大区展开（openRegion 是单值），扇形张开时其余大区淡出，杜绝两层按钮叠在一起。
- * 几何量与文案必须与 exam-regions 同源，不能各写一份，否则单测校验的落点等于白测。
+ * 大区按钮：常驻只显示 6 个，点开后由 ExamRegionPanel 在图框底部给出该区子部位。
+ * 同时只允许一个大区展开（openRegion 是单值），展开时其余大区淡出，杜绝两层按钮叠在一起。
  */
-export function ExamRegionMarker({ region, posture, open, busy, observation, onToggle, onExamine }: { region: ExamRegion; posture: 'standing' | 'supine'; open: boolean; busy: boolean; observation: ExamObservation | null; onToggle: () => void; onExamine: (part: string) => void }) {
+export function ExamRegionMarker({ region, posture, open, busy, observation, onToggle }: { region: ExamRegion; posture: 'standing' | 'supine'; open: boolean; busy: boolean; observation: ExamObservation | null; onToggle: () => void }) {
   const parts = region.parts as readonly string[];
   const observedInRegion = observation && parts.includes(observation.bodyPartId) ? observation.status : undefined;
-  // 锚点用百分比 + 固定按钮宽度：与 exam-regions 的 regionAnchor 几何模型逐项对齐，
-  // 扇形原点（.exam-region 的 50%/50%）因此正好落在模型算出的锚点上，不需要量真实像素。
   const top = `${region.anchorTop[posture === 'supine' ? 1 : 0]}%`;
   const anchorStyle: CSSProperties = region.side === 'left'
     ? { top, left: `${REGION_EDGE_INSET}%`, width: REGION_TRIGGER_WIDTH }
@@ -38,17 +34,32 @@ export function ExamRegionMarker({ region, posture, open, busy, observation, onT
   return (
     <div className="exam-region" data-region={region.id} data-side={region.side} data-open={open || undefined} style={anchorStyle}>
       <button type="button" className="exam-region-trigger" disabled={busy} aria-expanded={open} data-observed={observedInRegion} onClick={onToggle}><span aria-hidden="true" />{region.label}</button>
-      {open && <div className="exam-region-fan" role="group" aria-label={`${region.label}：选择要检查的部位`}>
-        {region.parts.map((part, index) => <button
+    </div>
+  );
+}
+
+/**
+ * 第二级选位面板：固定在图框底部，按网格排列子部位。
+ * 不再沿大弧放射——7 个部位散落在头、胸、腹会让「鼻」「口咽」「颈部」离解剖位置很远，
+ * 学生需要来回找；网格面板位置稳定、每颗按钮等高，窄图框自动降为两列并可滚动。
+ */
+export function ExamRegionPanel({ region, busy, observation, onExamine, onClose }: { region: ExamRegion; busy: boolean; observation: ExamObservation | null; onExamine: (part: string) => void; onClose: () => void }) {
+  return (
+    <div className="exam-region-panel" role="group" aria-label={`${region.label}：选择要检查的部位`}>
+      <div className="exam-region-panel-head">
+        <strong>{region.label}</strong><span>选择部位</span>
+        <button type="button" className="exam-region-panel-close" disabled={busy} onClick={onClose} aria-label="收起部位选择"><X size={15} /></button>
+      </div>
+      <div className="exam-region-panel-grid">
+        {region.parts.map((part) => <button
           key={part}
           type="button"
-          className="exam-fan-item"
+          className="exam-part-item"
           disabled={busy}
           data-observed={observation?.bodyPartId === part ? observation.status : undefined}
-          style={{ '--fan-angle': `${fanAngle(region, index)}deg`, '--fan-r': `${fanRadiusPercent(region, index)}cqw` } as CSSProperties}
           onClick={() => onExamine(part)}
         >{partLabel(part)}</button>)}
-      </div>}
+      </div>
     </div>
   );
 }

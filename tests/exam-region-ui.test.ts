@@ -4,8 +4,8 @@ import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { AgentEvent } from '@/domain/agent';
-import { ExamObservationCard, ExamRegionMarker, type ExamObservation } from '@/components/exam-region-panel';
-import { EXAM_REGIONS, REGION_EDGE_INSET, REGION_TRIGGER_WIDTH, fanAngle, fanRadiusPercent, partLabel } from '@/domain/exam-regions';
+import { ExamObservationCard, ExamRegionMarker, ExamRegionPanel, type ExamObservation } from '@/components/exam-region-panel';
+import { EXAM_REGIONS, REGION_EDGE_INSET, REGION_TRIGGER_WIDTH, partLabel } from '@/domain/exam-regions';
 import { TECHNIQUE_NOTE_BADGE, examTechniqueNote } from '@/domain/exam-technique-notes';
 import { createInitialSession, runAgentTurn } from '@/lib/agent-engine';
 
@@ -19,7 +19,16 @@ function renderMarker(regionIndex: number, options: { open?: boolean; posture?: 
     busy: options.busy ?? false,
     observation: options.observation ?? null,
     onToggle: noop,
+  }));
+}
+
+function renderPanel(regionIndex: number, options: { busy?: boolean; observation?: ExamObservation | null } = {}): string {
+  return renderToStaticMarkup(createElement(ExamRegionPanel, {
+    region: EXAM_REGIONS[regionIndex],
+    busy: options.busy ?? false,
+    observation: options.observation ?? null,
     onExamine: noop,
+    onClose: noop,
   }));
 }
 
@@ -38,25 +47,34 @@ test('6 个大区常驻渲染，锚点与朝向逐项等于 exam-regions 的几�
   assert.ok(html.includes('aria-expanded="false"'), '大区按钮没有展开态，读屏学生听不出还有第二层');
 });
 
-test('仰卧位换用仰卧锚点，展开后每颗子部位的角度与半径都来自 domain', () => {
+test('仰卧位换用仰卧锚点，展开态只标记 aria-expanded', () => {
   const region = EXAM_REGIONS[0];
   const supine = renderMarker(0, { posture: 'supine' });
   assert.ok(supine.includes(`top:${region.anchorTop[1]}%`), '仰卧位沿用站姿锚点，按钮会离开实际解剖位置');
   const open = renderMarker(0, { open: true, posture: 'supine' });
-  assert.ok(open.includes(`top:${region.anchorTop[1]}%`));
-  assert.ok(open.includes(`aria-label="${region.label}：选择要检查的部位"`));
-  region.parts.forEach((part, index) => {
-    assert.ok(open.includes(`>${partLabel(part)}</button>`), `${part} 的扇形按钮文案不是部位目录里的名字`);
-    assert.ok(open.includes(`--fan-angle:${fanAngle(region, index)}deg`), `${part} 的角度与几何模型不一致`);
-    // 半径写成容器查询单位而不是 px：按图框宽度同比缩放，窄图框下不会横穿中线压到对侧大区。
-    assert.ok(open.includes(`--fan-r:${fanRadiusPercent(region, index)}cqw`), `${part} 的半径与几何模型不一致，单测校验的落点等于白测`);
-  });
-  assert.equal(open.match(/exam-fan-item/g)?.length, region.parts.length, '扇形按钮数与该区子部位数不符');
+  assert.ok(open.includes('aria-expanded="true"'));
+  assert.equal(open.includes('exam-part-item'), false, '子部位应放在独立面板，不再散落在患儿图内');
 });
 
-test('请求进行中扇形与触发器一起禁用，学生不会在等待时点出第二次查体', () => {
-  const busy = renderMarker(0, { open: true, busy: true });
-  assert.equal(busy.match(/disabled=""/g)?.length, 1 + EXAM_REGIONS[0].parts.length);
+test('部位面板按区渲染全部子部位，位置固定且带收起入口', () => {
+  for (const [index, region] of EXAM_REGIONS.entries()) {
+    const html = renderPanel(index);
+    assert.ok(html.includes(`aria-label="${region.label}：选择要检查的部位"`));
+    assert.equal(html.match(/exam-part-item/g)?.length, region.parts.length, '面板按钮数与该区子部位数不符');
+    for (const part of region.parts) {
+      assert.ok(html.includes(`>${partLabel(part)}</button>`), `${part} 的面板按钮文案不是部位目录里的名字`);
+    }
+    assert.ok(html.includes('aria-label="收起部位选择"'), '面板没有收起入口');
+  }
+});
+
+test('面板中的已观察部位按 success/blocked 标记，请求进行中所有按钮一起禁用', () => {
+  const region = EXAM_REGIONS[0];
+  const observed: ExamObservation = { bodyPartId: region.parts[1], toolId: 'inspection', detail: '病例记录', title: '眼部', status: 'success', sound: null };
+  const html = renderPanel(0, { observation: observed });
+  assert.ok(html.includes('data-observed="success"'), '已获得结果的部位没有成功标记');
+  const busy = renderPanel(0, { busy: true });
+  assert.equal(busy.match(/disabled=""/g)?.length, 1 + region.parts.length, '请求进行中仍有可点按钮');
 });
 
 function observation(status: 'success' | 'blocked', toolId: string, bodyPartId: string, detail: string): ExamObservation {

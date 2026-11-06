@@ -4,7 +4,7 @@ import { CaseRecordDrawer } from '@/components/case-record-drawer';
 import { DirectionHint } from '@/components/direction-hint';
 import { ExpandableNote } from '@/components/expandable-note';
 import { EXAM_REGIONS, partLabel } from '@/domain/exam-regions';
-import { ExamObservationCard, ExamRegionMarker, type ExamObservation } from '@/components/exam-region-panel';
+import { ExamObservationCard, ExamRegionMarker, ExamRegionPanel, type ExamObservation } from '@/components/exam-region-panel';
 import { NoteWriting, type NoteWritingHandle } from '@/components/note-writing';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
 import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
@@ -89,6 +89,7 @@ function PatientFigure({ patient, posture, selectedTool, onExamine, observation,
   const profile = resolveCommunicationProfile(patient.id, patient.age);
   const asset = patientAssetByKey(appearance.key);
   const assetGap = bindingGapNote(profile.ageBand);
+  const openRegionData = EXAM_REGIONS.find((region) => region.id === openRegion) ?? null;
   return (
     <div className="patient-stage" data-posture={posture} data-avatar={appearance.key}>
       <div className="patient-figure" aria-label="仿真虚拟患儿交互模型" data-fan-open={interactive && openRegion ? openRegion : undefined}>
@@ -108,8 +109,14 @@ function PatientFigure({ patient, posture, selectedTool, onExamine, observation,
           busy={busy}
           observation={observation}
           onToggle={() => setOpenRegion((current) => (current === region.id ? null : region.id))}
-          onExamine={onExamine}
         />)}
+        {interactive && openRegionData && <ExamRegionPanel
+          region={openRegionData}
+          busy={busy}
+          observation={observation}
+          onClose={() => setOpenRegion(null)}
+          onExamine={(part) => { setOpenRegion(null); onExamine(part); }}
+        />}
       </div>
       {interactive && observation && <ExamObservationCard observation={observation} onClose={onCloseObservation} onReplayAudio={onReplayAudio} />}
       <div className="patient-caption"><span>{interactive ? <>当前器材：<strong>{[...tools, ...sourceExamTools].find((tool) => tool.id === selectedTool)?.label ?? '未选择'}</strong></> : <strong>观察模式</strong>}</span><span className="emotion-pill">{interactive ? '先点大区，再点具体部位' : '自行定位 · 操作后查看结果'}</span></div>

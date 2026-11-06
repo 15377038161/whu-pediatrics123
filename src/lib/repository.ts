@@ -11,9 +11,10 @@ import { assertCasePublishedForNewSession } from '@/lib/case-publication';
 import { isScorableCase } from '@/domain/case-classification';
 import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
 import { CASE_INDEX_NUMBER, TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
-import { eligibleAdmissions, scorableAdmissions, selectAdmission } from '@/lib/case-admission';
+import { eligibleAdmissions, hasResolvableCaseSource, scorableAdmissions, selectAdmission, type AdmissionCandidate } from '@/lib/case-admission';
 import { getUnpublishedCaseIds } from '@/lib/case-publication';
 import { creationSessionId, creationFingerprint, type SessionCreationOptions } from '@/lib/session-creation';
+import { getTeacherSourceId } from '@/lib/teacher-case-data';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getCase } from '@/domain/case';
 import { isPlaceholderDemographic } from '@/domain/demographics';
@@ -295,6 +296,26 @@ export class AgentRepository {
     }
   }
 
+  /** 随机抽中后做一次轻量可玩性探测：本地/缓存/DB 都取不到完整版本的病例换下一例。
+   *  只探测，不建会话、不写库；全部探测失败时保留原抽中项，避免把 DB 抖动硬判成 NO_ELIGIBLE_CASE。
+   *  换例次数上限 4：正常环境第一例就命中，只有缺件病例才会继续。 */
+  private async pickPlayableAdmission(candidates: AdmissionCandidate[], selected: string, options: SessionCreationOptions): Promise<string> {
+    let current = selected;
+    const tried = new Set([getTeacherSourceId(current)]);
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      if (await hasResolvableCaseSource(candidates.find((item) => item.caseId === current) ?? { caseId: current, sourceId: getTeacherSourceId(current) }, this.actor.accessToken)) return current;
+      const remaining = candidates.filter((item) => !tried.has(item.sourceId));
+      if (!remaining.length) break;
+      try {
+        current = selectAdmission(remaining, options.excludeCaseId, options.allowRepeat);
+      } catch {
+        break;
+      }
+      tried.add(getTeacherSourceId(current));
+    }
+    return selected;
+  }
+
   async createRequestedSession(options: SessionCreationOptions): Promise<SessionState> {
     options = { ...options, caseId: options.caseId ? resolveCaseId(options.caseId) : undefined, excludeCaseId: options.excludeCaseId ? resolveCaseId(options.excludeCaseId) : undefined };
     const fingerprint = creationFingerprint(options);
@@ -310,10 +331,12 @@ export class AgentRepository {
     }
     const admissionPool = eligibleAdmissions(await getUnpublishedCaseIds(this.actor.accessToken));
     // 专项/OSCE 的可评分守卫前移：抽例前就滤掉资料不足病例，学生不会抽中后才被 CASE_INSUFFICIENT 打回死路。
-    // 随机性不变（不做定向指派），guided/immersive 沿用全量池以保留历史行为。
-    const caseId = options.random
-      ? selectAdmission(options.mode === 'practice' || options.mode === 'osce' ? scorableAdmissions(admissionPool) : admissionPool, options.excludeCaseId, options.allowRepeat)
-      : options.caseId;
+    // 资格池已按公开目录判定；抽中后再按本地/缓存/DB 版本做一次可玩性探测（部署环境无本地病例文件）。
+    const playablePool = options.mode === 'practice' || options.mode === 'osce' ? scorableAdmissions(admissionPool) : admissionPool;
+    const selectedCaseId = options.random ? selectAdmission(playablePool, options.excludeCaseId, options.allowRepeat) : options.caseId;
+    const caseId = options.random && selectedCaseId
+      ? await this.pickPlayableAdmission(playablePool, selectedCaseId, options)
+      : selectedCaseId;
     try {
       const created = await this.createSession(options.mode, caseId, options.focus, id, fingerprint);
       if (created.creationRequest !== fingerprint) throw new Error('CREATION_REQUEST_CONFLICT');

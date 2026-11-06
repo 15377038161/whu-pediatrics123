@@ -37,9 +37,12 @@
 .list li { margin-bottom: .25rem; }
 .list.danger { color: #8a3a24; }
 .steps { margin: 8px 0 0; padding-left: 0; list-style: none; counter-reset: step; display: grid; gap: .55rem; }
-.steps li { counter-increment: step; display: grid; grid-template-columns: 1.9rem minmax(0, 1fr); gap: .5rem; padding: .6rem .7rem; border-radius: .7rem; background: #fafdfb; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: 1.9rem minmax(0, 1fr); grid-template-rows: auto auto; column-gap: .5rem; row-gap: .15rem; padding: .6rem .7rem; border-radius: .7rem; background: #fafdfb; }
 .steps li::before {
   content: counter(step);
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: start;
   display: grid;
   place-items: center;
   height: 1.9rem;
@@ -49,8 +52,8 @@
   font-size: .85rem;
   font-weight: 700;
 }
-.steps strong { display: block; color: var(--ink); font-size: .95rem; }
-.steps span { color: #46655d; font-size: .92rem; line-height: 1.75; }
+.steps strong { grid-column: 2; grid-row: 1; display: block; color: var(--ink); font-size: .95rem; }
+.steps span { grid-column: 2; grid-row: 2; color: #46655d; font-size: .92rem; line-height: 1.75; }
 
 .sources { margin: 8px 0 0; padding-left: 1.25rem; color: #667875; font-size: .88rem; line-height: 1.8; }
 .notice { margin: 16px 0 0; padding: .8rem .9rem; border: 1px solid #ead58e; border-radius: .9rem; background: #fffaf0; color: #684f16; font-size: .9rem; line-height: 1.8; }
