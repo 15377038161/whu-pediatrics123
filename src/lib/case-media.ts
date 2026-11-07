@@ -55,7 +55,13 @@ export async function getCaseMediaLink(fileId: string): Promise<{ url: string; e
       const bytes=readFileSync(path.join(root,'media',`${digest}.png`));
       if(bytes.length>3_000_000||createHash('sha256').update(bytes).digest('hex')!==digest)throw new Error('FILE_UNAVAILABLE');
       return {url:`data:image/png;base64,${bytes.toString('base64')}`,expiresAt:'',fileName:null};
-    }catch{throw new Error('FILE_UNAVAILABLE');}
+    }catch{
+      // Dynamic import avoids a module cycle through source-snapshot media decoding.
+      const {readRecoveredTrainingMedia}=await import('@/lib/controlled-case-bundle');
+      const recovered=await readRecoveredTrainingMedia(fileId);
+      if(!recovered)throw new Error('FILE_UNAVAILABLE');
+      return {url:`data:image/png;base64,${Buffer.from(recovered).toString('base64')}`,expiresAt:'',fileName:null};
+    }
   }
   const illustration = Object.hasOwn(TEACHING_ILLUSTRATIONS, fileId) ? TEACHING_ILLUSTRATIONS[fileId] : undefined;
   if (illustration) return {url: illustration.url, expiresAt: '', fileName: null};

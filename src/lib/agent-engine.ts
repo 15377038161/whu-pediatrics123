@@ -1,4 +1,4 @@
-import { historyDialogue, sourceHistoryFacts,disclosedHistoryCodes,conversationAct } from '@/lib/history-dialogue';
+import { historyDialogue, sourceHistoryFacts,disclosedHistoryCodes,conversationAct, type DialogueInvoke } from '@/lib/history-dialogue';
 import { sessionTeachingCase, sessionTeachingPackage } from '@/lib/session-teaching';
 import { readTeachingPackage } from '@/lib/teaching-package-store';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
@@ -303,12 +303,12 @@ function applyInterventionState(session: SessionState, action: Extract<AgentEven
  *  仅做同义口语转换与自然语气包裹，不新增、不修改任何事实（数值、部位、时间、阴性/阳性表述保持原文）；
  *  未匹配术语保留原文（宁可不顺口也不虚构）。开头按消息数轮换，避免每轮同一句式。 */
 
-async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>, speech?: EventSpeechMeta): Promise<AgentTurnResult> {
+async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>, speech?: EventSpeechMeta, historyInvoke?: DialogueInvoke): Promise<AgentTurnResult> {
   const spokenIntervention = detectSpokenIntervention(text);
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   if (pediatricCase.sourceFacts !== undefined) {
     if (spokenIntervention) applyInterventionState(session, spokenIntervention);
-    return handleSourceQuestion(session, text, clientEventId, forwardHeaders, speech);
+    return handleSourceQuestion(session, text, clientEventId, forwardHeaders, speech, historyInvoke);
   }
   const intents = identifyHistoryIntents(session.caseId, text, session.sourceSnapshotVersion, session.id);
   // 分时点事实释放（补充单 §5）：命中但事实设定了更晚的释放阶段时，该事实现阶段不可告知——
@@ -409,7 +409,7 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
   return { session, newMessages, feedback: feedbackFor(session, `已形成“${labels}”的过程证据。`), trace: traces, runtime: roleResult.runtime };
 }
 
-async function handleSourceQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>, speech?: EventSpeechMeta): Promise<AgentTurnResult> {
+async function handleSourceQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>, speech?: EventSpeechMeta, historyInvoke?: DialogueInvoke): Promise<AgentTurnResult> {
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   const source = pediatricCase.sourceFacts;
   const pack = sessionTeachingPackage(session);
@@ -423,7 +423,7 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
   const baselineProfile = resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age);
   const profile=pack?.roleState?.childCanSpeak===false?{...baselineProfile,speechCapability:'impaired' as const}:baselineProfile;
   const asCommunication=Boolean(pack)&&conversationAct(text)==='explanation';
-  const { dialogue, runtime } = await historyDialogue(session,text,allFacts,profile,forwardHeaders,undefined,asCommunication?'explanation':'question');
+  const { dialogue, runtime } = await historyDialogue(session,text,allFacts,profile,forwardHeaders,historyInvoke,asCommunication?'explanation':'question');
   const newMessages = [message('student',text,speechOptions(speech)),...dialogue.utterances.map(item=>message(item.actor,item.text,{emotion:session.childEmotion}))];
   const codes = disclosedHistoryCodes(dialogue,allFacts);
   session.dialogueMemory = {topic:dialogue.topic,lastFactIds:codes.length?codes:session.dialogueMemory?.lastFactIds??[],clarifiedQuestion:dialogue.clarification??null,concern:/担心|严重|危险/.test(text)?text:session.dialogueMemory?.concern??null};
@@ -881,6 +881,8 @@ export interface AgentTurnOptions {
   accessToken?: string | null;
   /** Internal dependency injection for source/simulation boundary tests, never a request field. */
   testSupplementInvoke?:TestSupplementInvoke;
+  /** Offline acceptance can observe the real model response without exposing it in session state. */
+  historyInvoke?:DialogueInvoke;
 }
 
 export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string, options?: AgentTurnOptions): Promise<AgentTurnResult> {
@@ -907,7 +909,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
   if (!validateEventStage(session, event)) throw new Error(session.mode === 'practice' ? 'PRACTICE_EVENT_FORBIDDEN' : 'OSCE_EVENT_STAGE_FORBIDDEN');
 
   switch (event.type) {
-    case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders, event.data.speech);
+    case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders, event.data.speech, options?.historyInvoke);
     case 'DOCTOR_INTERVENTION': return handleIntervention(session, event.data.action, clientEventId);
     case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId, event.data.posture, event.data.position, event.data.location);
     case 'ORDER_TEST': return handleTest(session, event.data, clientEventId, options?.accessToken, options?.forwardHeaders, options?.testSupplementInvoke);
@@ -915,7 +917,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
     case 'SUBMIT_HISTORY_SUMMARY': return handleHistorySummary(session, event.data.summary, clientEventId);
     case 'SUBMIT_EXAM_OBSERVATION': return handleExamObservation(session, event.data, clientEventId);
     case 'SUBMIT_PLAN': return handlePlan(session, event.data, clientEventId);
-    case 'SEND_COMMUNICATION': return session.teachingPackageVersion?handleQuestion(session,event.data.text,clientEventId,options?.forwardHeaders,event.data.speech):handleCommunication(session, event.data.text, clientEventId, event.data.speech);
+    case 'SEND_COMMUNICATION': return session.teachingPackageVersion?handleQuestion(session,event.data.text,clientEventId,options?.forwardHeaders,event.data.speech,options?.historyInvoke):handleCommunication(session, event.data.text, clientEventId, event.data.speech);
     case 'NAVIGATE_STAGE': {
       if (!validateStageNavigation(session, event.data.stage)) throw new Error(session.mode === 'practice' ? 'PRACTICE_STAGE_FORBIDDEN' : 'OSCE_STAGE_BACKTRACK_FORBIDDEN');
       // 非 OSCE 的「非前进一格」导航（回看已完成阶段/返回会话中心/同格重进）只记录展示阶段

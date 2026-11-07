@@ -1,29 +1,27 @@
 /* eslint-disable no-console */
 /**
- * 三组既有教师病例各 20 轮真实病史模型验证。
- * - 与 handleSourceQuestion 一致，使用 sourceHistoryFacts + historyDialogue -> invokeCozeAI。
- * - 使用纯内存 SessionState 延续最近对话，不创建账号、不登录、不写数据库。
- * - 只保存 execution/model/attempts/duration/hash 等元数据，不保存病例、问题或回复正文。
+ * 三组教师病例各 20 轮真实病史模型验证。
+ * - 强制读取隔离恢复目录中的新版教学包及精确版本源病例，不访问对象存储或旧候选 ZIP。
+ * - 每轮走 runAgentTurn(ASK_QUESTION) 真实引擎路径，不手工重放会话状态。
+ * - 只保存执行元数据与安全校验码；模型原文仅可写入 /tmp 下的私有目录。
  */
+import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { strFromU8, unzipSync } from 'fflate';
-import type { AgentMessage, SessionState } from '../src/domain/agent';
+import type { SessionState } from '../src/domain/agent';
 import { getCase } from '../src/domain/case';
 import { SOURCE_HISTORY_TOPICS } from '../src/domain/source-history';
 import type { HistoryFact } from '../src/domain/teaching-package';
-import { createInitialSession } from '../src/lib/agent-engine';
+import { createInitialSession, runAgentTurn } from '../src/lib/agent-engine';
 import { verifiedComplaint } from '../src/lib/admission-complaint';
-import { computeImportVersion } from '../src/lib/teacher-case-import';
-import { describeAIConfig, getAIGatewaySettings } from '../src/lib/coze-ai';
-import { ensureControlledCaseBundle } from '../src/lib/controlled-case-bundle';
-import { parseControlledCasePackageManifest } from '../src/lib/controlled-case-package';
-import { controlledCaseBundles } from '../src/lib/controlled-case-registry';
+import { computeCaseDataVersion } from '../src/lib/case-data-version';
+import { describeAIConfig, getAIGatewaySettings, invokeCozeAI } from '../src/lib/coze-ai';
 import { registerControlledCase } from '../src/lib/controlled-case-store';
-import { resolveAuditedCommunicationProfile } from '../src/lib/communication-profile-overrides';
-import { disclosedHistoryCodes, historyDialogue, sourceHistoryFacts } from '../src/lib/history-dialogue';
+import { sessionTeachingPackage } from '../src/lib/session-teaching';
+import { readTeachingPackage } from '../src/lib/teaching-package-store';
 import { recordSchema } from '../src/lib/teacher-case-data';
 
 type CaseKey = 'dka' | 'newborn' | 'respiratory';
@@ -56,6 +54,7 @@ interface RoundEvidence {
   execution: string;
   model: string | null;
   attempts: number;
+  modelCalls: number;
   durationMs: number;
   errorKind: string | null;
   modelDialoguePresent: boolean;
@@ -66,6 +65,7 @@ interface RoundEvidence {
   citedFactCount: number;
   fallbackContentUsed: boolean;
   exactQuestionEcho: boolean;
+  validationReasons: string[];
 }
 
 function argument(name: string): string {
@@ -77,47 +77,33 @@ function sha256(value: string): string {
   return createHash('sha256').update(value, 'utf8').digest('hex');
 }
 
-const CANDIDATE_ARCHIVE = {
-  fileId: '579c3fbb0bddf46c921ef344b1d7de90',
-  fileName: 'peds-workbuddy-67-import-candidate.zip',
-  bytes: 364182,
-  sha256: 'ebf4286039913a41c67c6b16f4321ea1d04f987f81788a0407a176e6ff657487',
-} as const;
-
-/** Read one verified candidate source into the process-local store; never installs or writes persistent data. */
-async function ensureCandidateSource(caseId: string): Promise<string | null> {
-  const { StorageClient } = await import('coder-coding-dev-sdk');
-  const bytes = await new StorageClient().readFile({ fileId: CANDIDATE_ARCHIVE.fileId });
-  if (bytes.length !== CANDIDATE_ARCHIVE.bytes || createHash('sha256').update(bytes).digest('hex') !== CANDIDATE_ARCHIVE.sha256) {
-    throw new Error('候选包字节数或 SHA256 与只读审计不一致');
-  }
-  const files = unzipSync(bytes);
-  const manifestBytes = files['manifest.json'];
-  if (!manifestBytes) throw new Error('候选包缺少 manifest.json');
-  const manifest = parseControlledCasePackageManifest(JSON.parse(strFromU8(manifestBytes)));
-  if (!manifest.sourceCaseIds.includes(caseId)) return null;
-  const memberPath = `knowledge/teaching-cases/${caseId}.json`;
-  const member = files[memberPath];
-  if (!member || createHash('sha256').update(member).digest('hex') !== manifest.hashes[memberPath]) {
-    throw new Error('目标病例缺失或 manifest 哈希不匹配');
-  }
-  const record = recordSchema.parse(JSON.parse(strFromU8(member)));
-  if (record.caseId !== caseId) throw new Error('目标病例 ID 不匹配');
-  const version = computeImportVersion(record);
-  registerControlledCase(record, version);
-  return version;
+/** Load the exact recovered pair into memory only; never installs or writes persistent data. */
+function loadRecoveredCase(caseId: string, runtimeRoot: string, sourceRoot: string) {
+  const index = JSON.parse(readFileSync(path.join(runtimeRoot, 'index.json'), 'utf8')) as {
+    schemaVersion: number;
+    entries: Record<string, string>;
+  };
+  if (index.schemaVersion !== 1) throw new Error('恢复目录 index.json 版本不受支持');
+  const teachingVersion = index.entries[caseId];
+  if (!teachingVersion) throw new Error(`${caseId} 不在新版 runtime/index.json 中`);
+  const pack = readTeachingPackage(caseId, teachingVersion);
+  if (!pack) throw new Error(`${caseId} 新版教学包缺失、损坏或版本校验失败`);
+  if (!/^teacher-[^/\\]+$/.test(pack.sourceId)) throw new Error('教学包 sourceId 不安全');
+  const record = recordSchema.parse(JSON.parse(readFileSync(path.join(sourceRoot, `${pack.sourceId}.json`), 'utf8')));
+  if (record.caseId !== pack.sourceId) throw new Error('源病例与教学包 sourceId 不一致');
+  const sourceVersion = computeCaseDataVersion(record);
+  if (sourceVersion !== pack.sourceVersion) throw new Error('源病例与教学包 sourceVersion 不一致');
+  registerControlledCase(record, sourceVersion);
+  return { pack, sourceVersion };
 }
 
-function message(actor: AgentMessage['actor'], content: string): AgentMessage {
-  const createdAt = new Date().toISOString();
-  return { id: crypto.randomUUID(), actor, content, emotion: 'neutral', kind: 'dialogue', createdAt };
-}
-
+/** Mirror the engine's fact inventory for topic selection; the turn itself still uses runAgentTurn. */
 function allSourceFacts(session: SessionState): HistoryFact[] {
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   const source = pediatricCase.sourceFacts;
-  if (!source) throw new Error(`${session.caseId} 缺少可核验的教师病例正文`);
-  const facts = sourceHistoryFacts(source.sections.history);
+  const pack = sessionTeachingPackage(session);
+  if (!source || !pack) throw new Error(`${session.caseId} 缺少已绑定的新版教学包或源病例`);
+  const facts = [...pack.historyFacts];
   facts.push({ id: 'SOURCE_HX_-1', text: `孩子${source.age}，${source.sex}。`, topics: ['年龄与性别'], sourceLocator: 'age/sex', origin: 'source', actor: 'parent' });
   const complaint = verifiedComplaint(source);
   if (complaint) facts.push({ id: 'SOURCE_HX_-2', text: complaint, topics: ['主要不适'], sourceLocator: 'complaint', origin: 'source', actor: 'mixed' });
@@ -128,6 +114,10 @@ function allSourceFacts(session: SessionState): HistoryFact[] {
 async function main(): Promise<void> {
   const caseKey = argument('--case') as CaseKey;
   if (!Object.hasOwn(CASE_IDS, caseKey)) throw new Error('必须指定 --case dka|newborn|respiratory');
+  const runtimeRootArgument = argument('--runtime-root') || process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT || '';
+  if (!runtimeRootArgument) throw new Error('必须指定 --runtime-root <隔离恢复目录/runtime>');
+  const runtimeRoot = path.resolve(runtimeRootArgument);
+  const sourceRoot = path.resolve(argument('--source-root') || path.join(path.dirname(runtimeRoot), 'source-cases'));
   const outputArgument = argument('--output');
   if (!outputArgument) throw new Error('必须指定 --output <artifacts/model-acceptance/*.json>');
   const output = path.resolve(outputArgument);
@@ -136,85 +126,118 @@ async function main(): Promise<void> {
     throw new Error('输出仅允许写入 artifacts/model-acceptance/*.json');
   }
   mkdirSync(outputRoot, { recursive: true });
+  const privateRawArgument = argument('--private-raw-dir');
+  const privateRawDir = privateRawArgument ? path.resolve(privateRawArgument) : null;
+  if (privateRawDir) {
+    const temporaryRoot = path.resolve(tmpdir());
+    if (!privateRawDir.startsWith(`${temporaryRoot}${path.sep}`)) {
+      throw new Error('私有原文只能写入独立临时目录，不得进入项目或 Git');
+    }
+    mkdirSync(privateRawDir, { recursive: true, mode: 0o700 });
+  }
 
+  process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT = runtimeRoot;
   process.env.ENABLE_AI_FIXTURE = 'false';
   const config = describeAIConfig();
   if (config.apiKeySource === 'missing') throw new Error('缺少真实模型凭据，未执行任何轮次');
   const gateway = getAIGatewaySettings();
   const caseId = CASE_IDS[caseKey];
-  const bundle = controlledCaseBundles.find((item) => item.sourceId === caseId) ?? null;
-  let sourceVersion = bundle?.version ?? null;
-  if (!sourceVersion) sourceVersion = await ensureCandidateSource(caseId);
-  if (!sourceVersion) throw new Error(`${caseId} 在受控注册表和已校验候选包中均无可核验来源`);
-  await ensureControlledCaseBundle(caseId, sourceVersion);
+  const { pack, sourceVersion } = loadRecoveredCase(caseId, runtimeRoot, sourceRoot);
   const session = createInitialSession('offline-model-verification-no-auth', 'guided', caseId, undefined, sourceVersion);
-  const pediatricCase = getCase(caseId, sourceVersion, session.id);
+  assert.equal(session.sourceSnapshotVersion, sourceVersion);
+  assert.equal(session.teachingPackageVersion, pack.version);
   const facts = allSourceFacts(session);
   const topics = SOURCE_HISTORY_TOPICS.filter((topic) => facts.some((fact) => fact.topics.includes(topic.label)));
   if (topics.length === 0) throw new Error(`${caseId} 未解析到可提问的病史主题`);
-  const profile = resolveAuditedCommunicationProfile(caseId, pediatricCase.age);
   const configuredModel = process.env.COZE_AI_ROLE_MODEL || 'doubao-seed-1-8-251228';
   const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  const workingTreeDirty = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim().length > 0;
   const evidence = {
-    schemaVersion: 2,
+    schemaVersion: 4,
     status: 'running' as 'running' | 'completed' | 'failed',
     startedAt: new Date().toISOString(),
     completedAt: null as string | null,
     sourceCommit,
+    workingTreeDirty,
     caseKey,
     caseId,
     requestedRounds: 20,
     sourceFactCount: facts.length,
     availableTopicCount: topics.length,
     sourceSnapshot: {
-      origin: bundle ? 'registered-controlled-bundle' : 'verified-candidate-archive-not-activated',
+      origin: 'isolated-recovered-source-case',
       version: sourceVersion,
-      fileId: bundle?.fileId ?? CANDIDATE_ARCHIVE.fileId,
-      archiveSha256: bundle?.sha256 ?? CANDIDATE_ARCHIVE.sha256,
       persistentInstallationPerformed: false,
+      objectStorageReadUsed: false,
+    },
+    teachingPackage: {
+      origin: 'isolated-recovered-runtime-index',
+      version: pack.version,
+      sourceVersion: pack.sourceVersion,
+      sessionBindingVerified: true,
     },
     runtime: {
-      path: 'sourceHistoryFacts + historyDialogue + invokeCozeAI',
+      path: 'runAgentTurn(ASK_QUESTION) + sessionTeachingPackage + historyDialogue + invokeCozeAI',
       provider: config.provider,
       apiKeySource: config.apiKeySource,
       sdkVersion: config.sdkVersion,
       timeoutMs: gateway.timeoutMs,
       configuredModel,
       rawResponseContentSaved: false,
+      privateRawFileCount: 0,
+      privateTemporaryRawCapture: Boolean(privateRawDir),
       questionContentSaved: false,
       authenticationUsed: false,
       databaseWritesUsed: false,
+      objectStorageWritesUsed: false,
       inMemorySessionOnly: true,
     },
     rounds: [] as RoundEvidence[],
     summary: null as null | Record<string, unknown>,
   };
-  const save = () => writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`, { mode: 0o600 });
+  let activeRound = 0;
+  let activeRoundCall = 0;
+  let rawCaptureCount = 0;
+  const save = () => {
+    evidence.runtime.rawResponseContentSaved = rawCaptureCount > 0;
+    evidence.runtime.privateRawFileCount = rawCaptureCount;
+    writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`, { mode: 0o600 });
+  };
+  const historyInvoke = async (input: Parameters<typeof invokeCozeAI>[0]) => {
+    activeRoundCall += 1;
+    const result = await invokeCozeAI(input);
+    if (privateRawDir) {
+      const file = path.join(privateRawDir, `${caseKey}-round-${String(activeRound).padStart(2, '0')}-call-${String(activeRoundCall).padStart(2, '0')}.txt`);
+      writeFileSync(file, result.content, { encoding: 'utf8', mode: 0o600 });
+      rawCaptureCount += 1;
+    }
+    return result;
+  };
   save();
 
   try {
     for (let round = 1; round <= 20; round += 1) {
+      activeRound = round;
+      activeRoundCall = 0;
       const topic = topics[(round - 1) % topics.length];
       const followUp = round > topics.length;
       const baseQuestion = TOPIC_QUESTIONS[topic.label] ?? `请具体说说${topic.label}。`;
       const question = followUp ? `${baseQuestion}请接着刚才的情况说，后来还有什么变化？` : baseQuestion;
       const contextMessagesProvided = session.messages.filter((item) => ['student', 'child', 'parent'].includes(item.actor)).slice(-12).length;
-      const { dialogue, runtime } = await historyDialogue(session, question, facts, profile);
-      const dialogueText = dialogue.utterances.map((item) => item.text).join('\n');
+      const result = await runAgentTurn(
+        session,
+        { type: 'ASK_QUESTION', data: { text: question } },
+        `offline-model-${caseKey}-${round}`,
+        { historyInvoke },
+      );
+      const runtime = result.runtime;
+      if (!runtime) throw new Error(`第 ${round} 轮未返回角色模型执行证据`);
+      if (privateRawDir && activeRoundCall === 0) throw new Error(`第 ${round} 轮模型原文私有捕获失败`);
+      const responses = result.newMessages.filter((item) => item.actor === 'child' || item.actor === 'parent');
+      const dialogueText = responses.map((item) => item.content).join('\n');
       const modelDialogueText = runtime.execution === 'model' ? dialogueText : '';
-      const codes = disclosedHistoryCodes(dialogue, facts);
-
-      session.messages.push(message('student', question));
-      session.messages.push(...dialogue.utterances.map((item) => message(item.actor, item.text)));
-      session.askedIntents = [...new Set([...session.askedIntents, ...codes])];
-      session.unlockedEvidence = [...new Set([...session.unlockedEvidence, ...codes])];
-      session.dialogueMemory = {
-        topic: dialogue.topic,
-        lastFactIds: codes.length ? codes : session.dialogueMemory?.lastFactIds ?? [],
-        clarifiedQuestion: dialogue.clarification ?? null,
-        concern: /担心|严重|危险/.test(question) ? question : session.dialogueMemory?.concern ?? null,
-      };
-      session.updatedAt = new Date().toISOString();
+      const event = session.events.at(-1);
+      const codes = event?.clientEventId === `offline-model-${caseKey}-${round}` ? event.evidenceCodes : [];
 
       evidence.rounds.push({
         round,
@@ -224,24 +247,30 @@ async function main(): Promise<void> {
         execution: runtime.execution,
         model: runtime.model,
         attempts: runtime.attempts ?? 0,
+        modelCalls: activeRoundCall,
         durationMs: runtime.durationMs,
         errorKind: runtime.errorKind ?? null,
         modelDialoguePresent: Boolean(modelDialogueText),
         modelDialogueHash: modelDialogueText ? sha256(modelDialogueText) : null,
         dialogueLength: dialogueText.length,
-        dialogueActors: dialogue.utterances.map((item) => item.actor),
-        utteranceCount: dialogue.utterances.length,
-        citedFactCount: codes.length,
+        dialogueActors: responses.map((item) => item.actor),
+        utteranceCount: responses.length,
+        citedFactCount: codes.filter((code) => code !== 'COMMUNICATION').length,
         fallbackContentUsed: runtime.execution !== 'model',
         exactQuestionEcho: dialogueText.trim() === question.trim(),
+        validationReasons: runtime.validationReasons ?? [],
       });
       save();
-      console.log(`ROUND ${caseKey} ${round}/20 execution=${runtime.execution} model=${runtime.model ?? 'null'} attempts=${runtime.attempts ?? 0} durationMs=${runtime.durationMs} context=${contextMessagesProvided}`);
+      console.log(`ROUND ${caseKey} ${round}/20 execution=${runtime.execution} model=${runtime.model ?? 'null'} attempts=${runtime.attempts ?? 0} modelCalls=${activeRoundCall} durationMs=${runtime.durationMs} context=${contextMessagesProvided} validation=${(runtime.validationReasons ?? []).join(',') || 'none'}`);
     }
 
     const durations = evidence.rounds.map((item) => item.durationMs).sort((a, b) => a - b);
     const executions = evidence.rounds.reduce<Record<string, number>>((acc, item) => {
       acc[item.execution] = (acc[item.execution] ?? 0) + 1;
+      return acc;
+    }, {});
+    const validationReasons = evidence.rounds.flatMap((item) => item.validationReasons).reduce<Record<string, number>>((acc, reason) => {
+      acc[reason] = (acc[reason] ?? 0) + 1;
       return acc;
     }, {});
     const modelHashes = evidence.rounds.map((item) => item.modelDialogueHash).filter((item): item is string => Boolean(item));
@@ -254,7 +283,11 @@ async function main(): Promise<void> {
       uniqueModelDialogueHashes: new Set(modelHashes).size,
       exactQuestionEchoRounds: evidence.rounds.filter((item) => item.exactQuestionEcho).length,
       contextCarriedRounds: evidence.rounds.filter((item) => item.contextMessagesProvided > 0).length,
+      validationIssueRounds: evidence.rounds.filter((item) => item.validationReasons.length > 0).length,
+      validationReasons,
       totalAttempts: evidence.rounds.reduce((sum, item) => sum + item.attempts, 0),
+      totalModelCalls: evidence.rounds.reduce((sum, item) => sum + item.modelCalls, 0),
+      correctedModelCalls: evidence.rounds.filter((item) => item.modelCalls > 1).length,
       latencyMs: {
         min: durations[0] ?? 0,
         p50: durations[Math.floor((durations.length - 1) * 0.5)] ?? 0,
@@ -266,7 +299,8 @@ async function main(): Promise<void> {
     evidence.completedAt = new Date().toISOString();
     save();
     console.log(`SUMMARY ${JSON.stringify(evidence.summary)}`);
-    if (evidence.rounds.length !== 20 || (executions.model ?? 0) === 0) process.exitCode = 1;
+    const expectedRawCount = evidence.rounds.reduce((sum, item) => sum + item.modelCalls, 0);
+    if (evidence.rounds.length !== 20 || (executions.model ?? 0) === 0 || (privateRawDir && rawCaptureCount !== expectedRawCount)) process.exitCode = 1;
   } catch (error) {
     evidence.status = 'failed';
     evidence.completedAt = new Date().toISOString();

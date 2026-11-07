@@ -3,7 +3,7 @@ import test from 'node:test';
 import type { SessionState } from '@/domain/agent';
 import { resolveCommunicationProfile } from '@/domain/communication-profile';
 import type { HistoryFact } from '@/domain/teaching-package';
-import { contextualHistorySelection, historyDialogue, sourceHistoryFacts, validateHistoryDialogue,disclosedHistoryCodes,conversationAct } from '@/lib/history-dialogue';
+import { contextualHistorySelection, historyDialogue, inspectHistoryDialogue, sourceHistoryFacts, validateHistoryDialogue,disclosedHistoryCodes,conversationAct } from '@/lib/history-dialogue';
 
 const facts:HistoryFact[]=[
   {id:'hx-time',text:'咳嗽3天。',topics:['呼吸相关症状','起病与病程'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
@@ -55,6 +55,40 @@ test('不存在的事实、捏造数值、未到阶段及婴儿台词均拒绝',
   assert.equal(validateHistoryDialogue(reply('咳嗽3天','hx-time'),[{...facts[0],availableFromStage:'tests'}],profile,'history'),null);
   assert.equal(validateHistoryDialogue({topic:'测试',utterances:[{actor:'child',text:'右胸疼',factIds:['hx-pain']}]},facts,resolveCommunicationProfile('synthetic','2天'),'history'),null);
 });
+test('模型降级只返回安全校验原因码，不包含模型原文或私有事实',async()=>{
+  const invalid={topic:'病程',utterances:[{actor:'parent' as const,text:'咳嗽9天。',factIds:['hx-time']}]};
+  const inspected=inspectHistoryDialogue(invalid,facts,profile,'history');
+  assert.equal(inspected.dialogue,null);
+  assert.deepEqual(inspected.issues.map(issue=>`${issue.code}@${issue.utteranceIndex}`),['ungrounded_number@0','ungrounded_quantity@0']);
+  const result=await historyDialogue(state(),'咳嗽多久了？',facts,profile,undefined,async()=>({content:JSON.stringify(invalid)}));
+  assert.equal(result.runtime.execution,'model_fallback');
+  assert.equal(result.runtime.errorKind,'ungrounded_dialogue');
+  assert.deepEqual(result.runtime.validationReasons,['ungrounded_number@0','ungrounded_quantity@0']);
+  assert.equal(JSON.stringify(result.runtime).includes('咳嗽9天'),false);
+});
+test('首次绑定失败最多纠错一次，第二次仍须通过同一校验器',async()=>{
+  let calls=0;
+  const repaired=await historyDialogue(state(),'咳嗽多久了？',facts,profile,undefined,async input=>{
+    calls++;
+    if(calls===1)return {content:JSON.stringify({topic:'病程',utterances:[{actor:'parent',text:'咳嗽9天。',factIds:['hx-time']}]})};
+    const correction=JSON.parse(input.messages.at(-1)?.content as string);
+    assert.deepEqual(correction.validationReasons,['ungrounded_number@0','ungrounded_quantity@0']);
+    return {content:JSON.stringify({topic:'病程',utterances:[{actor:'parent',text:'咳嗽3天。',factIds:['hx-time']}]})};
+  });
+  assert.equal(calls,2);assert.equal(repaired.runtime.execution,'model');assert.equal(repaired.runtime.attempts,2);
+  let failedCalls=0;
+  const failed=await historyDialogue(state(),'咳嗽多久了？',facts,profile,undefined,async()=>{
+    failedCalls++;return {content:JSON.stringify({topic:'病程',utterances:[{actor:'parent',text:'咳嗽9天。',factIds:['hx-time']}]})};
+  });
+  assert.equal(failedCalls,2);assert.equal(failed.runtime.execution,'model_fallback');assert.equal(failed.runtime.attempts,2);
+});
+test('否定句中的有症状子串不误判，真正阴性翻转仍拒绝',()=>{
+  const negative={...facts[0],text:'无腹痛腹泻。'};
+  const make=(text:string)=>({topic:'消化道',utterances:[{actor:'parent' as const,text,factIds:['hx-time']}]});
+  assert.ok(validateHistoryDialogue(make('没有拉肚子。'),[negative],profile,'history'));
+  assert.ok(validateHistoryDialogue(make('未出现腹泻。'),[negative],profile,'history'));
+  assert.equal(validateHistoryDialogue(make('有腹泻。'),[negative],profile,'history'),null);
+});
 test('保留关键阴性，不允许改成相反症状，也不允许角色给标准诊断',()=>{
   assert.equal(validateHistoryDialogue({topic:'测试',utterances:[{actor:'parent',text:'有血尿。',factIds:['hx-negative']}]},facts,profile,'history'),null);
   assert.equal(validateHistoryDialogue({topic:'测试',utterances:[{actor:'parent',text:'正确诊断是肺炎。',factIds:['hx-time']}]},facts,profile,'history'),null);
@@ -67,6 +101,34 @@ test('中文数词保持原值可用，改天为周或用同义词翻转阴性�
   assert.equal(validateHistoryDialogue(make('咳嗽十天了'),facts,profile,'history'),null);
   const negative={...facts[0],text:'无发热。'};
   assert.equal(validateHistoryDialogue(make('有发烧。'),[negative],profile,'history'),null);
+});
+test('中文范围、孕周和常见单位只做有源事实的等价转换',()=>{
+  const source:HistoryFact={id:'hx-values',text:'胎龄38+5周，BW3.4Kg；配方奶30ml/次，2-3h/次，伴吐奶2次；大便1次/3-4天。',topics:['出生、喂养与生长发育'],actor:'parent',origin:'source',sourceLocator:'synthetic'};
+  const make=(text:string)=>({topic:'数值',utterances:[{actor:'parent' as const,text,factIds:['hx-values']}]});
+  assert.ok(validateHistoryDialogue(make('胎龄38周多5天，出生体重3.4公斤，配方奶每次30毫升，每两三个小时喂一次，吐奶两次，大便三四天一次。'),[source],profile,'history'));
+  const wrongRange=inspectHistoryDialogue(make('胎龄38周多5天，出生体重3.4公斤，配方奶每次30毫升，每两三个小时喂一次，吐奶两次，大便四五天一次。'),[source],profile,'history');
+  assert.equal(wrongRange.dialogue,null);assert.ok(wrongRange.issues.some(issue=>issue.code==='ungrounded_quantity'));
+  assert.equal(validateHistoryDialogue(make('胎龄38周多6天，出生体重3.4公斤。'),[source],profile,'history'),null);
+  assert.equal(validateHistoryDialogue(make('胎龄38周多5天，出生体重4.3公斤。'),[source],profile,'history'),null);
+  assert.equal(validateHistoryDialogue(make('配方奶每次30毫升，每2到4小时喂。'),[source],profile,'history'),null);
+});
+test('指示性这一次不算次数，新增病史次数仍须拒绝',()=>{
+  const infection:HistoryFact={id:'hx-infection',text:'前10天曾有新型冠状病毒感染病史',topics:['既往、过敏、接种及家族史'],actor:'parent',origin:'source',sourceLocator:'synthetic'};
+  const make=(text:string)=>({topic:'既往史',utterances:[{actor:'parent' as const,text,factIds:['hx-infection']}]});
+  assert.ok(validateHistoryDialogue(make('十天前得过新冠。'),[infection],profile,'history'));
+  assert.equal(validateHistoryDialogue(make('十天前得过一次新冠。'),[infection],profile,'history'),null);
+  const negative:HistoryFact={id:'hx-negative',text:'无发热',topics:['发热与处理'],actor:'parent',origin:'source',sourceLocator:'synthetic'};
+  const treatment:HistoryFact={id:'hx-treatment',text:'静注治疗2天，仍有咳嗽伴喘息',topics:['已用药物与院外处理'],actor:'parent',origin:'source',sourceLocator:'synthetic'};
+  assert.ok(validateHistoryDialogue({topic:'发热与治疗',utterances:[{actor:'parent',text:'孩子这一次从一开始就没发烧，在外院输了两天药也没见好。',factIds:['hx-negative','hx-treatment']}]},[negative,treatment],profile,'history'));
+});
+test('空编号只允许纯不确定性表达，不能夹带医学否定或阳性结论',()=>{
+  const make=(text:string)=>({topic:'未知信息',utterances:[{actor:'parent' as const,text,factIds:[]}]});
+  assert.ok(validateHistoryDialogue(make('这一点我没留意，不能确定。'),facts,profile,'history'));
+  assert.ok(validateHistoryDialogue(make('这部分我不太记得，可以请家长补充一下吗？'),facts,profile,'history'));
+  assert.ok(validateHistoryDialogue(make('有没有皮疹我记不得了。'),facts,profile,'history'));
+  assert.ok(validateHistoryDialogue(make('湿疹情况我暂时没法确认。'),facts,profile,'history'));
+  assert.equal(validateHistoryDialogue(make('这一点我不确定，没有皮疹。'),facts,profile,'history'),null);
+  assert.equal(validateHistoryDialogue(make('没有水肿。'),facts,profile,'history'),null);
 });
 test('直接问能表达的儿童自身感受可由儿童回答，出生用药仍由家长补充',async()=>{
   const old=process.env.ENABLE_AI_FIXTURE;process.env.ENABLE_AI_FIXTURE='true';

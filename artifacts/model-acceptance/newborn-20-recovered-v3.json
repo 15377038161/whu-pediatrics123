@@ -1,0 +1,551 @@
+{
+  "schemaVersion": 4,
+  "status": "completed",
+  "startedAt": "2026-11-07T14:04:57.159Z",
+  "completedAt": "2026-11-07T14:06:53.295Z",
+  "sourceCommit": "0b300ebf07f9ac35dd48d1adf4c404863186e803",
+  "workingTreeDirty": true,
+  "caseKey": "newborn",
+  "caseId": "teacher-新生儿败血症",
+  "requestedRounds": 20,
+  "sourceFactCount": 29,
+  "availableTopicCount": 7,
+  "sourceSnapshot": {
+    "origin": "isolated-recovered-source-case",
+    "version": "5964e5e810213b0c",
+    "persistentInstallationPerformed": false,
+    "objectStorageReadUsed": false
+  },
+  "teachingPackage": {
+    "origin": "isolated-recovered-runtime-index",
+    "version": "9bb732310a5f6d183093",
+    "sourceVersion": "5964e5e810213b0c",
+    "sessionBindingVerified": true
+  },
+  "runtime": {
+    "path": "runAgentTurn(ASK_QUESTION) + sessionTeachingPackage + historyDialogue + invokeCozeAI",
+    "provider": "coze_native",
+    "apiKeySource": "platform_injected",
+    "sdkVersion": "1.0.0-20261019.d5eff68",
+    "timeoutMs": 30000,
+    "configuredModel": "doubao-seed-1-8-251228",
+    "rawResponseContentSaved": true,
+    "privateRawFileCount": 29,
+    "privateTemporaryRawCapture": true,
+    "questionContentSaved": false,
+    "authenticationUsed": false,
+    "databaseWritesUsed": false,
+    "objectStorageWritesUsed": false,
+    "inMemorySessionOnly": true
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "topic": "起病与病程",
+      "followUp": false,
+      "contextMessagesProvided": 1,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 2971,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "b264759e951cbf4fcdd472240325a6570bc5f329b0b93eae17a3325e46e3e502",
+      "dialogueLength": 42,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 2,
+      "topic": "一般状态、进食及排泄",
+      "followUp": false,
+      "contextMessagesProvided": 3,
+      "execution": "model_fallback",
+      "model": null,
+      "attempts": 2,
+      "modelCalls": 2,
+      "durationMs": 8644,
+      "errorKind": "ungrounded_dialogue",
+      "modelDialoguePresent": false,
+      "modelDialogueHash": null,
+      "dialogueLength": 25,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": true,
+      "exactQuestionEcho": false,
+      "validationReasons": [
+        "ungrounded_number@0",
+        "ungrounded_quantity@0"
+      ]
+    },
+    {
+      "round": 3,
+      "topic": "出生、喂养与生长发育",
+      "followUp": false,
+      "contextMessagesProvided": 5,
+      "execution": "model_fallback",
+      "model": null,
+      "attempts": 2,
+      "modelCalls": 2,
+      "durationMs": 10077,
+      "errorKind": "ungrounded_dialogue",
+      "modelDialoguePresent": false,
+      "modelDialogueHash": null,
+      "dialogueLength": 44,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 3,
+      "fallbackContentUsed": true,
+      "exactQuestionEcho": false,
+      "validationReasons": [
+        "ungrounded_number@1",
+        "ungrounded_quantity@1"
+      ]
+    },
+    {
+      "round": 4,
+      "topic": "既往、过敏、接种及家族史",
+      "followUp": false,
+      "contextMessagesProvided": 7,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 2,
+      "modelCalls": 2,
+      "durationMs": 6395,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "b3b222d408f423772a429adf44a833eaf5d3de5758a8b8d3176ce5b7b630a8ac",
+      "dialogueLength": 46,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 5,
+      "topic": "已用药物与院外处理",
+      "followUp": false,
+      "contextMessagesProvided": 9,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 2,
+      "modelCalls": 2,
+      "durationMs": 4906,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "a74ea2c09f17a3e61ac46ca80e50796fdafc29a5c307ed3b0f8a4131337528d1",
+      "dialogueLength": 14,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 0,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 6,
+      "topic": "水肿及尿液变化",
+      "followUp": false,
+      "contextMessagesProvided": 11,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 3414,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "90787029575c56b439ada32609642c6ada4e06f0182a68a57815d7a9c24747e0",
+      "dialogueLength": 13,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 0,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 7,
+      "topic": "黄疸、皮肤及出血",
+      "followUp": false,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 4357,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "e8af5ed635553868a6afaff9759d7b8a17a9b84efd05669ad002302fe8d2f37c",
+      "dialogueLength": 54,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 8,
+      "topic": "起病与病程",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 3447,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "0fa6bee607f00c55b7decac0ebfb0158681b689b09aa2484bfdd8b6646cee76e",
+      "dialogueLength": 58,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 9,
+      "topic": "一般状态、进食及排泄",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model_fallback",
+      "model": null,
+      "attempts": 2,
+      "modelCalls": 2,
+      "durationMs": 6186,
+      "errorKind": "ungrounded_dialogue",
+      "modelDialoguePresent": false,
+      "modelDialogueHash": null,
+      "dialogueLength": 25,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": true,
+      "exactQuestionEcho": false,
+      "validationReasons": [
+        "ungrounded_number@0",
+        "ungrounded_quantity@0"
+      ]
+    },
+    {
+      "round": 10,
+      "topic": "出生、喂养与生长发育",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model_fallback",
+      "model": null,
+      "attempts": 2,
+      "modelCalls": 2,
+      "durationMs": 10712,
+      "errorKind": "ungrounded_dialogue",
+      "modelDialoguePresent": false,
+      "modelDialogueHash": null,
+      "dialogueLength": 44,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 3,
+      "fallbackContentUsed": true,
+      "exactQuestionEcho": false,
+      "validationReasons": [
+        "ungrounded_number@1",
+        "ungrounded_quantity@1"
+      ]
+    },
+    {
+      "round": 11,
+      "topic": "既往、过敏、接种及家族史",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model_fallback",
+      "model": null,
+      "attempts": 2,
+      "modelCalls": 2,
+      "durationMs": 9468,
+      "errorKind": "ungrounded_dialogue",
+      "modelDialoguePresent": false,
+      "modelDialogueHash": null,
+      "dialogueLength": 38,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": true,
+      "exactQuestionEcho": false,
+      "validationReasons": [
+        "ungrounded_number@0",
+        "ungrounded_quantity@0"
+      ]
+    },
+    {
+      "round": 12,
+      "topic": "已用药物与院外处理",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 4437,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "b721a34e61cb1759d9b31aa570b1f184e135c4be756d3a1b38756a6a9c01b405",
+      "dialogueLength": 92,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 3,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 13,
+      "topic": "水肿及尿液变化",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 2999,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "90787029575c56b439ada32609642c6ada4e06f0182a68a57815d7a9c24747e0",
+      "dialogueLength": 13,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 0,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 14,
+      "topic": "黄疸、皮肤及出血",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 4782,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "296dfaa7a78401b8ec5e2055e6d146802bc9ee7eb51a6ed7857a7b9b1bb83532",
+      "dialogueLength": 72,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 3,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 15,
+      "topic": "起病与病程",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 4862,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "c9c230ccda8d015a13b4be0b09f928bd0a852c5f37aba43b50888c1e28d28515",
+      "dialogueLength": 59,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 16,
+      "topic": "一般状态、进食及排泄",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model_fallback",
+      "model": null,
+      "attempts": 2,
+      "modelCalls": 2,
+      "durationMs": 8566,
+      "errorKind": "ungrounded_dialogue",
+      "modelDialoguePresent": false,
+      "modelDialogueHash": null,
+      "dialogueLength": 25,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": true,
+      "exactQuestionEcho": false,
+      "validationReasons": [
+        "ungrounded_number@0",
+        "ungrounded_quantity@0"
+      ]
+    },
+    {
+      "round": 17,
+      "topic": "出生、喂养与生长发育",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 3987,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "384097d0df4c51ec397e3ac7ee81d6e0c29dad6c299d075b6ccc582fd4ce2cb8",
+      "dialogueLength": 93,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 6,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 18,
+      "topic": "既往、过敏、接种及家族史",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 2,
+      "modelCalls": 2,
+      "durationMs": 8456,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "fe1279cbc3baff6052d5509c2822951c4bd6864eb18e28a832d6d97134bb5cac",
+      "dialogueLength": 87,
+      "dialogueActors": [
+        "parent",
+        "parent"
+      ],
+      "utteranceCount": 2,
+      "citedFactCount": 2,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 19,
+      "topic": "已用药物与院外处理",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 4345,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "47a3df78053f07db710f22a80c6ea38b9cfd7cab4d4faddb345308bd3886e9a5",
+      "dialogueLength": 83,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 3,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    },
+    {
+      "round": 20,
+      "topic": "水肿及尿液变化",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "modelCalls": 1,
+      "durationMs": 2613,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "90787029575c56b439ada32609642c6ada4e06f0182a68a57815d7a9c24747e0",
+      "dialogueLength": 13,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 0,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false,
+      "validationReasons": []
+    }
+  ],
+  "summary": {
+    "completedRounds": 20,
+    "executions": {
+      "model": 14,
+      "model_fallback": 6
+    },
+    "modelRounds": 14,
+    "fallbackRounds": 6,
+    "deterministicRounds": 0,
+    "uniqueModelDialogueHashes": 12,
+    "exactQuestionEchoRounds": 0,
+    "contextCarriedRounds": 20,
+    "validationIssueRounds": 6,
+    "validationReasons": {
+      "ungrounded_number@0": 4,
+      "ungrounded_quantity@0": 4,
+      "ungrounded_number@1": 2,
+      "ungrounded_quantity@1": 2
+    },
+    "totalAttempts": 29,
+    "totalModelCalls": 29,
+    "correctedModelCalls": 9,
+    "latencyMs": {
+      "min": 2613,
+      "p50": 4782,
+      "p95": 10077,
+      "max": 10712
+    }
+  }
+}

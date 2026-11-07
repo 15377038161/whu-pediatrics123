@@ -272,6 +272,8 @@ export interface AgentRuntimeSummary {
   durationMs: number;
   attempts?: number;
   errorKind?: string;
+  /** Safe rule codes only; never includes model text or private case facts. */
+  validationReasons?: string[];
 }
 
 export interface AbilityScores {
