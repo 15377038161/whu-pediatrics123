@@ -103,5 +103,9 @@ export function sourceExamDefinitions(text: string): string[][] {
 export type ExamPosture = 'standing' | 'supine';
 /** 历史事件未带姿势时不改写原始记录；新请求腹部类检查必须明确仰卧。 */
 export function postureAllows(bodyPart: string, posture?: ExamPosture): boolean {
-  return !posture || !SUPINE_ONLY_PARTS.has(bodyPart) || posture === 'supine';
+  const requiresSupine = SUPINE_ONLY_PARTS.has(bodyPart)
+    || bodyPart.startsWith('abdomen-')
+    || bodyPart === 'umbilicus'
+    || bodyPart === 'external-genitalia';
+  return !posture || !requiresSupine || posture === 'supine';
 }

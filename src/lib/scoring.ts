@@ -1,5 +1,7 @@
 import {TEACHING_ILLUSTRATIONS} from '@/domain/teaching-illustrations';
 import teachingIllustrations from '@/domain/case-teaching-illustrations.json';
+import { buildTeachingFeedback } from '@/domain/teaching-score';
+import { sessionTeachingPackage,sessionTeachingCase } from '@/lib/session-teaching';
 import {SOURCE_HISTORY_TOPICS, sourceHistorySentences} from '@/domain/source-history';
 import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
 import type { AbilityScores, ScoreEvidence, SessionState, TrainingReport } from '@/domain/agent';
@@ -18,6 +20,7 @@ function eventIdsFor(session: SessionState, codes: string[]): string[] {
 /** 评分对照来源：优先使用会话绑定版本的安全读取结果（RPC/教师直读），
  *  避免直接使用进程内快照（可能因召回漂移与绑定版本不一致）。 */
 export interface ReportReference {
+  noteText?: string;
   diagnosis?: string;
   plan?: string;
 }
@@ -57,6 +60,8 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
     const unavailableCount=unique.length-items.length;
     report.decisionEvidenceReview={status:unavailableCount?'unavailable':items.length?'linked':'unlinked',items,unavailableCount,caseVersion:session.caseVersion,sourceSnapshotVersion:session.sourceSnapshotVersion??null};
   }
+  const teachingPackage=sessionTeachingPackage(session);
+  if(teachingPackage)report.teachingFeedback=buildTeachingFeedback(session,teachingPackage,reference?.noteText);
   return report;
 }
 
@@ -514,18 +519,19 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
   // 对照来源优先级：会话绑定版本的安全读取（RPC/教师直读）> 进程内缓存快照（本地 knowledge 场景）。
   // 学生会话无绑定版本对照时保持"资料不足"，不用漂移数据补造。
   const source = getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts;
+  const packageFacts=sessionTeachingPackage(session);
   const collectionReview: NonNullable<TrainingReport['collectionReview']> = [];
   const focusArea = session.mode === 'practice' ? session.practiceFocus : null;
   if (source && (!focusArea || focusArea === 'history')) {
     const sentences=sourceHistorySentences(source.sections.history);
     for (const topic of SOURCE_HISTORY_TOPICS) {
-      const codes=sentences.flatMap((fact,index)=>topic.source.test(fact)?[`SOURCE_HX_${index}`]:[]);
+      const codes=packageFacts?packageFacts.historyFacts.filter(f=>f.topics.includes(topic.label)).map(f=>f.id):sentences.flatMap((fact,index)=>topic.source.test(fact)?[`SOURCE_HX_${index}`]:[]);
       if(codes.length) collectionReview.push({area:'history',label:topic.label,available:codes.length,
         collected:codes.filter(code=>session.askedIntents.includes(code)).length,eventIds:eventIdsFor(session,codes)});
     }
   }
   if (source && (!focusArea || focusArea === 'exam')) {
-    for(const exam of getCase(session.caseId,session.sourceSnapshotVersion,session.id).exams.filter(e=>e.evidenceCode!=='EX_PREP')) {
+    for(const exam of sessionTeachingCase(session).exams.filter(e=>e.evidenceCode!=='EX_PREP'&&(!packageFacts||packageFacts.rubric.some(r=>r.evidenceCodes.includes(e.evidenceCode))))) {
       collectionReview.push({area:'exam',label:exam.label,available:1,collected:session.unlockedEvidence.includes(exam.evidenceCode)?1:0,eventIds:eventIdsFor(session,[exam.evidenceCode])});
     }
   }
@@ -536,8 +542,8 @@ function buildSourceReport(session: SessionState, reportId: string, reference?: 
     for (const item of session.supplementalTests ?? []) {
       for (const sourceId of item.sourceTestIds ?? []) supplementalBySource.set(sourceId, item.id);
     }
-    for(const check of session.caseOptions?.tests ?? []) {
-      const code=`SOURCE_TEST_${check.id.replace('source-test-','')}`;
+    for(const check of packageFacts?.tests ?? session.caseOptions?.tests ?? []) {
+      const code=packageFacts?`TEACH_TEST_${check.id}`:`SOURCE_TEST_${check.id.replace('source-test-','')}`;
       const supplementId=supplementalBySource.get(check.id);
       const obtained=session.unlockedEvidence.includes(code)||Boolean(supplementId);
       const evidenceCodes=supplementId?[code,`SUPPLEMENT_TEST_${supplementId}`]:[code];

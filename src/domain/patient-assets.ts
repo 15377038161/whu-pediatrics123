@@ -64,6 +64,8 @@ export interface CaregiverAsset {
  * 保证人物背景 UI 展示的素材信息与实际渲染素材一致。
  */
 export const PATIENT_ASSETS: readonly PatientAsset[] = [
+  {assetId:'infant-boy',ageBand:'infant',sexPresentation:'male',postures:['supine'],sources:{supine:'/media/clinical/virtual-infant-boy-supine-v1.png'},style:'synthetic_illustration',license:'project_internal_unreviewed',isSynthetic:true,reviewStatus:'unaudited',version:'v1',note:'婴儿男童仰卧虚拟示教样板，非病例本人，不代表真实体征'},
+  {assetId:'infant-girl',ageBand:'infant',sexPresentation:'female',postures:['supine'],sources:{supine:'/media/clinical/virtual-infant-girl-supine-v1.png'},style:'synthetic_illustration',license:'project_internal_unreviewed',isSynthetic:true,reviewStatus:'unaudited',version:'v1',note:'婴儿女童仰卧虚拟示教样板，非病例本人，不代表真实体征'},
   {
     assetId: 'newborn-boy',
     ageBand: 'newborn',

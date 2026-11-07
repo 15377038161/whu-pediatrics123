@@ -1,5 +1,8 @@
 import type { CaseMedia, SessionState } from '@/domain/agent';
 import { TEACHING_ILLUSTRATIONS } from '@/domain/teaching-illustrations';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { createHash } from 'node:crypto';
 
 /** Keep storage URLs and any extra private properties out of event metadata. */
 export function decodeCaseMedia(value: unknown): CaseMedia[] {
@@ -44,6 +47,16 @@ export function findReleasedMedia(session: SessionState, fileId: string): CaseMe
 
 /** 媒体签名链接解析：以已释放登记的 fileId 换带期限链接（过期前端重新请求）。 */
 export async function getCaseMediaLink(fileId: string): Promise<{ url: string; expiresAt: string; fileName: string | null }> {
+  if(fileId.startsWith('training-media:')){
+    const digest=fileId.slice('training-media:'.length);
+    if(!/^[a-f0-9]{64}$/.test(digest))throw new Error('FILE_UNAVAILABLE');
+    const root=path.resolve(process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT||path.join(process.cwd(),'knowledge','training-packages'));
+    try{
+      const bytes=readFileSync(path.join(root,'media',`${digest}.png`));
+      if(bytes.length>3_000_000||createHash('sha256').update(bytes).digest('hex')!==digest)throw new Error('FILE_UNAVAILABLE');
+      return {url:`data:image/png;base64,${bytes.toString('base64')}`,expiresAt:'',fileName:null};
+    }catch{throw new Error('FILE_UNAVAILABLE');}
+  }
   const illustration = Object.hasOwn(TEACHING_ILLUSTRATIONS, fileId) ? TEACHING_ILLUSTRATIONS[fileId] : undefined;
   if (illustration) return {url: illustration.url, expiresAt: '', fileName: null};
   if (fileId.startsWith('teaching-illustration:')) throw new Error('FILE_UNAVAILABLE');

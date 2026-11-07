@@ -24,7 +24,7 @@ export function getCaseRecordEntries(session: Pick<SessionState, 'events' | 'mes
   return session.events
     .filter((event) => event.evidenceCodes.length > 0 || event.type === 'ORDER_TEST')
     .map((event) => {
-      const category: CaseRecordCategory = event.type === 'ASK_QUESTION'
+      const category: CaseRecordCategory = event.type === 'ASK_QUESTION'||event.type==='SEND_COMMUNICATION'&&event.summary.startsWith('沟通交流：')
         ? 'history'
         : event.type === 'ORDER_TEST' ? 'test' : 'exam';
       if (category !== 'history') return { event, category, question: null, answers: [] };
@@ -56,6 +56,7 @@ export function searchCaseRecordEntries(entries: CaseRecordEntry[], category: Ca
 }
 
 function sourceHistoryQuestion(summary: string): string | null {
+  if (summary.startsWith('沟通交流：')) return summary.slice('沟通交流：'.length).trim() || null;
   if (summary.startsWith(sourceQuestionPrefix)) return summary.slice(sourceQuestionPrefix.length).trim() || null;
   if (summary.startsWith(unknownQuestionPrefix) && summary.endsWith(unknownQuestionSuffix)) {
     return summary.slice(unknownQuestionPrefix.length, -unknownQuestionSuffix.length).trim() || null;

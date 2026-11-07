@@ -21,7 +21,7 @@ test('reviewed posture/result edits change version; private rules stay out of st
  assert.notEqual(computeCaseDataVersion({...record,examRules:[{...record.examRules![0],result:'合成修订'}]}),computeCaseDataVersion(record));
  assert.equal('examRules' in buildFactsPayloadForInit(record),false);
  assert.deepEqual(buildBindingConfigForInit(record)?.examRules,record.examRules);
- assert.equal(new Set(EXAM_LOCATIONS.map(([id])=>id)).size,24);
+ assert.equal(new Set(EXAM_LOCATIONS.map(([id])=>id)).size,EXAM_LOCATIONS.length);
  // 部位枚举必须由 EXAM_LOCATIONS 派生；再出现第二份字面量清单就会漂移。
  assert.deepEqual([...sourceExamRuleSchema.shape.bodyPartId.options],EXAM_LOCATIONS.map(([id])=>id));
 });

@@ -138,7 +138,7 @@ export function NoteWriting({ sessionId, embedded=false, context, onComplete, re
       clientEventIdRef.current = null;
       setConfirmMissing(false);
       await refreshSubmissions();
-      setActiveSection('history');
+      setActiveSection(embedded&&onComplete?'submit':'history');
       setExpandedNoteId(saved.id);
       // 报告尚未生成时 AI 无可核对证据，提交后可在报告生成后手动发起评分。
       if (!context || context.reportId) void handleReview(saved.id);

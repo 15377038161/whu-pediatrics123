@@ -1,60 +1,35 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { EXAM_LOCATIONS } from '../src/domain/source-exam-contract';
-import { EXAM_REGIONS, SUPINE_ONLY_PARTS, partLabel, regionForPart } from '../src/domain/exam-regions';
+import { ANATOMY_REGIONS, EXAM_INSTRUMENTS, instrumentsForSite } from '@/domain/exam-anatomy';
+import { EXAM_LOCATIONS } from '@/domain/source-exam-contract';
+import { SUPINE_ONLY_PARTS, partLabel } from '@/domain/exam-regions';
+import { examProtocol } from '@/domain/exam-protocol';
 
-const locationIds: readonly string[] = EXAM_LOCATIONS.map(([id]) => id);
-const BUTTON_HEIGHT = 44;
-const POSTURES = ['standing', 'supine'] as const;
-
-test('6 大区覆盖全部子部位，且每个子部位只归属一个大区', () => {
-  assert.equal(EXAM_REGIONS.length, 6);
-  const owned = EXAM_REGIONS.flatMap((region) => [...region.parts]);
-  assert.equal(new Set(owned).size, owned.length, '子部位被两个大区重复收录会让学生点到两次');
-  assert.deepEqual([...owned].sort(), [...locationIds].sort());
-  for (const region of EXAM_REGIONS) {
-    assert.equal(regionForPart(region.parts[0])?.id, region.id);
-    assert.ok(region.parts.length >= 3 && region.parts.length <= 7, `${region.id} 子部位数超出面板可点范围`);
-  }
+test('新目录覆盖全部规范部位，左右肺野按患者方向定位',()=>{
+  const sites=ANATOMY_REGIONS.flatMap(r=>r.sites);
+  assert.equal(ANATOMY_REGIONS.length,8);
+  assert.equal(new Set(sites.map(s=>s.id)).size,sites.length);
+  assert.deepEqual(sites.map(s=>s.id).sort(),EXAM_LOCATIONS.map(([id])=>id).sort());
+  assert.ok(sites.find(s=>s.id==='right-lung-upper')!.x<50);
+  assert.ok(sites.find(s=>s.id==='right-lung-back')!.x>50);
+  for(const site of sites)assert.ok(site.x>0&&site.x<100&&site.y>0&&site.y<100);
 });
-
-test('10 个旧部位 id 全部保留原名，在飞会话的已解锁证据码不作废', () => {
-  for (const legacy of ['forehead', 'mouth', 'neck', 'chest', 'upper-arm', 'skin', 'abdomen', 'finger', 'hands', 'limbs']) {
-    assert.ok(locationIds.includes(legacy), legacy);
-    assert.ok(regionForPart(legacy), `${legacy} 未归入任何大区`);
-  }
-  assert.equal(locationIds.length, 24);
+test('三个测温器材分开，错误部位不可选；肌力不用叩诊锤代替',()=>{
+  assert.ok(instrumentsForSite('axilla').includes('axillary-thermometer'));
+  assert.equal(instrumentsForSite('forehead').includes('axillary-thermometer'),false);
+  assert.ok(instrumentsForSite('forehead').includes('infrared-thermometer'));
+  assert.ok(instrumentsForSite('ears').includes('tympanic-thermometer'));
+  assert.equal(instrumentsForSite('upper-limb-power').includes('reflex-hammer'),false);
 });
-
-test('partLabel 全覆盖且不返回空串，未收录 id 原样回退暴露数据缺口', () => {
-  for (const [id, label] of EXAM_LOCATIONS) {
-    assert.equal(partLabel(id), label);
-    assert.ok(label.trim().length > 0, id);
-  }
-  assert.equal(partLabel('no-such-part'), 'no-such-part');
-  assert.equal(regionForPart('no-such-part'), null);
-});
-
-test('仰卧位限定部位都在册，且不含站姿即可完成的部位', () => {
-  for (const part of SUPINE_ONLY_PARTS) {
-    assert.ok(locationIds.includes(part), part);
-    assert.ok(['abdomen', 'liver-spleen', 'groin'].includes(part), `${part} 不需要强制仰卧`);
-  }
-  for (const standing of ['chest', 'chest-lung', 'chest-heart', 'neck', 'limbs', 'spine']) {
-    assert.equal(SUPINE_ONLY_PARTS.has(standing), false, standing);
-  }
-});
-
-test('同栏大区锚点纵向间距不小于按钮高度，常驻 6 个按钮本身不重叠', () => {
-  for (const posture of POSTURES) {
-    for (const side of ['left', 'right'] as const) {
-      const tops = EXAM_REGIONS.filter((region) => region.side === side)
-        .map((region) => region.anchorTop[posture === 'supine' ? 1 : 0])
-        .sort((a, b) => a - b);
-      for (let i = 1; i < tops.length; i += 1) {
-        // 最不利图框高 340px（新生儿方图）：百分比差要换算成像素仍够一个点击目标。
-        assert.ok((tops[i] - tops[i - 1]) / 100 * 340 >= BUTTON_HEIGHT, `${side} 栏 ${posture} 第 ${i} 个锚点与前一个只差 ${(tops[i] - tops[i - 1])}%`);
-      }
+test('可选操作均有规范说明，旧部位标签仍可读',()=>{
+  const tools=new Map(EXAM_INSTRUMENTS.map(t=>[t.id,t]));
+  for(const [id,label] of EXAM_LOCATIONS){
+    assert.equal(partLabel(id),label);
+    for(const tool of instrumentsForSite(id)){
+      assert.ok(tools.has(tool));assert.ok(examProtocol(tool,id)?.technique);
+      if(!['inspection','palpation','percussion'].includes(tool))assert.ok(tools.get(tool)?.image);
     }
   }
+  assert.equal(partLabel('unregistered'),'unregistered');
+  for(const id of SUPINE_ONLY_PARTS)assert.ok(EXAM_LOCATIONS.some(([part])=>id===part));
 });

@@ -28,3 +28,5 @@ docs/实施方案/病例知识库资源索引.json
 supabase/.temp/
 *.pdf
 !public/models/anatomy/piper-corresponding-source.zip
+
+.next-training/

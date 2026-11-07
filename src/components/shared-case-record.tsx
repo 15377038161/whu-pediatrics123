@@ -5,6 +5,7 @@ import { ClipboardPen, Search, Volume2, X } from 'lucide-react';
 import type { SessionState } from '@/domain/agent';
 import { getCaseRecordEntries, searchCaseRecordEntries, type CaseRecordCategory } from '@/domain/case-record';
 import { resolveDisplayedVitals, VITAL_SOURCE_LABELS } from '@/domain/vital-signs';
+import {LabReportView} from '@/components/lab-report-view';
 import { CaseMediaGallery } from '@/components/case-media-gallery';
 
 const categoryLabels: Record<CaseRecordCategory, string> = {
@@ -92,7 +93,8 @@ export function SharedCaseRecord({
                   <span className="record-evidence-count">{entry.event.evidenceCodes.length > 0 ? `${entry.event.evidenceCodes.length} 项证据` : '待出结果'}</span>
                 </summary>
                 <div className="shared-record-detail">
-                  {entry.category !== 'history' && <p className="record-result-text">{entry.event.summary}</p>}
+                  {entry.event.testReport&&<LabReportView report={entry.event.testReport}/>}
+                  {entry.category !== 'history' && (entry.event.testReport?<details><summary>核对原始文字与申请目的</summary><p className="record-result-text">{entry.event.summary}</p></details>:<p className="record-result-text">{entry.event.summary}</p>)}
                   {entry.answers.length > 0 ? <div className="record-answer-list">{entry.answers.map((answer, index) => <p key={`${entry.event.id}-${index}`}><span>{answer.actor === 'parent' ? '家长回答' : '患儿回答'}</span>{answer.content}</p>)}</div> : null}
                   {entry.category === 'history' && entry.answers.length === 0 ? <p className="record-detail-muted">未关联到可展示的家长或患儿回答。</p> : null}
                   {entry.event.media && entry.event.media.length > 0

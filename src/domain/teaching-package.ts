@@ -1,0 +1,61 @@
+import {labReportSchema} from './lab-report';
+import { z } from 'zod';
+import { sourceExamRuleSchema } from './source-exam-contract';
+
+export const teachingOriginSchema = z.enum(['source','teaching-simulation','reference']);
+export const historyFactSchema = z.object({
+  id:z.string(), text:z.string().min(1), topics:z.array(z.string()), sourceLocator:z.string(),
+  origin:teachingOriginSchema, actor:z.enum(['parent','child','mixed']), childText:z.string().optional(),
+  timeContext:z.string().optional(),values:z.array(z.object({value:z.string(),unit:z.string()})).optional(),negativeTerms:z.array(z.string()).optional(),
+  availableFromStage:z.enum(['triage','history','exam','tests','assessment','plan','communication','report']).optional(),
+});
+export type HistoryFact = z.infer<typeof historyFactSchema>;
+const mediaSchema=z.object({fileId:z.string(),kind:z.literal('image'),caption:z.string()});
+export const teachingExamSchema=sourceExamRuleSchema.extend({
+  id:z.string(), evidenceCode:z.string(), origin:teachingOriginSchema,
+  technique:z.string(), reaction:z.string(), interpretation:z.string(),
+  allowedPositions:z.array(z.enum(['standing','supine','sitting','lateral','prone'])).optional(),
+  scope:z.enum(['local','whole-region','reference']), aspect:z.enum(['front','back']).optional(),
+  media:z.array(mediaSchema).default([]),
+});
+export const teachingTestSchema=z.object({
+  report:labReportSchema.optional(),
+  id:z.string(),label:z.string(),aliases:z.array(z.string()).default([]),result:z.string(),
+  origin:teachingOriginSchema, objective:z.string(),reference:z.string(),
+  necessity:z.enum(['essential','optional','not-routine','context-dependent']),rationale:z.string(),
+  sourceLocator:z.string(),media:z.array(mediaSchema).default([]),
+});
+export const rubricSectionSchema=z.enum(['history','exam','tests','diagnosis','plan','note','communication']);
+export const teachingRubricItemSchema=z.object({
+  id:z.string(),section:rubricSectionSchema,level:z.enum(['basic','advanced']),label:z.string(),maxScore:z.number().positive(),
+  concepts:z.array(z.array(z.string()).min(1)).default([]),evidenceCodes:z.array(z.string()).default([]),
+  fullAnswer:z.string(),partialAnswer:z.string(),incorrectAnswer:z.string(),
+  safetyCritical:z.boolean().default(false),sourceLocator:z.string(),
+  unsafePhrases:z.array(z.string()).default([]),
+  partialConcepts:z.array(z.array(z.string())).optional(),
+});
+export const teachingPackageSchema=z.object({
+  schemaVersion:z.literal(1),caseId:z.string(),sourceId:z.string(),sourceVersion:z.string(),version:z.string(),
+  relation:z.enum(['independent','alias','subtype']),relationNote:z.string().optional(),title:z.string(),age:z.string(),sex:z.string(),
+  reviewStatus:z.literal('automated-unreviewed'),complaint:z.string(),
+  persona:z.object({appearance:z.string(),caregiver:z.string(),speaking:z.string(),cooperation:z.string(),knowledgeBoundary:z.string()}),
+  roleState:z.object({childCanSpeak:z.boolean(),reason:z.string(),sourceLocator:z.string()}).optional(),
+  appearanceAssets:z.array(z.object({assetId:z.string(),posture:z.enum(['standing','supine']),publicPath:z.string()})).optional(),
+  historyFacts:z.array(historyFactSchema),exams:z.array(teachingExamSchema),tests:z.array(teachingTestSchema),
+  questions:z.array(z.object({topic:z.string(),prompt:z.string(),variants:z.array(z.string()),followups:z.array(z.string()),factIds:z.array(z.string()),parentAnswer:z.string(),childAnswer:z.string(),unavailable:z.string()})).default([]),
+  management:z.array(z.object({title:z.string(),detail:z.string(),origin:teachingOriginSchema,sourceLocator:z.string()})),
+  referenceNote:z.record(z.string(),z.string()),rubric:z.array(teachingRubricItemSchema),
+  references:z.array(z.object({title:z.string(),url:z.string(),accessedAt:z.string()})),
+});
+export type TeachingPackage=z.infer<typeof teachingPackageSchema>;
+export type TeachingExam=z.infer<typeof teachingExamSchema>;
+export type TeachingTest=z.infer<typeof teachingTestSchema>;
+export type TeachingRubricItem=z.infer<typeof teachingRubricItemSchema>;
+export interface TeachingFeedback {
+  packageVersion:string;totalScore:number;basicScore:number;advancedScore:number;assessableMaxScore:number;
+  basicMaxScore?:number;advancedMaxScore?:number;
+  items:Array<{id:string;section:string;level:string;label:string;score:number;maxScore:number;status:'achieved'|'partial'|'missing'|'incorrect'|'not_assessable';explanation:string;example:string}>;
+  tests:Array<{label:string;requested:boolean;requestCount?:number;purposes?:string[];necessity:TeachingTest['necessity'];rationale:string;origin:TeachingTest['origin']}>;
+  materialSummary:{source:number;simulated:number;reference:number};
+  disclaimer:string;
+}

@@ -8,6 +8,7 @@ import { CaseAnalysisSection } from '@/components/case-analysis-section';
 import { findRubricForReport, isUnscoredReport, rubricStatusForDisplay, unscoredReasonForDisplay, type RubricItem } from '@/domain/training-rubric';
 import { practiceScenarios } from '@/domain/practice-scenarios';
 import { ReportEvidenceMedia } from '@/components/report-evidence-media';
+import { TeachingFeedbackView } from '@/components/teaching-feedback';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
   { key: 'history', label: '儿科问诊', max: 25 },
@@ -235,12 +236,13 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
   const practiceHref = practiceDeepLink(report.caseId, rankedFocusItems.map((item) => item.dimension));
   return (
     <div>
+      {report.teachingFeedback&&<TeachingFeedbackView feedback={report.teachingFeedback}/>}
       <section className="report-hero">
-        <div className="score-ring" aria-label={unscored ? '未评分' : `总分 ${report.totalScore} 分`}><strong>{unscored ? '未评分' : report.totalScore}</strong></div>
+        <div className="score-ring" aria-label={unscored ? '未评分' : `总分 ${report.totalScore} 分`}><strong style={report.teachingFeedback?{fontSize:15}:undefined}>{report.teachingFeedback ? '过程记录' : unscored ? '未评分' : report.totalScore}</strong></div>
         <div>
           <p className="eyebrow">{mode}{focusScenario ? ` · ${focusScenario.title}` : ''} · {readonly ? '只读报告' : '训练完成'}</p>
           <h1>{caseTitle}</h1>
-          <p>{processReport ? '分数表示训练过程完成度。请根据已获得的记录复盘，诊断和处置的正确性由教师结合具体内容复核。' : report.mode === 'osce' ? '模拟站参考评分依据实际问答、器材操作、临床决策与沟通原文生成，不构成正式考试成绩。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
+          <p>{report.teachingFeedback ? '上方为本轮教学逐项反馈。下方保留实际提交与既有过程记录，两个口径分别展示。' : processReport ? '分数表示训练过程完成度。请根据已获得的记录复盘，诊断和处置的正确性由教师结合具体内容复核。' : report.mode === 'osce' ? '模拟站参考评分依据实际问答、器材操作、临床决策与沟通原文生成，不构成正式考试成绩。' : '报告依据实际问答、器材操作、临床决策与沟通原文生成。'}</p>
           <ExpandableNote label="评分口径与量表" align="start" className="note-spaced">
             <p>评分量表：{rubric ? `${rubric.name}（v${report.rubricVersion}）` : '历史报告固定六维量表（生成时未单独保存量表版本，按报告快照展示，不重算旧分）'}</p>
             <p>成绩口径：{evaluationBasisLabels[evaluationBasis]}</p>
@@ -250,7 +252,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
         </div>
       </section>
       {report.caseAnalysis && <CaseAnalysisSection block={report.caseAnalysis} />}
-      <section style={ui.focus} aria-labelledby="report-focus-heading">
+      {!report.teachingFeedback&&<section style={ui.focus} aria-labelledby="report-focus-heading">
         <header>
           <p className="eyebrow">优先补练</p>
           <h2 id="report-focus-heading" style={ui.focusHeading}>{focusItems.length > 0 ? '你最需要改进的' : '本轮改进项'}</h2>
@@ -282,7 +284,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
           </p>
         )}
         {hiddenFocusCount > 0 && <p style={ui.hint}>另有 {hiddenFocusCount} 条改进项未在此展示，见下方「全部明细」。</p>}
-      </section>
+      </section>}
       <section className="report-section" style={{ marginTop: 14 }}>
         <h2><BookOpenCheck size={18} style={{ verticalAlign: -4, marginRight: 6 }} />下一步补练</h2>
         <p>{report.recommendation}</p>

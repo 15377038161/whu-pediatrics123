@@ -1,3 +1,4 @@
+import type {LabReport} from './lab-report';
 import type { DiagnosisPointResult } from './diagnosis-answer';
 
 export type AppRole = 'student' | 'teacher';
@@ -96,6 +97,7 @@ export interface CaseMedia {
 }
 
 export interface ClinicalEvent {
+  testReport?:LabReport;
   id: string;
   clientEventId: string;
   type: AgentEvent['type'];
@@ -124,6 +126,10 @@ export interface SupplementalTest {
 }
 
 export interface SessionState {
+  /** Local installed teaching package, pinned at creation; absent on historical/source-only sessions. */
+  teachingPackageVersion?: string;
+  /** Disclosed context only. No hidden source, answers, or model prompt belongs in session state. */
+  dialogueMemory?: { topic:string; lastFactIds:string[]; clarifiedQuestion:string|null; concern:string|null };
   id: string;
   userId: string;
   caseId: string;
@@ -160,6 +166,8 @@ export interface SessionState {
   preparationActions: string[];
   unlockedEvidence: string[];
   orderedTests: string[];
+  /** Local teaching requests; repeats revisit a fixed result, not a new patient measurement. */
+  testRequests?:Array<{testId:string;clientEventId:string;purpose:string|null;requestedAt:string}>;
   /** Server audit metadata; students see released report events, not per-item origin labels. */
   supplementalTests?: SupplementalTest[];
   decision: {
@@ -190,6 +198,7 @@ export interface SessionState {
   reportId: string | null;
   /** 会话创建幂等参数指纹；历史会话无此字段。 */
   creationRequest?: string;
+  examPosition?:ExamPosition;
   examPosture?: 'standing' | 'supine';
   /** 病例快照版本绑定：首次加载时固定，之后（含重启后）按此版本恢复病例事实，防止召回漂移换患者。 */
   sourceSnapshotVersion?: string | null;
@@ -221,10 +230,13 @@ export interface EventSpeechMeta {
   audioDurationMs?: number;
 }
 
+export type ExamPosition = 'standing' | 'supine' | 'sitting' | 'lateral' | 'prone';
+export interface ExamLocation { side: 'left' | 'right' | 'both' | 'midline'; aspect: 'front' | 'back' }
+
 export type AgentEvent =
   | { type: 'ASK_QUESTION'; data: { text: string; speech?: EventSpeechMeta } }
   | { type: 'DOCTOR_INTERVENTION'; data: { action: 'child_answer' | 'pause_parent' | 'comfort_child' } }
-  | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string; posture?: 'standing' | 'supine' } }
+  | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string; posture?: 'standing' | 'supine'; position?:ExamPosition; location?: ExamLocation } }
   | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
   | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; secondaryDiagnosis?: string[]; summary: string; diagnosisBasis: string; differentials: string; linkedEventIds?:string[] } }
   | { type: 'SUBMIT_HISTORY_SUMMARY'; data: { summary: string } }
@@ -317,6 +329,8 @@ export interface CaseAnalysisBlock {
 }
 
 export interface TrainingReport {
+  /** Local teaching practice feedback; independent of totalScore and official/historical grades. */
+  teachingFeedback?: import('./teaching-package').TeachingFeedback;
   /** Frozen source version for evidence/media replay; absent historical reports do not guess. */
   sourceSnapshotVersion?: string | null;
   /** 生成时固定的学生最终提交，不追溯重写历史报告。 */

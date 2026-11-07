@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Bot, ChevronUp, LoaderCircle, RotateCcw, UserRound, Volume2 } from 'lucide-react';
+import { Baby, UsersRound, ChevronUp, LoaderCircle, RotateCcw, UserRound, Volume2 } from 'lucide-react';
 import type { AgentMessage } from '@/domain/agent';
 import { StreamText } from '@/components/stream-text';
 import { VoiceMessageButton } from '@/components/voice-message-button';
@@ -24,7 +24,7 @@ function messageTime(value: string) {
 
 function Avatar({ actor }: { actor: AgentMessage['actor'] }) {
   return <span className="chat-avatar" data-actor={actor} aria-hidden="true">
-    {actor === 'student' ? <UserRound size={18} /> : <Bot size={18} />}
+    {actor === 'child' ? <Baby size={18} /> : actor === 'parent' ? <UsersRound size={18} /> : <UserRound size={18} />}
   </span>;
 }
 

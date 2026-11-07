@@ -3,8 +3,10 @@
 import { CaseRecordDrawer } from '@/components/case-record-drawer';
 import { DirectionHint } from '@/components/direction-hint';
 import { ExpandableNote } from '@/components/expandable-note';
-import { EXAM_REGIONS, partLabel } from '@/domain/exam-regions';
-import { ExamObservationCard, ExamRegionMarker, ExamRegionPanel, type ExamObservation } from '@/components/exam-region-panel';
+import { partLabel } from '@/domain/exam-regions';
+import { ClinicalExam } from '@/components/clinical-exam';
+import { EXAM_INSTRUMENTS } from '@/domain/exam-anatomy';
+import type { ExamObservation } from '@/components/exam-region-panel';
 import { NoteWriting, type NoteWritingHandle } from '@/components/note-writing';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
 import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
@@ -14,14 +16,13 @@ import { ageBandLabel, bindingGapNote, patientAssetByKey, sexPresentationLabel }
 import { SharedCaseRecord } from '@/components/shared-case-record';
 
 import {
-  Activity, ArrowLeft, AudioLines, Check, ChevronRight, Clock3, Ear, Eye, Hammer, Hand, Home,
-  ClipboardList, LoaderCircle, MessageCircle, Ruler, Send, Stethoscope, UserRound, Volume2, VolumeX, X,
+  Activity, ArrowLeft, ChevronRight, Clock3, Home,
+  ClipboardList, LoaderCircle, MessageCircle, Send, Stethoscope, UserRound, Volume2, VolumeX, X,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AgentEvent, AgentTurnResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
+import type { AgentEvent, ExamPosition, ExamLocation, AgentTurnResult, PracticeFocus, SessionMode, SessionState, Stage, TrainingReport } from '@/domain/agent';
 import { getPracticeScenario } from '@/domain/practice-scenarios';
 import { findPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 import { CommunicationCall } from '@/components/communication-call';
@@ -40,36 +41,7 @@ const stages: Array<{ id: Stage; label: string; short: string }> = [
   { id: 'communication', label: '患儿与家长沟通', short: '沟通' }, { id: 'report', label: '训练报告', short: '报告' },
 ];
 
-const tools = [
-  { id: 'hand-hygiene', label: '手卫生', image: '/media/clinical/tools/hand-hygiene.png' },
-  { id: 'stethoscope', label: '听诊器', image: '/media/clinical/tools/stethoscope.png' },
-  { id: 'thermometer', label: '体温计', image: '/media/clinical/tools/thermometer.png' },
-  { id: 'oximeter', label: '血氧仪', image: '/media/clinical/tools/oximeter.png' },
-  { id: 'bp-cuff', label: '血压计', image: '/media/clinical/tools/bp-cuff.png' },
-  { id: 'tongue-depressor', label: '压舌板', image: '/media/clinical/tools/tongue-depressor.png' },
-  { id: 'flashlight', label: '手电筒', image: '/media/clinical/tools/flashlight.png' },
-];
-
-/** 来源病例（教师病例）查体规则额外使用的器材（无实拍图，用图标兜底渲染）。
- *  清单必须与 SOURCE_EXAM_TOOL_IDS 一致，缺一项学生就点不到该器材、对应体征永远拿不到。 */
-const sourceExamTools = [
-  { id: 'inspection', label: '视诊' },
-  { id: 'palpation', label: '触诊' },
-  { id: 'percussion', label: '叩诊' },
-  { id: 'reflex-hammer', label: '叩诊锤' },
-  { id: 'otoscope', label: '耳镜' },
-  { id: 'measuring-tape', label: '软尺' },
-];
-
-/** 无实拍图器材的图标兜底；未收录 id 也给出图标而不是空白按钮。 */
-function toolFallbackIcon(toolId: string) {
-  if (toolId === 'inspection') return <Eye size={22} />;
-  if (toolId === 'palpation') return <Hand size={22} />;
-  if (toolId === 'percussion') return <AudioLines size={22} />;
-  if (toolId === 'reflex-hammer') return <Hammer size={22} />;
-  if (toolId === 'otoscope') return <Ear size={22} />;
-  return <Ruler size={22} />;
-}
+const tools = EXAM_INSTRUMENTS;
 
 const focusLabels: Record<PracticeFocus, string> = {
   history: '儿科病史采集', exam: '体格检查专项', safety: '儿童危重症识别', communication: '家长焦虑沟通',
@@ -82,45 +54,28 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   return authedFetch<T>(url, init);
 }
 
-function PatientFigure({ patient, posture, selectedTool, onExamine, observation, onCloseObservation, onReplayAudio, busy, interactive }: { patient: Omit<PublicCaseProfile, 'sex'> & { sex: string }; posture: 'standing' | 'supine'; selectedTool: string | null; onExamine: (part: string) => void; observation: ExamObservation | null; onCloseObservation: () => void; onReplayAudio: () => void; busy: boolean; interactive: boolean }) {
-  const [openRegion, setOpenRegion] = useState<string | null>(null);
-  const appearance=patientAppearance(patient.sex,posture,patient.id,patient.age);
-  // 人物背景（方案 9.1/9.2 与 17.2 V09 人物匹配）：角色能力经 communicationProfile 派生，
-  // 素材信息经资产清单；未知不猜、未审核不伪装（derivation 如实展示）。
+function PatientFigure({ patient, posture, position, onExamine, observation, onCloseObservation, onReplayAudio, busy, hygieneCompleted }: { patient: Omit<PublicCaseProfile, 'sex'> & { sex: string }; posture: 'standing' | 'supine'; position: ExamPosition; selectedTool: string | null; onExamine: (part: string, tool?: string, location?: ExamLocation) => void; observation: ExamObservation | null; onCloseObservation: () => void; onReplayAudio: () => void; busy: boolean; interactive: boolean; hygieneCompleted: boolean }) {
+  const appearance = patientAppearance(patient.sex, posture, patient.id, patient.age);
+  // 保留原人物背景与审核边界；新解剖组件只接管部位定位，不覆盖这些既有说明。
   const profile = resolveCommunicationProfile(patient.id, patient.age);
   const asset = patientAssetByKey(appearance.key);
   const assetGap = bindingGapNote(profile.ageBand);
-  const openRegionData = EXAM_REGIONS.find((region) => region.id === openRegion) ?? null;
+  const photographicPosition = position === 'standing' || position === 'supine';
+  const positionLabel = photographicPosition ? appearance.alt : `当前为${({ sitting: '坐位', lateral: '侧卧', prone: '俯卧' } as const)[position]}，使用中性部位定位示意。`;
   return (
     <div className="patient-stage" data-posture={posture} data-avatar={appearance.key}>
-      <div className="patient-figure" aria-label="仿真虚拟患儿交互模型" data-fan-open={interactive && openRegion ? openRegion : undefined}>
-        {appearance.src ? <Image
-          className="patient-photo"
-          src={appearance.src}
-          alt={appearance.alt}
-          fill
-          priority
-          sizes="(max-width: 767px) 92vw, (max-width: 1199px) 38vw, 360px"
-        /> : <div className="patient-unspecified" role="img" aria-label={appearance.alt}><UserRound size={100} /><p>{appearance.key === 'age-unspecified' ? '病例年龄未明确' : '病例未注明性别'}</p><small>暂不指定人物形象，请依据病例记录完成查体。</small></div>}
-        {interactive && EXAM_REGIONS.map((region) => <ExamRegionMarker
-          key={region.id}
-          region={region}
-          posture={posture}
-          open={openRegion === region.id}
-          busy={busy}
-          observation={observation}
-          onToggle={() => setOpenRegion((current) => (current === region.id ? null : region.id))}
-        />)}
-        {interactive && openRegionData && <ExamRegionPanel
-          region={openRegionData}
-          busy={busy}
-          observation={observation}
-          onClose={() => setOpenRegion(null)}
-          onExamine={(part) => { setOpenRegion(null); onExamine(part); }}
-        />}
-      </div>
-      {interactive && observation && <ExamObservationCard observation={observation} onClose={onCloseObservation} onReplayAudio={onReplayAudio} />}
-      <div className="patient-caption"><span>{interactive ? <>当前器材：<strong>{[...tools, ...sourceExamTools].find((tool) => tool.id === selectedTool)?.label ?? '未选择'}</strong></> : <strong>观察模式</strong>}</span><span className="emotion-pill">{interactive ? '先点大区，再点具体部位' : '自行定位 · 操作后查看结果'}</span></div>
+      <ClinicalExam
+        image={photographicPosition ? appearance.src : null}
+        alt={positionLabel}
+        posture={posture}
+        position={position}
+        busy={busy}
+        hygieneCompleted={hygieneCompleted}
+        observation={observation}
+        onExamine={onExamine}
+        onCloseObservation={onCloseObservation}
+        onReplayAudio={onReplayAudio}
+      />
       <details className="patient-background">
         <summary>人物背景</summary>
         <dl>
@@ -136,13 +91,6 @@ function PatientFigure({ patient, posture, selectedTool, onExamine, observation,
       <p className="patient-disclosure" title="通用示教角色，外观不代表病例年龄或实际体征">虚拟标准化患儿 · 非真实病例影像</p>
     </div>
   );
-}
-
-function ToolRack({ tools: rackTools, selectedTool, onSelect, busy, hygieneCompleted }: { tools: Array<{ id: string; label: string; image?: string }>; selectedTool: string | null; onSelect: (toolId: string) => void; busy: boolean; hygieneCompleted: boolean }) {
-  return <div className="tool-rack" aria-label="体格检查器材栏">{rackTools.map(({ id,label,image }) => {
-    const completed = id === 'hand-hygiene' && hygieneCompleted;
-    return <button type="button" className="tool" data-selected={selectedTool === id} data-completed={completed} disabled={busy} onClick={() => onSelect(id)} aria-pressed={selectedTool === id} key={id}><span className="tool-photo-wrap">{image ? <Image className="tool-photo" src={image} alt="" fill sizes="72px" /> : <span className="tool-icon-fallback" aria-hidden="true">{toolFallbackIcon(id)}</span>}</span><span>{completed && <Check size={13} />} {completed ? '手卫生已完成' : label}</span></button>;
-  })}</div>;
 }
 
 export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, practiceFocus, initialPanel }: { mode: SessionMode; initialSessionId?: string; initialCaseId?: string; practiceFocus?: PracticeFocus; initialPanel?: 'note' }) {
@@ -169,7 +117,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [summary, setSummary] = useState('');
   const [diagnosisBasis, setDiagnosisBasis] = useState('');
   const [decisionEvidenceIds,setDecisionEvidenceIds]=useState<string[]>([]);
-  const [posture, setPosture] = useState<'standing' | 'supine'>('standing');
+  const [posture, setPosture] = useState<ExamPosition>('standing');
   const [differentials, setDifferentials] = useState('');
   const [priority, setPriority] = useState('');
   const [planDetail, setPlanDetail] = useState('');
@@ -234,7 +182,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     setHistorySummaryText(next.historySummary ?? '');
     setExamFindingsText(next.examObservation?.findings ?? '');
     setExamInterpretationText(next.examObservation?.interpretation ?? '');
-    setPosture(next.examPosture ?? 'standing');
+    setPosture(next.examPosition ?? next.examPosture ?? 'standing');
   }, []);
 
   useEffect(() => {
@@ -384,7 +332,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     if (!result) setPendingConversation({ text, voice: Boolean(speech), status: 'failed' });
     return Boolean(result);
   }
-  async function examine(part: string, toolOverride?: string) {
+  async function examine(part: string, toolOverride?: string, location?:ExamLocation) {
     const partName = partLabel(part);
     const activeTool = toolOverride ?? selectedTool;
     if (!activeTool) {
@@ -393,8 +341,9 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       setExamObservation({ bodyPartId: part, title: partName, detail, toolId: 'none', status: 'blocked', sound: null });
       return;
     }
-    const toolLabel = [...tools, ...sourceExamTools].find((tool) => tool.id === activeTool)?.label ?? activeTool;
-    const result = await sendEvent({ type: 'EXAM_ACTION', data: { toolId: activeTool, bodyPartId: part, posture: effectivePosture } });
+    setSelectedTool(activeTool);
+    const toolLabel = tools.find((tool) => tool.id === activeTool)?.label ?? activeTool;
+    const result = await sendEvent({ type: 'EXAM_ACTION', data: { toolId: activeTool, bodyPartId: part, posture: effectivePosture, position:effectivePosition, location } });
     if (!result) return;
     const latestEvent = result.session.events.at(-1);
     const success = latestEvent?.type === 'EXAM_ACTION' && latestEvent.correct === true;
@@ -404,7 +353,6 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     setExamObservation(observation);
     if (success) {
       if (observation.sound) playExamObservationAudio(observation);
-      openWorkspaceView('record');
     }
   }
 
@@ -431,6 +379,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   // 展示阶段优先级：回看态 viewStage（非 OSCE，业务阶段不变）> communication 归一到会话中心 > 业务阶段
   // （practice 沟通专项的 communication 是真实业务阶段，不归一）
   const displayStage: Stage | undefined = session?.viewStage ?? (session?.stage === 'communication' && session.mode !== 'osce' && session.mode !== 'practice' ? 'history' : session?.stage);
+  useEffect(()=>{if(window.matchMedia('(max-width:1023px)').matches)document.querySelector<HTMLElement>('.stage-scroll [data-current="true"]')?.scrollIntoView({block:'nearest',inline:'center'});},[displayStage,noteOpen]);
   const currentIndex = visibleStages.findIndex((stage) => stage.id === displayStage);
   const evidenceEvents = useMemo(() => session?.events.filter((event) => event.evidenceCodes.length > 0) ?? [], [session?.events]);
   const decisionEvidenceItems=useMemo(()=>session?diagnosticEvidenceEvents(session):[],[session]);
@@ -451,8 +400,10 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const caseProfile = session.caseOptions ? { ...baseProfile, title: session.caseOptions.complaint ?? session.caseOptions.sourceName, age: session.caseOptions.age, sex: session.caseOptions.sex } : baseProfile;
   // 新生儿/婴儿（≤1 岁）病例只有仰卧体位（C01）：体位选项与查体事件按病例年龄收窄，
   // 不出现「1 天新生儿站立体位」这类与病例事实矛盾的交互。
-  const postureOptions = allowedPostures(caseProfile.age);
-  const effectivePosture = postureOptions.includes(posture) ? posture : postureOptions[0];
+  const basicPostures=allowedPostures(caseProfile.age);
+  const postureOptions:ExamPosition[]=session.teachingPackageVersion?(basicPostures.length===1?['supine','lateral']:['standing','supine','sitting','lateral','prone']):basicPostures;
+  const effectivePosition=postureOptions.includes(posture)?posture:postureOptions[0];
+  const effectivePosture=effectivePosition==='standing'?'standing':'supine';
   const spatialExam = !noteOpen && displayStage === 'exam';
   const drawerStage = noteOpen || displayStage === 'assessment' || displayStage === 'plan';
   function openWorkspaceView(view: 'task' | 'patient' | 'record') {
@@ -479,7 +430,6 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const showPatient = spatialExam;
   function openNote(){setRecordOpen(false);setNoteOpen(true);setMobileView('task');router.replace(`/student/training?session=${session!.id}&panel=note`);}
   const nextAction = displayStage==='exam'?{label:'辅助检查',stage:'tests' as Stage}:displayStage==='tests'?{label:'整理诊断',stage:'assessment' as Stage}:displayStage==='history'&&!session.plan?{label:examEvidenceCount>0?'返回查体':'进入查体',stage:'exam' as Stage}:null;
-  const examTools = [...tools, ...sourceExamTools];
   function replayObservationAudio() {
     if (examObservation && !playExamObservationAudio(examObservation)) setFeedback('当前浏览器不支持结果声音播放，请直接阅读查体结果。');
   }
@@ -553,12 +503,9 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       </>;
       case 'history': return conversationContent;
       case 'exam': return <>
-        <div className="stage-intro exam-stage-intro"><h2>选择器材，再点大区与具体部位</h2><p>先选方法或器材，然后在患儿图上点开所属大区，从放射出的子部位里选一个。每次操作都会给出本例所见，并附一段未经临床审核的通用要领。</p></div>
-        <div className="posture-selector" role="group" aria-label="查体姿势">{postureOptions.map((value) => { const label = value === 'standing' ? '站立' : '仰卧'; return <button key={value} type="button" className="btn btn-secondary" aria-pressed={effectivePosture === value} disabled={busy} onClick={() => { setPosture(value); setExamObservation(null); }}>{label}</button>; })}<small>{postureOptions.includes('supine') && postureOptions.includes('standing') ? '自行选择适合本次检查的体位' : '此年龄仅提供卧位查体'}</small></div>
-        <div className="exam-tool-selector">
-          <div className="exam-tool-heading"><strong>选择方法或器材</strong><span>{selectedTool ? `当前：${examTools.find((tool) => tool.id === selectedTool)?.label ?? '请先选择本例器材'}` : '尚未选择'}</span></div>
-          <ToolRack tools={examTools} selectedTool={selectedTool} onSelect={(toolId) => { void selectExamTool(toolId); }} busy={busy} hygieneCompleted={hygieneCompleted} />
-        </div>
+        <div className="stage-intro exam-stage-intro"><h2>先定位部位，再选择方法</h2><p>按大部位、具体位置、方法或器材的顺序检查。先核对体位并完成说明；本例记录、教学模拟与参考要领分别标明。</p></div>
+        <div className="posture-selector" role="group" aria-label="查体姿势">{postureOptions.map((value) => { const label = {standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'}[value]; return <button key={value} type="button" className="btn btn-secondary" aria-pressed={effectivePosition === value} disabled={busy} onClick={() => { setPosture(value); setExamObservation(null); }}>{label}</button>; })}<small>{postureOptions.includes('standing')?'选择实际协助完成的体位；切换定位图不会自动调整体位':'低龄患儿采用卧位，调整侧卧需照护者协助'}</small></div>
+        <div className="clinical-workspace-guide"><strong>检查顺序</strong><ol><li>核对体位并向患儿说明</li><li>在中间选择大部位与具体位置</li><li>核对患者左右侧、前后面</li><li>选择适用方法或器材后执行</li></ol><button type="button" className="btn btn-secondary" disabled={busy} onClick={()=>{void selectExamTool('hand-hygiene');}}>{hygieneCompleted?'手卫生与说明已完成':'完成手卫生与检查说明'}</button></div>
 
         {practiceCompletion === 'exam_observation' && (
           <form className="clinical-form practice-summary-form" onSubmit={async (event) => { event.preventDefault(); if (examFindingsText.trim().length < 10 || examLinkedEvidence.length === 0) return; await sendEvent({ type: 'SUBMIT_EXAM_OBSERVATION', data: { findings: examFindingsText.trim(), interpretation: examInterpretationText.trim() || undefined, linkedEvidence: examLinkedEvidence } }); }}>
@@ -666,7 +613,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
           <div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}{spatialExam && mobileView === 'task' && <button className="icon-btn mobile-drawer-close" type="button" onClick={closeMobileDrawer} aria-label="关闭检查方法抽屉"><X size={17} /></button>}</div></div>
           <div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮重点</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div>
         </section>
-        {showPatient&&<section className="workspace-panel training-patient" data-mobile-hidden={spatialExam ? false : mobileView !== 'patient'}><div className="panel-head"><h2>{session.caseOptions ? '教学部位示意' : '患儿交互模型'}</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}</span></div><PatientFigure posture={effectivePosture} patient={caseProfile} selectedTool={selectedTool} onExamine={examine} observation={examObservation} onCloseObservation={() => setExamObservation(null)} onReplayAudio={replayObservationAudio} busy={busy} interactive={spatialExam} /></section>}
+        {showPatient&&<section className="workspace-panel training-patient" data-mobile-hidden={spatialExam ? false : mobileView !== 'patient'}><div className="panel-head"><h2>{session.caseOptions ? '教学部位示意' : '患儿交互模型'}</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}</span></div><PatientFigure posture={effectivePosture} position={effectivePosition} patient={caseProfile} selectedTool={selectedTool} onExamine={examine} observation={examObservation} onCloseObservation={() => setExamObservation(null)} onReplayAudio={replayObservationAudio} busy={busy} interactive={spatialExam} hygieneCompleted={hygieneCompleted} /></section>}
         {!drawerStage && !recordOpen && <section ref={recordPanelRef} tabIndex={-1} className="workspace-panel training-record" aria-label="共享病例记录" data-mobile-hidden={true}>
           <SharedCaseRecord session={session} onOpenNote={openNote}  audioObservation={examObservation?.status === 'success' && examObservation.sound ? { title: examObservation.title, sound: examObservation.sound } : null} onReplayAudio={replayObservationAudio} />
         </section>}

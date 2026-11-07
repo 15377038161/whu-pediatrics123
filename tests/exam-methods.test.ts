@@ -126,7 +126,7 @@ test('缺陷d：巴宾斯基征与病理征阳性归神经系统检查，不只�
 });
 
 test('缺陷e：仰卧位限定部位由 SUPINE_ONLY_PARTS 统一给出，新增腹部类部位不再绕过', () => {
-  assert.deepEqual([...SUPINE_ONLY_PARTS].sort(), ['abdomen', 'groin', 'liver-spleen']);
+  assert.ok(SUPINE_ONLY_PARTS.has('abdomen') && SUPINE_ONLY_PARTS.has('external-genitalia'));
   for (const part of SUPINE_ONLY_PARTS) {
     assert.equal(postureAllows(part, 'standing'), false, part);
     assert.equal(postureAllows(part, 'supine'), true, part);

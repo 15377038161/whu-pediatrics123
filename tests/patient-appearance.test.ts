@@ -74,7 +74,7 @@ test('C01 全病例扫描：所有 ≤1 岁真实病例均为同性别卧位婴�
     const appearance = patientAppearance(sex, 'standing', id, age);
     if (band === 'newborn' || band === 'infant') {
       youngInfantCount += 1;
-      assert.equal(appearance.src, sex === '女' ? NEWBORN_GIRL : NEWBORN_BOY, `${id}（${age}）应使用同性别卧位婴儿形象`);
+      assert.equal(appearance.src, band==='infant'?(sex==='女'?'/media/clinical/virtual-infant-girl-supine-v1.png':'/media/clinical/virtual-infant-boy-supine-v1.png'):(sex === '女' ? NEWBORN_GIRL : NEWBORN_BOY), `${id}（${age}）应使用同性别卧位婴儿形象`);
       assert.ok(!appearance.src.includes('standing'), `${id}（${age}）不得使用站立儿童图`);
       // 新生儿/婴儿不参与哈希：同一病例重复解析稳定
       assert.equal(patientAppearance(sex, 'supine', id, age).key, appearance.key);
@@ -92,9 +92,9 @@ test('C01 边界分档：1 天/28 天新生儿含边界，29 天起婴儿档，1
   assert.equal(patientAppearance('女', 'standing', 'x', '1天').src, NEWBORN_GIRL);
   assert.equal(patientAppearance('男', 'standing', 'x', '1天').src, NEWBORN_BOY);
   assert.equal(patientAppearance('女', 'standing', 'x', '28天').src, NEWBORN_GIRL);
-  assert.equal(patientAppearance('男', 'standing', 'x', '29天').src, NEWBORN_BOY);
-  assert.equal(patientAppearance('女', 'standing', 'x', '1月13天').src, NEWBORN_GIRL);
-  assert.equal(patientAppearance('男', 'standing', 'x', '7月4天').src, NEWBORN_BOY);
+  assert.equal(patientAppearance('男', 'standing', 'x', '29天').src, '/media/clinical/virtual-infant-boy-supine-v1.png');
+  assert.equal(patientAppearance('女', 'standing', 'x', '1月13天').src, '/media/clinical/virtual-infant-girl-supine-v1.png');
+  assert.equal(patientAppearance('男', 'standing', 'x', '7月4天').src, '/media/clinical/virtual-infant-boy-supine-v1.png');
   // 儿童档：站立请求返回站立图（通用虚拟儿童，哈希选择稳定）
   const childStanding = patientAppearance('女', 'standing', 'x', '8岁27天');
   assert.ok(childStanding.src !== null && /virtual-child/.test(childStanding.src));
@@ -152,7 +152,7 @@ test('独立项 C 边界保持：学龄前（4-6 岁）仍走哈希通用素材�
     const boy = patientAppearance('男', 'standing', `band-keep-${age}`, age);
     assert.ok(/^(boy-a|boy-b)$/.test(boy.key), `${age} 应保持学龄前哈希素材，实际 ${boy.key}`);
   }
-  assert.equal(patientAppearance('女', 'standing', 'band-keep-infant', '6个月').key, 'newborn-girl');
+  assert.equal(patientAppearance('女', 'standing', 'band-keep-infant', '6个月').key, 'infant-girl');
   assert.equal(patientAppearance('男', 'supine', 'band-keep-newborn', '15天').key, 'newborn-boy');
   assert.equal(patientAppearance('女', 'standing', 'band-keep-x', '待核验').src,null);
 });

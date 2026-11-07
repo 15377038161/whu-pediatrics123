@@ -1,3 +1,4 @@
+import { examProtocol } from './exam-protocol';
 import { EXAM_LOCATIONS, SOURCE_EXAM_TOOL_IDS } from '@/domain/source-exam-contract';
 
 /**
@@ -146,7 +147,7 @@ const ROUTINE_TABLE: ReadonlyMap<string, RoutineEntry> = new Map(
 );
 
 /** 非常规组合说明按器材分组：先说该器材常规用在哪些部位、为什么当前部位不常规，再拼接部位句说明该部位常规该用什么器材，避免 278 个组合共用一句模板。 */
-const NOT_ROUTINE_TOOL_NOTE: Readonly<Record<ToolId, string>> = {
+const NOT_ROUTINE_TOOL_NOTE: Readonly<Partial<Record<ToolId, string>>> = {
   'hand-hygiene': '手卫生是接触每位患儿前后的通用准备步骤，只作用于双手清洁，不针对其他部位产生任何体征观察；',
   'stethoscope': '听诊器常规用于肺野、心前区与腹部肠鸣音听诊，依赖含气腔隙、血流或肠管运动产生声音，其他部位无有效听诊体征；',
   'thermometer': '体温计常规置于额部或腋下测量体温，反映的是全身性生命体征，不能评估局部器官的形态与功能；',
@@ -162,7 +163,7 @@ const NOT_ROUTINE_TOOL_NOTE: Readonly<Record<ToolId, string>> = {
   'reflex-hammer': '叩诊锤常规用于神经系统的深反射与病理反射检查，依赖叩击肌腱引出反射；其他部位没有可供叩击的肌腱反射弧，用叩诊锤检查无判读意义；',
 };
 
-const NOT_ROUTINE_PART_NOTE: Readonly<Record<LocationId, string>> = {
+const NOT_ROUTINE_PART_NOTE: Readonly<Partial<Record<LocationId, string>>> = {
   'forehead': '头面前囟常规用视诊观察头颅与前囟形态，用体温计测额温，用软尺测头围。',
   'eyes': '眼与结膜常规用手电筒照明配合视诊，检查结膜、巩膜、瞳孔与对光反射。',
   'ears': '耳部常规用耳镜检查外耳道与鼓膜，耳周淋巴结则用触诊。',
@@ -193,8 +194,10 @@ export function examTechniqueNote(toolId: string, bodyPartId: string): ExamTechn
   if (!VALID_TOOL_IDS.has(toolId) || !VALID_LOCATION_IDS.has(bodyPartId)) return null;
   const routine = ROUTINE_TABLE.get(`${toolId}${COMBO_SEPARATOR}${bodyPartId}`);
   if (routine) return { kind: 'routine', technique: routine.technique, expectedNormal: routine.expectedNormal };
+  const protocol=examProtocol(toolId,bodyPartId);
+  if(protocol)return {kind:'routine',technique:protocol.technique,expectedNormal:protocol.normal};
   // 合法性校验通过后 id 必落在两张 Record 的键域内（Record 键域与校验集合同源派生），断言仅用于桥接 string 与字面量联合类型。
-  const toolNote = NOT_ROUTINE_TOOL_NOTE[toolId as ToolId];
-  const partNote = NOT_ROUTINE_PART_NOTE[bodyPartId as LocationId];
+  const toolNote = NOT_ROUTINE_TOOL_NOTE[toolId as ToolId] ?? '该器材须按其测量方式、年龄限制与操作说明使用。';
+  const partNote = NOT_ROUTINE_PART_NOTE[bodyPartId as LocationId] ?? '请核对局部定位及对应操作要领。';
   return { kind: 'not-routine', note: `${toolNote}${partNote}` };
 }

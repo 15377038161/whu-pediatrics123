@@ -1,5 +1,7 @@
 import { EXAM_LOCATIONS, type ExamLocationId } from '@/domain/source-exam-contract';
 
+export { ANATOMY_REGIONS } from '@/domain/exam-anatomy';
+
 /**
  * 查体部位两级结构：患儿图上常驻 6 个大区按钮，点开后在图框底部弹出紧凑的部位选择面板。
  *
@@ -45,4 +47,7 @@ export function regionForPart(partId: string): ExamRegion | null {
 }
 
 /** 仰卧位才能做的部位：站姿下点击要拦住并提示改体位，不能静默给结果。 */
-export const SUPINE_ONLY_PARTS: ReadonlySet<string> = new Set(['abdomen', 'liver-spleen', 'groin']);
+export const SUPINE_ONLY_PARTS: ReadonlySet<string> = new Set([
+  'abdomen', 'liver-spleen', 'groin', 'umbilicus', 'external-genitalia',
+  'abdomen-right-upper', 'abdomen-left-upper', 'abdomen-right-lower', 'abdomen-left-lower',
+]);

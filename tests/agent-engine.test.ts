@@ -238,7 +238,8 @@ test('教师病例处置不会统一改善血氧，历史缺资料版本不被�
   const session = createInitialSession('student-1', 'guided', 'teacher-川崎病', undefined, 'legacy-missing-source-version');
   assert.deepEqual(session.vitals, { temperature: null, heartRate: null, respiratoryRate: null, spo2: null });
   const question = await runAgentTurn(session, { type: 'ASK_QUESTION', data: { text: '什么时候开始发烧？' } }, 'missing-source-question');
-  assert.ok(question.newMessages.some((message) => message.content.includes('说不清楚')));
+  assert.ok(question.newMessages.some((message) => /具体|核实|了解/.test(message.content)));
+  assert.equal(question.newMessages.some(message=>/发热\d/.test(message.content)),false);
   assert.deepEqual(question.session.askedIntents, []);
   await runAgentTurn(session, { type: 'SUBMIT_PLAN', data: { priority: '吸氧监测', detail: '结合资料进一步评估' } }, 'source-plan');
   assert.equal(session.vitals.spo2, null);

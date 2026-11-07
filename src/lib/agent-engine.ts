@@ -1,4 +1,8 @@
-import {SOURCE_HISTORY_TOPICS, sourceHistorySentences} from '@/domain/source-history';
+import { historyDialogue, sourceHistoryFacts,disclosedHistoryCodes,conversationAct } from '@/lib/history-dialogue';
+import { sessionTeachingCase, sessionTeachingPackage } from '@/lib/session-teaching';
+import { readTeachingPackage } from '@/lib/teaching-package-store';
+import { computeCaseDataVersion } from '@/lib/case-data-version';
+import { ANATOMY_REGIONS, instrumentsForSite } from '@/domain/exam-anatomy';
 import {getPublicCase,isTrainableCase} from '@/lib/case-identity';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
@@ -7,6 +11,7 @@ import { postureAllows, type ExamPosture } from '@/domain/exam-methods';
 import { stageReached } from '@/domain/agent';
 import type {
   AgentEvent,
+  ExamPosition,
   AgentMessage,
   AgentTraceItem,
   AgentTurnResult,
@@ -93,6 +98,7 @@ function clinicalEvent(
 export function createInitialSession(userId: string, mode: SessionMode, caseId = FLAGSHIP_CASE.id, practiceFocus?: PracticeFocus, sourceSnapshotVersion?: string | null, sessionId?: string | null): SessionState {
   getPublicCase(caseId);
   const pediatricCase = getCase(caseId, sourceSnapshotVersion, sessionId);
+  const teachingPackage = pediatricCase.sourceFacts ? readTeachingPackage(pediatricCase.id, null, sourceSnapshotVersion || computeCaseDataVersion(pediatricCase.sourceFacts)) : null;
   const startedAt = now();
   // OSCE 时限单一来源（方案 15）：按站点契约配置设定；随机站不与病例绑定，教师病例也能解析出站点。
   const osceStation = mode === 'osce' ? resolveOsceStation(pediatricCase.id) : null;
@@ -102,7 +108,7 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
   const scenario = mode === 'practice' ? getPracticeScenario(practiceFocus ?? 'history') : null;
   const openingMessages: AgentMessage[] = [
     message('system', pediatricCase.triage, { kind: 'navigation' }),
-    message('parent', pediatricCase.openingParent, { emotion: 'anxious' }),
+    message('parent', pediatricCase.openingParent, { emotion: teachingPackage?'neutral':'anxious' }),
   ];
   if (scenario) {
     openingMessages.push(message('system', `【${scenario.title}】目标：${scenario.goal} ${scenario.briefing.join(' ')} ${scenario.completionHint}`, { kind: 'navigation' }));
@@ -116,7 +122,8 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
     userId,
     caseId: pediatricCase.id,
     caseVersion: pediatricCase.version,
-    sourceSnapshotVersion: sourceSnapshotVersion ?? null,
+    sourceSnapshotVersion: sourceSnapshotVersion ?? teachingPackage?.sourceVersion ?? null,
+    ...(teachingPackage ? { teachingPackageVersion:teachingPackage.version } : {}),
     mode,
     practiceFocus: mode === 'practice' ? practiceFocus ?? 'history' : null,
     scenarioVersion: scenario?.configVersion,
@@ -139,10 +146,10 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
     childEmotion: pediatricCase.initialEmotion,
     parentInterruption: 'active',
     behavior: {
-      childResponseStyle: 'age_limited',
-      parentResponseStyle: 'interrupting',
+      childResponseStyle: teachingPackage?'cooperative':'age_limited',
+      parentResponseStyle: teachingPackage?'supportive':'interrupting',
       hiddenExposureRevealed: false,
-      cooperation: 35,
+      cooperation: teachingPackage?65:35,
     },
     vitals: { ...pediatricCase.initialVitals },
     reportId: null,
@@ -254,7 +261,7 @@ function validateEventStage(session: SessionState, event: AgentEvent): boolean {
     case 'ASK_QUESTION':
     case 'DOCTOR_INTERVENTION':
     case 'SEND_COMMUNICATION':
-      return true; // 问诊/沟通干预/家长沟通在任意阶段均合法（回复为通用话术，不泄露病例事实）
+      return true; // 问诊与沟通在任意阶段合法；仍按绑定事实和披露阶段校验，不解锁检查。
     case 'EXAM_ACTION':
       return currentIndex >= order.indexOf('exam');
     case 'ORDER_TEST':
@@ -295,23 +302,6 @@ function applyInterventionState(session: SessionState, action: Extract<AgentEven
 /** 来源病例问诊的确定性兜底口语化（模型不可用/解析失败时）：
  *  仅做同义口语转换与自然语气包裹，不新增、不修改任何事实（数值、部位、时间、阴性/阳性表述保持原文）；
  *  未匹配术语保留原文（宁可不顺口也不虚构）。开头按消息数轮换，避免每轮同一句式。 */
-function casualParentReply(fact: string, turnIndex: number): string {
-  const openers = ['嗯，是这样的，', '是这样的医生，', '唉，', ''];
-  const opener = openers[turnIndex % openers.length];
-  const spoken = fact
-    .replaceAll('患儿', '孩子')
-    .replace(/精神反应可/g, '精神还行')
-    .replace(/神志清楚/g, '人是清醒的')
-    .replace(/发热/g, '发烧')
-    .replace(/纳差|食欲不振/g, '吃得少')
-    .replace(/腹泻/g, '拉肚子')
-    .replace(/呕吐/g, '吐')
-    .replace(/气促/g, '呼吸有点快')
-    .replace(/咳嗽剧烈/g, '咳得厉害')
-    .replace(/无抽搐/g, '没有抽过')
-    .replace(/四肢冰凉/g, '手脚冰凉');
-  return `${opener}${spoken}。`;
-}
 
 async function handleQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>, speech?: EventSpeechMeta): Promise<AgentTurnResult> {
   const spokenIntervention = detectSpokenIntervention(text);
@@ -422,52 +412,32 @@ async function handleQuestion(session: SessionState, text: string, clientEventId
 async function handleSourceQuestion(session: SessionState, text: string, clientEventId: string, forwardHeaders?: Record<string, string>, speech?: EventSpeechMeta): Promise<AgentTurnResult> {
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   const source = pediatricCase.sourceFacts;
-  const history = source?.sections.history ?? '';
-  const sentences = sourceHistorySentences(history);
-  const topics = SOURCE_HISTORY_TOPICS;
-  let matches: Array<{ fact: string; index: number }> = [];
-  if (/多大|几岁|年龄|男孩|女孩|性别/.test(text) && source) {
-    matches = [{ fact: `孩子${source.age}，${source.sex}。`, index: -1 }];
-  } else {
-    const selected = topics.filter((topic) => topic.question.test(text));
-    const terms = text.match(/[\u4e00-\u9fff]{2,}/g)?.flatMap((word) => Array.from({ length: Math.max(0, word.length - 1) }, (_, index) => word.slice(index, index + 2))) ?? [];
-    const relevantTerms = [...new Set(terms)].filter((term) => !['孩子', '医生', '小朋', '朋友', '可以', '告诉', '知道', '什么', '情况', '有没', '没有', '多久', '开始', '么时', '时候'].includes(term));
-    matches = sentences.map((fact, index) => ({ fact: fact.trim().replace(/^[一二三四五六七八九十\d]+[、.．]\s*(?=[\u4e00-\u9fff])/, ''), index,
-      relevance: relevantTerms.filter((term) => fact.includes(term)).length * 3 + selected.filter((topic) => topic.source.test(fact)).length }))
-      .filter((item) => item.relevance > 0).sort((a, b) => b.relevance - a.relevance).slice(0, 3);
-    if (/哪里不舒服|怎么了|主诉|为什么来|什么不舒服|主要症状|主要问题/.test(text) && source) matches = [{ fact: verifiedComplaint(source) ?? '主诉尚需补充核实', index: -2 }];
+  const pack = sessionTeachingPackage(session);
+  const facts = pack?.historyFacts ?? sourceHistoryFacts(source?.sections.history ?? '');
+  const allFacts = [...facts];
+  if (source) {
+    allFacts.push({id:'SOURCE_HX_-1',text:`孩子${source.age}，${source.sex}。`,topics:['年龄与性别'],sourceLocator:'age/sex',origin:'source',actor:'parent'});
+    const complaint = verifiedComplaint(source);
+    if (complaint) allFacts.push({id:'SOURCE_HX_-2',text:complaint,topics:['主要不适'],sourceLocator:'complaint',origin:'source',actor:'mixed'});
   }
-  const fact = matches.map((item) => item.fact).join('。');
-  // 发言计划（方案 8.2/8.4）：先按病例角色能力决定说话者，再渲染角色回复。
-  const profile = resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age);
-  const childCapable = canChildSpeak(profile);
-  const parentPaused = session.parentInterruption === 'paused';
-  const roleResult = fact ? await renderRoleReply({ childAge: pediatricCase.age, childSex: pediatricCase.sex,
-    question: text, childFact: '', parentFact: fact, preferredActor: 'parent', parentPaused,
-    childComforted: session.childEmotion === 'calm', recentMessages: session.messages.slice(-6),
-    communicationProfile: profile,
-  }, forwardHeaders) : null;
-  const reply = fact ? roleResult?.reply?.parent ?? casualParentReply(fact, session.messages.length) : '这部分我说不清楚，需要再核实一下。';
-  const nonverbalNote = roleResult?.reply?.nonverbal;
-  const responder: AgentMessage = !parentPaused
-    ? message('parent', reply, { emotion: session.childEmotion })
-    : childCapable
-      // 暂停家长后由患儿先答：仅适用于能语言表达的患儿，答不上时自然请家长补充。
-      ? message('child', '这个我说不清楚，可以请家长补充吗？', { emotion: session.childEmotion })
-      // 不能言语患儿 + 暂停家长：不机械产出患儿台词（方案 8.2）；家长给出合理场景回应并继续训练。
-      : message('parent', '好的医生，不过孩子还不会说话，这些还是我来回答吧。', { emotion: session.childEmotion });
-  const newMessages = [message('student', text, speechOptions(speech)), responder];
-  // 非言语反馈独立展示（括注舞台提示，非语义台词）；不把旁白混进患儿语音（方案 8.4）。
-  if (nonverbalNote && !childCapable) newMessages.push(message('child', `（${nonverbalNote}）`, { emotion: session.childEmotion }));
-  // 家长代答时证据照常解锁；仅"患儿先答但答不上"（能表达且被暂停）不解锁。
-  const codes = parentPaused && childCapable ? [] : matches.map((item) => `SOURCE_HX_${item.index}`);
-  session.askedIntents = uniq([...session.askedIntents, ...codes]);
-  session.unlockedEvidence = uniq([...session.unlockedEvidence, ...codes]);
+  const baselineProfile = resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age);
+  const profile=pack?.roleState?.childCanSpeak===false?{...baselineProfile,speechCapability:'impaired' as const}:baselineProfile;
+  const asCommunication=Boolean(pack)&&conversationAct(text)==='explanation';
+  const { dialogue, runtime } = await historyDialogue(session,text,allFacts,profile,forwardHeaders,undefined,asCommunication?'explanation':'question');
+  const newMessages = [message('student',text,speechOptions(speech)),...dialogue.utterances.map(item=>message(item.actor,item.text,{emotion:session.childEmotion}))];
+  const codes = disclosedHistoryCodes(dialogue,allFacts);
+  session.dialogueMemory = {topic:dialogue.topic,lastFactIds:codes.length?codes:session.dialogueMemory?.lastFactIds??[],clarifiedQuestion:dialogue.clarification??null,concern:/担心|严重|危险/.test(text)?text:session.dialogueMemory?.concern??null};
+  session.askedIntents = uniq([...session.askedIntents,...codes]);
+  session.unlockedEvidence = uniq([...session.unlockedEvidence,...codes]);
   session.messages.push(...newMessages);
-  session.events.push(clinicalEvent(clientEventId, 'ASK_QUESTION', 'history', codes.length ? `依据病例正文回答：${text}` : `问诊记录：${text}；该信息尚未获得`, null, codes));
-  advanceToHistoryStage(session); session.updatedAt = now();
-  return { session, newMessages, feedback: feedbackFor(session, codes.length ? '回答依据该病例的原始病史，已记录来源证据。' : '请记录需要补充核实的信息，继续采集其他病史。'),
-    trace: [trace('知识检索', '按本病例病史检索已提供事实', source ? [source.caseId] : []), trace('病例状态', '保留未知信息，不补写病史')], runtime: roleResult?.runtime };
+  if(asCommunication){
+    session.communication=[session.communication,text].filter(Boolean).join('\n');
+    session.unlockedEvidence=uniq([...session.unlockedEvidence,'COMMUNICATION']);
+  }
+  session.events.push(clinicalEvent(clientEventId,asCommunication?'SEND_COMMUNICATION':'ASK_QUESTION',asCommunication?'communication':'history',`${asCommunication?'沟通交流':'依据病例正文回答'}：${text}`,null,asCommunication?[...codes,'COMMUNICATION']:codes));
+  if(asCommunication&&session.mode==='osce')advanceStageTo(session,'communication');else advanceToHistoryStage(session);
+  session.updatedAt=now();
+  return {session,newMessages,feedback:null,trace:[trace('角色调度','按问题对象、年龄和知情范围安排回答'),trace('知识检索','使用当前病例的可披露事实及已披露对话上下文')],runtime};
 }
 
 function handleIntervention(session: SessionState, action: Extract<AgentEvent, { type: 'DOCTOR_INTERVENTION' }>['data']['action'], clientEventId: string, spokenText?: string, speech?: EventSpeechMeta): AgentTurnResult {
@@ -483,7 +453,7 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
   applyInterventionState(session, action);
   // 发言计划（方案 8.2）：不能言语患儿的干预不机械执行固定台词；
   // 安抚只影响情绪与配合，不改变语言能力；"让孩子自己说"按能力给出合理场景回应。
-  const childCapable = canChildSpeak(resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age));
+  const childCapable = sessionTeachingPackage(session)?.roleState?.childCanSpeak!==false&&canChildSpeak(resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age));
   if (action === 'pause_parent') {
     response = childCapable
       ? message('parent', '好的，我等孩子说完再补充。', { emotion: 'neutral' })
@@ -510,14 +480,28 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
   };
 }
 
-function handleExam(session: SessionState, toolId: string, bodyPartId: string, clientEventId: string, posture?: ExamPosture): AgentTurnResult {
-  if (posture) session.examPosture = posture;
-  const rule = findExamRule(session.caseId, toolId, bodyPartId, session.sourceSnapshotVersion, session.id);
-  const effectivePosture=posture ?? session.examPosture ?? (rule?.postures ? 'standing' : undefined);
-  if (!postureAllows(bodyPartId, effectivePosture) || (rule?.postures && effectivePosture && !rule.postures.includes(effectivePosture))) {
-    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', '当前检查与所选体位不匹配，未释放查体结果', false, []));
-    return { session, newMessages: [], feedback: feedbackFor(session, '本次检查不适用于当前体位，请调整体位后再试。'), trace: [trace('查体规则', '检查姿势与部位匹配')] };
+function handleExam(session: SessionState, toolId: string, bodyPartId: string, clientEventId: string, posture?: ExamPosture, position?:ExamPosition, location?:Extract<AgentEvent,{type:"EXAM_ACTION"}>["data"]["location"]): AgentTurnResult {
+  const target=ANATOMY_REGIONS.flatMap(r=>r.sites).find(s=>s.id===bodyPartId);
+  if(location&&((target?.aspect&&target.aspect!==location.aspect)||(bodyPartId.startsWith('left-')&&location.side!=='left')||(bodyPartId.startsWith('right-')&&location.side!=='right'))){
+    session.events.push(clinicalEvent(clientEventId,'EXAM_ACTION','exam','检查位置的左右或前后面不匹配，未释放结果',false,[]));
+    return {session,newMessages:[],feedback:feedbackFor(session,'请核对患者左右侧及前后面，示意方向切换不能代替实际调整体位。'),trace:[trace('查体规则','具体位置核对')]};
   }
+  if(session.teachingPackageVersion&&toolId!=='hand-hygiene'&&!instrumentsForSite(bodyPartId).includes(toolId)){
+    session.events.push(clinicalEvent(clientEventId,'EXAM_ACTION','exam','器材测量方式与当前部位不匹配，未释放结果',false,[]));
+    return {session,newMessages:[],feedback:feedbackFor(session,'该器材不适用于当前部位。请核对测量方式与局部定位后重新选择。'),trace:[trace('查体规则','器材和部位匹配检查')]};
+  }
+  if (posture) session.examPosture = posture;
+  const rule = session.teachingPackageVersion ? sessionTeachingCase(session).exams.find(item=>item.toolId===toolId&&item.bodyPartId===bodyPartId) ?? null : findExamRule(session.caseId, toolId, bodyPartId, session.sourceSnapshotVersion, session.id);
+  const effectivePosture=posture ?? session.examPosture ?? (rule?.postures ? 'standing' : undefined);
+  const teachingExam=sessionTeachingPackage(session)?.exams.find(e=>e.toolId===toolId&&e.bodyPartId===bodyPartId);
+  const effectivePosition=position??posture??session.examPosition??effectivePosture??'standing';
+  if(session.teachingPackageVersion)session.examPosition=effectivePosition;
+  const positionBlocked=teachingExam?.allowedPositions?!teachingExam.allowedPositions.includes(effectivePosition):(!postureAllows(bodyPartId,effectivePosture)||(rule?.postures&&effectivePosture&&!rule.postures.includes(effectivePosture)));
+  if(positionBlocked){
+    session.events.push(clinicalEvent(clientEventId,'EXAM_ACTION','exam','当前检查与实际体位不匹配，未释放结果',false,[]));
+    return {session,newMessages:[],feedback:feedbackFor(session,target?.aspect==='back'?'仰卧位不能直接完成后背检查。请实际选择并协助调整为适当的侧卧、坐位等体位；切换前后面示意不会代替体位调整。':'本次检查不适用于当前实际体位，请调整体位后再试。'),trace:[trace('查体规则','实际体位与检查可达性核对')]};
+  }
+
   const traceItems = [trace('查体规则', '校验准备动作、器材、部位与检查顺序')];
   if (!rule) {
     // 来源病例：无来源体征明确「资料未提供」，不补正常结果、不虚构患者事实、不关闭整个查体
@@ -561,7 +545,7 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   if (measuredVitals.respiratoryRate !== undefined) session.vitals.respiratoryRate = measuredVitals.respiratoryRate;
   if (measuredVitals.spo2 !== undefined) session.vitals.spo2 = measuredVitals.spo2;
   // 结果释放：随事件挂载该查体项绑定的病例媒体（如有；仅图核通过媒体可登记进病例配置）
-  session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}：${rule.result}`, true, [rule.evidenceCode], rule.media));
+  session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}${session.teachingPackageVersion?`（实际体位${{standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'}[effectivePosition]}）`:''}${location?`（${{left:'患者左侧',right:'患者右侧',both:'双侧或整体',midline:'正中'}[location.side]}，${location.aspect==='front'?'前面':'后面'}）`:''}：${rule.result}`, true, [rule.evidenceCode], rule.media));
   advanceStageTo(session, 'exam');
   session.updatedAt = now();
   const resultMessage = message('system', rule.result, { kind: 'navigation' });  session.messages.push(resultMessage);
@@ -587,13 +571,13 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
       trace: [trace('安全校验', '仅查看检查阶段不会推进业务阶段，开单前须从问诊合法前进到查体')],
     };
   }
-  const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
+  const pediatricCase = sessionTeachingCase(session);
   // 申请解析：旧 testId 点选直取目录项（不存在即 TEST_NOT_FOUND，语义不变）；
   // 新文本申请按服务端确定性别名匹配解析（同义词组+单向前缀，见 test-name-matcher），
   // 未匹配项保留学生原文回显并明确「资料未提供」——不猜测扩展、不编造结果、不下发候选列表。
   const requests: Array<{ requested: string; test: AuxiliaryTest | null; status?: string }> = [];
   if ('testId' in data) {
-    const test = findTest(session.caseId, data.testId, session.sourceSnapshotVersion, session.id);
+    const test = pediatricCase.tests.find(item=>item.id===data.testId);
     if (!test) throw new Error('TEST_NOT_FOUND');
     requests.push({ requested: test.label, test });
   } else {
@@ -651,6 +635,10 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     const test = request.test;
     if (processedIds.has(test.id)) continue;
     processedIds.add(test.id);
+    if(session.teachingPackageVersion){
+      session.testRequests??=[];
+      session.testRequests.push({testId:test.id,clientEventId,purpose:reason,requestedAt:now()});
+    }
     if (session.orderedTests.includes(test.id) && session.unlockedEvidence.includes(test.evidenceCode)) {
       feedbackParts.push(`${test.label}已申请，结果保留在本次记录中。`);
       continue;
@@ -711,7 +699,9 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     session.orderedTests = uniq([...session.orderedTests, test.id]);
     session.unlockedEvidence = uniq([...session.unlockedEvidence, test.evidenceCode]);
     // 结果释放：随事件挂载该检查绑定的病例媒体（如有；仅图核通过媒体可登记进病例配置）
-    session.events.push(clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：${test.result}`, test.appropriate, [test.evidenceCode], test.media));
+    const releasedEvent=clinicalEvent(clientEventId, 'ORDER_TEST', 'tests', `${test.label}：${test.result}${reason?`\n申请目的：${reason}`:''}`, test.appropriate, [test.evidenceCode], test.media);
+    if(test.report)releasedEvent.testReport=test.report;
+    session.events.push(releasedEvent);
     const resultMessage = message('system', test.result, { kind: 'navigation' });
     session.messages.push(resultMessage);
     newMessages.push(resultMessage);
@@ -910,7 +900,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
   if (session.expiresAt && Date.parse(session.expiresAt) <= Date.now() && event.type !== 'FINISH_SESSION') {
     throw new Error('SESSION_EXPIRED');
   }
-  if (session.events.some((item) => item.clientEventId === clientEventId)) {
+  if (session.events.some((item) => item.clientEventId === clientEventId)||session.testRequests?.some(item=>item.clientEventId===clientEventId)) {
     return { session, newMessages: [], feedback: null, trace: [trace('病例状态', '重复事件已按幂等键忽略')] };
   }
   // OSCE 事件-阶段门控 + 专项训练事件门控：学生不得经 API 获取当前模式不应开放的病例事实
@@ -919,13 +909,13 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
   switch (event.type) {
     case 'ASK_QUESTION': return handleQuestion(session, event.data.text, clientEventId, options?.forwardHeaders, event.data.speech);
     case 'DOCTOR_INTERVENTION': return handleIntervention(session, event.data.action, clientEventId);
-    case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId, event.data.posture);
+    case 'EXAM_ACTION': return handleExam(session, event.data.toolId, event.data.bodyPartId, clientEventId, event.data.posture, event.data.position, event.data.location);
     case 'ORDER_TEST': return handleTest(session, event.data, clientEventId, options?.accessToken, options?.forwardHeaders, options?.testSupplementInvoke);
     case 'SUBMIT_DECISION': return handleDecision(session, event.data, clientEventId);
     case 'SUBMIT_HISTORY_SUMMARY': return handleHistorySummary(session, event.data.summary, clientEventId);
     case 'SUBMIT_EXAM_OBSERVATION': return handleExamObservation(session, event.data, clientEventId);
     case 'SUBMIT_PLAN': return handlePlan(session, event.data, clientEventId);
-    case 'SEND_COMMUNICATION': return handleCommunication(session, event.data.text, clientEventId, event.data.speech);
+    case 'SEND_COMMUNICATION': return session.teachingPackageVersion?handleQuestion(session,event.data.text,clientEventId,options?.forwardHeaders,event.data.speech):handleCommunication(session, event.data.text, clientEventId, event.data.speech);
     case 'NAVIGATE_STAGE': {
       if (!validateStageNavigation(session, event.data.stage)) throw new Error(session.mode === 'practice' ? 'PRACTICE_STAGE_FORBIDDEN' : 'OSCE_STAGE_BACKTRACK_FORBIDDEN');
       // 非 OSCE 的「非前进一格」导航（回看已完成阶段/返回会话中心/同格重进）只记录展示阶段

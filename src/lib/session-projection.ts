@@ -28,8 +28,10 @@ export function projectSessionForRole(session: SessionState, role: AppRole): Ses
   delete publicSession.supplementalTests;
   // 创建指纹包含服务端原病例ID，仅用于幂等核对，不能作为公开会话字段。
   delete publicSession.creationRequest;
+  delete publicSession.dialogueMemory;
+  delete publicSession.testRequests;
   if (session.status !== 'active') return publicSession;
-  if (!session.caseOptions) return session.creationRequest ? publicSession : session;
+  if (!session.caseOptions) return publicSession;
   const profile = findPublicCase(session.caseId);
   const complaint = verifiedComplaint(readTeacherCaseData(session.caseId, session.sourceSnapshotVersion, session.id));
   return {

@@ -1,3 +1,4 @@
+@import "../components/clinical-exam.css";
 @import "tailwindcss";
 
 :root {
@@ -387,34 +388,6 @@ textarea { resize: vertical; }
 .posture-selector [aria-pressed="true"] { background: var(--ink); color: var(--paper, #fffdf8); }
 .posture-selector small { color: var(--muted); }
 .patient-breath { transform-origin: center; animation: breathing 1.15s ease-in-out infinite; }
-/* 查体两级选位：常驻 6 个大区贴边；点开后由底部面板给出该区子部位，不再沿大弧散落。 */
-.exam-region { position: absolute; z-index: 3; height: 44px; }
-/* 展开的大区抬到最上层：人物背景面板（z-index 6）不能挡住触发器。 */
-.exam-region[data-open] { z-index: 8; }
-.exam-region-trigger { width: 100%; height: 100%; display: inline-flex; align-items: center; gap: 5px; padding: 0 7px; border: 1px solid rgba(23,60,60,.28); border-radius: 999px; background: rgba(255,253,248,.95); color: var(--ink); box-shadow: 0 6px 16px rgba(23,60,60,.14); font-size: 11px; font-weight: 800; line-height: 1.15; white-space: nowrap; backdrop-filter: blur(7px); cursor: pointer; }
-.exam-region-trigger span { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--brick); box-shadow: 0 0 0 4px rgba(170,73,58,.14); }
-.exam-region-trigger:hover, .exam-region-trigger:focus-visible { border-color: var(--brick); color: var(--brick); }
-.exam-region-trigger:disabled { opacity: .55; cursor: progress; }
-.exam-region-trigger[data-observed="success"] { border-color: #75c9ad; background: #effbf6; color: #064d43; animation: observed-pulse 1.15s ease-out 2; }
-.exam-region-trigger[data-observed="success"] span { background: var(--pine); box-shadow: 0 0 0 4px rgba(72,177,141,.18); }
-.exam-region-trigger[data-observed="blocked"] { border-color: #eba99e; background: #fff1ee; color: #7d3930; animation: observed-shake .34s ease-in-out; }
-.exam-region[data-open] .exam-region-trigger { border-color: var(--brick); color: var(--brick); background: #fff; }
-/* 第二级部位面板：固定在图框底部，等宽网格；比原来的放射扇形更紧凑、位置稳定。 */
-.exam-region-panel { position: absolute; z-index: 9; left: 10px; right: 10px; bottom: 10px; padding: 10px; border: 1px solid #b9dfd0; border-radius: 15px; background: rgba(255,253,248,.98); box-shadow: 0 14px 32px rgba(23,94,79,.22); backdrop-filter: blur(14px); animation: observation-in .22s ease-out; }
-.exam-region-panel-head { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
-.exam-region-panel-head strong { color: var(--pine-dark); font-size: 13px; }
-.exam-region-panel-head span { color: var(--muted); font-size: 10px; }
-.exam-region-panel-close { margin-left: auto; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--muted); cursor: pointer; }
-.exam-region-panel-close:hover, .exam-region-panel-close:focus-visible { border-color: var(--brick); color: var(--brick); }
-.exam-region-panel-close:disabled { opacity: .55; cursor: progress; }
-.exam-region-panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 6px; max-height: 168px; overflow-y: auto; scrollbar-width: thin; }
-.exam-part-item { min-height: 44px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #9bcfbd; border-radius: 999px; background: #fff; color: var(--pine-dark); font-size: 12px; font-weight: 800; white-space: nowrap; cursor: pointer; }
-.exam-part-item:hover, .exam-part-item:focus-visible { border-color: var(--brick); color: var(--brick); }
-.exam-part-item:disabled { opacity: .55; cursor: progress; }
-.exam-part-item[data-observed="success"] { border-color: #75c9ad; background: #effbf6; color: #064d43; animation: fan-observed-pulse 1.15s ease-out 2; }
-.exam-part-item[data-observed="blocked"] { border-color: #eba99e; background: #fff1ee; color: #7d3930; }
-/* 展开一个大区时其余大区淡出但未遮住处仍可点，可直接切换而不用先收起。 */
-.patient-figure[data-fan-open] .exam-region:not([data-open]) { opacity: .38; }
 .patient-caption { position: absolute; bottom: 13px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 11px; background: rgba(255,253,248,.9); font-size: 12px; backdrop-filter: blur(10px); }
 .exam-observation { position: absolute; z-index: 4; left: 18px; right: 18px; bottom: 58px; padding: 12px; overflow: hidden; border: 1px solid #b9dfd0; border-radius: 15px; background: rgba(240,251,246,.96); box-shadow: 0 14px 32px rgba(23,94,79,.2); backdrop-filter: blur(14px); animation: observation-in .3s ease-out; }
 .exam-observation[data-status="blocked"] { border-color: #efb9ae; background: rgba(255,244,241,.97); }
@@ -1075,7 +1048,6 @@ textarea { resize: vertical; }
 .training-shell .patient-caption { padding:8px; font-size:10px; }
 /* 工作台里患儿图更窄，但大区与部位按钮一律保持 44px 点击目标不缩小；
    部位面板固定在图框底部，窄图框自动降为两列并可滚动，不会再压住相邻按钮。 */
-.training-shell .exam-region-trigger { background: rgba(255,253,248,.92); }
 .training-shell .test-order-form { padding:18px; border:1px solid #dce8e1; border-radius:16px; background:#f5faf6; margin-bottom:20px; }
 .training-shell .tests-intro h2 { font-size:24px; }
 .training-shell .test-order-form textarea { min-height:110px; background:#fff; }
@@ -1209,3 +1181,7 @@ textarea { resize: vertical; }
 .message[data-pending] .message-label { justify-content:space-between; }
 .message[data-pending] .message-label>span:last-child { font-weight:400; }
 .composer-meta:empty { display:none; }
+
+@media(min-width:1024px){.training-shell .training-grid[data-patient='true']{grid-template-columns:minmax(180px,.55fr) minmax(340px,1.4fr) minmax(240px,.8fr)}}
+
+.released-lab-report{border:1px solid #b8cfc0;border-radius:10px;background:#fff;padding:10px;margin:10px 0;font-size:12px}.released-lab-report header{display:flex;gap:8px;justify-content:space-between;align-items:center;color:#255c49}.released-lab-report small{font-size:10px;color:#657b6b}.released-lab-report p{line-height:1.7;font-size:11px}.lab-report-scroll{overflow:auto;max-height:350px}.released-lab-report table{border-collapse:collapse;min-width:440px;width:100%;font-size:11px}.released-lab-report th,.released-lab-report td{padding:7px;border:1px solid #d8e2d8;text-align:left;white-space:normal}.released-lab-report thead{background:#eaf2e8;position:sticky;top:0}.released-lab-report tbody th{font-weight:600}

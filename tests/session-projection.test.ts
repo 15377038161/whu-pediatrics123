@@ -63,11 +63,12 @@ test('已完成/报告待生成会话：不投影（复盘需要原始信息）'
   }
 });
 
-test('无 caseOptions 会话（演示病例）：原样返回', () => {
+test('无 caseOptions 会话仍经过公开投影', () => {
   const session = createInitialSession('user-test', 'guided', 'peds-respiratory-001');
   assert.equal(session.caseOptions, undefined);
   const projected = projectSessionForRole(session, 'student');
-  assert.equal(projected, session);
+  assert.deepEqual(projected, session);
+  assert.notEqual(projected,session);
 });
 
 test('列表投影：逐条应用且保持顺序', () => {

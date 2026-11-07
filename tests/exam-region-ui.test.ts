@@ -4,77 +4,22 @@ import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { AgentEvent } from '@/domain/agent';
-import { ExamObservationCard, ExamRegionMarker, ExamRegionPanel, type ExamObservation } from '@/components/exam-region-panel';
-import { EXAM_REGIONS, REGION_EDGE_INSET, REGION_TRIGGER_WIDTH, partLabel } from '@/domain/exam-regions';
+import { ExamObservationCard, type ExamObservation } from '@/components/exam-region-panel';
+import { partLabel } from '@/domain/exam-regions';
 import { TECHNIQUE_NOTE_BADGE, examTechniqueNote } from '@/domain/exam-technique-notes';
 import { createInitialSession, runAgentTurn } from '@/lib/agent-engine';
+import {ANATOMY_REGIONS} from '@/domain/exam-anatomy';
+import {RegionDiagram} from '@/components/clinical-exam';
 
 const noop = () => undefined;
 
-function renderMarker(regionIndex: number, options: { open?: boolean; posture?: 'standing' | 'supine'; busy?: boolean; observation?: ExamObservation | null } = {}): string {
-  return renderToStaticMarkup(createElement(ExamRegionMarker, {
-    region: EXAM_REGIONS[regionIndex],
-    posture: options.posture ?? 'standing',
-    open: options.open ?? false,
-    busy: options.busy ?? false,
-    observation: options.observation ?? null,
-    onToggle: noop,
-  }));
-}
-
-function renderPanel(regionIndex: number, options: { busy?: boolean; observation?: ExamObservation | null } = {}): string {
-  return renderToStaticMarkup(createElement(ExamRegionPanel, {
-    region: EXAM_REGIONS[regionIndex],
-    busy: options.busy ?? false,
-    observation: options.observation ?? null,
-    onExamine: noop,
-    onClose: noop,
-  }));
-}
-
-test('6 个大区常驻渲染，锚点与朝向逐项等于 exam-regions 的几何模型', () => {
-  const html = EXAM_REGIONS.map((_, index) => renderMarker(index)).join('');
-  for (const region of EXAM_REGIONS) {
-    assert.ok(html.includes(`data-region="${region.id}"`), region.id);
-    assert.ok(html.includes(`>${region.label}</button>`), `${region.id} 的大区按钮文案不是目录里的名字`);
-    const side = region.side === 'left' ? `left:${REGION_EDGE_INSET}%` : `right:${REGION_EDGE_INSET}%`;
-    assert.ok(html.includes(side), `${region.id} 没贴到患儿图边缘，扇形会朝图外张开`);
-    assert.ok(html.includes(`width:${REGION_TRIGGER_WIDTH}px`), `${region.id} 触发器宽度与几何模型不一致`);
-    assert.ok(html.includes(`top:${region.anchorTop[0]}%`), `${region.id} 站姿锚点与几何模型不一致`);
-  }
-  // 收起态不渲染任何子部位：两层按钮同时出现就会互相压住（正是改造前的毛病）。
-  assert.equal(html.includes('exam-fan-item'), false, '未展开就渲染扇形按钮，24 个部位会一次性平铺');
-  assert.ok(html.includes('aria-expanded="false"'), '大区按钮没有展开态，读屏学生听不出还有第二层');
-});
-
-test('仰卧位换用仰卧锚点，展开态只标记 aria-expanded', () => {
-  const region = EXAM_REGIONS[0];
-  const supine = renderMarker(0, { posture: 'supine' });
-  assert.ok(supine.includes(`top:${region.anchorTop[1]}%`), '仰卧位沿用站姿锚点，按钮会离开实际解剖位置');
-  const open = renderMarker(0, { open: true, posture: 'supine' });
-  assert.ok(open.includes('aria-expanded="true"'));
-  assert.equal(open.includes('exam-part-item'), false, '子部位应放在独立面板，不再散落在患儿图内');
-});
-
-test('部位面板按区渲染全部子部位，位置固定且带收起入口', () => {
-  for (const [index, region] of EXAM_REGIONS.entries()) {
-    const html = renderPanel(index);
-    assert.ok(html.includes(`aria-label="${region.label}：选择要检查的部位"`));
-    assert.equal(html.match(/exam-part-item/g)?.length, region.parts.length, '面板按钮数与该区子部位数不符');
-    for (const part of region.parts) {
-      assert.ok(html.includes(`>${partLabel(part)}</button>`), `${part} 的面板按钮文案不是部位目录里的名字`);
-    }
-    assert.ok(html.includes('aria-label="收起部位选择"'), '面板没有收起入口');
-  }
-});
-
-test('面板中的已观察部位按 success/blocked 标记，请求进行中所有按钮一起禁用', () => {
-  const region = EXAM_REGIONS[0];
-  const observed: ExamObservation = { bodyPartId: region.parts[1], toolId: 'inspection', detail: '病例记录', title: '眼部', status: 'success', sound: null };
-  const html = renderPanel(0, { observation: observed });
-  assert.ok(html.includes('data-observed="success"'), '已获得结果的部位没有成功标记');
-  const busy = renderPanel(0, { busy: true });
-  assert.equal(busy.match(/disabled=""/g)?.length, 1 + region.parts.length, '请求进行中仍有可点按钮');
+test('胸部后面不显示心前区与心脏听诊区，左右标记随观察面改变',()=>{
+  const region=ANATOMY_REGIONS.find(r=>r.id==='rg-chest')!;
+  const back=renderToStaticMarkup(createElement(RegionDiagram,{region,aspect:'back',selected:null,onSelect:noop,busy:false}));
+  assert.equal(back.includes('aria-label="心前区"'),false);
+  assert.equal(back.includes('aria-label="二尖瓣听诊区"'),false);
+  assert.ok(back.includes('aria-label="右后肺野"'));
+  assert.ok(back.includes('患者左侧'));
 });
 
 function observation(status: 'success' | 'blocked', toolId: string, bodyPartId: string, detail: string): ExamObservation {

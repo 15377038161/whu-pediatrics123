@@ -1,3 +1,4 @@
+import type {LabReport} from './lab-report';
 import { RETIRED_SIMULATION_PROFILES } from '@/domain/case-catalog';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { patientAppearance } from '@/domain/patient-appearance';
@@ -37,6 +38,7 @@ export interface ExamRule {
 }
 
 export interface AuxiliaryTest {
+  report?:LabReport;
   aliases?: string[];
   id: string;
   label: string;

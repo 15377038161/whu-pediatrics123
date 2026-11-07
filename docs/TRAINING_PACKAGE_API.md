@@ -1,0 +1,48 @@
+# 本地教学包接口与版本契约
+
+复用现有 `/api/sessions`、`/api/agent/turn`、`/api/sessions/[id]/finish` 和 `/api/sessions/[id]/media`，不增设平行引擎、不新增数据库迁移。新增状态随现有 `training_sessions.state` 保存。
+
+## 会话内部状态
+
+`sourceSnapshotVersion` 固定原始病例版本；`teachingPackageVersion` 固定教学补充版本。只有新会话且两者匹配才绑定本地包。历史会话缺少教学版本时仍按原资料读取。已绑定的旧包保留，更新当前索引不会改变旧会话。
+
+`roleState` 在私有病例包中登记年龄与明确意识/语言受限的角色约束，不能将婴儿或原记录不能交流的患儿编成能完整答话。
+
+`dialogueMemory` 包含当前主题、实际披露事实编号、待澄清问题和已有顾虑，仅服务端使用，学生投影删除。角色规划、未披露事实、答案、原件路径均不下发。`examPosition` 记录实际体位；`examPosture` 保留原始人物素材/历史事件的站立或仰卧语义。
+
+新包中 `ASK_QUESTION` 与 `SEND_COMMUNICATION` 共用同一角色管线，按本轮内容识别补问和解释；阶段不会回退。解释只提供已披露事实并累计 `communication`，不能用纯礼貌回应获取病史分。
+
+## 查体事件
+
+```json
+{
+  "type": "EXAM_ACTION",
+  "data": {
+    "toolId": "stethoscope",
+    "bodyPartId": "right-lung-back",
+    "posture": "supine",
+    "position": "lateral",
+    "location": {"side":"right","aspect":"back"}
+  }
+}
+```
+
+`position` 可为 `standing/supine/sitting/lateral/prone`；`location.side` 可为 `left/right/both/midline`。新增字段可选，旧事件仍可解释。新包的 `allowedPositions` 决定实际体位可达性；原 `postures` 保留旧素材和历史规则。服务端核对部位、左右前后、体位及准备条件，失败不释放结果或媒体。
+
+旧粗部位编号不自动扩充成新的分区阳性所见。同一原始整体记录可供不同局部入口回看，但结果标明范围限制，评分使用同一证据码去重。未独立分区的资料不能自动定位到某个肺野。
+
+## 检查与媒体
+
+沿用文本申请 `ORDER_TEST`，检查目录不下发学生。当前申请解析到教学包中的固定结果，结果随事件释放。旧 `testId` 也从当前绑定教学定义中解析。重复申请回看同一结果，不重复得证据。
+
+新包的内部 `testRequests` 记录每个独立申请幂等键、项目、目的和时点；学生会话投影删除。最终反馈才输出每项申请次数与目的。重复按钮提交沿用同一幂等键时不累计次数，新的复查意图仍只回看固定教学结果，不冒充新标本数值。
+
+`ClinicalEvent.testReport` 只在对应检查结果实际释放后附加：检查名、标本说明、原始指标/数值/单位/时点、参考信息及来源。未申请时不下发；单位或标本原文未注明时明确说明，不凭经验填成患者数据。
+
+媒体标识为 `training-media:<sha256>`。接口先验证身份、会话归属和已释放登记，再核对私有PNG哈希、大小；返回中性图注及图片数据，不返回原件路径、含诊断的文件名或下载原件入口。没有释放的标识不可探测。
+
+## 结束后的评分
+
+`TrainingReport.teachingFeedback` 保存教学版本、基础/提高得分、可评价满分、逐项状态、可接受表达和检查必要性说明。它不覆盖 `totalScore`，也不参与正式成绩同步和历史重算。素材缺失、病历读取失败等记录为 `not_assessable`。
+
+每点仅100%/50%/0%三档；实际事实证据不足时不能以模型引用或“提交过”代替。关键安全点识别明确危险表达，正确拒绝危险措施不因此扣分。具体规则与例子随包版本固定。
