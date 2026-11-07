@@ -9,7 +9,7 @@ from PIL import Image,ImageDraw,ImageFont
 from pypdf import PdfReader
 
 ROOT=Path('deliverables/67-cases-20261107');OUT=Path('outputs/training-20261107/docx-qa')
-RENDER=Path('C:/Users/Administrator/.codex/plugins/cache/openai-primary-runtime/documents/26.1104.12130/skills/documents/render_docx.py')
+RENDER=Path('C:/Users/Administrator/.codex/plugins/cache/openai-primary-runtime/documents/26.1105.12137/skills/documents/render_docx.py')
 OUT.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ);env['PATH']='C:/Program Files/LibreOffice/program;'+env['PATH']
 font=ImageFont.truetype('C:/Windows/Fonts/msyh.ttc',14)

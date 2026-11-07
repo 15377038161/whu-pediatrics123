@@ -7,7 +7,7 @@ export default defineConfig([
   ...nextTs,
   globalIgnores([
     '.next/**',
-    '.next-training/**',
+    '.next-training/**', '.next-exam/**',
     'deliverables/**',
     'dist/**',
     'node_modules/**',

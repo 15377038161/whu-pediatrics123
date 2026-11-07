@@ -2,6 +2,8 @@
 from pathlib import Path
 from collections import defaultdict
 import json,csv,hashlib
+from io import BytesIO
+from PIL import Image
 from docx import Document
 from docx.shared import Inches,Pt,RGBColor
 from docx.oxml import OxmlElement
@@ -80,7 +82,13 @@ for entry in index:
         asset=next((a for a in pack['appearanceAssets'] if a['posture']=='supine'),pack['appearanceAssets'][0])
         photo=Path('public')/asset['publicPath'].lstrip('/')
         if photo.exists():
-            doc.add_picture(str(photo),width=Inches(2.6))
+            if photo.suffix.lower()=='.webp':
+                compatible=BytesIO()
+                Image.open(photo).save(compatible,format='PNG')
+                compatible.seek(0)
+                doc.add_picture(compatible,width=Inches(2.6))
+            else:
+                doc.add_picture(str(photo),width=Inches(2.6))
             para(doc,'通用虚拟示教形象，非原患者照片；不代表病理体征。体位、年龄档与性别用于交互匹配。')
 
     for key,label in [('appearance','形象与外观'),('caregiver','照护者'),('speaking','表达方式'),('cooperation','配合与动作'),('knowledgeBoundary','知情边界')]:

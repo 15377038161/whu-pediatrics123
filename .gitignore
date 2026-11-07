@@ -30,3 +30,8 @@ supabase/.temp/
 !public/models/anatomy/piper-corresponding-source.zip
 
 .next-training/
+
+.next-exam/
+
+# Raw model replies and operational audit evidence stay private.
+artifacts/model-acceptance/

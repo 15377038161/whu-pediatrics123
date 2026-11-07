@@ -3,6 +3,13 @@ import test from 'node:test';
 import {gradeTeachingPoint,clinicalEvidenceRatio} from '@/domain/teaching-score';
 import type {TeachingRubricItem} from '@/domain/teaching-package';
 const point:TeachingRubricItem={id:'monitor',section:'plan',level:'basic',label:'监测血糖与电解质',maxScore:4,concepts:[['血糖'],['电解质','血钾']],evidenceCodes:[],fullAnswer:'监测血糖和电解质',partialAnswer:'只覆盖一项',incorrectAnswer:'未监测',safetyCritical:true,sourceLocator:'synthetic',unsafePhrases:[]};
+test('查体观察解释留给教师复核，不因关键词命中或未命中自动判医学分',()=>{
+  const manual={...point,id:'exam-interpret',section:'exam' as const,concepts:[['观察'],['提示']]};
+  for(const text of ['观察提示异常','已经完成查体','']){
+    const grade=gradeTeachingPoint(manual,text,new Set());
+    assert.equal(grade.status,'not_assessable');assert.equal(grade.ratio,0);assert.match(grade.explanation,/教师/);
+  }
+});
 test('简答、同义词满分，方向正确部分分，空话不能拿满分',()=>{
   assert.equal(gradeTeachingPoint(point,'血糖、血钾',new Set()).ratio,1);
   assert.equal(gradeTeachingPoint(point,'监测血糖',new Set()).ratio,.5);

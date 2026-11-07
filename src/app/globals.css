@@ -262,19 +262,7 @@ textarea { resize: vertical; }
 .stage-chip[data-current="true"] { background: var(--pine); color: white; box-shadow: 0 5px 14px rgba(25,117,104,.22); }
 .stage-chip[data-done="true"]::before { content: "✓ "; color: #9bd1bf; }
 .training-grid { padding: 14px; display: grid; gap: 14px; }
-.mobile-workspace-nav { position: fixed; z-index: 80; left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; padding: 6px; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.96); box-shadow: 0 14px 38px rgba(23,60,60,.18); backdrop-filter: blur(16px); }
-.mobile-workspace-nav button { min-height: 52px; border: 0; border-radius: 12px; background: transparent; color: #60726f; display: grid; place-items: center; align-content: center; gap: 1px; font-size: 11px; }
-.mobile-workspace-nav button svg { width: 19px; height: 19px; }
-.mobile-workspace-nav button[data-active="true"] { color: white; background: var(--pine); }
-.mobile-workspace-nav button:disabled { opacity: .38; cursor: not-allowed; }
 [data-mobile-hidden="true"] { display: none; }
-.mobile-drawer-backdrop { position: fixed; z-index: 65; inset: 0; border: 0; background: rgba(18,49,47,.24); backdrop-filter: blur(2px); }
-[data-mobile-drawer="true"] { position: fixed; z-index: 70; left: 10px; right: 10px; bottom: calc(78px + env(safe-area-inset-bottom)); max-height: min(62svh, 560px); overflow: auto; border-radius: 22px; box-shadow: 0 24px 54px rgba(23,60,60,.28); animation: drawer-rise .22s ease-out; }
-[data-mobile-drawer="true"] > .panel-head, details[data-mobile-drawer="true"] > summary { position: sticky; z-index: 2; top: 0; background: rgba(255,255,255,.96); backdrop-filter: blur(12px); }
-.training-primary[data-stage="exam"][data-mobile-drawer="true"] .exam-stage-intro,
-.training-primary[data-stage="exam"][data-mobile-drawer="true"] .exam-route,
-.training-primary[data-stage="exam"][data-mobile-drawer="true"] .exam-open-patient { display: none; }
-.training-primary[data-stage="exam"][data-mobile-drawer="true"] .panel-body { padding: 12px; }
 .workspace-panel { background: var(--white); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-soft); }
 .panel-head { min-height: 54px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
 .panel-head h2 { margin: 0; font-size: 16px; }
@@ -368,27 +356,14 @@ textarea { resize: vertical; }
 .focus-banner { margin: -2px 0 14px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border: 1px solid #c8e8db; border-radius: 13px; background: linear-gradient(90deg, var(--mint), #f7fdf9); }
 .focus-banner span { color: var(--muted); font-size: 11px; }
 .focus-banner strong { color: var(--pine-dark); font-size: 13px; }
-
-.patient-stage { position: relative; min-height: 620px; display: grid; place-items: center; overflow: hidden; padding: 14px 10px 78px; background: #e8ece8; }
-.patient-stage::before { content: ""; position: absolute; inset: 14px; border: 1px solid rgba(23,60,60,.13); border-radius: 24px; pointer-events: none; }
-.patient-figure { position: relative; width: min(100%, 360px); aspect-ratio: 957/1644; overflow: hidden; border-radius: 20px; background: #f2efe9; box-shadow: 0 20px 38px rgba(23,60,60,.18); }
-.patient-photo { object-fit: contain; }
 .patient-unspecified { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 28px; text-align: center; color: var(--muted); }
-.patient-stage[data-posture="supine"] .patient-figure { background: #edf3ef; }
-.patient-stage[data-posture="supine"] .patient-photo { object-fit: contain; }
 /* 婴儿素材为512×512方图；按实际画布定位，避免套用竖版儿童容器产生留白及热区错位。 */
-.patient-stage[data-avatar="newborn-boy"] .patient-figure,
-.patient-stage[data-avatar="newborn-girl"] .patient-figure { aspect-ratio: 1; }
 /* 2026-10-23 独立项 C：幼儿/学龄/青少年分档素材为 832×1216（与既有学龄前 957×1644 不同），
    按 data-avatar 覆盖容器比例，contain 下无 letterbox。 */
-.patient-stage[data-avatar="toddler-boy"] .patient-figure, .patient-stage[data-avatar="toddler-girl"] .patient-figure,
-.patient-stage[data-avatar="school-boy"] .patient-figure, .patient-stage[data-avatar="school-girl"] .patient-figure,
-.patient-stage[data-avatar="adolescent-boy"] .patient-figure, .patient-stage[data-avatar="adolescent-girl"] .patient-figure { aspect-ratio: 832/1216; }
 .posture-selector { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-block: 14px; }
 .posture-selector [aria-pressed="true"] { background: var(--ink); color: var(--paper, #fffdf8); }
 .posture-selector small { color: var(--muted); }
 .patient-breath { transform-origin: center; animation: breathing 1.15s ease-in-out infinite; }
-.patient-caption { position: absolute; bottom: 13px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 11px; background: rgba(255,253,248,.9); font-size: 12px; backdrop-filter: blur(10px); }
 .exam-observation { position: absolute; z-index: 4; left: 18px; right: 18px; bottom: 58px; padding: 12px; overflow: hidden; border: 1px solid #b9dfd0; border-radius: 15px; background: rgba(240,251,246,.96); box-shadow: 0 14px 32px rgba(23,94,79,.2); backdrop-filter: blur(14px); animation: observation-in .3s ease-out; }
 .exam-observation[data-status="blocked"] { border-color: #efb9ae; background: rgba(255,244,241,.97); }
 .exam-observation-head { display: grid; grid-template-columns: 38px minmax(0,1fr) 34px; gap: 9px; align-items: center; }
@@ -419,15 +394,6 @@ textarea { resize: vertical; }
 .exam-auscultation[data-sound="wheeze"] span:nth-of-type(2), .exam-auscultation[data-sound="wheeze"] span:nth-of-type(4) { height: 23px; }
 .patient-disclosure { position: absolute; right: 18px; top: 18px; margin: 0; padding: 5px 8px; border-radius: 999px; background: rgba(23,60,60,.78); color: white; font-size: 10px; letter-spacing: .02em; }
 /* 人物背景面板（方案 9.1/9.2 与 17.2 V09）：默认折叠小徽标，展开后 dl 网格展示，风格与 patient-caption 一致 */
-.patient-background { position: absolute; left: 14px; top: 16px; z-index: 2; max-width: min(300px, 72%); }
-.patient-background > summary { display: inline-flex; align-items: center; gap: 4px; margin: 0; padding: 5px 10px; border-radius: 999px; background: rgba(255,253,248,.92); color: var(--ink); font-size: 11px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(23,60,60,.14); list-style: none; }
-.patient-background > summary::-webkit-details-marker { display: none; }
-.patient-background[open] > summary::after { content: '✕'; margin-left: 4px; font-size: 10px; opacity: .6; }
-.patient-background dl { margin: 6px 0 0; padding: 10px 12px; border-radius: 11px; background: rgba(255,253,248,.94); backdrop-filter: blur(10px); box-shadow: 0 4px 14px rgba(23,60,60,.16); display: grid; gap: 6px; font-size: 11px; color: var(--ink); }
-.patient-background dl div { display: grid; grid-template-columns: 56px 1fr; gap: 6px; align-items: baseline; }
-.patient-background dt { color: #5c7a6e; font-weight: 700; white-space: nowrap; }
-.patient-background dd { margin: 0; line-height: 1.5; }
-@media (max-width: 767px) { .patient-background { max-width: 66%; } .patient-background dl { font-size: 10px; } }
 .emotion-pill { color: var(--brick); font-weight: 800; }
 .tool-rack { display: flex; gap: 8px; overflow-x: auto; padding: 10px; background: #f3f7f4; }
 .tool { position: relative; flex: 0 0 82px; min-height: 86px; border: 1px solid transparent; border-radius: 13px; background: var(--white); color: var(--ink); display: grid; place-items: center; align-content: center; gap: 3px; font-size: 11px; }
@@ -703,18 +669,12 @@ textarea { resize: vertical; }
   .exam-tool-selector .tool-rack { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; overflow: visible; }
   .exam-tool-selector .tool { width: 100%; min-height: 72px; }
   .exam-tool-selector .tool-photo-wrap { width: 48px; height: 42px; }
-  .exam-open-patient { display: none; }
   .training-primary[data-stage="history"] .history-chat, .training-primary[data-stage="communication"] .history-chat { min-height: 450px; max-height: 560px; }
   .training-shell { padding-bottom: 24px; }
-  .mobile-workspace-nav { display: none; }
   [data-mobile-hidden="true"] { display: block; }
   /* 桌面端查体抽屉复位：resume 至查体阶段时 mobileView 仍为初始值 'task'，
      抽屉遮罩（fixed inset:0 z-65）与底部抽屉样式不得在 ≥1024px 生效，
      否则会拦截全屏点击、要求用户额外点击遮罩才能操作 */
-  .mobile-drawer-backdrop { display: none; }
-  [data-mobile-drawer="true"] { position: static; inset: auto; max-height: none; overflow: visible; border-radius: 0; box-shadow: none; animation: none; }
-  [data-mobile-drawer="true"] > .panel-head, details[data-mobile-drawer="true"] > summary { position: static; background: transparent; backdrop-filter: none; }
-  .patient-stage { min-height: 570px; }
   .message-list { max-height: 520px; }
 }
 
@@ -1041,11 +1001,7 @@ textarea { resize: vertical; }
 .training-shell .training-record>.panel-body { display:flex; flex:1; flex-direction:column; min-height:0; overflow:hidden; }
 .training-shell .training-record .vitals,.training-shell .record-section-head { flex-shrink:0; }
 .training-shell .evidence-log { flex:1; min-height:0; overflow-y:auto; align-content:start; scrollbar-gutter:stable; overscroll-behavior:contain; padding-right:5px; }
-.training-shell .patient-stage { flex:1; min-height:0; padding:10px 10px 60px; display:flex; justify-content:center; }
-.training-shell .patient-figure { width:auto; height:100%; max-width:100%; flex:1; max-height:100%; }
-.training-shell .patient-background { z-index:6; }
 .training-shell .exam-observation { max-height:42%; overflow-y:auto; }
-.training-shell .patient-caption { padding:8px; font-size:10px; }
 /* 工作台里患儿图更窄，但大区与部位按钮一律保持 44px 点击目标不缩小；
    部位面板固定在图框底部，窄图框自动降为两列并可滚动，不会再压住相邻按钮。 */
 .training-shell .test-order-form { padding:18px; border:1px solid #dce8e1; border-radius:16px; background:#f5faf6; margin-bottom:20px; }
@@ -1058,8 +1014,7 @@ textarea { resize: vertical; }
   .training-shell .training-grid[data-patient='false'] .training-record { grid-column:2; }
 }
 @media(max-width:1023px) {
-  .training-shell:not([data-note='true']) .training-grid { margin-bottom:76px; }
-  .training-shell .workspace-panel[data-mobile-drawer='true'] { display:flex; height:auto; max-height:62svh; }
+  .training-shell:not([data-note='true']) .training-grid { }
   .training-shell .training-patient { height:100%; }
   .training-note-workspace { padding:10px 12px; }
 }
@@ -1106,14 +1061,12 @@ textarea { resize: vertical; }
 .direction-hint-head strong { font-size:12px; }
 .direction-hint-popover p { margin:8px 0; font-size:12px; line-height:1.7; white-space:pre-wrap; }
 .direction-hint-popover small { display:block; color:var(--muted); font-size:10px; }
-.mobile-drawer-close { display:none; }
 .training-shell section[tabindex='-1']:focus { outline:none; }
 @media(max-width:1023px) {
   .workspace-stage-row { padding-right:8px; }
   .direction-hint-trigger { width:34px; overflow:hidden; padding:4px 8px; color:transparent; }
   .direction-hint-trigger svg { color:var(--ink); flex:none; }
   .direction-hint-popover { position:fixed; top:112px; right:14px; }
-  .training-shell .mobile-drawer-close { display:inline-flex; }
   .shared-record-note-entry { padding-bottom:4px; }
 }
 
@@ -1142,12 +1095,9 @@ textarea { resize: vertical; }
  .record-drawer-trigger { padding:4px 6px; font-size:10px; }
  .training-shell .training-grid[data-patient='false'] .training-primary { display:flex; position:static; height:100%; max-height:none; }
  .training-shell:not([data-note='true']) .training-grid[data-patient='false'] { margin-bottom:0; }
- .training-shell:not([data-exam='true']) .mobile-workspace-nav { display:none; }
  .training-shell .training-primary > .panel-head { min-height:36px; padding:6px 10px; justify-content:flex-end; }
  .training-shell .training-primary > .panel-head h2 { display:none; }
  .training-shell .training-primary > .panel-head:not(:has(.panel-actions > *)) { display:none; }
- .training-shell .training-primary[data-mobile-drawer='true'] > .panel-head { justify-content:space-between; }
- .training-shell .training-primary[data-mobile-drawer='true'] > .panel-head h2 { display:block; }
  .training-shell .test-order-form { padding:12px; margin-bottom:12px; }
  .training-shell .tests-intro h2 { font-size:20px; }
  .training-shell .tests-intro p { margin-bottom:8px; }
@@ -1182,6 +1132,6 @@ textarea { resize: vertical; }
 .message[data-pending] .message-label>span:last-child { font-weight:400; }
 .composer-meta:empty { display:none; }
 
-@media(min-width:1024px){.training-shell .training-grid[data-patient='true']{grid-template-columns:minmax(180px,.55fr) minmax(340px,1.4fr) minmax(240px,.8fr)}}
+
 
 .released-lab-report{border:1px solid #b8cfc0;border-radius:10px;background:#fff;padding:10px;margin:10px 0;font-size:12px}.released-lab-report header{display:flex;gap:8px;justify-content:space-between;align-items:center;color:#255c49}.released-lab-report small{font-size:10px;color:#657b6b}.released-lab-report p{line-height:1.7;font-size:11px}.lab-report-scroll{overflow:auto;max-height:350px}.released-lab-report table{border-collapse:collapse;min-width:440px;width:100%;font-size:11px}.released-lab-report th,.released-lab-report td{padding:7px;border:1px solid #d8e2d8;text-align:left;white-space:normal}.released-lab-report thead{background:#eaf2e8;position:sticky;top:0}.released-lab-report tbody th{font-weight:600}

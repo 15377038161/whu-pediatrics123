@@ -2,7 +2,7 @@ import { historyDialogue, sourceHistoryFacts,disclosedHistoryCodes,conversationA
 import { sessionTeachingCase, sessionTeachingPackage } from '@/lib/session-teaching';
 import { readTeachingPackage } from '@/lib/teaching-package-store';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
-import { ANATOMY_REGIONS, instrumentsForSite } from '@/domain/exam-anatomy';
+import { ANATOMY_REGIONS, EXAM_INSTRUMENTS, anatomyLabel, instrumentsForSite } from '@/domain/exam-anatomy';
 import {getPublicCase,isTrainableCase} from '@/lib/case-identity';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
@@ -486,9 +486,14 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
     session.events.push(clinicalEvent(clientEventId,'EXAM_ACTION','exam','检查位置的左右或前后面不匹配，未释放结果',false,[]));
     return {session,newMessages:[],feedback:feedbackFor(session,'请核对患者左右侧及前后面，示意方向切换不能代替实际调整体位。'),trace:[trace('查体规则','具体位置核对')]};
   }
-  if(session.teachingPackageVersion&&toolId!=='hand-hygiene'&&!instrumentsForSite(bodyPartId).includes(toolId)){
+  // Validate the pairing even for source-only sessions. Missing source data and a
+  // mismatched instrument are different outcomes. The old thermometer ID remains
+  // readable for historical clients; new UI exposes three explicit thermometers.
+  if(target&&toolId!=='hand-hygiene'&&toolId!=='thermometer'&&!instrumentsForSite(bodyPartId).includes(toolId)){
     session.events.push(clinicalEvent(clientEventId,'EXAM_ACTION','exam','器材测量方式与当前部位不匹配，未释放结果',false,[]));
-    return {session,newMessages:[],feedback:feedbackFor(session,'该器材不适用于当前部位。请核对测量方式与局部定位后重新选择。'),trace:[trace('查体规则','器材和部位匹配检查')]};
+    const tool=EXAM_INSTRUMENTS.find(item=>item.id===toolId);
+    const usage=toolId==='axillary-thermometer'?'腋下电子体温计应放在腋窝测量。':toolId==='infrared-thermometer'?'额温枪应对准额部测量。':toolId==='tympanic-thermometer'?'耳温计应在耳部按器材要求测量。':'';
+    return {session,newMessages:[],feedback:feedbackFor(session,`${tool?.label??'所选器材'}与${anatomyLabel(bodyPartId)}不匹配，本次未获得查体结果。${usage}请重新选择器材或部位。`),trace:[trace('查体规则','器材和部位匹配检查')]};
   }
   if (posture) session.examPosture = posture;
   const rule = session.teachingPackageVersion ? sessionTeachingCase(session).exams.find(item=>item.toolId===toolId&&item.bodyPartId===bodyPartId) ?? null : findExamRule(session.caseId, toolId, bodyPartId, session.sourceSnapshotVersion, session.id);

@@ -1,10 +1,29 @@
 'use client';
 import Image from 'next/image';
 import type { ExamLocation,ExamPosition } from '@/domain/agent';
-import { useState } from 'react';
-import { ArrowLeft, Check, Hand, RotateCcw } from 'lucide-react';
-import { ANATOMY_REGIONS, EXAM_INSTRUMENTS, anatomyLabel, instrumentsForSite, type AnatomyRegion, type ExamAspect } from '@/domain/exam-anatomy';
+import { useEffect, useRef, useState } from 'react';
+import { Check, Hand, MapPin, RotateCcw, Stethoscope, UserRound } from 'lucide-react';
+import { ANATOMY_REGIONS, EXAM_INSTRUMENTS, anatomyLabel, type AnatomyRegion, type ExamAspect } from '@/domain/exam-anatomy';
 import { ExamObservationCard, type ExamObservation } from './exam-region-panel';
+import { photoExamMap, type PhotoCrop, type PhotoTarget } from '@/domain/exam-photo-map';
+
+function PhotoSurface({image,alt,targets,crop,selected,onSelect,busy,toolImage,overview=false}:{image:string;alt:string;targets:PhotoTarget[];crop?:PhotoCrop;selected:string|null;onSelect:(id:string,side?:ExamLocation['side'])=>void;busy:boolean;toolImage?:string;overview?:boolean}){
+  const [ratio,setRatio]=useState(832/1216);
+  const [pointer,setPointer]=useState<{x:number;y:number}|null>(null);
+  const area=crop??{x:0,y:0,width:100,height:100};
+  return <div className="ce-photo-surface" data-overview={overview} data-equipped={Boolean(toolImage)} style={{aspectRatio:ratio*area.width/area.height,width:overview?`min(100%, ${ratio*46}dvh)`:'100%',marginInline:'auto'}} onPointerMove={event=>{if(event.pointerType==='mouse'){const rect=event.currentTarget.getBoundingClientRect();setPointer({x:event.clientX-rect.left,y:event.clientY-rect.top});}}} onPointerLeave={()=>setPointer(null)}>
+    <Image src={image} alt={alt} width={832} height={1216} sizes={overview?'(max-width:767px) 85vw, 360px':'800px'} priority={overview} onLoad={event=>{const img=event.currentTarget;if(img.naturalHeight)setRatio(img.naturalWidth/img.naturalHeight);}} style={{position:'absolute',maxWidth:'none',width:`${10000/area.width}%`,height:`${10000/area.height}%`,left:`${-area.x/area.width*100}%`,top:`${-area.y/area.height*100}%`}}/>
+    {!overview&&<svg className="ce-target-guides" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">{targets.map((target,index)=><line key={target.id} x1={target.x} y1={target.y} x2={index%2===0?20:80} y2={(Math.floor(index/2)+1)/(Math.ceil(targets.length/2)+1)*100}/>)}</svg>}
+    {targets.map(target=><button type="button" key={target.id} className="ce-photo-target" data-side={target.x<45?'left':'right'} aria-label={`${overview?'定位':'部位定位点：'}${target.label}`} title={target.label} aria-pressed={selected===target.id} disabled={busy} style={{left:`${target.x}%`,top:`${target.y}%`}} onClick={()=>onSelect(target.id,target.side)}><span className="ce-target-dot"/>{overview&&<span className="ce-target-name">{target.label}</span>}</button>)}
+    {!overview&&targets.map((target,index)=><button type="button" key={'label-'+target.id} className="ce-photo-label" aria-label={`检查${target.label}`} aria-pressed={selected===target.id} disabled={busy} style={{[index%2===0?'left':'right']:0,top:`${(Math.floor(index/2)+1)/(Math.ceil(targets.length/2)+1)*100}%`}} onClick={()=>onSelect(target.id,target.side)}>{target.label}</button>)}
+    {toolImage&&pointer&&<span className="ce-held-tool" style={{left:pointer.x+12,top:pointer.y+12}} aria-hidden="true"><Image src={toolImage} alt="" width={44} height={44}/></span>}
+  </div>;
+}
+
+const detailGroups:Record<string,Array<{label:string;ids:string[]}>>={
+  'rg-head-neck':[{label:'眼耳鼻口',ids:['eyes','ears','nose','mouth']},{label:'头颅与前囟',ids:['scalp','fontanelle','forehead']},{label:'颈部',ids:['neck','thyroid','cervical-nodes']}],
+  'rg-chest':[{label:'肺野',ids:['right-lung-upper','left-lung-upper','right-lung-lower','left-lung-lower','chest-lung']},{label:'心前区',ids:['aortic-area','pulmonic-area','erb-area','tricuspid-area','mitral-area']},{label:'胸壁与腋窝',ids:['chest','axilla','breast']}],
+};
 
 export function RegionDiagram({region,aspect,selected,selectedSide='both',onSelect,busy}:{region:AnatomyRegion;aspect:ExamAspect;selected:string|null;selectedSide?:ExamLocation['side'];onSelect:(id:string,side?:ExamLocation['side'])=>void;busy:boolean}){
   const sites=region.sites.filter(s=>!s.aspect||s.aspect===aspect).flatMap(s=>s.paired?[{...s,markerSide:aspect==='front'?'right':'left'},{...s,x:100-s.x,markerSide:aspect==='front'?'left':'right'}]:[{...s,markerSide:''}]);
@@ -28,23 +47,83 @@ export function RegionDiagram({region,aspect,selected,selectedSide='both',onSele
   </div>;
 }
 
-export function ClinicalExam({image,alt,posture,position,busy,hygieneCompleted,observation,onExamine,onCloseObservation,onReplayAudio}:{image:string|null;alt:string;posture:'standing'|'supine';position?:ExamPosition;busy:boolean;hygieneCompleted:boolean;observation:ExamObservation|null;onExamine:(part:string,tool:string,location?:ExamLocation)=>void;onCloseObservation:()=>void;onReplayAudio:()=>void}){
-  const [regionId,setRegionId]=useState<string|null>(null);
-  const [part,setPart]=useState<string|null>(null);
-  const [tool,setTool]=useState<string|null>(null);
-  const [side,setSide]=useState<ExamLocation['side']>('both');
-  const [aspect,setAspect]=useState<ExamAspect>('front');
-  const region=ANATOMY_REGIONS.find(r=>r.id===regionId);
-  function selectPart(id:string,sideOverride?:ExamLocation['side']){setPart(id);setTool(null);setSide(sideOverride??(id.startsWith('left-')?'left':id.startsWith('right-')?'right':/scalp|forehead|fontanelle|nose|mouth|neck|thyroid|spine|umbilicus|external-genitalia|general-state|growth/.test(id)?'midline':'both'));onCloseObservation();}
-  function selectRegion(id:string){setRegionId(id);setPart(null);setTool(null);setAspect(id==='rg-back'?'back':'front');onCloseObservation();}
-  const methods=part?EXAM_INSTRUMENTS.filter(t=>instrumentsForSite(part).includes(t.id)):[];
+const positionLabels: Record<ExamPosition,string> = {standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'};
+const instruments = EXAM_INSTRUMENTS.filter(item => item.id !== 'hand-hygiene');
+
+export function ClinicalExam({image,alt,assetKey,posture,position,positions,onPositionChange,busy,hygieneCompleted,observation,onExamine,onCloseObservation,onReplayAudio}: {
+  image:string|null; alt:string; assetKey?:string; posture:'standing'|'supine'; position:ExamPosition;
+  positions:ExamPosition[]; onPositionChange:(position:ExamPosition)=>void;
+  busy:boolean; hygieneCompleted:boolean; observation:ExamObservation|null;
+  onExamine:(part:string,tool:string,location?:ExamLocation)=>void;
+  onCloseObservation:()=>void; onReplayAudio:()=>void;
+}) {
+  const [regionId,setRegionId] = useState('rg-head-neck');
+  const [part,setPart] = useState<string|null>(null);
+  const [tool,setTool] = useState<string|null>(null);
+  const [side,setSide] = useState<ExamLocation['side']>('both');
+  const [aspect,setAspect] = useState<ExamAspect>('front');
+  const [detailGroup,setDetailGroup] = useState(0);
+  const resultRef=useRef<HTMLDivElement>(null);
+  const region = ANATOMY_REGIONS.find(item => item.id === regionId)!;
+  const selectedInstrument = instruments.find(item => item.id === tool);
+  const map=assetKey?photoExamMap(assetKey,posture,regionId,detailGroup):null;
+  const groups=detailGroups[regionId];
+  const visibleTargets=map?.sites.filter(site=>!groups||groups[detailGroup]?.ids.includes(site.id))??[];
+  useEffect(()=>{if(observation&&observation.toolId!=='hand-hygiene')resultRef.current?.scrollIntoView({block:'nearest'});},[observation]);
+  // Findings are bound to a completed action, never carried over to another selection.
+  const currentObservation = observation && (observation.toolId === 'hand-hygiene' || (observation.bodyPartId === part && observation.toolId === tool)) ? observation : null;
+  function selectPart(id:string,sideOverride?:ExamLocation['side'],perform=false) {
+    setPart(id);
+    setSide(sideOverride ?? (id.startsWith('left-') ? 'left' : id.startsWith('right-') ? 'right' : /^(scalp|forehead|fontanelle|nose|mouth|neck|thyroid|spine|umbilicus|external-genitalia|general-state|growth)$/.test(id) ? 'midline' : 'both'));
+    onCloseObservation();
+    if(perform&&tool)onExamine(id,tool,{side:sideOverride??(id.startsWith('left-')?'left':id.startsWith('right-')?'right':/^(scalp|forehead|fontanelle|nose|mouth|neck|thyroid|spine|umbilicus|external-genitalia|general-state|growth)$/.test(id)?'midline':'both'),aspect});
+  }
+  function selectRegion(id:string) {
+    setRegionId(id); setPart(null); setDetailGroup(0); setAspect(id === 'rg-back' ? 'back' : 'front'); onCloseObservation();
+    // Deliberately keep the selected instrument: students choose the pairing themselves.
+  }
   return <div className="clinical-exam" data-posture={posture}>
-    <div className="clinical-exam-top"><div><small>体格检查</small><strong>{region?`${region.label}${part?' / '+anatomyLabel(part):''}`:'从大部位开始定位'}</strong></div><button type="button" disabled={busy} data-done={hygieneCompleted} onClick={()=>onExamine('hands','hand-hygiene')}><Hand size={16}/>{hygieneCompleted?'准备已完成':'手卫生与检查说明'}{hygieneCompleted&&<Check size={15}/>}</button></div>
-    {!region?<div className="clinical-overview"><div className="clinical-overview-image">{image?<Image src={image} alt={alt} fill sizes="(max-width:767px) 65vw, 320px" priority/>:<div className="clinical-neutral-person"><svg viewBox="0 0 100 180" width="100" height="180" role="img" aria-label="中性人物示意"><circle cx="50" cy="22" r="17" fill="#c2cfc2"/><path d="M34 47Q50 41 66 47L85 92 75 98 61 68 63 110 73 163 58 168 50 125 42 168 27 163 37 110 39 68 25 98 15 92Z" fill="#c2cfc2"/></svg><p>{alt}</p></div>}</div><nav className="clinical-region-list" aria-label="选择查体大部位">{ANATOMY_REGIONS.map((r,i)=><button type="button" key={r.id} disabled={busy} onClick={()=>selectRegion(r.id)}><span>{String(i+1).padStart(2,'0')}</span><strong>{r.label}</strong><small>{r.sites.length}处定位</small></button>)}</nav></div>:
-      <><div className="clinical-location-head"><button type="button" onClick={()=>{setRegionId(null);setPart(null);setTool(null);}}><ArrowLeft size={16}/>全部位</button><span>当前体位：{{standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'}[position??posture]}</span>{region.sites.some(s=>s.aspect)&&<button type="button" onClick={()=>{setAspect(aspect==='front'?'back':'front');setPart(null);setTool(null);}}><RotateCcw size={15}/>{aspect==='front'?'查看后面':'查看前面'}</button>}</div>
-      <RegionDiagram region={region} aspect={aspect} selected={part} selectedSide={side} onSelect={selectPart} busy={busy}/>
-      <div className="clinical-site-list" aria-label="具体检查部位">{region.sites.filter(s=>!s.aspect||s.aspect===aspect).map(s=><button type="button" key={s.id} disabled={busy} aria-pressed={part===s.id} onClick={()=>selectPart(s.id)}>{anatomyLabel(s.id)}</button>)}</div>
-      <div className="clinical-methods">{part&&<label className="clinical-location-select">检查侧别 <select value={side} disabled={busy||part.startsWith('left-')||part.startsWith('right-')} onChange={e=>setSide(e.target.value as ExamLocation['side'])}><option value="both">双侧比较 / 整体</option><option value="left">患者左侧</option><option value="right">患者右侧</option><option value="midline">正中</option></select><small>切换示意方向不会代替实际调整体位</small></label>}<h3>{part?`在${anatomyLabel(part)}选择方法或器材`:'先选择具体检查位置'}</h3><div className="clinical-instruments">{methods.map(t=><button type="button" key={t.id} disabled={busy} aria-pressed={tool===t.id} onClick={()=>setTool(t.id)}>{t.image?<Image src={t.image} alt="" width={64} height={64}/>:<span className="clinical-method-symbol">{t.id==='inspection'?'视':t.id==='palpation'?'触':'叩'}</span>}<span>{t.label}</span></button>)}</div>{part&&tool&&<button type="button" className="clinical-execute" disabled={busy} onClick={()=>onExamine(part,tool,{side,aspect})}>{busy?'正在检查…':`执行${EXAM_INSTRUMENTS.find(t=>t.id===tool)?.label} · ${anatomyLabel(part)}`}</button>}</div></>}
-    {observation&&<ExamObservationCard observation={observation} onClose={onCloseObservation} onReplayAudio={onReplayAudio}/>}
+    <header className="ce-toolbar">
+      <div className="ce-intro"><Stethoscope size={19}/><div><strong>拿起器材，开始查体</strong><span>{selectedInstrument?`已拿起${selectedInstrument.label} · 在人物和局部图上点选检查部位`:'先选择器材，再点击人物上的部位'}</span></div></div>
+      <button className="ce-preparation" type="button" disabled={busy || hygieneCompleted} data-done={hygieneCompleted} onClick={()=>onExamine('hands','hand-hygiene')}>
+        {hygieneCompleted ? <Check size={16}/> : <Hand size={16}/>} {hygieneCompleted ? '手卫生与说明已完成' : '手卫生与检查说明'}
+      </button>
+    </header>
+    <div className="ce-layout">
+      <section className="ce-tools" aria-label="检查器材">
+        <div className="ce-section-title"><span>01</span><h3>选择器材 / 方法</h3></div>
+        <p className="ce-muted">器材可自由选择，也可先选部位</p>
+        <div className="ce-tool-grid">{instruments.map(item => <button key={item.id} type="button" aria-label={item.label} aria-pressed={tool === item.id} disabled={busy} onClick={()=>{setTool(item.id);onCloseObservation();}}>
+          <Image src={item.image} alt={item.label} width={72} height={64} sizes="80px"/><span>{item.label}</span>{tool === item.id && <Check size={13} className="ce-tool-check"/>}
+        </button>)}</div>
+      </section>
+      <section className="ce-patient" aria-label="患儿与大部位">
+        <div className="ce-section-title"><span>02</span><h3>点击人物定位</h3></div>
+        <div className="ce-patient-image">
+          {image ? <PhotoSurface key={image} image={image} alt={alt} targets={map?.regions??[]} selected={regionId} onSelect={selectRegion} busy={busy} toolImage={selectedInstrument?.image} overview/> : <div className="ce-no-image"><UserRound size={64}/><p>{alt}</p></div>}
+          <span className="ce-illustration-label">虚拟示教人物{position !== posture ? ` · ${positionLabels[posture]}参考图` : ""}</span>
+        </div>
+        <div className="ce-position"><span>当前体位</span><div role="group" aria-label="查体姿势">{positions.map(value => <button type="button" key={value} disabled={busy} aria-pressed={position === value} onClick={()=>{onPositionChange(value);onCloseObservation();}}>{positionLabels[value]}</button>)}</div></div>
+        <div className="ce-extra-regions"><button type="button" disabled={busy} onClick={()=>selectRegion('rg-back')}>背腰部定位</button><button type="button" disabled={busy} onClick={()=>selectRegion('rg-general')}>全身观察与测量</button></div>
+        <details className="ce-region-fallback"><summary>用文字选择大部位</summary><nav className="ce-regions" aria-label="选择查体大部位">{ANATOMY_REGIONS.map(item => <button type="button" key={item.id} disabled={busy} aria-pressed={regionId === item.id} onClick={()=>selectRegion(item.id)}>{item.label}</button>)}</nav></details>
+        <p className="ce-image-note">人物图片用于场景展示，具体体征以检查结果为准。</p>
+      </section>
+      <section className="ce-operation" aria-label="部位定位与检查结果">
+        <div className="ce-location-heading"><div><MapPin size={17}/><h3>{region.label}</h3></div>{region.sites.some(site=>site.aspect) && <button type="button" disabled={busy} onClick={()=>{setAspect(aspect === 'front' ? 'back' : 'front');setPart(null);onCloseObservation();}}><RotateCcw size={14}/>{aspect === 'front' ? '查看后面' : '查看前面'}</button>}</div>
+        <p className="ce-muted">{aspect === 'front' ? '前面' : '后面'} · 左右均按患儿自身方向标记</p>
+        {groups&&aspect==='front'&&<div className="ce-detail-groups" role="group" aria-label="局部定位范围">{groups.map((group,index)=><button type="button" key={group.label} aria-pressed={detailGroup===index} disabled={busy} onClick={()=>{setDetailGroup(index);setPart(null);onCloseObservation();}}>{group.label}</button>)}</div>}
+        {image&&map?.crop&&aspect==='front'?<div className="ce-zoom-map"><PhotoSurface key={image+regionId} image={image} alt={`${region.label}局部放大定位，虚拟示教人物`} crop={map.crop} targets={visibleTargets} selected={part} onSelect={(id,markerSide)=>selectPart(id,markerSide,true)} busy={busy} toolImage={selectedInstrument?.image}/></div>:<RegionDiagram region={region} aspect={aspect} selected={part} selectedSide={side} onSelect={(id,markerSide)=>selectPart(id,markerSide,true)} busy={busy}/>}
+        <p className="ce-touch-hint">{tool?'点击局部定位点，即用手中器材检查':'先从器材栏拿起器材，再点局部定位点进行检查'}</p>
+        <details className="ce-map-detail" key={regionId+aspect}><summary>用文字选择具体部位</summary><div className="ce-sites" role="group" aria-label="具体检查部位">{region.sites.filter(site=>!site.aspect || site.aspect === aspect).map(site => <button type="button" key={site.id} disabled={busy} aria-pressed={part === site.id} onClick={()=>selectPart(site.id,undefined,true)}>{anatomyLabel(site.id)}</button>)}</div></details>
+        {part && <fieldset className="ce-side"><legend>检查侧别</legend>{(['both','left','right','midline'] as const).filter(value=>part.startsWith('left-') ? value === 'left' : part.startsWith('right-') ? value === 'right' : true).map(value => <button type="button" key={value} disabled={busy} aria-pressed={side === value} onClick={()=>{setSide(value);onCloseObservation();}}>{{both:'双侧 / 整体',left:'患儿左侧',right:'患儿右侧',midline:'正中'}[value]}</button>)}</fieldset>}
+        <div className="ce-action">
+          <div className="ce-selection"><span>{selectedInstrument?.label ?? '尚未选择器材'}</span><span>＋</span><strong>{part ? anatomyLabel(part) : '尚未选择具体部位'}</strong></div>
+          <button className="ce-execute" type="button" disabled={busy || !part || !tool} onClick={()=>{if(part && tool)onExamine(part,tool,{side,aspect});}}>{busy ? '正在检查…' : '开始检查'}</button>
+        </div>
+        <div ref={resultRef} className="ce-result" aria-label="本次查体反馈" aria-live="polite">
+          {currentObservation ? <ExamObservationCard observation={currentObservation} onClose={onCloseObservation} onReplayAudio={onReplayAudio}/> : <div className="ce-result-empty"><Stethoscope size={26}/><strong>检查所见将在这里显示</strong><p>拿起器材，点击局部图上的部位进行检查。患儿反应与所见会同步到病例记录，供你判断和书写病历。</p></div>}
+        </div>
+      </section>
+    </div>
   </div>;
 }

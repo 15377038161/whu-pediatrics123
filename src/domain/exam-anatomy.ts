@@ -22,18 +22,18 @@ export function anatomyLabel(id: string): string { return ANATOMY_LABELS[id as k
 
 export const EXAM_INSTRUMENTS = [
   {id:'hand-hygiene',label:'手卫生与说明',image:'/media/clinical/tools/hand-hygiene.png'},
-  {id:'inspection',label:'视诊',image:'/media/clinical/tools/inspection.png'}, {id:'palpation',label:'触诊',image:'/media/clinical/tools/palpation.png'}, {id:'percussion',label:'叩诊',image:'/media/clinical/tools/percussion.png'},
+  {id:'inspection',label:'视诊',image:'/media/clinical/tools/inspection.webp'}, {id:'palpation',label:'触诊',image:'/media/clinical/tools/palpation.webp'}, {id:'percussion',label:'叩诊',image:'/media/clinical/tools/percussion.webp'},
   {id:'stethoscope',label:'听诊器',image:'/media/clinical/tools/stethoscope.png'},
   {id:'axillary-thermometer',label:'腋下电子体温计',image:'/media/clinical/tools/thermometer.png'},
-  {id:'infrared-thermometer',label:'额温枪',image:'/media/clinical/tools/infrared-thermometer.png'},
-  {id:'tympanic-thermometer',label:'耳温计',image:'/media/clinical/tools/tympanic-thermometer.png'},
+  {id:'infrared-thermometer',label:'额温枪',image:'/media/clinical/tools/infrared-thermometer.webp'},
+  {id:'tympanic-thermometer',label:'耳温计',image:'/media/clinical/tools/tympanic-thermometer.webp'},
   {id:'oximeter',label:'血氧仪',image:'/media/clinical/tools/oximeter.png'},
   {id:'bp-cuff',label:'儿童血压计',image:'/media/clinical/tools/bp-cuff.png'},
   {id:'tongue-depressor',label:'压舌板',image:'/media/clinical/tools/tongue-depressor.png'},
   {id:'flashlight',label:'手电筒',image:'/media/clinical/tools/flashlight.png'},
-  {id:'otoscope',label:'耳镜',image:'/media/clinical/tools/otoscope.png'},
-  {id:'measuring-tape',label:'软尺',image:'/media/clinical/tools/measuring-tape.png'},
-  {id:'reflex-hammer',label:'叩诊锤',image:'/media/clinical/tools/reflex-hammer.png'},
+  {id:'otoscope',label:'耳镜',image:'/media/clinical/tools/otoscope.webp'},
+  {id:'measuring-tape',label:'软尺',image:'/media/clinical/tools/measuring-tape.webp'},
+  {id:'reflex-hammer',label:'叩诊锤',image:'/media/clinical/tools/reflex-hammer.webp'},
 ];
 
 /** Neutral method menu. It must never be derived from a case's positive findings. */

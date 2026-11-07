@@ -1,7 +1,7 @@
 /** Loopback-only UI acceptance adapter. Existing engine + projection, synthetic user, no database/auth writes.
  * Browser request routing explicitly uses this adapter; the app's real auth is never changed.
  */
-import {createServer} from 'node:http';
+import {createServer,request as httpRequest} from 'node:http';
 import {createInitialSession,runAgentTurn} from '../../src/lib/agent-engine';
 import {projectSessionForRole} from '../../src/lib/session-projection';
 import {buildReport} from '../../src/lib/scoring';
@@ -20,12 +20,17 @@ let notes:NoteView[]=[];
 const noteEvents=new Map<string,NoteView>();
 const user={id:'local-ui-validation',role:'student',displayName:'本地界面验收',studentNo:'LOCAL-ONLY',className:'本地界面验收'};
 createServer(async(req,res)=>{
-  const reply=(data:unknown,status=200)=>{res.writeHead(status,{'content-type':'application/json','access-control-allow-origin':'*'});res.end(JSON.stringify({ok:status<400,data}));};
+  if(!req.url?.startsWith('/api/') && req.url !== '/reset'){
+    const upstream=httpRequest({hostname:'127.0.0.1',port:8876,path:req.url,method:req.method,headers:{...req.headers,host:'127.0.0.1:8876'}},incoming=>{res.writeHead(incoming.statusCode??502,incoming.headers);incoming.pipe(res);});
+    upstream.on('error',()=>{res.writeHead(502);res.end('Local Next preview is not running on 8876.');});
+    req.pipe(upstream);return;
+  }
+  const reply=(data:unknown,status=200)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify({ok:status<400,data}));};
   try{
     const url=new URL(req.url??'/', 'http://127.0.0.1:8786');
     let body='';for await(const chunk of req)body+=chunk;
     const data=body?JSON.parse(body):{};
-    if(url.pathname==='/reset'){session=createInitialSession(user.id,'guided',data.caseId??session.caseId);report=null;draft=null;notes=[];noteEvents.clear();return reply({id:session.id});}
+    if(url.pathname==='/reset'){session=createInitialSession(user.id,data.mode??'guided',data.caseId??session.caseId,data.practiceFocus);report=null;draft=null;notes=[];noteEvents.clear();return reply({id:session.id});}
     if(url.pathname==='/api/auth/me')return reply({user});
     if(url.pathname==='/api/agent/turn'){
       const parsed=agentTurnSchema.parse(data);
@@ -56,4 +61,4 @@ createServer(async(req,res)=>{
     if(url.pathname==='/api/engagement')return reply({accepted:true});
     return reply([]);
   }catch{reply(null,422);}
-}).listen(8786,'127.0.0.1',()=>console.log(JSON.stringify({localFixturePort:8786,databaseWrites:false,realAuthentication:false})));
+}).listen(8875,'127.0.0.1',()=>console.log(JSON.stringify({localFixturePort:8875,databaseWrites:false,realAuthentication:false})));

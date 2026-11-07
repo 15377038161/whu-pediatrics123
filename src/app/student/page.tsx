@@ -101,10 +101,10 @@ export default function StudentHome() {
     </header>
     {!system ? <nav className={styles.map} aria-label="选择儿科系统">
       <picture>
-        <source media="(max-width: 600px)" srcSet="/pediatric-systems-map-mobile.png" />
+        <source media="(max-width: 600px)" srcSet="/pediatric-systems-map-mobile.webp" />
         <img
           className={styles.mapArt}
-          src="/pediatric-systems-map-desktop.png"
+          src="/pediatric-systems-map-desktop.webp"
           alt="武汉大学中南医院与儿科各系统群岛地图"
           width={1586}
           height={992}

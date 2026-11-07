@@ -74,7 +74,7 @@ test('C01 全病例扫描：所有 ≤1 岁真实病例均为同性别卧位婴�
     const appearance = patientAppearance(sex, 'standing', id, age);
     if (band === 'newborn' || band === 'infant') {
       youngInfantCount += 1;
-      assert.equal(appearance.src, band==='infant'?(sex==='女'?'/media/clinical/virtual-infant-girl-supine-v1.png':'/media/clinical/virtual-infant-boy-supine-v1.png'):(sex === '女' ? NEWBORN_GIRL : NEWBORN_BOY), `${id}（${age}）应使用同性别卧位婴儿形象`);
+      assert.equal(appearance.src, band==='infant'?(sex==='女'?'/media/clinical/virtual-infant-girl-supine-v1.webp':'/media/clinical/virtual-infant-boy-supine-v1.webp'):(sex === '女' ? NEWBORN_GIRL : NEWBORN_BOY), `${id}（${age}）应使用同性别卧位婴儿形象`);
       assert.ok(!appearance.src.includes('standing'), `${id}（${age}）不得使用站立儿童图`);
       // 新生儿/婴儿不参与哈希：同一病例重复解析稳定
       assert.equal(patientAppearance(sex, 'supine', id, age).key, appearance.key);
@@ -92,9 +92,9 @@ test('C01 边界分档：1 天/28 天新生儿含边界，29 天起婴儿档，1
   assert.equal(patientAppearance('女', 'standing', 'x', '1天').src, NEWBORN_GIRL);
   assert.equal(patientAppearance('男', 'standing', 'x', '1天').src, NEWBORN_BOY);
   assert.equal(patientAppearance('女', 'standing', 'x', '28天').src, NEWBORN_GIRL);
-  assert.equal(patientAppearance('男', 'standing', 'x', '29天').src, '/media/clinical/virtual-infant-boy-supine-v1.png');
-  assert.equal(patientAppearance('女', 'standing', 'x', '1月13天').src, '/media/clinical/virtual-infant-girl-supine-v1.png');
-  assert.equal(patientAppearance('男', 'standing', 'x', '7月4天').src, '/media/clinical/virtual-infant-boy-supine-v1.png');
+  assert.equal(patientAppearance('男', 'standing', 'x', '29天').src, '/media/clinical/virtual-infant-boy-supine-v1.webp');
+  assert.equal(patientAppearance('女', 'standing', 'x', '1月13天').src, '/media/clinical/virtual-infant-girl-supine-v1.webp');
+  assert.equal(patientAppearance('男', 'standing', 'x', '7月4天').src, '/media/clinical/virtual-infant-boy-supine-v1.webp');
   // 儿童档：站立请求返回站立图（通用虚拟儿童，哈希选择稳定）
   const childStanding = patientAppearance('女', 'standing', 'x', '8岁27天');
   assert.ok(childStanding.src !== null && /virtual-child/.test(childStanding.src));

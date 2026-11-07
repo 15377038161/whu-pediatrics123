@@ -9,9 +9,30 @@ import { partLabel } from '@/domain/exam-regions';
 import { TECHNIQUE_NOTE_BADGE, examTechniqueNote } from '@/domain/exam-technique-notes';
 import { createInitialSession, runAgentTurn } from '@/lib/agent-engine';
 import {ANATOMY_REGIONS} from '@/domain/exam-anatomy';
-import {RegionDiagram} from '@/components/clinical-exam';
+import {ClinicalExam,RegionDiagram} from '@/components/clinical-exam';
+import {EXAM_INSTRUMENTS} from '@/domain/exam-anatomy';
 
 const noop = () => undefined;
+
+test('自主查体首屏保留人物图片并提供全部器材，选择不预先透露有效组合',()=>{
+  const html=renderToStaticMarkup(createElement(ClinicalExam,{image:'/test-person.webp',alt:'合成测试患儿',posture:'standing',position:'standing',positions:['standing','supine'],onPositionChange:noop,busy:false,hygieneCompleted:false,observation:null,onExamine:noop,onCloseObservation:noop,onReplayAudio:noop}));
+  assert.ok(html.includes('alt="合成测试患儿"'));
+  for(const tool of EXAM_INSTRUMENTS.filter(item=>item.id!=='hand-hygiene')) assert.ok(html.includes(`alt="${tool.label}"`),tool.label+'必须有图片且能自主选择');
+  assert.ok(html.includes('开始检查'));
+  assert.ok(html.includes('用文字选择具体部位'));
+});
+
+test('源记录会话也区分错误器材与资料缺失，三种体温计不可混用且不释放证据',async()=>{
+  const session=createInitialSession('wrong-tool-probe','immersive');
+  for(const [toolId,bodyPartId] of [['axillary-thermometer','forehead'],['infrared-thermometer','axilla'],['tympanic-thermometer','eyes']] as const){
+    const before=[...session.unlockedEvidence];
+    const turn=await runAgentTurn(session,{type:'EXAM_ACTION',data:{toolId,bodyPartId}},`mismatch-${toolId}`);
+    assert.deepEqual(session.unlockedEvidence,before);
+    assert.equal(session.events.at(-1)?.correct,false);
+    assert.match(turn.feedback??'',/不匹配/);
+    assert.equal(turn.newMessages.length,0);
+  }
+});
 
 test('胸部后面不显示心前区与心脏听诊区，左右标记随观察面改变',()=>{
   const region=ANATOMY_REGIONS.find(r=>r.id==='rg-chest')!;

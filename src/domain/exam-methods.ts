@@ -30,7 +30,12 @@ function pick(parts: string[], pattern: RegExp, absorbed: ReadonlySet<number>, e
 }
 
 export function sourceExamDefinitions(text: string): string[][] {
-  const parts = text.split(/[，,；;。\n]/);
+  // Keep a recorded consciousness score and its parenthesised components
+  // together. Otherwise “eye opening” leaks into ocular findings and the
+  // remaining movement/verbal scores become dangling fragments.
+  const scores:string[]=[];
+  const protectedText=text.replace(/(?:改良)?(?:Glasgow|\bGCS\b)[^，,；;。\n（(]{0,40}(?:[（(][^）)\n]{0,200}[）)])?/gi,record=>{scores.push(record);return `§GCS${scores.length-1}§`;});
+  const parts = protectedText.split(/[，,；;。\n]/).map(part=>part.replace(/§GCS(\d+)§/g,(_,index)=>scores[Number(index)]));
   /** 已被淋巴结触诊吸收的片段下标；这些片段不再进入其他查体结果。 */
   const absorbed = new Set<number>();
   for (let i = 0; i < parts.length; i += 1) {
@@ -61,7 +66,7 @@ export function sourceExamDefinitions(text: string): string[][] {
     ['thermometer', 'forehead', '体温测量', snippets(/体温|\bT\s*[:：]?\s*\d/i)],
     ['inspection', 'forehead', '头颅与前囟视诊', snippets(/前囟|颅|头颅|方颅|颅骨软化/)],
     ['measuring-tape', 'forehead', '头围测量', snippets(/头围/)],
-    ['flashlight', 'eyes', '眼部与瞳孔检查', snippets(/眼|结膜|巩膜|瞳孔|对光反射|光反射/, LYMPH_MAIN)],
+    ['flashlight', 'eyes', '眼部与瞳孔检查', snippets(/眼|结膜|巩膜|瞳孔|对光反射|光反射/, new RegExp(`${LYMPH_MAIN.source}|Glasgow|\\bGCS\\b|睁眼[^，。]{0,6}分`,'i'))],
     ['otoscope', 'ears', '耳镜检查', snippets(/鼓膜|外耳道|耳|听力/, LYMPH_MAIN)],
     ['inspection', 'nose', '鼻部视诊', snippets(/鼻/, LYMPH_MAIN)],
     ['tongue-depressor', 'mouth', '口咽检查', mouthSnippets()],
@@ -92,7 +97,7 @@ export function sourceExamDefinitions(text: string): string[][] {
     ['reflex-hammer', 'neuro', '神经系统与反射检查', snippets(/腱反射|膝反射|踝反射|腹壁反射|提睾反射|病理反射|巴氏|巴宾斯基|Babinski|病理征|脑膜刺激征|克氏|布氏|神经系统|肌力|肌张力|(?:拥抱|吸吮|握持|觅食|颈肢|抬颈|原始)反射/i)],
     // 皮肤与全身
     ['inspection', 'skin', '皮肤与黄疸视诊', snippets(/皮肤|黄染|黄疸|皮疹|出血点|瘀点|瘀斑|紫癜|湿疹|荨麻疹|苍白|发绀|青紫|花斑|弹性|面色|咖啡斑/, /巩膜/)],
-    ['inspection', 'general-state', '一般状态与精神反应', snippets(/精神|神志|神清|嗜睡|昏睡|昏迷|烦躁|萎靡|意识|反应|哭闹|呻吟|营养状况|一般状态/)],
+    ['inspection', 'general-state', '一般状态与精神反应', snippets(/精神|神志|神清|嗜睡|昏睡|昏迷|烦躁|萎靡|意识|反应|哭闹|呻吟|营养状况|一般状态|Glasgow|\bGCS\b/i)],
     ['inspection', 'nails', '指甲与甲床视诊', snippets(/指甲|甲床|杵状|指端|趾端/)],
     // 生命体征
     ['bp-cuff', 'upper-arm', '血压测量', snippets(/\bBP|血压/i)],

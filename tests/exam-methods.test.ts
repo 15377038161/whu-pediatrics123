@@ -5,6 +5,15 @@ import { SUPINE_ONLY_PARTS } from '../src/domain/exam-regions';
 
 const result = (records: string[][], method: string, part?: string) =>
   records.find(row => row[0] === method && (part === undefined || row[1] === part))?.[3] ?? '';
+
+test('眼部检查不因睁眼字样泄露整项Glasgow评分，保留独立瞳孔和对光反射',()=>{
+  const records=sourceExamDefinitions('改良Glasgow评分10分（睁眼3分，语言反应3分，运动反应4分）。双侧瞳孔等大等圆，对光反射灵敏。');
+  const eyes=result(records,'flashlight','eyes');
+  assert.match(eyes,/双侧瞳孔等大等圆/);
+  assert.match(eyes,/对光反射灵敏/);
+  assert.doesNotMatch(eyes,/Glasgow|评分|睁眼3分/);
+  assert.ok(result(records,'inspection','general-state').includes('改良Glasgow评分10分（睁眼3分，语言反应3分，运动反应4分）'));
+});
 const at = (text: string, method: string, part?: string) => result(sourceExamDefinitions(text), method, part);
 
 test('乳房发育视诊与结节触诊分别取原文，不用心肺听诊替代', () => {

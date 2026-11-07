@@ -31,6 +31,7 @@ function positiveMention(text:string,terms:string[]):boolean{
   });
 }
 export function gradeTeachingPoint(item:TeachingRubricItem,text:string,eventCodes:ReadonlySet<string>,purposeProvided=false):{ratio:number;status:TeachingFeedback['items'][number]['status'];explanation:string}{
+  if(item.id==='exam-interpret')return {ratio:0,status:'not_assessable',explanation:'查体观察与解释的医学正确性需由教师结合本例证据复核，提交原文已保留；本项不自动判分，不计入当前可评价满分。'};
   // Template labels with placeholders are not clinical content; a concise factual entry still counts.
   if(item.section==='note')text=text.replace(/(?:主诉|现病史|查体|体格检查|初步诊断|诊断|诊疗计划|计划|治疗|处置)\s*[:：]\s*(?:略|同上|同前|见前|待补|暂无|无|不知道|不清楚|未填写)\s*(?=[；;]|$)/g,'');
   if(item.safetyCritical&&item.unsafePhrases?.length&&positiveMention(text,item.unsafePhrases))return {ratio:0,status:'incorrect',explanation:'本项出现明确不安全的处置表达，关键安全点不得分；其他独立正确要点仍分别计分。'};

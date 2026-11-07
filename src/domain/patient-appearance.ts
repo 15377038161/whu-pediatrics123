@@ -85,7 +85,7 @@ export function patientAppearance(sex: string, posture: 'standing'|'supine', cas
   // 不参与哈希选择——1 天女婴不得显示站立学龄前儿童（C01 修复核心）。
   if (isYoungInfant(ageKnown)) {
     const infant=toAgeBand(parseAgeToDays(ageKnown ?? ''))==='infant';
-    const character=infant?{key:normalized==='男'?'infant-boy':'infant-girl',supine:normalized==='男'?'/media/clinical/virtual-infant-boy-supine-v1.png':'/media/clinical/virtual-infant-girl-supine-v1.png'}:newbornCharacters[normalized];
+    const character=infant?{key:normalized==='男'?'infant-boy':'infant-girl',supine:normalized==='男'?'/media/clinical/virtual-infant-boy-supine-v1.webp':'/media/clinical/virtual-infant-girl-supine-v1.webp'}:newbornCharacters[normalized];
     return {
       key: character.key,
       src: character.supine,
