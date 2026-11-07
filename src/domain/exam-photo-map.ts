@@ -21,6 +21,44 @@ const landmarks:Record<string,readonly [number,number,number,number,number,numbe
   'adolescent-girl:standing':[13,30,43,54,45,78], 'adolescent-girl:supine':[12,30,41,52,45,76],
 };
 
+// Eyes, nose, mouth and ear levels are calibrated per actual asset and posture.
+// A single offset from “head centre” put some supine faces on the forehead.
+// Tuple: eyeY, noseY, mouthY, earY, earX, faceX, neckY (whole-photo percent).
+const faces:Record<string,readonly [number,number,number,number,number,number,number]>={
+  'infant-boy:supine':[14.4,18,20.1,16.7,36.5,50,27.5],
+  'infant-girl:supine':[17.8,20.6,23.1,19.5,36.5,50,31.5],
+  'newborn-boy:supine':[35,35.6,37.4,36.3,44,49.3,44],
+  'newborn-girl:supine':[36.4,37.3,39,38,44,49.5,45.5],
+  'boy-a:standing':[16.7,18.4,20.9,18.5,39.5,49,26],
+  'boy-a:supine':[16.3,19.2,21,17.8,41,49.5,26],
+  'boy-b:standing':[17.4,19.7,21.6,19.3,39.5,50,26.6],
+  'boy-b:supine':[17.2,19.4,21.3,19.3,39.5,48,26.3],
+  'girl-a:standing':[16.7,18.9,21,19,39.5,49,26],
+  'girl-a:supine':[16.7,19,20.9,18.6,39,49,25.9],
+  'girl-b:standing':[17,19.7,21.6,20.2,40,50,26.6],
+  'girl-b:supine':[16.6,19.1,20.9,18.8,39.3,49.5,25.9],
+  'toddler-boy:standing':[24.5,26.8,28.7,25.6,43,52,33.7],
+  'toddler-boy:supine':[23.6,25.4,27,25.8,44,48.5,32],
+  'toddler-girl:standing':[23.6,26,28,26.7,43,51,33],
+  'toddler-girl:supine':[21.3,24,25.7,24,42.5,51,30.7],
+  'school-boy:standing':[12.1,14.4,16.7,14.8,43,50,21.7],
+  'school-boy:supine':[21.9,24,25.3,24.1,44,51,30.3],
+  'school-girl:standing':[17.7,19.5,21.6,20.2,43,50.5,26.6],
+  'school-girl:supine':[15,16.8,18.3,16.6,43,49.5,23.3],
+  'adolescent-boy:standing':[12.7,14.7,16.4,14.6,43,50.5,21.4],
+  'adolescent-boy:supine':[12.1,14.3,16,14.4,43,50,21],
+  'adolescent-girl:standing':[12.6,14.6,16.1,14.8,43,50,21.1],
+  'adolescent-girl:supine':[13.7,15.3,16.8,15.8,43,49.5,21.8],
+};
+const foreheadLevels:Record<string,number>={
+  'infant-boy:supine':9.4,'infant-girl:supine':13.5,'newborn-boy:supine':32.5,'newborn-girl:supine':33.5,
+  'boy-a:standing':12.5,'boy-a:supine':12.5,'boy-b:standing':14.6,'boy-b:supine':14,
+  'girl-a:standing':12.8,'girl-a:supine':12.6,'girl-b:standing':13.9,'girl-b:supine':13.5,
+  'toddler-boy:standing':22.5,'toddler-boy:supine':21.3,'toddler-girl:standing':19.7,'toddler-girl:supine':17.5,
+  'school-boy:standing':9.9,'school-boy:supine':19.7,'school-girl:standing':14.2,'school-girl:supine':11.7,
+  'adolescent-boy:standing':10.4,'adolescent-boy:supine':10,'adolescent-girl:standing':10.3,'adolescent-girl:supine':11.6,
+};
+
 export function photoExamMap(assetKey:string,posture:'standing'|'supine',regionId:string,detailGroup=0) {
   const points=landmarks[`${assetKey}:${posture}`];
   if(!points)return null;
@@ -58,8 +96,19 @@ export function photoExamMap(assetKey:string,posture:'standing'|'supine',regionI
     shoulder:[34,chest-4],'upper-arm':[32,chest+3],elbow:[31,arm-2],wrist:[30,groin-2],hands:[31,groin+2],finger:[32,groin+6],nails:[29,groin+6],'upper-limb-power':[32,arm],
     hip:[43,groin+2],knee:[43,(groin+leg)/2+4],ankle:[43,leg+9],foot:[44,leg+14],'lower-limb-edema':[43,leg+3],'lower-limb-power':[43,leg-5],plantar:[54,leg+14],
   };
+  const face=faces[`${assetKey}:${posture}`];
+  if(face){
+    const [eyeY,noseY,mouthY,earY,earX,faceX,neckY]=face;
+    Object.assign(locations,{eyes:[faceX,eyeY],nose:[faceX,noseY],mouth:[faceX,mouthY],ears:[earX,earY],neck:[faceX,neckY],thyroid:[faceX,neckY+.8],'cervical-nodes':[faceX-7*scale,neckY-.5]});
+    locations.forehead=[faceX,foreheadLevels[`${assetKey}:${posture}`]];
+    const headCrop=crops['rg-head-neck'];
+    headCrop.height=Math.max(headCrop.height,neckY+3-headCrop.y);
+  }
   if(infant)Object.assign(locations,{shoulder:[35,29],'upper-arm':[29,35],elbow:[24,40],wrist:[17,45],hands:[15,48],finger:[15,50],nails:[15,50],'upper-limb-power':[24,40]});
   if(newborn)Object.assign(locations,{shoulder:[44,43],'upper-arm':[40,47],elbow:[39,51],wrist:[38,55],hands:[39,58],finger:[39,60],nails:[39,60],'upper-limb-power':[39,51],ankle:[47,82],foot:[48,86],plantar:[54,86]});
+  // The plantar surface is not visible in these front-facing photographs.
+  // Its interaction uses the dedicated sole illustration instead of a shoe.
+  delete locations.plantar;
   if(regionId==='rg-chest'&&detailGroup===1)crops[regionId]={x:40,y:chest-7,width:25,height:18};
   const region=ANATOMY_REGIONS.find(item=>item.id===regionId);
   const crop=crops[regionId];

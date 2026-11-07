@@ -13,6 +13,7 @@ import {sessionTeachingPackage} from '@/lib/session-teaching';
 import {projectSessionForRole} from '@/lib/session-projection';
 import {findReleasedMedia,getCaseMediaLink} from '@/lib/case-media';
 import {getCaseRecordEntries} from '@/domain/case-record';
+import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
 
 test('本地包按双版本固定；错误操作不释放媒体，刷新与索引更新不漂移',async()=>{
   const root=mkdtempSync(path.join(os.tmpdir(),'peds-teaching-'));
@@ -64,6 +65,17 @@ test('本地包按双版本固定；错误操作不释放媒体，刷新与索�
     const records=getCaseRecordEntries(session);
     assert.ok(records.some(r=>r.question==='请您留意孩子的变化，及时告诉医生。'&&r.category==='history'&&r.answers.length>0));
     assert.ok(session.askedIntents.includes('SOURCE_HX_0_0'));
+    const osce=createInitialSession('synthetic-osce','osce',id);
+    await runAgentTurn(osce,{type:'NAVIGATE_STAGE',data:{stage:'exam'}},'osce-enter-exam');
+    await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'hand-hygiene',bodyPartId:'hands'}},'osce-prep');
+    const osceExam=await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'palpation',bodyPartId:'abdomen',position:'supine'}},'osce-exam');
+    assert.equal(osce.events.at(-1)?.correct,true);
+    assert.ok(osceExam.newMessages.some(m=>m.content.includes('合成结果：无压痛')));
+    const osceReference=await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'stethoscope',bodyPartId:'right-lung-back',position:'lateral',location:{side:'right',aspect:'back'}}},'osce-reference');
+    const osceOutput=JSON.stringify({exam:osceExam.newMessages,reference:osceReference.newMessages,session:projectSessionForRole(osce,'student')});
+    for(const hidden of ['先解释再触诊','配合实际体位检查后肺野','合成配合动作','合成后肺野所见'])assert.equal(osceOutput.includes(hidden),false,hidden+'不应成为闭卷站提示');
+    assert.ok(osceOutput.includes('缺少独立患者查体记录'));
+    assert.equal(diagnosticEvidenceEvents(osce).some(e=>e.evidenceCodes.includes('TEACH_EX_stethoscope_right-lung-back')),false);
     const count=session.events.filter(e=>e.type==='ORDER_TEST').length;
     await runAgentTurn(session,{type:'ORDER_TEST',data:{requestedTests:'尿常规'}},'test-repeat-synthetic');
     assert.equal(session.events.filter(e=>e.type==='ORDER_TEST').length,count);

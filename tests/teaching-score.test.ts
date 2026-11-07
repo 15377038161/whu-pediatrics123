@@ -49,4 +49,5 @@ test('诊断依据需要实际临床内容，空标签和相反阴性不能得�
   assert.equal(clinicalEvidenceRatio('有发热',records),0);
   assert.equal(clinicalEvidenceRatio('咳嗽3天',records),.5);
   assert.equal(clinicalEvidenceRatio('咳嗽伴双肺湿啰音，支持肺部疾病',records),1);
+  assert.equal(clinicalEvidenceRatio('患儿有呼吸困难',[{area:'exam',text:'【原记录】双侧瞳孔等大\n操作：观察呼吸困难与反射\n配合反应：模拟动作'}]),0);
 });

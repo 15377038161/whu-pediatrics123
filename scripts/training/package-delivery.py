@@ -1,12 +1,30 @@
 """Export only current versions and referenced media; originals and old installed versions stay untouched."""
 from pathlib import Path
-import csv,hashlib,html,json,shutil,zipfile
+import argparse,csv,hashlib,html,json,re,shutil,zipfile
 
-ROOT=Path('deliverables/67-cases-20261107');LIB=Path('knowledge/training-packages');OUT=Path('outputs/training-20261107')
+parser=argparse.ArgumentParser(description='Create a dated private delivery without replacing an earlier archive.')
+parser.add_argument('--date',required=True,help='New delivery date, YYYYMMDD')
+args=parser.parse_args()
+if not re.fullmatch(r'\d{8}',args.date):raise RuntimeError('DELIVERY_DATE_INVALID')
+SEED=Path('deliverables/67-cases-20261107');ROOT=Path('deliverables')/f'67-cases-{args.date}'
+LIB=Path('knowledge/training-packages');OUT=Path('outputs/training-20261107')
+archive=ROOT.parent/f'67例病例_本地教学资料包_{args.date}.zip'
+pictures=ROOT.parent/f'图片素材包_{args.date}.zip'
+if ROOT.exists() or archive.exists() or pictures.exists():raise RuntimeError('DELIVERY_TARGET_ALREADY_EXISTS')
+ROOT.mkdir(parents=True)
+for folder in ['word','json']:shutil.copytree(SEED/folder,ROOT/folder)
+for name in ['index.json','病例总索引.csv']:shutil.copy2(SEED/name,ROOT/name)
+asset_manifest=json.loads((SEED/'assets/manifest.json').read_text(encoding='utf-8'))
+for entry in asset_manifest:
+    source=SEED/'assets'/entry['path'];dest=ROOT/'assets'/entry['path']
+    if entry.get('sha256') and hashlib.sha256(source.read_bytes()).hexdigest()!=entry['sha256']:raise RuntimeError('ASSET_HASH_MISMATCH')
+    dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,dest)
+shutil.copy2(SEED/'assets/manifest.json',ROOT/'assets/manifest.json')
 for directory in ['runtime/packages','runtime/media','provenance','quality']:(ROOT/directory).mkdir(parents=True,exist_ok=True)
-index=json.loads((ROOT/'index.json').read_text(encoding='utf-8'));entries={};media=set();material_index=[]
+index=json.loads((ROOT/'index.json').read_text(encoding='utf-8'));entries={};media=set();material_index=[];sources=set()
 for entry in index:
     version=entry['version'];pack=json.loads((LIB/'packages'/f'{version}.json').read_text(encoding='utf-8'));entries[pack['caseId']]=version
+    sources.add(pack['sourceId'])
     shutil.copy2(LIB/'packages'/f'{version}.json',ROOT/'runtime/packages'/f'{version}.json')
     for kind,items in [('test',pack['tests']),('exam',pack['exams'])]:
         for item in items:
@@ -14,6 +32,8 @@ for entry in index:
                 digest=m['fileId'].split(':')[1];media.add(digest)
                 material_index.append({'ordinal':entry['ordinal'],'caseId':pack['caseId'],'kind':kind,'label':item['label'],'origin':item['origin'],'fileId':m['fileId'],'file':'clinical-media/'+digest+'.png','caption':m['caption']})
 (ROOT/'runtime/index.json').write_text(json.dumps({'schemaVersion':1,'entries':entries},ensure_ascii=False,indent=2),encoding='utf-8')
+(ROOT/'source-cases').mkdir()
+for source_id in sources:shutil.copy2(Path('knowledge/teaching-cases')/f'{source_id}.json',ROOT/'source-cases'/f'{source_id}.json')
 for digest in media:shutil.copy2(LIB/'media'/f'{digest}.png',ROOT/'runtime/media'/f'{digest}.png')
 # This exporter may be rerun before handoff; remove only obsolete generated export files.
 for folder,expected in [(ROOT/'runtime/packages',{v+'.json' for v in entries.values()}),(ROOT/'runtime/media',{d+'.png' for d in media})]:
@@ -36,6 +56,8 @@ build=json.loads((OUT/'document-build.json').read_text(encoding='utf-8'))
 by_ordinal={r['ordinal']:r for r in build}
 for row in audit:
     if row.get('sha256')!=by_ordinal.get(row.get('ordinal'),{}).get('sha256'):raise RuntimeError('DOCUMENT_QA_VERSION_MISMATCH')
+    document=ROOT/'word'/Path(by_ordinal[row['ordinal']]['word']).name
+    if hashlib.sha256(document.read_bytes()).hexdigest()!=row['sha256']:raise RuntimeError('DOCUMENT_CURRENT_HASH_MISMATCH')
     if row.get('error') or row.get('pageMismatch') or row.get('blankPages') or row.get('edgeInkPages'):raise RuntimeError('DOCUMENT_QA_FAILED')
 (ROOT/'quality/document-render-audit.json').write_text(json.dumps(audit,indent=2),encoding='utf-8')
 dialogue=json.loads((OUT/'dialogue-evaluation.json').read_text(encoding='utf-8'))
@@ -50,6 +72,7 @@ for name in ['test-suite','lint','typecheck','build']:
     if log.exists():(ROOT/'quality'/(name+'-tail.txt')).write_text('\n'.join(log.read_text(encoding='utf-8',errors='replace').splitlines()[-18:]),encoding='utf-8')
 for name in ['TRAINING_PACKAGE_LOCAL.md','TRAINING_PACKAGE_API.md','TRAINING_CONTENT_AUTHORING.md']:
     shutil.copy2(Path('docs')/name,ROOT/name)
+for name in ['EXAM_INTERACTION.md','67_CASES_ACCEPTANCE_STATUS.md']:shutil.copy2(Path('docs')/name,ROOT/name)
 acceptance=Path('docs/67例本地实施验收记录_20261107.md')
 if acceptance.exists():shutil.copy2(acceptance,ROOT/'验收记录.md')
 rows=[]
@@ -66,23 +89,22 @@ pages=sum(r['pages'] for r in audit)
 - `word/`：67份完整病例教学手册，共{pages}页已渲染。包括人物/照护者、原始病历、问法与知情边界、局部查体/体位/器材/反应、检查与图片、诊疗及逐点评分。
 - `json/`：67份对应完整数据，供核对和后续制作。
 - `runtime/`：当前67个不可变教学版本及其引用的{len(media)}个去重媒体文件。目录保持私有；按运行说明安装，不复制到public，不覆盖原始病例或历史绑定。
-- `assets/`：11类实体器材、手卫生及视触叩示意、20基础人物组合及实际用到的备选人物、9张局部示意SVG。
+- `source-cases/`：本次对应的53份私有原始来源，供版本绑定校验；不能上传公开GitHub或复制到public。
+- `assets/`：11类实体器材、手卫生及视触叩示意、20基础人物组合及实际用到的备选人物、{sum(a.get('type')=='authored-neutral-diagram' for a in asset_manifest)}张局部示意SVG。
 - `provenance/`：素材绑定、原件哈希、处理副本哈希、裁剪与遮挡记录；原件仍在项目原位置。
 - `quality/`：逐文档渲染、版本与业务规则、媒体OCR复检、工程和浏览器证据。真实模型与合成测试分开。
 
 自动整理内容未医学审定。原始病情与固定教学补充分别标明，不在每次申请时随机生成检查结果。无法可靠模拟的项目提供评估及参考，不伪造患者数值。一例原材料未记录性别，使用中性占位，不猜男女。
 
-本轮未发布线上、未覆盖线上病例、未重算历史成绩。真实模型服务尚未配置，本机60轮代表对话为受控降级；真实登录、多身份数据库与物理语音另列待验。参阅 `验收记录.md` 和三份运行/接口/制作说明。
+本轮未发布线上、未覆盖线上病例、未重算历史成绩。本机60轮代表对话为受控降级；服务器真实调用、真实登录、多身份数据库与物理语音均须另行取证，不能用本机记录替代。查体观察解释的医学正确性由教师复核，不自动按关键词判分。参阅 `验收记录.md` 和三份运行/接口/制作说明。
 ''',encoding='utf-8')
 manifest=[]
 for p in sorted(ROOT.rglob('*')):
     if p.is_file() and p.name!='文件校验清单.json':manifest.append({'path':p.relative_to(ROOT).as_posix(),'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
 (ROOT/'文件校验清单.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
-archive=ROOT.parent/'67例病例_本地教学资料包_20261107.zip'
 with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
     for p in sorted(ROOT.rglob('*')):
         if p.is_file():z.write(p,(Path(ROOT.name)/p.relative_to(ROOT)).as_posix())
-pictures=ROOT.parent/'图片素材包_20261107.zip'
 with zipfile.ZipFile(pictures,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
     for p in sorted((ROOT/'assets').rglob('*')):
         if p.is_file():z.write(p,p.relative_to(ROOT).as_posix())

@@ -80,6 +80,15 @@ test('本例无记录时保留诚实占位，第二层仍给要领但不补造�
   if (note?.kind === 'not-routine') assert.ok(html.includes('这一组合不属常规查体') && html.includes(note.note));
 });
 
+test('闭卷站保留患者所见，隐藏通用操作要领及历史结构化结果中的过程提示',()=>{
+  const html=renderToStaticMarkup(createElement(ExamObservationCard,{
+    observation:observation('success','stethoscope','chest-lung','【原记录】合成患者呼吸音\n操作：合成操作提示\n配合反应：合成流程提示'),
+    onClose:noop,onReplayAudio:noop,showReference:false,
+  }));
+  assert.ok(html.includes('合成患者呼吸音'));
+  for(const text of ['合成操作提示','合成流程提示','查看操作要领','exam-technique-note'])assert.equal(html.includes(text),false);
+});
+
 test('未经临床审核的第二层文案永不进入会话事件、反馈或角色消息（评分证据链只吃第一层）', async () => {
   const session = createInitialSession('exam-layer-probe', 'immersive');
   const serialized: string[] = [];

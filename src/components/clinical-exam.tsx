@@ -21,19 +21,21 @@ function PhotoSurface({image,alt,targets,crop,selected,onSelect,busy,toolImage,o
 }
 
 const detailGroups:Record<string,Array<{label:string;ids:string[]}>>={
-  'rg-head-neck':[{label:'眼耳鼻口',ids:['eyes','ears','nose','mouth']},{label:'头颅与前囟',ids:['scalp','fontanelle','forehead']},{label:'颈部',ids:['neck','thyroid','cervical-nodes']}],
+  'rg-head-neck':[{label:'额面部',ids:['forehead','eyes','ears','nose','mouth']},{label:'头颅与前囟',ids:['scalp','fontanelle']},{label:'颈部',ids:['neck','thyroid','cervical-nodes']}],
   'rg-chest':[{label:'肺野',ids:['right-lung-upper','left-lung-upper','right-lung-lower','left-lung-lower','chest-lung']},{label:'心前区',ids:['aortic-area','pulmonic-area','erb-area','tricuspid-area','mitral-area']},{label:'胸壁与腋窝',ids:['chest','axilla','breast']}],
+  'rg-lower-limb':[{label:'关节与活动',ids:['hip','knee','ankle','foot','lower-limb-power']},{label:'水肿与末梢',ids:['lower-limb-edema','foot','ankle']},{label:'足底面',ids:['plantar']}],
 };
 
 export function RegionDiagram({region,aspect,selected,selectedSide='both',onSelect,busy}:{region:AnatomyRegion;aspect:ExamAspect;selected:string|null;selectedSide?:ExamLocation['side'];onSelect:(id:string,side?:ExamLocation['side'])=>void;busy:boolean}){
   const sites=region.sites.filter(s=>!s.aspect||s.aspect===aspect).flatMap(s=>s.paired?[{...s,markerSide:aspect==='front'?'right':'left'},{...s,x:100-s.x,markerSide:aspect==='front'?'left':'right'}]:[{...s,markerSide:''}]);
   return <div className="clinical-local-map">
-    <svg viewBox="0 0 100 100" role="img" aria-label={`${region.label}${aspect==='front'?'前面':'后面'}局部定位示意`}>
+    <svg viewBox="0 0 100 100" role="img" aria-label={`${region.label}${region.outline==='sole'?'足底面':aspect==='front'?'前面':'后面'}局部定位示意`}>
       <defs><linearGradient id={`skin-${region.id}`} x2="0" y2="1"><stop stopColor="#f5dfca"/><stop offset="1" stopColor="#dfbfa6"/></linearGradient></defs>
       <g fill={`url(#skin-${region.id})`} stroke="#b38c73" strokeWidth=".6">
         {region.outline==='head'?<><ellipse cx="50" cy="39" rx="28" ry="33"/><path d="M38 66V78L25 88Q50 98 75 88L62 78V66"/><ellipse cx="21" cy="42" rx="4" ry="9"/><ellipse cx="79" cy="42" rx="4" ry="9"/><path d="M35 37h9m12 0h9m-15 7v7m-8 8q8 4 16 0" fill="none"/></>:
         region.outline==='arm'?<path d="M40 8Q48 4 59 14L62 38 58 64 64 75 71 90Q68 95 64 89L58 81 60 94Q56 98 53 88L50 78 49 95Q45 98 44 88L43 78 40 92Q35 94 37 84L40 67 36 42Z"/>:
         region.outline==='leg'?<path d="M35 7Q51 3 65 10L61 36 58 53 58 76 72 86Q81 93 67 95L44 92Q39 89 43 79L41 58 35 38Z"/>:
+        region.outline==='sole'?<><path d="M44 93Q31 91 35 76Q40 61 32 45Q26 34 28 23Q23 9 34 6Q44 6 43 21Q46 10 52 14Q58 15 56 26Q61 17 67 22Q72 24 67 32Q74 25 78 31Q81 35 73 40Q79 36 81 42Q82 48 72 52Q69 64 65 76Q61 96 44 93Z"/><path d="M64 82Q73 58 69 44Q63 32 48 27" fill="none" stroke="#6b957e" strokeDasharray="2 2"/></>:
         region.outline==='general'?<><circle cx="50" cy="15" r="10"/><path d="M40 28L26 36 19 60 26 63 36 44 37 63 32 91 43 94 50 70 57 94 68 91 63 63 64 44 74 63 81 60 74 36 60 28Z"/></>:
         <><path d="M35 4L35 12 15 22 20 40 26 37 28 72 35 94 65 94 72 72 74 37 80 40 85 22 65 12V4"/>
           {region.outline==='torso'&&<><path d="M48 24Q35 19 27 36V62Q37 67 47 60ZM52 24Q65 19 73 36V62Q63 67 53 60Z" fill="#e2b5ac" opacity=".6"/><path d="M50 19v46m-19 8q19 6 38 0" fill="none"/></>}
@@ -41,7 +43,7 @@ export function RegionDiagram({region,aspect,selected,selectedSide='both',onSele
           {region.outline==='back'&&<path d="M50 15v64m-5-58h10m-10 7h10m-10 7h10m-10 7h10m-10 7h10m-10 7h10m-10 7h10" fill="none"/>}</>}
       </g>
     </svg>
-    <span className="clinical-side clinical-side-left">患者{aspect==='front'?'右':'左'}侧</span><span className="clinical-side clinical-side-right">患者{aspect==='front'?'左':'右'}侧</span>
+    {region.outline==='sole'?<span className="clinical-side clinical-side-left">足底面 · 局部示意</span>:<><span className="clinical-side clinical-side-left">患者{aspect==='front'?'右':'左'}侧</span><span className="clinical-side clinical-side-right">患者{aspect==='front'?'左':'右'}侧</span></>}
     {sites.map(s=><button type="button" key={s.id+(s.markerSide??'')} className="clinical-hotspot" style={{left:`${s.x}%`,top:`${s.y}%`}} disabled={busy} aria-label={(s.markerSide==='left'?'患者左侧':s.markerSide==='right'?'患者右侧':'')+anatomyLabel(s.id)} title={anatomyLabel(s.id)} data-selected={selected===s.id&&(selectedSide==='both'||!s.markerSide||selectedSide===s.markerSide)} onClick={()=>onSelect(s.id,s.markerSide?s.markerSide as ExamLocation['side']:undefined)}><span/></button>)}
     <small className="clinical-map-caption">局部医学示意 · 点击定位点或下方部位名称</small>
   </div>;
@@ -50,12 +52,13 @@ export function RegionDiagram({region,aspect,selected,selectedSide='both',onSele
 const positionLabels: Record<ExamPosition,string> = {standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'};
 const instruments = EXAM_INSTRUMENTS.filter(item => item.id !== 'hand-hygiene');
 
-export function ClinicalExam({image,alt,assetKey,posture,position,positions,onPositionChange,busy,hygieneCompleted,observation,onExamine,onCloseObservation,onReplayAudio}: {
+export function ClinicalExam({image,alt,assetKey,posture,position,positions,onPositionChange,busy,hygieneCompleted,observation,onExamine,onCloseObservation,onReplayAudio,showReference=true}: {
   image:string|null; alt:string; assetKey?:string; posture:'standing'|'supine'; position:ExamPosition;
   positions:ExamPosition[]; onPositionChange:(position:ExamPosition)=>void;
   busy:boolean; hygieneCompleted:boolean; observation:ExamObservation|null;
   onExamine:(part:string,tool:string,location?:ExamLocation)=>void;
   onCloseObservation:()=>void; onReplayAudio:()=>void;
+  showReference?:boolean;
 }) {
   const [regionId,setRegionId] = useState('rg-head-neck');
   const [part,setPart] = useState<string|null>(null);
@@ -68,7 +71,10 @@ export function ClinicalExam({image,alt,assetKey,posture,position,positions,onPo
   const selectedInstrument = instruments.find(item => item.id === tool);
   const map=assetKey?photoExamMap(assetKey,posture,regionId,detailGroup):null;
   const groups=detailGroups[regionId];
-  const visibleTargets=map?.sites.filter(site=>!groups||groups[detailGroup]?.ids.includes(site.id))??[];
+  const visibleTargets=(map?.sites.filter(site=>!groups||groups[detailGroup]?.ids.includes(site.id))??[]).sort((a,b)=>a.y-b.y||a.x-b.x);
+  const scalpView=regionId==='rg-head-neck'&&detailGroup===1;
+  const soleView=regionId==='rg-lower-limb'&&detailGroup===2;
+  const diagramRegion:AnatomyRegion=soleView?{...region,outline:'sole',sites:[{id:'plantar',x:67,y:59}]}:scalpView?{...region,sites:region.sites.filter(site=>groups?.[detailGroup].ids.includes(site.id))}:region;
   useEffect(()=>{if(observation&&observation.toolId!=='hand-hygiene')resultRef.current?.scrollIntoView({block:'nearest'});},[observation]);
   // Findings are bound to a completed action, never carried over to another selection.
   const currentObservation = observation && (observation.toolId === 'hand-hygiene' || (observation.bodyPartId === part && observation.toolId === tool)) ? observation : null;
@@ -112,7 +118,8 @@ export function ClinicalExam({image,alt,assetKey,posture,position,positions,onPo
         <div className="ce-location-heading"><div><MapPin size={17}/><h3>{region.label}</h3></div>{region.sites.some(site=>site.aspect) && <button type="button" disabled={busy} onClick={()=>{setAspect(aspect === 'front' ? 'back' : 'front');setPart(null);onCloseObservation();}}><RotateCcw size={14}/>{aspect === 'front' ? '查看后面' : '查看前面'}</button>}</div>
         <p className="ce-muted">{aspect === 'front' ? '前面' : '后面'} · 左右均按患儿自身方向标记</p>
         {groups&&aspect==='front'&&<div className="ce-detail-groups" role="group" aria-label="局部定位范围">{groups.map((group,index)=><button type="button" key={group.label} aria-pressed={detailGroup===index} disabled={busy} onClick={()=>{setDetailGroup(index);setPart(null);onCloseObservation();}}>{group.label}</button>)}</div>}
-        {image&&map?.crop&&aspect==='front'?<div className="ce-zoom-map"><PhotoSurface key={image+regionId} image={image} alt={`${region.label}局部放大定位，虚拟示教人物`} crop={map.crop} targets={visibleTargets} selected={part} onSelect={(id,markerSide)=>selectPart(id,markerSide,true)} busy={busy} toolImage={selectedInstrument?.image}/></div>:<RegionDiagram region={region} aspect={aspect} selected={part} selectedSide={side} onSelect={(id,markerSide)=>selectPart(id,markerSide,true)} busy={busy}/>}
+        {image&&map?.crop&&aspect==='front'&&!scalpView&&!soleView?<div className="ce-zoom-map"><PhotoSurface key={image+regionId} image={image} alt={`${region.label}局部放大定位，虚拟示教人物`} crop={map.crop} targets={visibleTargets} selected={part} onSelect={(id,markerSide)=>selectPart(id,markerSide,true)} busy={busy} toolImage={selectedInstrument?.image}/></div>:<RegionDiagram region={diagramRegion} aspect={aspect} selected={part} selectedSide={side} onSelect={(id,markerSide)=>selectPart(id,markerSide,true)} busy={busy}/>}
+        {(scalpView||soleView)&&<p className="ce-touch-hint">{soleView?'足底采用局部医学示意；检查前协助患儿取适当体位并放松足部。':'头颅与前囟采用医学示意；不从正面照片推断囟门大小或开闭。'}</p>}
         <p className="ce-touch-hint">{tool?'点击局部定位点，即用手中器材检查':'先从器材栏拿起器材，再点局部定位点进行检查'}</p>
         <details className="ce-map-detail" key={regionId+aspect}><summary>用文字选择具体部位</summary><div className="ce-sites" role="group" aria-label="具体检查部位">{region.sites.filter(site=>!site.aspect || site.aspect === aspect).map(site => <button type="button" key={site.id} disabled={busy} aria-pressed={part === site.id} onClick={()=>selectPart(site.id,undefined,true)}>{anatomyLabel(site.id)}</button>)}</div></details>
         {part && <fieldset className="ce-side"><legend>检查侧别</legend>{(['both','left','right','midline'] as const).filter(value=>part.startsWith('left-') ? value === 'left' : part.startsWith('right-') ? value === 'right' : true).map(value => <button type="button" key={value} disabled={busy} aria-pressed={side === value} onClick={()=>{setSide(value);onCloseObservation();}}>{{both:'双侧 / 整体',left:'患儿左侧',right:'患儿右侧',midline:'正中'}[value]}</button>)}</fieldset>}
@@ -121,7 +128,7 @@ export function ClinicalExam({image,alt,assetKey,posture,position,positions,onPo
           <button className="ce-execute" type="button" disabled={busy || !part || !tool} onClick={()=>{if(part && tool)onExamine(part,tool,{side,aspect});}}>{busy ? '正在检查…' : '开始检查'}</button>
         </div>
         <div ref={resultRef} className="ce-result" aria-label="本次查体反馈" aria-live="polite">
-          {currentObservation ? <ExamObservationCard observation={currentObservation} onClose={onCloseObservation} onReplayAudio={onReplayAudio}/> : <div className="ce-result-empty"><Stethoscope size={26}/><strong>检查所见将在这里显示</strong><p>拿起器材，点击局部图上的部位进行检查。患儿反应与所见会同步到病例记录，供你判断和书写病历。</p></div>}
+          {currentObservation ? <ExamObservationCard observation={currentObservation} onClose={onCloseObservation} onReplayAudio={onReplayAudio} showReference={showReference}/> : <div className="ce-result-empty"><Stethoscope size={26}/><strong>检查所见将在这里显示</strong><p>拿起器材，点击局部图上的部位进行检查。患儿反应与所见会同步到病例记录，供你判断和书写病历。</p></div>}
         </div>
       </section>
     </div>

@@ -6,6 +6,7 @@ export function diagnosticEvidenceEvents(session:SessionState):ClinicalEvent[] {
   return session.events.filter(event=>{
     if(!['ASK_QUESTION','EXAM_ACTION','ORDER_TEST'].includes(event.type))return false;
     if(event.type!=='ORDER_TEST'&&event.correct===false)return false;
+    if(/【(?:检查参考说明|操作与参考说明)】/.test(event.summary))return false;
     return event.evidenceCodes.some(code=>code!=='EX_PREP'&&code!=='EX_PROVIDED'&&obtained.has(code));
   });
 }

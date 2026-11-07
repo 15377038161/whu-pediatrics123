@@ -11,7 +11,7 @@ export function clinicalEvidenceRatio(text:string,records:ReadonlyArray<{area:st
     while(offset>=0){const prefix=s.slice(Math.max(0,offset-10),offset);values.add(/(?:无|没有|否认|未见|未诉)[^，。；;]{0,4}$/.test(prefix));offset=s.indexOf(key,offset+key.length);}
     return values;
   };
-  for(const record of records){const source=normalize(record.text);
+  for(const record of records){const source=normalize(record.text.split(/\n操作：|\n配合反应：/)[0]);
     if(clinicalAnchors.some(a=>{const key=normalize(a);return answer.includes(key)&&source.includes(key)&&[...polarity(source,key)].some(p=>polarity(answer,key).has(p));}))areas.add(record.area);
   }
   return areas.size>1?1:areas.size===1?.5:0;

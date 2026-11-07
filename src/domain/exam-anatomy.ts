@@ -2,7 +2,7 @@ import { EXAM_LOCATIONS } from './source-exam-contract';
 
 export type ExamAspect = 'front' | 'back';
 export interface AnatomySite { id: string; x: number; y: number; aspect?: ExamAspect; paired?:boolean }
-export interface AnatomyRegion { id: string; label: string; sites: AnatomySite[]; outline: 'head' | 'torso' | 'abdomen' | 'back' | 'arm' | 'leg' | 'general' }
+export interface AnatomyRegion { id: string; label: string; sites: AnatomySite[]; outline: 'head' | 'torso' | 'abdomen' | 'back' | 'arm' | 'leg' | 'sole' | 'general' }
 const site = (id: string, x: number, y: number, aspect?: ExamAspect): AnatomySite => ({ id, x, y, ...(aspect ? { aspect } : {}) });
 
 /** Patient left is viewer right in the anterior view. Coordinates belong to local diagrams, never the patient photograph. */

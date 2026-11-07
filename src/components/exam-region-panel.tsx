@@ -12,7 +12,7 @@ export type ExamObservation = {
   sound: 'fine-crackles' | 'wheeze' | null;
 };
 
-export function ExamObservationCard({ observation, onClose, onReplayAudio }: { observation: ExamObservation; onClose: () => void; onReplayAudio: () => void }) {
+export function ExamObservationCard({ observation, onClose, onReplayAudio, showReference = true }: { observation: ExamObservation; onClose: () => void; onReplayAudio: () => void; showReference?: boolean }) {
   const note = examTechniqueNote(observation.toolId, observation.bodyPartId);
   const structured = observation.status === 'success' ? observation.detail.match(/^([\s\S]*?)\n操作：([\s\S]*?)\n配合反应：([\s\S]*)$/) : null;
   return (
@@ -23,10 +23,10 @@ export function ExamObservationCard({ observation, onClose, onReplayAudio }: { o
         <button type="button" onClick={onClose} aria-label="关闭查体反馈"><X size={16} /></button>
       </div>
       <div className="exam-observation-detail">
-        {structured ? <dl className="ce-findings"><dt>客观所见</dt><dd>{structured[1]}</dd><dt>检查过程</dt><dd>{structured[2]}</dd><dt>患儿反应</dt><dd>{structured[3]}</dd></dl> : <p>{observation.detail}</p>}
+        {structured ? <dl className="ce-findings"><dt>客观所见</dt><dd>{structured[1]}</dd>{showReference&&<><dt>检查过程</dt><dd>{structured[2]}</dd><dt>患儿反应</dt><dd>{structured[3]}</dd></>}</dl> : <p>{observation.detail}</p>}
       </div>
       {observation.sound && <button type="button" className="exam-auscultation" data-sound={observation.sound} onClick={onReplayAudio}><Volume2 size={15} /><span /><span /><span /><span /><span />{observation.sound === 'wheeze' ? '重播哮鸣音' : '重播湿啰音'}</button>}
-      {note && <details className="exam-technique-note">
+      {showReference && note && <details className="exam-technique-note">
         <summary>查看操作要领与正常表现参考</summary>
         <span className="exam-technique-badge">{TECHNIQUE_NOTE_BADGE}</span>
         {note.kind === 'routine'

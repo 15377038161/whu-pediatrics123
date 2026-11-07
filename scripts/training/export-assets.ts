@@ -3,7 +3,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {ANATOMY_REGIONS,EXAM_INSTRUMENTS} from '../../src/domain/exam-anatomy';
+import {ANATOMY_REGIONS,EXAM_INSTRUMENTS,type AnatomyRegion} from '../../src/domain/exam-anatomy';
 import {RegionDiagram} from '../../src/components/clinical-exam';
 import {patientAppearance,allowedPostures} from '../../src/domain/patient-appearance';
 
@@ -22,7 +22,8 @@ for(const [band,age] of [['newborn','2天'],['infant','6个月'],['toddler','2�
 // Preserve preschool alternatives used by actual case hashes as well as the 20 base combinations.
 const index=JSON.parse(readFileSync('deliverables/67-cases-20261107/index.json','utf8'));
 for(const entry of index){const pack=JSON.parse(readFileSync(`knowledge/training-packages/packages/${entry.version}.json`,'utf8'));for(const asset of pack.appearanceAssets??[])if(!manifest.some(m=>m.publicPath===asset.publicPath))copy(asset.publicPath,'patients',{id:asset.assetId,posture:asset.posture,basicCombination:false});}
-for(const region of ANATOMY_REGIONS)for(const aspect of region.id==='rg-chest'?['front','back'] as const:region.id==='rg-back'?['back'] as const:['front'] as const){
+const diagrams:AnatomyRegion[]=[...ANATOMY_REGIONS,{id:'rg-lower-limb-sole',label:'足底面',outline:'sole',sites:[{id:'plantar',x:67,y:59}]}];
+for(const region of diagrams)for(const aspect of region.id==='rg-chest'?['front','back'] as const:region.id==='rg-back'?['back'] as const:['front'] as const){
   const markup=renderToStaticMarkup(createElement(RegionDiagram,{region,aspect,selected:null,onSelect:()=>{},busy:false}));
   const svg=markup.match(/<svg[\s\S]*?<\/svg>/)?.[0];
   if(!svg)throw new Error('DIAGRAM_MISSING');

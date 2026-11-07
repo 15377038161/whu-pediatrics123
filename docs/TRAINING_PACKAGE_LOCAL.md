@@ -46,3 +46,5 @@ knowledge/training-packages/
 真实登录、多身份数据库持久化、真实模型自然度和物理麦克风/移动设备语音按验收记录单列。本轮未重新测试这些外部条件，也未恢复、检索或新建任何凭据。
 
 图片点选查体、器材持有反馈与服务器操作见 [EXAM_INTERACTION.md](EXAM_INTERACTION.md)。完整工作范围与最终67例双角色验收见 [67_CASES_ACCEPTANCE_STATUS.md](67_CASES_ACCEPTANCE_STATUS.md)。
+
+交付归档使用 `python scripts/training/package-delivery.py --date 20261108` 创建全新日期目录及压缩包；目标已存在时拒绝覆盖。仅复制当前索引引用的67个版本、媒体和素材清单，不清理安装目录中的历史版本。归档含私有来源与教师答案，不能上传公开GitHub或放入public。
