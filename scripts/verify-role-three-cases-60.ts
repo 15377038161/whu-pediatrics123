@@ -55,6 +55,7 @@ interface RoundEvidence {
   model: string | null;
   attempts: number;
   modelCalls: number;
+  capturedRawCalls: number;
   durationMs: number;
   errorKind: string | null;
   modelDialoguePresent: boolean;
@@ -153,7 +154,7 @@ async function main(): Promise<void> {
   const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   const workingTreeDirty = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim().length > 0;
   const evidence = {
-    schemaVersion: 4,
+    schemaVersion: 5,
     status: 'running' as 'running' | 'completed' | 'failed',
     startedAt: new Date().toISOString(),
     completedAt: null as string | null,
@@ -197,6 +198,7 @@ async function main(): Promise<void> {
   };
   let activeRound = 0;
   let activeRoundCall = 0;
+  let activeRoundCaptured = 0;
   let rawCaptureCount = 0;
   const save = () => {
     evidence.runtime.rawResponseContentSaved = rawCaptureCount > 0;
@@ -209,6 +211,7 @@ async function main(): Promise<void> {
     if (privateRawDir) {
       const file = path.join(privateRawDir, `${caseKey}-round-${String(activeRound).padStart(2, '0')}-call-${String(activeRoundCall).padStart(2, '0')}.txt`);
       writeFileSync(file, result.content, { encoding: 'utf8', mode: 0o600 });
+      activeRoundCaptured += 1;
       rawCaptureCount += 1;
     }
     return result;
@@ -219,6 +222,7 @@ async function main(): Promise<void> {
     for (let round = 1; round <= 20; round += 1) {
       activeRound = round;
       activeRoundCall = 0;
+      activeRoundCaptured = 0;
       const topic = topics[(round - 1) % topics.length];
       const followUp = round > topics.length;
       const baseQuestion = TOPIC_QUESTIONS[topic.label] ?? `请具体说说${topic.label}。`;
@@ -248,6 +252,7 @@ async function main(): Promise<void> {
         model: runtime.model,
         attempts: runtime.attempts ?? 0,
         modelCalls: activeRoundCall,
+        capturedRawCalls: activeRoundCaptured,
         durationMs: runtime.durationMs,
         errorKind: runtime.errorKind ?? null,
         modelDialoguePresent: Boolean(modelDialogueText),
@@ -261,7 +266,7 @@ async function main(): Promise<void> {
         validationReasons: runtime.validationReasons ?? [],
       });
       save();
-      console.log(`ROUND ${caseKey} ${round}/20 execution=${runtime.execution} model=${runtime.model ?? 'null'} attempts=${runtime.attempts ?? 0} modelCalls=${activeRoundCall} durationMs=${runtime.durationMs} context=${contextMessagesProvided} validation=${(runtime.validationReasons ?? []).join(',') || 'none'}`);
+      console.log(`ROUND ${caseKey} ${round}/20 execution=${runtime.execution} model=${runtime.model ?? 'null'} attempts=${runtime.attempts ?? 0} modelCalls=${activeRoundCall} capturedRawCalls=${activeRoundCaptured} durationMs=${runtime.durationMs} context=${contextMessagesProvided} error=${runtime.errorKind ?? 'none'} validation=${(runtime.validationReasons ?? []).join(',') || 'none'}`);
     }
 
     const durations = evidence.rounds.map((item) => item.durationMs).sort((a, b) => a - b);
@@ -274,12 +279,28 @@ async function main(): Promise<void> {
       return acc;
     }, {});
     const modelHashes = evidence.rounds.map((item) => item.modelDialogueHash).filter((item): item is string => Boolean(item));
+    const modelRounds = executions.model ?? 0;
+    const validationFallbackRounds = evidence.rounds.filter((item) => item.execution === 'model_fallback' && item.errorKind === 'ungrounded_dialogue').length;
+    const nonEvaluableRounds = evidence.rounds.filter((item) => item.execution !== 'model' && !(item.execution === 'model_fallback' && item.errorKind === 'ungrounded_dialogue'));
+    const rateLimitedRounds = evidence.rounds.filter((item) => item.errorKind === 'rate_limited').length;
+    const rawCaptureComplete = !privateRawDir || evidence.rounds.every((item) => item.capturedRawCalls === item.modelCalls);
+    const evaluationValid = evidence.rounds.length === 20 && modelRounds > 0 && nonEvaluableRounds.length === 0 && rawCaptureComplete;
+    const errorKinds = evidence.rounds.reduce<Record<string, number>>((acc, item) => {
+      if (item.errorKind) acc[item.errorKind] = (acc[item.errorKind] ?? 0) + 1;
+      return acc;
+    }, {});
     evidence.summary = {
+      evaluationValid,
       completedRounds: evidence.rounds.length,
       executions,
-      modelRounds: executions.model ?? 0,
+      modelRounds,
       fallbackRounds: executions.model_fallback ?? 0,
+      validationFallbackRounds,
+      transportFailureRounds: nonEvaluableRounds.length,
+      nonEvaluableRoundNumbers: nonEvaluableRounds.map((item) => item.round),
+      rateLimitedRounds,
       deterministicRounds: executions.deterministic ?? 0,
+      errorKinds,
       uniqueModelDialogueHashes: new Set(modelHashes).size,
       exactQuestionEchoRounds: evidence.rounds.filter((item) => item.exactQuestionEcho).length,
       contextCarriedRounds: evidence.rounds.filter((item) => item.contextMessagesProvided > 0).length,
@@ -287,6 +308,8 @@ async function main(): Promise<void> {
       validationReasons,
       totalAttempts: evidence.rounds.reduce((sum, item) => sum + item.attempts, 0),
       totalModelCalls: evidence.rounds.reduce((sum, item) => sum + item.modelCalls, 0),
+      totalCapturedRawCalls: evidence.rounds.reduce((sum, item) => sum + item.capturedRawCalls, 0),
+      rawCaptureComplete,
       correctedModelCalls: evidence.rounds.filter((item) => item.modelCalls > 1).length,
       latencyMs: {
         min: durations[0] ?? 0,
@@ -299,8 +322,7 @@ async function main(): Promise<void> {
     evidence.completedAt = new Date().toISOString();
     save();
     console.log(`SUMMARY ${JSON.stringify(evidence.summary)}`);
-    const expectedRawCount = evidence.rounds.reduce((sum, item) => sum + item.modelCalls, 0);
-    if (evidence.rounds.length !== 20 || (executions.model ?? 0) === 0 || (privateRawDir && rawCaptureCount !== expectedRawCount)) process.exitCode = 1;
+    if (!evaluationValid) process.exitCode = 1;
   } catch (error) {
     evidence.status = 'failed';
     evidence.completedAt = new Date().toISOString();
