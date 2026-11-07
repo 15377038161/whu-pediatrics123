@@ -1,0 +1,476 @@
+{
+  "schemaVersion": 2,
+  "status": "completed",
+  "startedAt": "2026-11-07T07:22:11.089Z",
+  "completedAt": "2026-11-07T07:23:28.875Z",
+  "sourceCommit": "0b8d26911eec118feec6ce38500fde78cd07fa38",
+  "caseKey": "respiratory",
+  "caseId": "teacher-急性毛细支气管炎",
+  "requestedRounds": 20,
+  "sourceFactCount": 15,
+  "availableTopicCount": 8,
+  "sourceSnapshot": {
+    "origin": "verified-candidate-archive-not-activated",
+    "version": "7e85f01ebd51bd0c",
+    "fileId": "579c3fbb0bddf46c921ef344b1d7de90",
+    "archiveSha256": "ebf4286039913a41c67c6b16f4321ea1d04f987f81788a0407a176e6ff657487",
+    "persistentInstallationPerformed": false
+  },
+  "runtime": {
+    "path": "sourceHistoryFacts + historyDialogue + invokeCozeAI",
+    "provider": "coze_native",
+    "apiKeySource": "platform_injected",
+    "sdkVersion": "1.0.0-20261019.d5eff68",
+    "timeoutMs": 30000,
+    "configuredModel": "doubao-seed-1-8-251228",
+    "rawResponseContentSaved": false,
+    "questionContentSaved": false,
+    "authenticationUsed": false,
+    "databaseWritesUsed": false,
+    "inMemorySessionOnly": true
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "topic": "起病与病程",
+      "followUp": false,
+      "contextMessagesProvided": 1,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3826,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "12147524e7c5d0e4d5bfa5941d03d9422aabf6a03d00702ccf272cab09d77329",
+      "dialogueLength": 72,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 2,
+      "topic": "发热与处理",
+      "followUp": false,
+      "contextMessagesProvided": 3,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 2684,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "34a5eb4fdbc2226bcfc93f3fa333c55ef455d0d424dc9fa2900175d52712b97b",
+      "dialogueLength": 29,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 0,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 3,
+      "topic": "一般状态、进食及排泄",
+      "followUp": false,
+      "contextMessagesProvided": 5,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3748,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "fa01e4aaddca7e75e6cdafa00d7941d243d445deb833e5789752a3d960e1f5c8",
+      "dialogueLength": 42,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 4,
+      "topic": "出生、喂养与生长发育",
+      "followUp": false,
+      "contextMessagesProvided": 7,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 4133,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "e48ad641f19be6dd7defdde6e9d8dacc8f26c9d07903974c41c20499683baaef",
+      "dialogueLength": 64,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 5,
+      "topic": "既往、过敏、接种及家族史",
+      "followUp": false,
+      "contextMessagesProvided": 9,
+      "execution": "model_fallback",
+      "model": null,
+      "attempts": 1,
+      "durationMs": 3845,
+      "errorKind": "ungrounded_dialogue",
+      "modelDialoguePresent": false,
+      "modelDialogueHash": null,
+      "dialogueLength": 102,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 4,
+      "fallbackContentUsed": true,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 6,
+      "topic": "已用药物与院外处理",
+      "followUp": false,
+      "contextMessagesProvided": 11,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3715,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "03f873436f22301b401242d4d484a600bc69924710e0dd641e597827985b53af",
+      "dialogueLength": 61,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 7,
+      "topic": "呼吸相关症状",
+      "followUp": false,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3334,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "d670dd272f4c4745a9017606d2476faa02923edbcecb3b7f0ae5805466721232",
+      "dialogueLength": 71,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 8,
+      "topic": "疼痛及消化道症状",
+      "followUp": false,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3074,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "11e6880d87a2e850886e5d98411f2d1dcdb3afe65a118f5c8c7d9901540fe075",
+      "dialogueLength": 39,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 0,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 9,
+      "topic": "起病与病程",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 4150,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "3894e1d2d0bbbcbfa2fa02c37af85f0edb40db8612806ca7ee684a16d81c3ee6",
+      "dialogueLength": 114,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 10,
+      "topic": "发热与处理",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3818,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "eb0e0f8dbf6b8fbe00829fc918a4dd0438483f8284027a61a3f0d9f2939d6033",
+      "dialogueLength": 73,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 11,
+      "topic": "一般状态、进食及排泄",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 4852,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "c051b6c3ac7d997ae7104b4cdeef8ec35df320002fc6696b02d3cc62faeb3436",
+      "dialogueLength": 98,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 12,
+      "topic": "出生、喂养与生长发育",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 5024,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "038861a4736f3ac73c7b7379fa41b8c4c87147e14fc11c3245eb50cabc399ef9",
+      "dialogueLength": 95,
+      "dialogueActors": [
+        "parent",
+        "parent"
+      ],
+      "utteranceCount": 2,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 13,
+      "topic": "既往、过敏、接种及家族史",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model_fallback",
+      "model": null,
+      "attempts": 1,
+      "durationMs": 4663,
+      "errorKind": "ungrounded_dialogue",
+      "modelDialoguePresent": false,
+      "modelDialogueHash": null,
+      "dialogueLength": 102,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 4,
+      "fallbackContentUsed": true,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 14,
+      "topic": "已用药物与院外处理",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3546,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "da6b2011999353957ea858d5c90b294dc8299c581ddf656bc205343fc3b31e2b",
+      "dialogueLength": 85,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 15,
+      "topic": "呼吸相关症状",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3839,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "bc279c8e24cc1ea957fe1133a11cce3f2484a2f02c5e1dec20dff1799a75f479",
+      "dialogueLength": 75,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 16,
+      "topic": "疼痛及消化道症状",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3909,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "9168eb80efec25d4e7f51853e7260480b6447612883bbe4f48a1f4e084bc3d14",
+      "dialogueLength": 58,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 0,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 17,
+      "topic": "起病与病程",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 4405,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "7018b92c70c67f03d28ac8b9ea258b927ccff53fa809a32eb71f077d3368f4cc",
+      "dialogueLength": 113,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 2,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 18,
+      "topic": "发热与处理",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3824,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "6b168b211273c9db17cd78da5dd395d36723253300b90061e4e4f7ce2a24f57c",
+      "dialogueLength": 86,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 19,
+      "topic": "一般状态、进食及排泄",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model_fallback",
+      "model": null,
+      "attempts": 1,
+      "durationMs": 3552,
+      "errorKind": "ungrounded_dialogue",
+      "modelDialoguePresent": false,
+      "modelDialogueHash": null,
+      "dialogueLength": 34,
+      "dialogueActors": [
+        "parent"
+      ],
+      "utteranceCount": 1,
+      "citedFactCount": 1,
+      "fallbackContentUsed": true,
+      "exactQuestionEcho": false
+    },
+    {
+      "round": 20,
+      "topic": "出生、喂养与生长发育",
+      "followUp": true,
+      "contextMessagesProvided": 12,
+      "execution": "model",
+      "model": "doubao-seed-1-8-251228",
+      "attempts": 1,
+      "durationMs": 3796,
+      "errorKind": null,
+      "modelDialoguePresent": true,
+      "modelDialogueHash": "f717bc1417e0cb724c210a285c5f79e1b9f0a141987bf00a0db17fc7116584de",
+      "dialogueLength": 94,
+      "dialogueActors": [
+        "parent",
+        "parent"
+      ],
+      "utteranceCount": 2,
+      "citedFactCount": 1,
+      "fallbackContentUsed": false,
+      "exactQuestionEcho": false
+    }
+  ],
+  "summary": {
+    "completedRounds": 20,
+    "executions": {
+      "model": 17,
+      "model_fallback": 3
+    },
+    "modelRounds": 17,
+    "fallbackRounds": 3,
+    "deterministicRounds": 0,
+    "uniqueModelDialogueHashes": 17,
+    "exactQuestionEchoRounds": 0,
+    "contextCarriedRounds": 20,
+    "totalAttempts": 20,
+    "latencyMs": {
+      "min": 2684,
+      "p50": 3824,
+      "p95": 4852,
+      "max": 5024
+    }
+  }
+}

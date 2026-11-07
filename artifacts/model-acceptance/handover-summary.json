@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-07T08:29:16.924Z",
+  "sourceCommit": "0b8d26911eec118feec6ce38500fde78cd07fa38",
+  "scope": {
+    "nonDestructive": true,
+    "objectsDeleted": 0,
+    "storageExpansionPurchased": false,
+    "databaseSchemaChanged": false,
+    "persistentCaseInstallationPerformed": false,
+    "deploymentPerformed": false,
+    "signedUrlsIncluded": false,
+    "secretsIncluded": false
+  },
+  "storage": {
+    "inventoryCapturedAt": "2026-11-07T05:23:37.283Z",
+    "objectCount": 177,
+    "bytes": 2186223256,
+    "decimalGB": 2.186223256,
+    "binaryGiB": 2.036079071,
+    "approximateQuotaGiB": 1.07,
+    "availableQuotaBytes": 0,
+    "addedSinceFrozenBaseline": 0,
+    "missingSinceFrozenBaseline": 0,
+    "zipObjectCount": 43,
+    "zipBytes": 1731340089,
+    "matrix": {
+      "nonPilotObjects": 42,
+      "activeRuntimeExcluded": 1,
+      "historicalGitReferenceObjects": 1,
+      "historicalGitReferenceFileName": "peds-material-install131.zip",
+      "gitHistoryReferenceFreeObjects": 41,
+      "completeStandaloneSamePathBackups": 0,
+      "localBackupObjects": 41,
+      "localBackupBytes": 1730583638,
+      "individualObjects": 6,
+      "private122RecoverySetMembers": 35,
+      "private122ControlObject": "peds-private122-control-v2.zip",
+      "private122MustRemainCompleteSet": true,
+      "deletionAuthorized": false
+    },
+    "recoveryPackage": {
+      "localInstallCopyAccessible": false,
+      "exactPackageBytesRecomputedInThisHandover": false,
+      "uploadAllowedByCurrentQuota": false,
+      "productionRestartRecoveryBlocked": true,
+      "note": "The current account is already over its approximate 1.07 GiB quota. A new exact recovery-package size/deficit is not invented while the local package is inaccessible; existing occupancy and zero available quota are sufficient to block upload."
+    }
+  },
+  "modelAcceptance": {
+    "provider": "coze_native",
+    "configuredModel": "doubao-seed-1-8-251228",
+    "totalRounds": 60,
+    "modelRounds": 35,
+    "fallbackRounds": 25,
+    "contextCarriedRounds": 60,
+    "uniqueModelDialogueHashes": 35,
+    "allFallbackErrorKinds": [
+      "ungrounded_dialogue"
+    ],
+    "cases": [
+      {
+        "caseKey": "dka",
+        "caseId": "teacher-1型糖尿病伴有酮症酸中毒",
+        "rounds": 20,
+        "model": 12,
+        "fallback": 8,
+        "contextCarriedRounds": 20,
+        "uniqueModelDialogueHashes": 12,
+        "latencyMs": {
+          "min": 3420,
+          "p50": 4547,
+          "p95": 6676,
+          "max": 7505
+        }
+      },
+      {
+        "caseKey": "newborn",
+        "caseId": "teacher-新生儿败血症",
+        "rounds": 20,
+        "model": 6,
+        "fallback": 14,
+        "contextCarriedRounds": 20,
+        "uniqueModelDialogueHashes": 6,
+        "latencyMs": {
+          "min": 2577,
+          "p50": 3759,
+          "p95": 4407,
+          "max": 4599
+        },
+        "qualityRisk": "14/20 rounds fell back because the model dialogue did not satisfy grounding validation."
+      },
+      {
+        "caseKey": "respiratory",
+        "caseId": "teacher-急性毛细支气管炎",
+        "rounds": 20,
+        "model": 17,
+        "fallback": 3,
+        "contextCarriedRounds": 20,
+        "uniqueModelDialogueHashes": 17,
+        "latencyMs": {
+          "min": 2684,
+          "p50": 3824,
+          "p95": 4852,
+          "max": 5024
+        }
+      }
+    ],
+    "rawModelResponseContentSaved": false,
+    "questionContentSaved": false,
+    "databaseWritesUsed": false,
+    "newPersistentInstallationOrActivation": false,
+    "sourceBoundary": "DKA reused the existing controlled bundle. Newborn and respiratory used verified candidate archive data read-only; no candidate snapshot was installed or activated."
+  },
+  "verification": {
+    "latestStaticChecks": {
+      "eslint": "passed",
+      "typeScript": "passed"
+    },
+    "inheritedUnitBaseline": {
+      "passed": 815,
+      "skipped": 8,
+      "failed": 0,
+      "rerunInThisHandover": false
+    },
+    "apiSmoke": {
+      "target": "local_preview_sandbox",
+      "routeCount": 81,
+      "testedRouteCount": 81,
+      "allCovered": true,
+      "homeStatus": 200,
+      "unexpectedStatuses": [],
+      "statusCountsIncludingHomeAndPublicChecks": {
+        "200": 4,
+        "307": 2,
+        "400": 1,
+        "401": 73,
+        "403": 2
+      },
+      "authenticatedBusinessFlowsValidated": false,
+      "desktopAndMobileBrowserUiValidated": false
+    },
+    "previewHealth": {
+      "app": "ready",
+      "database": "connected",
+      "persistedCaseKnowledge": "ready",
+      "model": "coze_runtime",
+      "localCaseFiles": "missing"
+    },
+    "baselinePreservation": {
+      "headUnchanged": true,
+      "trackedBusinessCodeChanged": false,
+      "dualMapsAnd13EntriesChanged": false,
+      "note": "Preserved by source-control state; this handover did not repeat authenticated 1440px/mobile hotspot clicking."
+    }
+  },
+  "deployment": {
+    "activeDeploymentId": "01f57b4542a64c418be3c54b6c9fb5b6",
+    "deployedCommitHash": "15eeb3b6f540a7949bbc017143b8cb732cfe0163",
+    "status": "RUNNING",
+    "health": "HEALTHY",
+    "reachabilityCheckedByUrlTool": false,
+    "matchesWorkspaceCommit": false,
+    "deploymentPerformedInThisHandover": false
+  },
+  "minimumUserActions": [
+    "Sign in to the existing authorized object-storage console; do not create a probe identity. Locate every row in local-backup-manifest.csv by exact fileName and fileId, then download the original objects to a new local directory.",
+    "Keep original file names and verify all 41 objects with local-backup-SHA256SUMS.txt and exact byte lengths. All 41 checks must pass. Treat peds-private122-part001.zip through part035.zip plus peds-private122-control-v2.zip as one complete recovery set; never select, rename, repack, or clean individual shards.",
+    "Keep a second independent verified copy and return the local verification result for human review. This manifest is not deletion authorization; no object should be deleted from this handover.",
+    "For the later recovery stage, make the original full recovery package accessible to the authorized environment or supply its exact byte size for a new space calculation. Do not upload it while the account remains over quota, and do not purchase expansion as part of this handover.",
+    "If authenticated UI acceptance is resumed, use the real preview login entry with an existing authorized student/teacher account; no synthetic probe user is required or authorized."
+  ],
+  "remainingBlockers": [
+    "The 53 source JSON files, 67 teaching versions, 1032 media files, and shared assets have not been installed into private persistent storage.",
+    "Health still reports caseKnowledge.localFiles=missing; a healthy app/database response is not evidence that all 67 local bundles are restored.",
+    "Newborn dialogue has a material grounding-quality risk: 14/20 rounds used model_fallback.",
+    "67/67 dual-version binding, report refresh, media permission checks, authenticated business flows, and real 1440px/mobile map clicking remain unvalidated in this handover.",
+    "The current workspace and active deployment are different commits; no unfinished persistence state has been published."
+  ],
+  "evidence": {
+    "classificationMatrixCsv": "projects/artifacts/model-acceptance/zip-classification-matrix.csv",
+    "classificationMatrixJson": "projects/artifacts/model-acceptance/zip-classification-matrix.json",
+    "localBackupManifestCsv": "projects/artifacts/model-acceptance/local-backup-manifest.csv",
+    "localBackupSha256Sums": "projects/artifacts/model-acceptance/local-backup-SHA256SUMS.txt",
+    "localBackupPlan": "projects/artifacts/model-acceptance/local-backup-plan.json",
+    "gitReferenceEvidence": "projects/artifacts/model-acceptance/git-zip-references.json",
+    "modelResults": [
+      "projects/artifacts/model-acceptance/dka-20.json",
+      "projects/artifacts/model-acceptance/newborn-20.json",
+      "projects/artifacts/model-acceptance/respiratory-20.json"
+    ],
+    "apiStatusLog": "projects/artifacts/model-acceptance/api-smoke-status.log",
+    "apiSummary": "projects/artifacts/model-acceptance/api-smoke-summary.json",
+    "healthResponse": "projects/artifacts/model-acceptance/health-integrations-response.json",
+    "storageInventory": "/tmp/peds-storage-audit-20261107/inventory.json"
+  }
+}

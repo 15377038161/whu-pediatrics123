@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-07T07:33:09.910Z",
+  "sourceCommit": "0b8d26911eec118feec6ce38500fde78cd07fa38",
+  "inventoryCapturedAt": "2026-11-07T05:23:37.283Z",
+  "gitEvidenceGeneratedAt": "2026-11-07T07:05:46.816Z",
+  "gitMethod": "git log --all --fixed-strings -S<filename|fileId> -- .",
+  "networkAccessUsed": false,
+  "objectStorageReadsUsed": false,
+  "objectStorageWritesUsed": false,
+  "signedUrlsIncluded": false,
+  "secretsIncluded": false,
+  "deletionAuthorized": false,
+  "definitions": {
+    "completeStandaloneBackup": "ZIP 内每个条目都在 ZIP 之外存在同路径、同内容的独立对象；只有全部条目满足才算完整。",
+    "otherZipCopies": "其他 ZIP 内的同内容或同路径副本单独列示，不等同于 ZIP 外独立同路径备份。",
+    "gitZero": "git log --all --fixed-strings -S<文件名|fileId> 对文件名和 fileId 均无提交命中；不等于医学价值或业务价值为零。",
+    "localBackupScope": "42 个非 pilot 对象中，Git 历史零引用且没有完整独立同路径备份的对象。pilot-case.zip 因活动运行时引用单独保留。"
+  },
+  "counts": {
+    "inventoryZipObjects": 43,
+    "matrixObjects": 42,
+    "activeRuntimeExcludedFromMatrix": 1,
+    "historicalGitReferenceObjects": 1,
+    "gitHistoryReferenceFreeObjects": 41,
+    "completeStandaloneNameContentBackups": 0,
+    "missingCompleteStandaloneNameContentBackups": 42,
+    "localBackupObjects": 41,
+    "individualObjects": 6,
+    "recoverySetMembers": 35
+  },
+  "sizes": {
+    "allZipObjects": {
+      "objectCount": 43,
+      "bytes": 1731340089,
+      "decimalGB": 1.731340089,
+      "binaryGiB": 1.612436109
+    },
+    "matrixObjects": {
+      "objectCount": 42,
+      "bytes": 1731324515,
+      "decimalGB": 1.731324515,
+      "binaryGiB": 1.612421605
+    },
+    "localBackupTotal": {
+      "objectCount": 41,
+      "bytes": 1730583638,
+      "decimalGB": 1.730583638,
+      "binaryGiB": 1.611731609
+    },
+    "individualObjects": {
+      "objectCount": 6,
+      "bytes": 85745913,
+      "decimalGB": 0.085745913,
+      "binaryGiB": 0.079857104
+    },
+    "private122CompleteSetMembers": {
+      "objectCount": 35,
+      "bytes": 1644837725,
+      "decimalGB": 1.644837725,
+      "binaryGiB": 1.531874505
+    }
+  },
+  "private122RecoverySet": {
+    "memberPattern": "peds-private122-part001.zip … peds-private122-part035.zip",
+    "memberCount": 35,
+    "controlObject": "peds-private122-control-v2.zip",
+    "fileNameAndSha256PresentInControlForEveryMember": true,
+    "fileIdPresentInControlForEveryMember": false,
+    "splitDecision": "不可把单分片判定为独立可清理对象；35 个分片必须与 control-v2 作为同一恢复集合完整备份和核验。"
+  },
+  "verificationOnlyReference": {
+    "fileName": "peds-workbuddy-67-import-candidate.zip",
+    "path": "scripts/verify-role-three-cases-60.ts",
+    "productionRuntimeDependency": false,
+    "note": "该引用是本轮新增的只读验收脚本，不应反向解释为生产运行时依赖。"
+  },
+  "userSteps": [
+    "在对象存储控制台按 fileName 精确查找，并核对 fileId；从官方控制台下载原对象，不使用本证据文件中的任何 URL（证据未包含签名 URL）。",
+    "本机新建独立目录，下载清单共 41 个对象、1730583638 字节；保留原文件名，并将 local-backup-SHA256SUMS.txt 放在同一目录。",
+    "Linux 在该目录执行 sha256sum -c local-backup-SHA256SUMS.txt；macOS 可执行 shasum -a 256 -c local-backup-SHA256SUMS.txt。必须 41/41 全部显示 OK。",
+    "Windows PowerShell 可对 local-backup-manifest.csv 每行使用 Get-FileHash -Algorithm SHA256，并用 Get-Item 核对 Length；哈希须不区分大小写等于 sha256，Length 须精确等于 bytes。",
+    "peds-private122-part001.zip 至 part035.zip 必须作为同一恢复集合完整下载；同时保留下载清单中的 peds-private122-control-v2.zip，不得只挑部分分片、改名、重打包或逐片清理。",
+    "核验后再保留第二份独立副本并复核；把本机核验结果交回人工审核。当前清单不是删除授权，本轮不会删除任何对象。"
+  ],
+  "artifacts": {
+    "matrix": "zip-classification-matrix.csv",
+    "localBackupManifest": "local-backup-manifest.csv",
+    "sha256Sums": "local-backup-SHA256SUMS.txt",
+    "detailedMatrixJson": "zip-classification-matrix.json"
+  }
+}

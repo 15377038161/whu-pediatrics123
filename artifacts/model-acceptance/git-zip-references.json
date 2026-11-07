@@ -1,0 +1,306 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-07T07:05:46.816Z",
+  "method": "git log --all --fixed-strings -S<filename|fileId> -- .",
+  "contentPrinted": false,
+  "objectCount": 42,
+  "complete": true,
+  "objects": [
+    {
+      "fileName": "peds-workbuddy-67-import-candidate.zip",
+      "fileId": "579c3fbb0bddf46c921ef344b1d7de90",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-material-install131.zip",
+      "fileId": "0a79e477106734017dc77ff2a500098c",
+      "nameHistoryCommits": [
+        "0ef1fb4485c02c6cd22ec50266e7ddcf5d8c51ee"
+      ],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-storage-diagnostic125.zip",
+      "fileId": "c5e56b3f791f731a1ab24a54aeaba57d",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private-original-reports123.zip",
+      "fileId": "8f29a50c304cf76834c1352050ce8ff8",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-control-v2.zip",
+      "fileId": "2ecea2d7208392b9ad6d1463c2da20f8",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part035.zip",
+      "fileId": "98bfcfe44736b47b2b6b13385ce7b86a",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part034.zip",
+      "fileId": "3adb625ed25bfe1b65d6bb45f319fbe5",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part033.zip",
+      "fileId": "c23e796edf97e159f9fdc778d714f8be",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part032.zip",
+      "fileId": "e1543b87144a87d8aa9bd3f0b2126c2e",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part031.zip",
+      "fileId": "1bc8d138d826d6f156a84b9d8a0b6ced",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part030.zip",
+      "fileId": "4dd276084189a93700238460f1573323",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part029.zip",
+      "fileId": "5725d6bb9ac12aea7efe7d676df36e43",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part028.zip",
+      "fileId": "90ff1f5fe702c180468997affbde933c",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part027.zip",
+      "fileId": "2342b06aca2aeb82d992820d7384baa1",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part026.zip",
+      "fileId": "9450ffeee7096d02f1b869278e5f4f5b",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part025.zip",
+      "fileId": "ad94d122e696610a5154508cc4ea3eaa",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part024.zip",
+      "fileId": "cc3b0cd0cc95c75887be0623b072c457",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part023.zip",
+      "fileId": "1fe1dba58e83dbcff1deaf41148ab404",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part022.zip",
+      "fileId": "c79279052d2c8864627c2c6ee5e17326",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part021.zip",
+      "fileId": "437cf8cf7a5a8217cde57d0a55bc0135",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part020.zip",
+      "fileId": "28c1e54c3387bbaf8f4a3960162ab5cc",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part019.zip",
+      "fileId": "98c318ae0634ff2fbdf329f1a9b58b07",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part018.zip",
+      "fileId": "6017dc35364a9a0571135b1afb921a03",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part017.zip",
+      "fileId": "20d1ca49985f4e8c19e8a2faec99c926",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part016.zip",
+      "fileId": "6605caf7240569d6a0c6e31495ad7cc1",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part015.zip",
+      "fileId": "0a98c95aa3322ceacaac1eadb81705b9",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part014.zip",
+      "fileId": "7744a169d1e3ec1990ee2fed3f5b792e",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part013.zip",
+      "fileId": "49dba71a34005fdeb415ad4a0fa76cb3",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part012.zip",
+      "fileId": "3d70813bed74527e26ed983215d73514",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part011.zip",
+      "fileId": "35ffff2f2cb56f8134e7c601b9abc452",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part010.zip",
+      "fileId": "f2755b5e395ce25c0c1c5fa9e07c83b1",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part009.zip",
+      "fileId": "77041e710a228a2d44c01f5d26db56de",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part008.zip",
+      "fileId": "3d86ccbb5e2d48bd625f0b29bb51bb9b",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part007.zip",
+      "fileId": "0928e474df2b95c1a78cbb529026a077",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part006.zip",
+      "fileId": "17dcf0e6ef5f986ab0c82a84dfbb611a",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part005.zip",
+      "fileId": "94e83a45e1a81c69cbebbc56fb7e1dcc",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part004.zip",
+      "fileId": "c497b8b29d8ead55a8a5992aa7048d4f",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part003.zip",
+      "fileId": "a56e2845dab19132b802d92da0366958",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part002.zip",
+      "fileId": "c4b30feebf739c05862ee91c6bba7984",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private122-part001.zip",
+      "fileId": "ee8ac7fba06e20e641188e0e58a949ff",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private-reports121-runtime-fix.zip",
+      "fileId": "5dc8ebc954f60c09721ef59f076f0247",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    },
+    {
+      "fileName": "peds-private-reports121.zip",
+      "fileId": "9a03e94e576b603ba301590cda15dd8e",
+      "nameHistoryCommits": [],
+      "idHistoryCommits": [],
+      "errors": []
+    }
+  ]
+}
