@@ -9,7 +9,7 @@ import {findReleasedMedia,getCaseMediaLink} from '../../src/lib/case-media';
 import {NOTE_TEMPLATE,NOTE_TEMPLATE_VERSION,normalizeNoteContent,type NoteContent} from '../../src/domain/medical-note';
 import type {NoteView} from '../../src/lib/note-projection';
 import {projectReportForRole} from '../../src/lib/report-projection';
-import {agentTurnSchema} from '../../src/lib/validation';
+import {agentTurnSchema,createSessionSchema} from '../../src/lib/validation';
 import type {TrainingReport} from '../../src/domain/agent';
 
 process.env.ENABLE_AI_FIXTURE='true';
@@ -18,6 +18,7 @@ let report:TrainingReport|null=null;
 let draft:{content:NoteContent}|null=null;
 let notes:NoteView[]=[];
 const noteEvents=new Map<string,NoteView>();
+const creationRequests=new Map<string,string>();
 const user={id:'local-ui-validation',role:'student',displayName:'本地界面验收',studentNo:'LOCAL-ONLY',className:'本地界面验收'};
 createServer(async(req,res)=>{
   if(!req.url?.startsWith('/api/') && req.url !== '/reset'){
@@ -47,8 +48,23 @@ createServer(async(req,res)=>{
     if(url.pathname.endsWith('/finish')){await runAgentTurn(session,{type:'FINISH_SESSION',data:{}},'finish-'+session.id);report=buildReport(session,session.id,{noteText:notes[0]?NOTE_TEMPLATE.map(s=>s.label+'：'+notes[0].content[s.key]).join('；'):''});return reply(projectReportForRole(report,'student'),201);}
     if(url.pathname.startsWith('/api/reports/'))return reply(report?projectReportForRole(report,'student'):null);
     if(url.pathname==='/api/speech/capabilities')return reply({available:false,tts:{available:false},asr:{available:false}});
-    if(url.pathname==='/api/sessions'&&req.method==='POST')return reply(projectSessionForRole(session,'student'),201);
-    if(url.pathname.startsWith('/api/sessions/'))return reply(projectSessionForRole(session,'student'));
+    if(url.pathname==='/api/sessions'&&req.method==='POST'){
+      const parsed=createSessionSchema.parse(data);
+      if(parsed.clientRequestId&&creationRequests.has(parsed.clientRequestId)){
+        if(creationRequests.get(parsed.clientRequestId)!==session.id)return reply(null,409);
+        return reply(projectSessionForRole(session,'student'),201);
+      }
+      // Single-session local harness: actually create the requested mode/focus;
+      // never return a guided session and label it OSCE/practice coverage.
+      session=createInitialSession(user.id,parsed.mode,parsed.caseId??session.caseId,parsed.focus);
+      report=null;draft=null;notes=[];noteEvents.clear();
+      if(parsed.clientRequestId)creationRequests.set(parsed.clientRequestId,session.id);
+      return reply(projectSessionForRole(session,'student'),201);
+    }
+    if(url.pathname.startsWith('/api/sessions/')){
+      if(url.pathname!==`/api/sessions/${session.id}`)return reply(null,404);
+      return reply(projectSessionForRole(session,'student'));
+    }
     if(url.pathname==='/api/notes/draft'&&req.method==='PUT'){draft={content:normalizeNoteContent(data.content)};return reply(draft);}
     if(url.pathname==='/api/notes'&&req.method==='POST'){
       const old=noteEvents.get(data.clientEventId);if(old)return reply(old);
