@@ -1025,7 +1025,6 @@ textarea { resize: vertical; }
 .workspace-stage-row .stage-scroll { flex:1; min-width:0; align-items:center; padding-bottom:6px; }
 .workspace-stage-row .stage-action { flex:none; min-height:30px; padding:4px 10px; font-size:11px; }
 .training-shell .training-title span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.training-shell .shared-case-record-body { gap:10px; padding:10px; overflow-y:auto; }
 .record-head-actions,.record-section-head,.shared-record-note-entry,.case-record-tools { display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .record-head-actions { font-size:11px; color:var(--muted); }
 .record-vitals,.record-timeline-section { min-width:0; }

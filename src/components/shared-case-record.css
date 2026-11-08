@@ -1,5 +1,5 @@
 /* Shared record proportions are consistent across all training stages and drawers. */
-.training-shell .shared-case-record-body{gap:8px;padding:10px}
+.training-shell .shared-case-record-body{gap:8px;padding:10px;overflow-y:auto}
 .training-shell .shared-case-record-body .record-section-head{margin:0 0 5px}
 .training-shell .shared-case-record-body .record-vitals .record-section-head>span{display:none}
 .training-shell .shared-case-record-body .vitals{gap:5px}
