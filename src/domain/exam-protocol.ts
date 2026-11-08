@@ -1,9 +1,11 @@
 import { anatomyLabel, instrumentsForSite } from './exam-anatomy';
+import {growthProtocol} from './growth-exam';
 
 /** Procedure descriptions are educational standards, not facts about a patient. */
 export function examProtocol(tool:string,part:string):{technique:string;normal:string;reaction:string}|null{
   if(!instrumentsForSite(part).includes(tool))return null;
   const label=anatomyLabel(part);
+  if(part==='growth')return growthProtocol(tool);
   if(/power/.test(part))return {technique:`在${label}观察自主活动，能配合者按口令完成主动及适当抗阻运动，比较双侧；按年龄、理解能力与配合程度选择评估方法，不能用敲击替代肌力评估。`,normal:'一般正常表现：自主运动与年龄相适应；可完成可靠分级时记录具体肌群和等级，不能配合时不强行给出5级等数值。',reaction:'模拟动作：在原有意识与运动能力范围内理解并尝试动作，疼痛或疲劳时暂停。'};
   if(part==='plantar')return {technique:'使用合适的钝性工具沿足底外侧向前轻划，避免损伤或疼痛刺激，观察足趾反应并比较双侧；结合年龄解释，不能将婴儿表现套用成人标准。',normal:'足底反应须结合年龄、意识和刺激方法解释；没有该项记录时不虚构阴性。',reaction:'模拟动作：保持足部放松；不以因疼痛缩腿的动作替代足趾反应。'};
   if(part==='external-genitalia')return {technique:'仅在有临床指征时实施；先说明目的、取得适当同意，安排照护者及合适陪同，保护隐私和保暖；按年龄采用局部医学示意，不进行无指征暴露或粗暴触诊。',normal:'局部形态与发育必须按年龄、性别及检查范围记录；没有独立资料时不补写正常或发育分级。',reaction:'模拟配合：由照护者协助并尊重患儿表达，可暂停检查；本平台仅提供局部示意和参考。'};

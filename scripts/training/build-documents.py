@@ -15,7 +15,7 @@ index=json.loads((ROOT/'index.json').read_text(encoding='utf-8'))
 font_name='宋体'
 origins={'source':'原始记录','teaching-simulation':'教学模拟设定','reference':'教学参考说明'}
 sections={'chiefComplaint':'主诉','presentIllness':'现病史','pastHistory':'既往史','personalHistory':'个人史','familyHistory':'家族史','physicalExam':'体格检查','auxiliaryTests':'辅助检查','preliminaryDiagnosis':'初步诊断','differentialDiagnosis':'鉴别诊断','treatmentPlan':'诊疗计划'}
-tools={'inspection':'视诊','palpation':'触诊','percussion':'叩诊','stethoscope':'听诊器','axillary-thermometer':'腋下电子体温计','infrared-thermometer':'额温枪','tympanic-thermometer':'耳温计','bp-cuff':'儿童血压计','oximeter':'血氧仪','tongue-depressor':'压舌板','flashlight':'手电筒','otoscope':'耳镜','measuring-tape':'软尺','reflex-hammer':'叩诊锤'}
+tools={'inspection':'视诊','palpation':'触诊','percussion':'叩诊','stethoscope':'听诊器','axillary-thermometer':'腋下电子体温计','infrared-thermometer':'额温枪','tympanic-thermometer':'耳温计','bp-cuff':'儿童血压计','oximeter':'血氧仪','tongue-depressor':'压舌板','flashlight':'手电筒','otoscope':'耳镜','measuring-tape':'软尺','reflex-hammer':'叩诊锤','standing-scale':'站台式体重秤','infant-scale':'婴儿秤','length-board':'身长板','stadiometer':'身高尺'}
 rubric_sections={'history':'问诊','exam':'查体','tests':'辅助检查','diagnosis':'诊断与鉴别','plan':'处置与治疗','note':'病历书写','communication':'沟通'}
 
 def style_font(style,size,bold=False):

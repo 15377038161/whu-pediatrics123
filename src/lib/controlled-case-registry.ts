@@ -55,5 +55,36 @@ export const controlledTrainingContentBundles: ControlledTrainingContentReferenc
       "sources": 53,
       "media": 1042
     }
+  },
+  {
+  "fileId": "09fac0d4ade8d9163986aca1f3e7a693",
+  "sha256": "ea489f2758b91a88143f98d63372245016526305602a9274866cb24c9488e6e7",
+  "bytes": 2429015,
+  "archive": "peds-training-content-661e313de274f2658394.zip",
+  "media": [
+    {
+      "fileId": "5c65c56220120988361a9796b414b125",
+      "sha256": "99115d51fd37794baf9702d9e3be54d4382407132bd3d6be0d3fd1ab373e3c2a",
+      "bytes": 38155799,
+      "archive": "peds-training-media-6688ba483378dc352fd0-01.zip"
+    },
+    {
+      "fileId": "f40ce2592eff30cf09c3e39d7d41dc03",
+      "sha256": "493b73fb1f047adbba4c517b2ac3d265f51b6f94b7311a64dddf193a4029df5b",
+      "bytes": 38243862,
+      "archive": "peds-training-media-6688ba483378dc352fd0-02.zip"
+    },
+    {
+      "fileId": "8fbc92f92b585fb8d60d50240dc57dec",
+      "sha256": "81981bb8782490d509f758ca9fbeb18e97189c5ecbff8bd3828f9ec81b78b175",
+      "bytes": 24247769,
+      "archive": "peds-training-media-6688ba483378dc352fd0-03.zip"
+    }
+  ],
+  "expected": {
+    "entries": 67,
+    "sources": 53,
+    "media": 1042
   }
+}
 ];

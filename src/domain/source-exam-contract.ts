@@ -23,7 +23,7 @@ export type ExamLocationId = (typeof EXAM_LOCATIONS)[number][0];
 const [firstLocation, ...restLocations] = EXAM_LOCATIONS.map(([id]) => id);
 /** 由 EXAM_LOCATIONS 派生，避免再维护一份会漂移的部位字面量清单。 */
 export const EXAM_LOCATION_IDS: [ExamLocationId, ...ExamLocationId[]] = [firstLocation, ...restLocations];
-export const SOURCE_EXAM_TOOL_IDS = ['stethoscope','thermometer','axillary-thermometer','infrared-thermometer','tympanic-thermometer','oximeter','bp-cuff','tongue-depressor','flashlight','otoscope','measuring-tape','inspection','palpation','percussion','reflex-hammer'] as const;
+export const SOURCE_EXAM_TOOL_IDS = ['stethoscope','thermometer','axillary-thermometer','infrared-thermometer','tympanic-thermometer','oximeter','bp-cuff','tongue-depressor','flashlight','otoscope','measuring-tape','inspection','palpation','percussion','reflex-hammer','standing-scale','infant-scale','length-board','stadiometer'] as const;
 export const sourceExamRuleSchema = z.object({
   toolId: z.enum(SOURCE_EXAM_TOOL_IDS),
   bodyPartId: z.enum(EXAM_LOCATION_IDS),

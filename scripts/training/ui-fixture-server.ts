@@ -11,9 +11,27 @@ import type {NoteView} from '../../src/lib/note-projection';
 import {projectReportForRole} from '../../src/lib/report-projection';
 import {agentTurnSchema,createSessionSchema} from '../../src/lib/validation';
 import type {TrainingReport} from '../../src/domain/agent';
+import {readFileSync} from 'node:fs';
+import path from 'node:path';
+import {readTeachingPackage} from '../../src/lib/teaching-package-store';
+import {recordSchema} from '../../src/lib/teacher-case-data';
+import {registerControlledCase} from '../../src/lib/controlled-case-store';
+import {computeCaseDataVersion} from '../../src/lib/case-data-version';
+import type {SessionMode,PracticeFocus} from '../../src/domain/agent';
 
 process.env.ENABLE_AI_FIXTURE='true';
-let session=createInitialSession('local-ui-validation','guided','teacher-i型糖尿病伴有酮症酸中毒');
+function createFixtureSession(mode:SessionMode,caseId:string,focus?:PracticeFocus){
+  const generation=process.env.PEDIATRICS_UI_FIXTURE_GENERATION_ROOT;
+  const pack=generation?readTeachingPackage(caseId):null;
+  if(generation){
+    if(!pack)throw Error('FIXTURE_PACKAGE_NOT_FOUND');
+    const record=recordSchema.parse(JSON.parse(readFileSync(path.join(generation,'source-cases',`${pack.sourceId}.json`),'utf8')));
+    if(record.caseId!==pack.sourceId||computeCaseDataVersion(record)!==pack.sourceVersion)throw Error('FIXTURE_SOURCE_VERSION_MISMATCH');
+    registerControlledCase(record,pack.sourceVersion);
+  }
+  return createInitialSession('local-ui-validation',mode,caseId,focus,pack?.sourceVersion);
+}
+let session=createFixtureSession('guided','teacher-i型糖尿病伴有酮症酸中毒');
 let report:TrainingReport|null=null;
 let draft:{content:NoteContent}|null=null;
 let notes:NoteView[]=[];
@@ -31,7 +49,7 @@ createServer(async(req,res)=>{
     const url=new URL(req.url??'/', 'http://127.0.0.1:8786');
     let body='';for await(const chunk of req)body+=chunk;
     const data=body?JSON.parse(body):{};
-    if(url.pathname==='/reset'){session=createInitialSession(user.id,data.mode??'guided',data.caseId??session.caseId,data.practiceFocus);report=null;draft=null;notes=[];noteEvents.clear();return reply({id:session.id});}
+    if(url.pathname==='/reset'){session=createFixtureSession(data.mode??'guided',data.caseId??session.caseId,data.practiceFocus);report=null;draft=null;notes=[];noteEvents.clear();return reply({id:session.id});}
     if(url.pathname==='/api/auth/me')return reply({user});
     if(url.pathname==='/api/agent/turn'){
       const parsed=agentTurnSchema.parse(data);
@@ -56,7 +74,7 @@ createServer(async(req,res)=>{
       }
       // Single-session local harness: actually create the requested mode/focus;
       // never return a guided session and label it OSCE/practice coverage.
-      session=createInitialSession(user.id,parsed.mode,parsed.caseId??session.caseId,parsed.focus);
+      session=createFixtureSession(parsed.mode,parsed.caseId??session.caseId,parsed.focus);
       report=null;draft=null;notes=[];noteEvents.clear();
       if(parsed.clientRequestId)creationRequests.set(parsed.clientRequestId,session.id);
       return reply(projectSessionForRole(session,'student'),201);
@@ -77,4 +95,4 @@ createServer(async(req,res)=>{
     if(url.pathname==='/api/engagement')return reply({accepted:true});
     return reply([]);
   }catch{reply(null,422);}
-}).listen(8875,'127.0.0.1',()=>console.log(JSON.stringify({localFixturePort:8875,databaseWrites:false,realAuthentication:false})));
+}).listen(8875,'127.0.0.1',()=>console.log(JSON.stringify({localFixturePort:8875,databaseWrites:false,realAuthentication:false,sourceSnapshotVersion:session.sourceSnapshotVersion,teachingPackageVersion:session.teachingPackageVersion})));

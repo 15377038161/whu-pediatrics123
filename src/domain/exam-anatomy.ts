@@ -33,6 +33,10 @@ export const EXAM_INSTRUMENTS = [
   {id:'flashlight',label:'手电筒',image:'/media/clinical/tools/flashlight.png'},
   {id:'otoscope',label:'耳镜',image:'/media/clinical/tools/otoscope.webp'},
   {id:'measuring-tape',label:'软尺',image:'/media/clinical/tools/measuring-tape.webp'},
+  {id:'standing-scale',label:'站台式体重秤',image:'/media/clinical/tools/standing-scale-v1.webp'},
+  {id:'infant-scale',label:'婴儿秤',image:'/media/clinical/tools/infant-scale-v1.webp'},
+  {id:'length-board',label:'身长板',image:'/media/clinical/tools/length-board-v1.webp'},
+  {id:'stadiometer',label:'身高尺',image:'/media/clinical/tools/stadiometer-v1.webp'},
   {id:'reflex-hammer',label:'叩诊锤',image:'/media/clinical/tools/reflex-hammer.webp'},
 ];
 
@@ -45,7 +49,7 @@ export function instrumentsForSite(id: string): string[] {
   if (id === 'mouth') return ['inspection','flashlight','tongue-depressor'];
   if (id === 'upper-arm') return ['inspection','palpation','bp-cuff'];
   if (id === 'finger') return ['inspection','palpation','oximeter'];
-  if (id === 'growth') return ['measuring-tape'];
+  if (id === 'growth') return ['measuring-tape','standing-scale','infant-scale','length-board','stadiometer'];
   if (id === 'fontanelle' || id === 'scalp') return ['inspection','palpation','measuring-tape'];
   if (/lung|chest$/.test(id)) return ['inspection','palpation','percussion','stethoscope'];
   if (/area$|chest-heart/.test(id)) return ['inspection','palpation','stethoscope'];

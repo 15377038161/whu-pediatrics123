@@ -1,6 +1,7 @@
 import type {ExamPosition} from './agent';
 import {ANATOMY_REGIONS,anatomyLabel,type ExamAspect} from './exam-anatomy';
 import {photoExamMap,type PhotoTarget,type PhotoCrop} from './exam-photo-map';
+import {growthPosition} from './growth-exam';
 
 export const EXAM_BACK_TEMPLATE='/media/clinical/exam-back-teaching-v1.png';
 const backLocations:Record<string,[number,number]>={back:[50,32],spine:[50,48],'left-kidney':[35,62],'right-kidney':[65,62],'left-lung-back':[34,43],'right-lung-back':[66,43],chest:[50,30],'chest-lung':[50,43],axilla:[19,34]};
@@ -17,7 +18,9 @@ export function examCanvasMap(assetKey:string|undefined,posture:'standing'|'supi
 }
 
 /** Offer only a position that this session actually supports. */
-export function requiredExamPosition(regionId:string|null,aspect:ExamAspect,current:ExamPosition,available:ExamPosition[]):ExamPosition|null{
+export function requiredExamPosition(regionId:string|null,aspect:ExamAspect,current:ExamPosition,available:ExamPosition[],tool?:string|null):ExamPosition|null{
+  const measurementPosition=regionId==='rg-general'&&tool?growthPosition(tool):null;
+  if(measurementPosition&&current!==measurementPosition)return available.includes(measurementPosition)?measurementPosition:null;
   if(/^rg-(abdomen|groin)$/.test(regionId??'')&&current!=='supine')return available.includes('supine')?'supine':null;
   if(aspect==='back'&&current==='supine')return (['sitting','lateral','standing'] as const).find(value=>available.includes(value))??null;
   return null;
