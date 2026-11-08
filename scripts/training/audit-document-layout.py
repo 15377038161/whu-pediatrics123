@@ -1,11 +1,12 @@
 """All-page PDF bounds check plus reproducible visual-review sheets; never prints clinical text."""
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-import json,subprocess,xml.etree.ElementTree as ET
+import json,subprocess,os,xml.etree.ElementTree as ET
 from pypdf import PdfReader
 from PIL import Image,ImageDraw,ImageFont
 
-ROOT=Path('outputs/training-20261107/docx-qa');OUT=Path('outputs/training-20261107/visual-qa');OUT.mkdir(exist_ok=True)
+AUTHORING=Path(os.environ.get('PEDIATRICS_TRAINING_AUTHORING_ROOT','outputs/training-20261107'))
+ROOT=AUTHORING/'docx-qa';OUT=AUTHORING/'visual-qa';OUT.mkdir(exist_ok=True)
 font=ImageFont.truetype('C:/Windows/Fonts/msyh.ttc',14)
 def inspect(folder):
     ordinal=int(folder.name);pdf=next(folder.glob('*.pdf'));reader=PdfReader(pdf)

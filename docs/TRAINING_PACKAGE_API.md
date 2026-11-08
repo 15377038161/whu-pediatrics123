@@ -58,3 +58,7 @@
 既有`POST /api/teacher/case-snapshot-archive`接受`RESTORE_AND_EXPORT_CASE_SOURCES`确认短语。沿用服务端getUser身份校验、教师角色、现有白名单及用户身份RLS客户端；只查固定53份来源，逐版本重算双表指纹。先按原规则恢复私有源文件，再返回`application/zip`附件。普通恢复请求仍只返回脱敏计数，不接收客户端病例正文或文件路径。
 
 附件包含当前来源、可核验版本档案、固定包清单和逐文件哈希；不导出任意服务器文件。响应使用`private, no-store`与中性文件名，`X-Content-SHA256`、`X-Case-Source-Count`和`X-Case-Version-Count`用于下载核对。来源缺失、冲突或指纹不符时不给出原件包。该入口仅供授权教师把原件保存到受控本地，学生接口不提供此下载。
+# 私有运行代次恢复
+
+预览配置`PEDIATRICS_TRAINING_RECOVERY=object-storage`时，沿用`ensureControlledCaseBundle`从代码登记的不可变对象恢复来源及教学包；只接受各自重算一致的版本。该设置仅控制私有文件读取，不授权数据库导入、发布或历史重评。源已恢复但教学包未恢复时继续核验教学代次；不将16位源版本误传为20位教学版本。媒体分包以全部登记成员校验后再释放单项像素，客户端仍只接收当前会话已释放的中性媒体标识。
+

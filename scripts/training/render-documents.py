@@ -8,7 +8,8 @@ import hashlib,json,os,subprocess,sys,time
 from PIL import Image,ImageDraw,ImageFont
 from pypdf import PdfReader
 
-ROOT=Path('deliverables/67-cases-20261107');OUT=Path('outputs/training-20261107/docx-qa')
+ROOT=Path(os.environ.get('PEDIATRICS_TRAINING_DELIVERY_ROOT','deliverables/67-cases-20261107'))
+OUT=Path(os.environ.get('PEDIATRICS_TRAINING_AUTHORING_ROOT','outputs/training-20261107'))/'docx-qa'
 RENDER=Path('C:/Users/Administrator/.codex/plugins/cache/openai-primary-runtime/documents/26.1105.12137/skills/documents/render_docx.py')
 OUT.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ);env['PATH']='C:/Program Files/LibreOffice/program;'+env['PATH']
@@ -56,3 +57,5 @@ with ThreadPoolExecutor(max_workers=2) as pool:
         (OUT/'render-audit.json').write_text(json.dumps(sorted(records,key=lambda r:r.get('ordinal',99)),indent=2),encoding='utf-8')
         print(json.dumps({'done':len(records),'pages':sum(r.get('pages',0) for r in records),'errors':sum('error' in r for r in records)}),flush=True)
 print(json.dumps({'documents':len(records),'seconds':round(time.time()-start)}))
+if len(records)!=67 or any(r.get('error') or r.get('pageMismatch') for r in records):
+    raise SystemExit(1)

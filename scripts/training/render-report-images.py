@@ -1,8 +1,10 @@
 """Render already fixed objective results; never invent numbers or diagnostic conclusions."""
 from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont
-import json,hashlib
-ROOT=Path('knowledge/training-packages');DELIVERY=Path('deliverables/67-cases-20261107');OUT=Path('outputs/training-20261107')
+import json,hashlib,os
+ROOT=Path(os.environ.get('PEDIATRICS_TRAINING_PACKAGE_ROOT','knowledge/training-packages'))
+OUT=Path(os.environ.get('PEDIATRICS_TRAINING_AUTHORING_ROOT','outputs/training-20261107'))
+OUT.mkdir(parents=True,exist_ok=True)
 font=ImageFont.truetype('C:/Windows/Fonts/msyh.ttc',24);small=ImageFont.truetype('C:/Windows/Fonts/msyh.ttc',19);bold=ImageFont.truetype('C:/Windows/Fonts/msyhbd.ttc',31)
 index=json.loads((ROOT/'index.json').read_text(encoding='utf-8'));mapped={};cache={};count=0
 def wrap(text,draw,max_width=1050):

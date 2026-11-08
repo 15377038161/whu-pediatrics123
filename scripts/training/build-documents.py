@@ -1,7 +1,7 @@
 """Private Word case manuals from the same validated packages consumed by training."""
 from pathlib import Path
 from collections import defaultdict
-import json,csv,hashlib
+import json,csv,hashlib,os
 from io import BytesIO
 from PIL import Image
 from docx import Document
@@ -9,8 +9,8 @@ from docx.shared import Inches,Pt,RGBColor
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-ROOT=Path('deliverables/67-cases-20261107');DOCS=ROOT/'word';DOCS.mkdir(exist_ok=True)
-LIB=Path('knowledge/training-packages')
+ROOT=Path(os.environ.get('PEDIATRICS_TRAINING_DELIVERY_ROOT','deliverables/67-cases-20261107'));DOCS=ROOT/'word';DOCS.mkdir(exist_ok=True)
+LIB=Path(os.environ.get('PEDIATRICS_TRAINING_PACKAGE_ROOT','knowledge/training-packages'))
 index=json.loads((ROOT/'index.json').read_text(encoding='utf-8'))
 font_name='宋体'
 origins={'source':'原始记录','teaching-simulation':'教学模拟设定','reference':'教学参考说明'}

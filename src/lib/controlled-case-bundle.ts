@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import {mkdir,writeFile} from 'node:fs/promises';
+import path from 'node:path';
 import { unzipSync, strFromU8 } from 'fflate';
 import type { TeachingPackage } from '@/domain/teaching-package';
 import { teachingPackageSchema } from '@/domain/teaching-package';
@@ -135,7 +137,7 @@ export function decodeControlledTrainingContent(bytes:Uint8Array,expected:Contro
 const recoveredMedia=new Map<string,RecoveredTrainingMedia>();
 const recoveredMediaArchives=new Map<string,ControlledArchiveReference>();
 const mediaCache=new Map<string,Uint8Array>();
-const mediaInflight=new Map<string,Promise<Uint8Array|null>>();
+const mediaInflight=new Map<string,Promise<Map<string,Uint8Array>>>();
 const MEDIA_CACHE_LIMIT=12;
 
 function cacheMedia(key:string,bytes:Uint8Array):void {
@@ -182,49 +184,69 @@ export function decodeControlledTrainingMediaArchive(bytes:Uint8Array,reference:
 }
 
 /** Resolve a released image from its exact content manifest and archive; no fileId-only object lookup. */
-export async function readRecoveredTrainingMedia(fileId:string):Promise<Uint8Array|null> {
+export async function readRecoveredTrainingMedia(fileId:string,loadArchive=readArchive):Promise<Uint8Array|null> {
   const cached=mediaCache.get(fileId);if(cached)return cached;
   const sha256=fileId.startsWith('training-media:')?fileId.slice('training-media:'.length):'';
   const descriptor=recoveredMedia.get(sha256);if(!descriptor)return null;
   const reference=recoveredMediaArchives.get(descriptor.archive);if(!reference)return null;
-  let task=mediaInflight.get(fileId);
+  const key=`${reference.fileId}:${reference.sha256}`;
+  let task=mediaInflight.get(key);
   if(!task){
     task=(async()=>{
-      const {StorageClient}=await import('coder-coding-dev-sdk');
-      const bytes=await new StorageClient().readFile({fileId:reference.fileId});
-      const data=decodeControlledTrainingMediaArchive(bytes,reference,descriptor);
-      cacheMedia(fileId,data);return data;
-    })();mediaInflight.set(fileId,task);
+      const bytes=await loadArchive(reference.fileId);
+      const descriptors=[...recoveredMedia.values()].filter(item=>item.archive===reference.archive);
+      const data=decodeControlledTrainingMediaArchiveSet(bytes,reference,descriptors);
+      const root=path.resolve(process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT||path.join(process.cwd(),'knowledge','training-packages'),'media');
+      // Cache only verified hash-addressed pixels in the existing private media directory.
+      // A read-only mount still serves the validated response from memory.
+      try{
+        await mkdir(root,{recursive:true});
+        await Promise.all([...data].map(async([digest,raw])=>{
+          try{await writeFile(path.join(root,`${digest}.png`),raw,{flag:'wx',mode:0o600});}
+          catch(error){if((error as NodeJS.ErrnoException).code!=='EEXIST')throw error;}
+        }));
+      }catch{ /* Disk caching is optional; content integrity remains mandatory. */ }
+      for(const [digest,raw] of data)cacheMedia(`training-media:${digest}`,raw);
+      return data;
+    })();mediaInflight.set(key,task);
   }
-  try{return await task;}finally{mediaInflight.delete(fileId);}
+  try{return (await task).get(sha256)??null;}finally{mediaInflight.delete(key);}
 }
 
 const inflight = new Map<string,Promise<void>>();
-export async function ensureControlledCaseBundle(caseId: string, version?: string | null): Promise<void> {
+const loadedContent = new Set<string>();
+async function readArchive(fileId:string):Promise<Uint8Array>{
+  const {StorageClient}=await import('coder-coding-dev-sdk');
+  return new StorageClient().readFile({fileId});
+}
+export async function ensureControlledCaseBundle(caseId: string, version?: string | null, loadArchive=readArchive): Promise<void> {
   const sourceId=getTeacherSourceId(caseId);
   for (const ref of bundles.filter(b=>b.sourceId===sourceId && (!version || b.version===version))) {
     if (getControlledCase(sourceId,ref.version)) continue;
     let task=inflight.get(ref.fileId);
     if(!task){
       task=(async()=>{
-        const {StorageClient}=await import('coder-coding-dev-sdk');
-        const bytes=await new StorageClient().readFile({fileId:ref.fileId});
+        const bytes=await loadArchive(ref.fileId);
         registerControlledCase(decodeControlledCaseBundle(bytes,ref),ref.version);
       })();inflight.set(ref.fileId,task);
     }
     try { await task; } finally { inflight.delete(ref.fileId); }
   }
-  if(!version||getControlledCase(sourceId,version))return;
+  if(!version)return;
+  // A source may already be warm while its independent teaching generation is still missing.
+  if(getControlledCase(sourceId,version)&&readTeachingPackage(caseId,undefined,version))return;
+  if(process.env.PEDIATRICS_TRAINING_RECOVERY!=='object-storage')return;
   for(const ref of controlledTrainingContentBundles){
-    let task=inflight.get(`content:${ref.fileId}`);
-    if(!task){
+    const key=`content:${ref.fileId}:${ref.sha256}`;
+    let task=inflight.get(key);
+    if(!task&&!loadedContent.has(key)){
       task=(async()=>{
-        const {StorageClient}=await import('coder-coding-dev-sdk');
-        const bytes=await new StorageClient().readFile({fileId:ref.fileId});
+        const bytes=await loadArchive(ref.fileId);
         installRecoveredTrainingContent(decodeControlledTrainingContent(bytes,ref),ref);
-      })();inflight.set(`content:${ref.fileId}`,task);
+        loadedContent.add(key);
+      })();inflight.set(key,task);
     }
-    try{await task;}finally{inflight.delete(`content:${ref.fileId}`);}
-    if(getControlledCase(sourceId,version)&&readTeachingPackage(caseId,version,version))return;
+    try{await task;}finally{inflight.delete(key);}
+    if(getControlledCase(sourceId,version)&&readTeachingPackage(caseId,undefined,version))return;
   }
 }

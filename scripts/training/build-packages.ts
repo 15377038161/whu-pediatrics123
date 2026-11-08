@@ -21,12 +21,14 @@ import { parseAgeToDays, toAgeBand } from '../../src/domain/communication-profil
 const sourceRoot=path.join(getKnowledgeRoot(),'teaching-cases');
 const root=path.resolve(process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT||'knowledge/training-packages');
 const delivery=path.resolve(process.env.PEDIATRICS_TRAINING_DELIVERY_ROOT||'deliverables/67-cases-20261107');
+const authoring=path.resolve(process.env.PEDIATRICS_TRAINING_AUTHORING_ROOT||'outputs/training-20261107');
+mkdirSync(authoring,{recursive:true});
 for(const dir of [root,path.join(root,'packages'),path.join(root,'media'),delivery,path.join(delivery,'json')])mkdirSync(dir,{recursive:true});
-const mediaIndexPath=path.resolve('outputs/training-20261107/processed-media.json');
+const mediaIndexPath=path.join(authoring,'processed-media.json');
 const mediaIndex:Record<string,Array<{testLabel?:string;examSite?:string;fileId:string;kind:'image';caption:string}>>=existsSync(mediaIndexPath)?JSON.parse(readFileSync(mediaIndexPath,'utf8')):{};
-const reportIndexPath=path.resolve('outputs/training-20261107/report-media.json');
+const reportIndexPath=path.join(authoring,'report-media.json');
 const reportIndex:typeof mediaIndex=existsSync(reportIndexPath)?JSON.parse(readFileSync(reportIndexPath,'utf8')):{};
-const simulationPath=path.resolve('outputs/training-20261107/simulated-media.json');
+const simulationPath=path.join(authoring,'simulated-media.json');
 const simulation:Record<string,{fileId:string;kind:'image';caption:string}>=existsSync(simulationPath)?JSON.parse(readFileSync(simulationPath,'utf8')):{};
 
 const TESTS:Array<{label:string;aliases:string[];pattern:RegExp;reference:string;fallbackFor?:string[]}>=[
@@ -245,5 +247,5 @@ if(inventory.length!==67||new Set(inventory.map(r=>r.sourceId)).size!==53)throw 
 writeFileSync(path.join(root,'index.next.json'),JSON.stringify({schemaVersion:1,entries},null,2));
 renameSync(path.join(root,'index.next.json'),path.join(root,'index.json'));
 writeFileSync(path.join(delivery,'index.json'),JSON.stringify(inventory,null,2));
-writeFileSync(path.resolve('outputs/training-20261107/build-summary.json'),JSON.stringify({entryCount:inventory.length,sourceCount:new Set(inventory.map(r=>r.sourceId)).size,historyFacts:inventory.reduce((n,r)=>n+r.historyFacts,0),exams:inventory.reduce((n,r)=>n+r.exams,0),tests:inventory.reduce((n,r)=>n+r.tests,0),rubricItems:inventory.reduce((n,r)=>n+r.rubricItems,0)},null,2));
+writeFileSync(path.join(authoring,'build-summary.json'),JSON.stringify({entryCount:inventory.length,sourceCount:new Set(inventory.map(r=>r.sourceId)).size,historyFacts:inventory.reduce((n,r)=>n+r.historyFacts,0),exams:inventory.reduce((n,r)=>n+r.exams,0),tests:inventory.reduce((n,r)=>n+r.tests,0),rubricItems:inventory.reduce((n,r)=>n+r.rubricItems,0)},null,2));
 console.log(JSON.stringify({entryCount:inventory.length,sourceCount:new Set(inventory.map(r=>r.sourceId)).size,packages:readdirSync(path.join(root,'packages')).length}));

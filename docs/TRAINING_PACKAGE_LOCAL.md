@@ -2,6 +2,12 @@
 
 本轮不发布线上，不导入线上病例，不重算历史成绩。源文件仍在 `knowledge/teaching-cases`；新教学包安装在私有目录 `knowledge/training-packages`。53个独立来源对应67个入口，14个关联入口单独成稿并说明名称、上位病种或亚型差异，不能视为14名新患者。
 
+2026-11-08另建服务器来源适配代次`6688ba483378dc352fd0`：53份来源来自当前教师可见双表的核验导出，67个教学版本重新制作，1042张图片按原图、原始数值重排、明确模拟/参考分别登记。与旧本地包不互换sourceVersion，不覆盖旧包。新内容和3个媒体分包已上传本项目对象存储；登记的SHA256仍须通过服务器SDK逐包回读，上传界面成功不等于安装验收完成。DKA不可重算的历史激活绑定仍保留，不擅自改用该代次的可核验来源。
+
+仅本地/Coder预览启用`PEDIATRICS_TRAINING_RECOVERY=object-storage`，复用既有受控恢复入口。启动后按会话绑定的源版本寻找相符教学包；源文件已在内存不应阻止教学包恢复，旧会话仍固定旧源/教学版本。对象包按长度和SHA256验证；共享媒体分包按完整登记清单解码，不把单图当作整个分包。已核验像素缓存到现有私有media目录，缓存不可写时仍可返回核验结果。该设置不写数据库、不发布病例、不重算报告。
+
+需要显式安装时，由服务器依次运行`pnpm exec tsx scripts/training/fetch-runtime.ts 6688ba483378dc352fd0 knowledge/training-archives/6688ba483378dc352fd0`，再运行`pnpm exec tsx scripts/training/install-runtime.ts knowledge/training-archives/6688ba483378dc352fd0 knowledge/training-generations/6688ba483378dc352fd0 --verify-only`，核验通过后去掉`--verify-only`。预览进程使用该代次的`runtime`作为`PEDIATRICS_TRAINING_PACKAGE_ROOT`。不传令牌、不接受任意fileId，不覆盖冲突文件；现有源文件、历史档案和数据库绑定保持原样。
+
 ## 本地运行
 
 已有依赖时，在项目根目录运行：

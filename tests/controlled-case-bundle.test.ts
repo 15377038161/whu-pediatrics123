@@ -1,18 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { zipSync, strToU8 } from 'fflate';
 import { teachingPackageSchema } from '@/domain/teaching-package';
 import { syntheticTeacherCase } from './fixtures/teacher-case';
-import { decodeControlledCaseBundle, decodeControlledTrainingContent, decodeControlledTrainingMediaArchive, installRecoveredTrainingContent } from '@/lib/controlled-case-bundle';
+import { decodeControlledCaseBundle, decodeControlledTrainingContent, decodeControlledTrainingMediaArchive, installRecoveredTrainingContent, ensureControlledCaseBundle,readRecoveredTrainingMedia } from '@/lib/controlled-case-bundle';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
 import { registerControlledCase, getControlledCase } from '@/lib/controlled-case-store';
 import { getCaseMediaLink } from '@/lib/case-media';
 import { readTeachingPackage, teachingPackageVersion } from '@/lib/teaching-package-store';
-import type { ControlledTrainingContentReference } from '@/lib/controlled-case-registry';
+import {controlledTrainingContentBundles, type ControlledTrainingContentReference} from '@/lib/controlled-case-registry';
 
 const hash=(b:Uint8Array)=>createHash('sha256').update(b).digest('hex');
 test('controlled object bundle preserves source version and rejects tampered bytes or wrong identity',()=>{
@@ -78,6 +78,23 @@ test('multi-source recovery binds every source/package version and fails closed 
   assert.deepEqual(decodeControlledTrainingMediaArchive(mediaZip,mediaRef,descriptor),mediaBytes);
   assert.throws(()=>decodeControlledTrainingMediaArchive(mediaZip,{...mediaRef,sha256:'0'.repeat(64)},descriptor),/INTEGRITY/);
 
+  registerControlledCase(source,sourceVersion);
+  assert.equal(readTeachingPackage(source.caseId,undefined,sourceVersion),null);
+  const previousRegistry=controlledTrainingContentBundles.splice(0,controlledTrainingContentBundles.length,fixture.reference);
+  const previousRecovery=process.env.PEDIATRICS_TRAINING_RECOVERY;
+  process.env.PEDIATRICS_TRAINING_RECOVERY='object-storage';
+  let archiveReads=0;
+  const loadArchive=async(fileId:string)=>{assert.equal(fileId,fixture.reference.fileId);archiveReads++;return fixture.zip;};
+  try{
+    await ensureControlledCaseBundle(source.caseId,sourceVersion,loadArchive);
+    assert.equal(readTeachingPackage(source.caseId,undefined,sourceVersion)?.version,pack.version,'warm source must not suppress independent teaching installation');
+    await ensureControlledCaseBundle(source.caseId,sourceVersion,loadArchive);
+    await ensureControlledCaseBundle(source.caseId,'0'.repeat(16),loadArchive);
+    assert.equal(archiveReads,1,'verified generation must not redownload for absent historical bindings');
+  }finally{
+    controlledTrainingContentBundles.splice(0,controlledTrainingContentBundles.length,...previousRegistry);
+    if(previousRecovery===undefined)delete process.env.PEDIATRICS_TRAINING_RECOVERY;else process.env.PEDIATRICS_TRAINING_RECOVERY=previousRecovery;
+  }
   installRecoveredTrainingContent(decoded,fixture.reference);
   assert.deepEqual(getControlledCase(source.caseId,sourceVersion),source);
   assert.equal(getControlledCase(source.caseId,'0'.repeat(16)),null);
@@ -92,6 +109,29 @@ test('multi-source recovery binds every source/package version and fails closed 
     const link=await getCaseMediaLink(`training-media:${mediaSha256}`);
     assert.ok(link.url.startsWith('data:image/png;base64,'));
     await assert.rejects(()=>getCaseMediaLink(`training-media:${'0'.repeat(64)}`),/FILE_UNAVAILABLE/);
+  }finally{
+    if(previous===undefined)delete process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT;else process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT=previous;
+    rmSync(root,{recursive:true,force:true});
+  }
+});
+
+test('a shared media archive validates all registered members, coalesces reads and caches verified pixels privately',async()=>{
+  const bytes=[strToU8('first-group-image'),strToU8('second-group-image')];
+  const descriptors=bytes.map(raw=>({sha256:hash(raw),path:`runtime/media/${hash(raw)}.png`,bytes:raw.length,archive:'synthetic-two-images.zip',fileId:`training-media:${hash(raw)}`}));
+  const zip=zipSync(Object.fromEntries(descriptors.map((item,i)=>[item.path,bytes[i]])));
+  const reference={fileId:'synthetic-two-images',sha256:hash(zip),bytes:zip.length,archive:'synthetic-two-images.zip'};
+  installRecoveredTrainingContent({sources:[],packages:[],entries:{},media:new Map(descriptors.map(item=>[item.sha256,item])),embeddedMedia:new Map()},{...reference,media:[reference]});
+  const root=mkdtempSync(path.join(os.tmpdir(),'peds-shared-media-'));
+  const previous=process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT;process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT=root;
+  let calls=0;
+  try{
+    const load=async(id:string)=>{assert.equal(id,reference.fileId);calls++;return zip;};
+    const values=await Promise.all(descriptors.map(item=>readRecoveredTrainingMedia(item.fileId,load)));
+    assert.equal(calls,1);assert.deepEqual(values,bytes);
+    for(const [i,item] of descriptors.entries()){
+      assert.deepEqual(new Uint8Array(readFileSync(path.join(root,'media',`${item.sha256}.png`))),bytes[i]);
+      assert.ok((await getCaseMediaLink(item.fileId)).url.startsWith('data:image/png;base64,'));
+    }
   }finally{
     if(previous===undefined)delete process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT;else process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT=previous;
     rmSync(root,{recursive:true,force:true});

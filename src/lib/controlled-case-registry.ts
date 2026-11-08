@@ -21,7 +21,39 @@ export const controlledCaseBundles: BundleReference[] = [{
 }];
 
 /**
- * Multi-source recovery stays dormant until an exact, reviewed object reference is registered.
- * An empty registry performs no storage reads and cannot change current or historical sessions.
+ * Immutable private generations; reads require PEDIATRICS_TRAINING_RECOVERY=object-storage.
+ * Source/teaching versions are checked independently. No database binding is changed.
  */
-export const controlledTrainingContentBundles: ControlledTrainingContentReference[] = [];
+export const controlledTrainingContentBundles: ControlledTrainingContentReference[] = [
+  {
+    "fileId": "f38b7a140f96283493b2b3bce97bb271",
+    "sha256": "093a32a35beac4d07a9597871fa1dc63266a1030f71b15272fd10bfc72b7fd3b",
+    "bytes": 2342278,
+    "archive": "peds-training-content-6688ba483378dc352fd0.zip",
+    "media": [
+      {
+        "fileId": "5c65c56220120988361a9796b414b125",
+        "sha256": "99115d51fd37794baf9702d9e3be54d4382407132bd3d6be0d3fd1ab373e3c2a",
+        "bytes": 38155799,
+        "archive": "peds-training-media-6688ba483378dc352fd0-01.zip"
+      },
+      {
+        "fileId": "f40ce2592eff30cf09c3e39d7d41dc03",
+        "sha256": "493b73fb1f047adbba4c517b2ac3d265f51b6f94b7311a64dddf193a4029df5b",
+        "bytes": 38243862,
+        "archive": "peds-training-media-6688ba483378dc352fd0-02.zip"
+      },
+      {
+        "fileId": "8fbc92f92b585fb8d60d50240dc57dec",
+        "sha256": "81981bb8782490d509f758ca9fbeb18e97189c5ecbff8bd3828f9ec81b78b175",
+        "bytes": 24247769,
+        "archive": "peds-training-media-6688ba483378dc352fd0-03.zip"
+      }
+    ],
+    "expected": {
+      "entries": 67,
+      "sources": 53,
+      "media": 1042
+    }
+  }
+];

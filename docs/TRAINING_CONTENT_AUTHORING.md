@@ -21,7 +21,13 @@ Python产物脚本使用随应用提供的文档运行时（python-docx、Pillow
 
 与服务器版本接入前，先通过原有教师快照恢复入口重算源文件指纹，再下载到受控本地目录比对。`compare-source-sets.ts <本地knowledge根目录> <服务器导出knowledge根目录> <私有输出.json>` 只输出版本及差异字段名称，不输出患者正文。指纹不同不能直接改教学包的sourceVersion冒充匹配；临床事实、绑定和来源差异须分别调查。DKA已有不可重算的激活版本须保留，不以最新可核验文件覆盖它。
 
-`build-packages.ts`沿用`PEDIATRICS_KNOWLEDGE_ROOT`读取来源，`PEDIATRICS_TRAINING_PACKAGE_ROOT`指定新包目录，`PEDIATRICS_TRAINING_DELIVERY_ROOT`指定新的JSON交付目录。制作服务器适配版本时三个目录显式指向隔离位置，保留原资料、历史包和现有索引；不就地替换原来的67份文件。
+`build-packages.ts`沿用`PEDIATRICS_KNOWLEDGE_ROOT`读取来源，`PEDIATRICS_TRAINING_PACKAGE_ROOT`指定新包目录，`PEDIATRICS_TRAINING_DELIVERY_ROOT`指定新的JSON/Word交付目录，`PEDIATRICS_TRAINING_AUTHORING_ROOT`指定图片索引、报告图索引、构建摘要和Word渲染记录目录。制作服务器适配版本时四个目录显式指向隔离位置；报告排图、Word制作和渲染脚本沿用这些变量。保留原资料、历史包和现有索引，不就地替换原来的67份文件。
+
+私有运行资料使用`package-runtime.py --runtime <新版runtime> --knowledge <核验来源根目录> --output <新目录>`制作，不包含业务代码或让Coder实现/发布的提示词。`install-runtime.ts <分包目录> <项目knowledge内的新代次目录> --verify-only`先验证全部来源、教学版本、媒体及哈希；去掉`--verify-only`后只写该隔离代次，已有不同内容即拒绝，最后写索引，不改数据库或历史绑定。生产代码通过GitHub接收，私有分包经用户授权的项目私有文件通道传输，不经聊天附件或公开仓库。旧`build-coder-handoff.py`已退役并在本地备份，不再生成混合代码与原件的旧交接包。
+
+沙箱工作区中被Git忽略的文件不等于有持久化保障。必须另验对象存储或受控私有挂载的重建路径；同一沙箱进程重启成功不能代替沙箱重新初始化后的恢复验收。
+
+当前服务器适配代次的原图复用要求来源共享已核验原文且年龄/性别一致，3个存在人口资料差异的来源暂不复用旧图；检查文字和数值图按新来源重新生成。此为来源与格式核验，不能称作医学审定。分包通过`controlled-case-registry.ts`登记不可变对象、大小和SHA256，预览需显式配置`PEDIATRICS_TRAINING_RECOVERY=object-storage`，禁止将此开关当成绕过源/教学版本校验的手段。
 
 教师源文件恢复的运行审计写在私有`knowledge/source-recovery-audits/<sha256>.json`，每次内容独立保存，不再覆盖Git中的旧日期审计记录。原有审计作为历史证据保留。
 
