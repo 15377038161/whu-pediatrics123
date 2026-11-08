@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ClipboardPen, Search, Volume2, X } from 'lucide-react';
+import { ClipboardPen, Search, Volume2, X, Maximize2 } from 'lucide-react';
 import type { SessionState } from '@/domain/agent';
 import { getCaseRecordEntries, searchCaseRecordEntries, type CaseRecordCategory } from '@/domain/case-record';
 import { resolveDisplayedVitals, VITAL_SOURCE_LABELS } from '@/domain/vital-signs';
@@ -19,6 +19,7 @@ export interface SharedCaseRecordProps {
   onOpenNote: () => void;
   drawer?: boolean;
   onClose?: () => void;
+  onExpand?: () => void;
   audioObservation?: { title: string; sound: 'fine-crackles' | 'wheeze' } | null;
   onReplayAudio?: () => void;
 }
@@ -29,6 +30,7 @@ export function SharedCaseRecord({
   onOpenNote,
   drawer = false,
   onClose,
+  onExpand,
   audioObservation,
   onReplayAudio,
 }: SharedCaseRecordProps) {
@@ -43,7 +45,10 @@ export function SharedCaseRecord({
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       const timeline = timelineRef.current;
-      if (timeline) timeline.scrollTop = timeline.scrollHeight;
+      if (timeline) {
+        const latest=timeline.querySelector<HTMLElement>('.shared-record-item:last-child');
+        if(latest)timeline.scrollTop+=latest.getBoundingClientRect().top-timeline.getBoundingClientRect().top;
+      }
     });
     return () => window.cancelAnimationFrame(frame);
   }, [latestRecordId]);
@@ -53,6 +58,7 @@ export function SharedCaseRecord({
       <h2>共享病例记录</h2>
       <span className="record-head-actions">
         <span>{entries.length} 项记录</span>
+        {!drawer&&onExpand&&<button className="record-expand" type="button" onClick={onExpand}><Maximize2 size={13}/>放大查看</button>}
         {drawer && <button className="icon-btn" type="button" onClick={onClose} aria-label="关闭病例记录抽屉"><X size={17} /></button>}
       </span>
     </div>
