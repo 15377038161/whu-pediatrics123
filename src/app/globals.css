@@ -1,4 +1,5 @@
 @import "../components/clinical-exam.css";
+@import "../components/shared-case-record.css";
 @import "tailwindcss";
 
 :root {
