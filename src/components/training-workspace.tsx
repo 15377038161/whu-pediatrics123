@@ -526,7 +526,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         </div>
       </header>
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
-      {noteOpen?<div className="training-note-workspace"><NoteWriting ref={noteRef} sessionId={session.id} embedded context={session} onComplete={()=>void finish()}/></div>:<div className="training-grid" data-patient={showPatient} data-exam={spatialExam} data-record-inline={!drawerStage && !recordOpen}>
+      {noteOpen?<div className="training-note-workspace"><NoteWriting ref={noteRef} sessionId={session.id} embedded context={session} onComplete={finish}/></div>:<div className="training-grid" data-patient={showPatient} data-exam={spatialExam} data-record-inline={!drawerStage && !recordOpen}>
         {(!spatialExam || practiceCompletion === 'exam_observation') && <section tabIndex={-1} className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={false}>
           <div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div>
           <div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮重点</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div>

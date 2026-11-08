@@ -33,7 +33,7 @@ const COMPLETENESS_LABEL: Record<ReturnType<typeof sectionCompleteness>, string>
 
 export interface NoteWritingHandle { flush: () => Promise<void> }
 
-export function NoteWriting({ sessionId, embedded=false, context, onComplete, ref }: {sessionId:string; embedded?:boolean; context?:SessionState; onComplete?:()=>void; ref?:Ref<NoteWritingHandle>}) {
+export function NoteWriting({ sessionId, embedded=false, context, onComplete, ref }: {sessionId:string; embedded?:boolean; context?:SessionState; onComplete?:()=>void | Promise<void>; ref?:Ref<NoteWritingHandle>}) {
   const [activeSection,setActiveSection]=useState<NoteSectionKey|'submit'|'history'>(NOTE_TEMPLATE[0].key);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -49,6 +49,8 @@ export function NoteWriting({ sessionId, embedded=false, context, onComplete, re
   const [reviewStreamText, setReviewStreamText] = useState('');
   const [reviewError, setReviewError] = useState('');
   const clientEventIdRef = useRef<string | null>(null);
+  const submitInFlightRef = useRef(false);
+  const submittedContentRef = useRef<NoteContent | null>(null);
   const draftLoadedRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDraftRef=useRef<NoteContent>(EMPTY_CONTENT);
@@ -64,6 +66,8 @@ export function NoteWriting({ sessionId, embedded=false, context, onComplete, re
         setDraft(content); latestDraftRef.current=content; savedContentRef.current=JSON.stringify(content);
         draftLoadedRef.current = true;
         setSubmissions(data.submissions);
+        const latest = [...data.submissions].sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt))[0];
+        submittedContentRef.current = latest ? Object.fromEntries(NOTE_TEMPLATE.map(section=>[section.key,latest.content[section.key]??''])) as NoteContent : null;
       })
       .catch((reason: unknown) => {
         if (!cancelled) setLoadError(reason instanceof Error ? reason.message : '病历记录读取失败');
@@ -122,29 +126,36 @@ export function NoteWriting({ sessionId, embedded=false, context, onComplete, re
     setConfirmMissing(false);clientEventIdRef.current=null;
   }
 
-  async function handleSubmit() {
-    if (submitting) return;
-    if (missingRequired.length > 0 && !confirmMissing) {
+  async function handleSubmit(generateReport = false) {
+    if (submitInFlightRef.current) return;
+    const content = { ...latestDraftRef.current };
+    const alreadySubmitted = submittedContentRef.current !== null && NOTE_TEMPLATE.every(section=>submittedContentRef.current![section.key]===content[section.key]);
+    if (!alreadySubmitted && missingRequired.length > 0 && !confirmMissing) {
       setConfirmMissing(true);
       return;
     }
+    submitInFlightRef.current = true;
     setSubmitting(true);
     setSubmitError('');
     if (!clientEventIdRef.current) clientEventIdRef.current = crypto.randomUUID();
     const clientEventId = clientEventIdRef.current;
     try {
       await flush();
-      const saved = await authedFetch<NoteView>('/api/notes', { method: 'POST', body: JSON.stringify({ sessionId, content: draft, clientEventId }) });
-      clientEventIdRef.current = null;
+      if (!alreadySubmitted) {
+        const saved = await authedFetch<NoteView>('/api/notes', { method: 'POST', body: JSON.stringify({ sessionId, content, clientEventId }) });
+        submittedContentRef.current = content;
+        setSubmissions(previous=>[saved,...previous.filter(note=>note.id!==saved.id)]);
+        setExpandedNoteId(saved.id);
+        // 报告尚未生成时 AI 无可核对证据；报告生成后再发起审阅。
+        if (!context || context.reportId) void handleReview(saved.id);
+      }
       setConfirmMissing(false);
-      await refreshSubmissions();
       setActiveSection(embedded&&onComplete?'submit':'history');
-      setExpandedNoteId(saved.id);
-      // 报告尚未生成时 AI 无可核对证据，提交后可在报告生成后手动发起评分。
-      if (!context || context.reportId) void handleReview(saved.id);
+      if (generateReport) await onComplete?.();
     } catch (reason: unknown) {
       setSubmitError(reason instanceof Error ? reason.message : '提交失败，请重试。');
     } finally {
+      submitInFlightRef.current = false;
       setSubmitting(false);
     }
   }
@@ -217,7 +228,7 @@ export function NoteWriting({ sessionId, embedded=false, context, onComplete, re
       <div className={styles.writingGrid}>
         <nav className={styles.sectionNav} aria-label="病历段落目录"><p>书写目录</p>{NOTE_TEMPLATE.map((section,index)=><button type="button" key={section.key} aria-current={activeSection===section.key?'step':undefined} onClick={()=>setActiveSection(section.key)}><span>{String(index+1).padStart(2,'0')}</span><strong>{section.label}</strong>{draft[section.key].trim()&&<CheckCircle2 size={14} aria-label="已有内容"/>}</button>)}<button type="button" aria-current={activeSection==='submit'?'step':undefined} onClick={()=>setActiveSection('submit')}>整合与提交 <Send size={14}/></button><button type="button" aria-current={activeSection==='history'?'step':undefined} onClick={()=>setActiveSection('history')}>提交记录 · {submissions.length}</button></nav>
         <section className={styles.editorPanel} aria-label="病历编辑区">
-          {active?<><div className={styles.editorHeading}><p>段落 {String(activeIndex+1).padStart(2,'0')} / {NOTE_TEMPLATE.length}</p><h2>{active.label}</h2></div><div className={styles.questionCard}><strong>围绕这些问题组织记录</strong><p>{active.hint}</p><small>只写本次接诊已核实的内容；没有资料时明确写未知、未询问或未完成。</small></div><textarea className={styles.sectionEditor} aria-label={active.label} value={draft[active.key]} onChange={event=>updateSection(active.key,event.target.value)} placeholder={`用自己的话书写${active.label}，保留信息来源与时间点…`}/><div className={styles.sectionVoice}><span>语音结果追加到当前段落，确认或编辑后再提交。</span><VoiceHoldButton key={active.key} sessionId={sessionId} disabled={submitting} onResult={result=>updateSection(active.key,appendVoiceTranscript(latestDraftRef.current[active.key],result.text))}/></div><div className={styles.editorMeta}><span>{COMPLETENESS_LABEL[sectionCompleteness(draft[active.key],active.required)]}</span><span>{draft[active.key].length} 字</span></div><footer className={styles.editorFooter}><button className="btn btn-secondary" disabled={activeIndex===0} onClick={()=>setActiveSection(NOTE_TEMPLATE[activeIndex-1].key)}>上一段落</button><button className="btn btn-primary" onClick={()=>setActiveSection(NOTE_TEMPLATE[activeIndex+1]?.key??'submit')}>{activeIndex===NOTE_TEMPLATE.length-1?'整合与提交':'下一段落'} <ArrowLeft size={14} style={{transform:'rotate(180deg)'}}/></button></footer></>:activeSection==='submit'?<div className={styles.reviewContent}><h2>整合与提交</h2><p>完整性提示帮助检查记录；提交后按固定五维评分。</p>{NOTE_TEMPLATE.map(section=><article key={section.key}><h3>{section.label}<button type="button" className="text-link" onClick={()=>setActiveSection(section.key)}>返回修改</button></h3><p className="preserve-lines">{draft[section.key]||'尚未书写'}</p></article>)}<div className={styles.noteActions}><button type="button" className="btn btn-secondary" onClick={()=>void flush().catch(()=>undefined)} disabled={saveState==='saving'}><Save size={14}/> 保存草稿</button><button type="button" className="btn btn-primary" onClick={()=>void handleSubmit()} disabled={submitting||!completed}>{submitting?'提交中…':confirmMissing?`仍有 ${missingRequired.length} 个必填段未写，仍要提交`:'提交病历'}</button>{confirmMissing&&<p className={styles.noteMissingWarn}>未书写：{missingRequired.join('、')}。确认后仍可提交，教师会看到原文。</p>}{submitError&&<p role="alert" className={styles.noteError}>{submitError}</p>}{submissions.length>0&&<p role="status">已有 {submissions.length} 次提交，原文已保留。</p>}{embedded&&onComplete&&<button type="button" className="btn btn-secondary" disabled={submitting||saveState==='saving'} onClick={async()=>{try{await flush();onComplete();}catch{/* keep editor open on save failure */}}}>保存并生成训练报告</button>}</div></div>:<div className={styles.reviewContent}>
+          {active?<><div className={styles.editorHeading}><p>段落 {String(activeIndex+1).padStart(2,'0')} / {NOTE_TEMPLATE.length}</p><h2>{active.label}</h2></div><div className={styles.questionCard}><strong>围绕这些问题组织记录</strong><p>{active.hint}</p><small>只写本次接诊已核实的内容；没有资料时明确写未知、未询问或未完成。</small></div><textarea className={styles.sectionEditor} aria-label={active.label} value={draft[active.key]} onChange={event=>updateSection(active.key,event.target.value)} placeholder={`用自己的话书写${active.label}，保留信息来源与时间点…`}/><div className={styles.sectionVoice}><span>语音结果追加到当前段落，确认或编辑后再提交。</span><VoiceHoldButton key={active.key} sessionId={sessionId} disabled={submitting} onResult={result=>updateSection(active.key,appendVoiceTranscript(latestDraftRef.current[active.key],result.text))}/></div><div className={styles.editorMeta}><span>{COMPLETENESS_LABEL[sectionCompleteness(draft[active.key],active.required)]}</span><span>{draft[active.key].length} 字</span></div><footer className={styles.editorFooter}><button className="btn btn-secondary" disabled={activeIndex===0} onClick={()=>setActiveSection(NOTE_TEMPLATE[activeIndex-1].key)}>上一段落</button><button className="btn btn-primary" onClick={()=>setActiveSection(NOTE_TEMPLATE[activeIndex+1]?.key??'submit')}>{activeIndex===NOTE_TEMPLATE.length-1?'整合与提交':'下一段落'} <ArrowLeft size={14} style={{transform:'rotate(180deg)'}}/></button></footer></>:activeSection==='submit'?<div className={styles.reviewContent}><h2>整合与提交</h2><p>完整性提示帮助检查记录；提交后按固定五维评分。</p>{NOTE_TEMPLATE.map(section=><article key={section.key}><h3>{section.label}<button type="button" className="text-link" onClick={()=>setActiveSection(section.key)}>返回修改</button></h3><p className="preserve-lines">{draft[section.key]||'尚未书写'}</p></article>)}<div className={styles.noteActions}><button type="button" className="btn btn-secondary" onClick={()=>void flush().catch(()=>undefined)} disabled={saveState==='saving'}><Save size={14}/> 保存草稿</button><button type="button" className="btn btn-primary" onClick={()=>void handleSubmit()} disabled={submitting||!completed}>{submitting?'提交中…':confirmMissing?`仍有 ${missingRequired.length} 个必填段未写，仍要提交`:'提交病历'}</button>{confirmMissing&&<p className={styles.noteMissingWarn}>未书写：{missingRequired.join('、')}。确认后仍可提交，教师会看到原文。</p>}{submitError&&<p role="alert" className={styles.noteError}>{submitError}</p>}{submissions.length>0&&<p role="status">已有 {submissions.length} 次提交，原文已保留。</p>}{embedded&&onComplete&&<button type="button" className="btn btn-secondary" disabled={submitting||saveState==='saving'||!completed} onClick={()=>void handleSubmit(true)}>{submitting?'提交中…':confirmMissing?`确认提交并生成报告（${missingRequired.length} 个必填段未写）`:'提交病历并生成训练报告'}</button>}</div></div>:<div className={styles.reviewContent}>
       <div className="section-head" style={{ marginTop: 30 }}>
         <h2 className="section-title">提交记录</h2>
         <span className="eyebrow">{submissions.length === 0 ? '提交后在此查看评分与意见' : `共 ${submissions.length} 次提交`}</span>
