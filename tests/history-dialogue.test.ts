@@ -43,6 +43,22 @@ test('承接追问使用上一问的用药主题，不把“之后呢”当作�
   const s=state();s.messages=[{actor:'student',content:'用过什么药？'}] as SessionState['messages'];s.dialogueMemory={topic:'已用药物与院外处理',lastFactIds:['hx-treatment'],clarifiedQuestion:null,concern:null};
   assert.ok(contextualHistorySelection(s,'吃了以后呢？',facts).facts.some(f=>f.id==='hx-treatment'));
 });
+
+test('概括询问起病时只回答主诉对应的时间，不倾倒既往和排便日期',async()=>{
+  const onset:HistoryFact[]=[
+    {id:'SOURCE_HX_-2',text:'咳嗽3天，发热1天。',topics:['主要不适'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'now-cough',text:'咳嗽3天',topics:['起病与病程','呼吸相关症状'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'now-fever',text:'发热1天',topics:['起病与病程','发热与处理'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'past',text:'既往1个月前有过住院。',topics:['起病与病程','既往、过敏、接种及家族史'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+    {id:'stool',text:'大便2天1次。',topics:['起病与病程','一般状态、进食及排泄'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+  ];
+  assert.deepEqual(contextualHistorySelection(state(),'孩子什么时候开始不舒服的？',onset).facts.map(f=>f.id),['now-cough','now-fever']);
+  const result=await historyDialogue(state(),'孩子什么时候开始不舒服的？',onset,profile,undefined,async()=>{throw Error('synthetic model unavailable');});
+  assert.equal(result.runtime.execution,'model_fallback');
+  assert.deepEqual(disclosedHistoryCodes(result.dialogue,onset),['now-cough','now-fever']);
+  assert.equal(result.dialogue.utterances.some(u=>/住院|大便/.test(u.text)),false);
+  assert.ok(contextualHistorySelection(state(),'以前是什么时候住院的？',onset).facts.some(f=>f.id==='past'),'specific past-history question must retain its facts');
+});
 test('模型选择不受前置三句截断，且只解锁实际引用的事实',async()=>{
   const many=Array.from({length:7},(_,i)=>({...facts[0],id:`fact-${i}`,text:`已有事实${i}。`}));
   const result=await historyDialogue(state(),'补充说说相关情况',many,profile,undefined,async()=>({content:JSON.stringify({topic:'本轮主题',utterances:[{actor:'parent',text:'已有事实6。',factIds:['fact-6']}]})}));

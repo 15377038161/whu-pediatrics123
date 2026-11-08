@@ -113,6 +113,17 @@ export function contextualHistorySelection(session:SessionState,question:string,
     .filter(term=>!['孩子','医生','小朋','朋友','可以','告诉','知道','什么','情况','有没','没有','多久','开始','时候','然后','后来','这个','那个','还有'].includes(term));
   const ranked=facts.map(fact=>({fact,score:terms.filter(term=>fact.text.includes(term)).length*3+fact.topics.filter(t=>topics.includes(t)).length*2}))
     .filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  const complaint=facts.find(f=>f.id==='SOURCE_HX_-2');
+  const generalOnset=!continuation&&topics.length===1&&topics[0]==='起病与病程'&&/什么时候|最早|最开始|何时/.test(question)&&/开始|不舒服|起病|发病/.test(question);
+  if(complaint&&generalOnset){
+    const comparable=(text:string)=>text.replace(/^(?:主诉|现病史)[：:\s]*/,'').replace(/[，,；;。!?？\s]/g,'');
+    const summary=comparable(complaint.text);
+    // Reuse exact onset facts expressed in the chief complaint, retaining their
+    // evidence IDs. Dates elsewhere (past illness, stools, birth) are not an
+    // answer to a general onset question merely because they contain time words.
+    const onsetFacts=facts.filter(f=>f.id!==complaint.id&&f.topics.includes('起病与病程')&&comparable(f.text).length>=4&&summary.includes(comparable(f.text)));
+    return {facts:onsetFacts.length?onsetFacts:[complaint],topic:'起病与病程',clarification:null};
+  }
   const broad=/哪里不舒服|怎么了|为什么来|什么不舒服|主要症状|主要问题/.test(question);
   if(broad){const complaint=facts.find(f=>f.id==='SOURCE_HX_-2');return {facts:complaint?[complaint]:ranked.slice(0,1).map(x=>x.fact),topic:'主要不适',clarification:null};}
   if(/多大|几岁|年龄|男孩|女孩|性别/.test(question)){const demographic=facts.find(f=>f.id==='SOURCE_HX_-1');return {facts:demographic?[demographic]:[],topic:'年龄与性别',clarification:null};}
