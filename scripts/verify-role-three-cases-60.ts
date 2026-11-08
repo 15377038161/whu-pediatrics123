@@ -29,27 +29,22 @@ type CaseKey = 'dka' | 'newborn' | 'respiratory';
 const CASE_IDS: Record<CaseKey, string> = {
   dka: 'teacher-1型糖尿病伴有酮症酸中毒',
   newborn: 'teacher-新生儿败血症',
-  respiratory: 'teacher-急性毛细支气管炎',
+  respiratory: 'teacher-肺炎支原体肺炎',
 };
 
-const TOPIC_QUESTIONS: Record<string, string> = {
-  起病与病程: '孩子这次不舒服是什么时候开始的？',
-  发热与处理: '孩子有没有发热，体温最高多少，做过哪些退热处理？',
-  '一般状态、进食及排泄': '孩子现在精神、饮食、睡眠和大小便情况怎么样？',
-  '出生、喂养与生长发育': '孩子出生、喂养和生长发育情况怎么样？',
-  '既往、过敏、接种及家族史': '孩子既往健康、过敏、疫苗接种和家族史有什么需要了解的？',
-  已用药物与院外处理: '这次就诊前在家用过什么药或做过什么处理？',
-  呼吸相关症状: '孩子有咳嗽、喘息、痰或呼吸费力吗？',
-  水肿及尿液变化: '孩子有没有水肿，尿液和排尿有什么变化？',
-  疼痛及消化道症状: '孩子有没有疼痛、呕吐、腹泻或其他消化道不舒服？',
-  '神经、意识与肢体功能': '孩子有没有抽搐、意识变化或肢体活动异常？',
-  '黄疸、皮肤及出血': '孩子有没有黄疸、皮疹、皮肤变化或出血表现？',
+// Continuous clinic conversations, including short references and clarification;
+// cycling independent topic questions cannot validate dialogue continuity.
+const NATURAL_QUESTIONS: Record<CaseKey, string[]> = {
+  dka: ['孩子主要哪里不舒服？','最早什么时候开始的？','后来呢？','喝水和小便有什么变化？','比之前明显吗？','吃东西和体重呢？','小朋友，你觉得哪里不舒服？','还是那个地方难受吗？','就诊前做过什么处理或者用过什么药？','吃了以后呢？','现在精神怎么样？有没有呕吐？','以前有过类似情况吗？','出生和生长发育怎么样？','家里有没有类似疾病？','您现在最担心什么？','我会先了解清楚，再向您解释检查安排。','那个变化一直都有吗？','我指的是前面说的小便变化。','有过敏或者长期用药吗？','还有什么刚才没问到、您想补充的吗？'],
+  newborn: ['宝宝出生多久了？这次因为什么来就诊？','最早发现什么变化？','后来呢？','吃奶和精神怎么样？','比平时少多少？您有记录吗？','小便和大便有什么变化？','哭声和活动呢？','有没有量过体温？最高或最低是多少？','出生时情况怎么样？','孕期和分娩有什么特别情况？','来就诊前做过什么处理？','做完以后呢？','以前查过什么？您记得哪些结果？','家里有过类似情况吗？','您最担心什么？','我先轻轻检查宝宝，同时向您解释每一步。','刚才说的那个是什么意思？','我是问吃奶情况有没有变化。','宝宝现在能自己说哪里不舒服吗？','还有什么没有问到的变化？'],
+  respiratory: ['孩子主要哪里不舒服？','最早什么时候开始？','后来呢？','咳嗽是什么样子的？','晚上和白天有区别吗？','有没有发烧？量过多少？','已经用过什么药？','吃了以后呢？','现在呼吸费力吗？','小朋友，你觉得哪里疼或者不舒服？','还是那个地方吗？','这几天精神和吃饭怎么样？','小便呢？','以前有类似的病吗？','有过敏或接触类似病人吗？','家长现在最担心什么？','我会轻轻检查，不舒服可以告诉我。','这个情况是一直这样，还是后来才有？','我是问咳嗽的变化。','还有需要补充的吗？'],
 };
 
 interface RoundEvidence {
   round: number;
   topic: string;
   followUp: boolean;
+  coverageTags: string[];
   contextMessagesProvided: number;
   execution: string;
   model: string | null;
@@ -144,7 +139,7 @@ async function main(): Promise<void> {
   const gateway = getAIGatewaySettings();
   const caseId = CASE_IDS[caseKey];
   const { pack, sourceVersion } = loadRecoveredCase(caseId, runtimeRoot, sourceRoot);
-  const session = createInitialSession('offline-model-verification-no-auth', 'guided', caseId, undefined, sourceVersion);
+  let session = createInitialSession('offline-model-verification-no-auth', 'guided', caseId, undefined, sourceVersion);
   assert.equal(session.sourceSnapshotVersion, sourceVersion);
   assert.equal(session.teachingPackageVersion, pack.version);
   const facts = allSourceFacts(session);
@@ -154,7 +149,7 @@ async function main(): Promise<void> {
   const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   const workingTreeDirty = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim().length > 0;
   const evidence = {
-    schemaVersion: 5,
+    schemaVersion: 6,
     status: 'running' as 'running' | 'completed' | 'failed',
     startedAt: new Date().toISOString(),
     completedAt: null as string | null,
@@ -163,6 +158,8 @@ async function main(): Promise<void> {
     caseKey,
     caseId,
     requestedRounds: 20,
+    conversationScenario: 'natural-clinic-v1',
+    serializedRestoreAfterRound: null as number | null,
     sourceFactCount: facts.length,
     availableTopicCount: topics.length,
     sourceSnapshot: {
@@ -223,10 +220,9 @@ async function main(): Promise<void> {
       activeRound = round;
       activeRoundCall = 0;
       activeRoundCaptured = 0;
-      const topic = topics[(round - 1) % topics.length];
-      const followUp = round > topics.length;
-      const baseQuestion = TOPIC_QUESTIONS[topic.label] ?? `请具体说说${topic.label}。`;
-      const question = followUp ? `${baseQuestion}请接着刚才的情况说，后来还有什么变化？` : baseQuestion;
+      const question = NATURAL_QUESTIONS[caseKey][round-1];
+      const followUp = /^(?:后来|吃了|做完|还是|比之前|比平时|那个|这个|我是|我指|小便呢)/.test(question);
+      const coverageTags=[...(followUp?['context-reference']:[]),...(/小朋友|宝宝现在能自己/.test(question)?['child-capability']:[]),...(/担心/.test(question)?['caregiver-concern']:[]),...(/我会|我先/.test(question)?['reassurance']:[]),...(/什么意思|我指的是|我是问/.test(question)?['clarification']:[]),...(question.split(/[？?]/).filter(Boolean).length>1||/和|或者/.test(question)?['compound-question']:[])];
       const contextMessagesProvided = session.messages.filter((item) => ['student', 'child', 'parent'].includes(item.actor)).slice(-12).length;
       const result = await runAgentTurn(
         session,
@@ -235,6 +231,7 @@ async function main(): Promise<void> {
         { historyInvoke },
       );
       const runtime = result.runtime;
+      session=result.session;
       if (!runtime) throw new Error(`第 ${round} 轮未返回角色模型执行证据`);
       if (privateRawDir && activeRoundCall === 0) throw new Error(`第 ${round} 轮模型原文私有捕获失败`);
       const responses = result.newMessages.filter((item) => item.actor === 'child' || item.actor === 'parent');
@@ -245,8 +242,9 @@ async function main(): Promise<void> {
 
       evidence.rounds.push({
         round,
-        topic: topic.label,
+        topic: session.dialogueMemory?.topic??'当前不适',
         followUp,
+        coverageTags,
         contextMessagesProvided,
         execution: runtime.execution,
         model: runtime.model,
@@ -265,8 +263,17 @@ async function main(): Promise<void> {
         exactQuestionEcho: dialogueText.trim() === question.trim(),
         validationReasons: runtime.validationReasons ?? [],
       });
+      if(round===10){
+        const serialized=JSON.stringify(session),before=sha256(serialized);
+        session=JSON.parse(serialized) as SessionState;
+        assert.equal(sha256(JSON.stringify(session)),before);
+        assert.equal(session.teachingPackageVersion,pack.version);
+        assert.equal(session.sourceSnapshotVersion,sourceVersion);
+        evidence.serializedRestoreAfterRound=10;
+      }
       save();
       console.log(`ROUND ${caseKey} ${round}/20 execution=${runtime.execution} model=${runtime.model ?? 'null'} attempts=${runtime.attempts ?? 0} modelCalls=${activeRoundCall} capturedRawCalls=${activeRoundCaptured} durationMs=${runtime.durationMs} context=${contextMessagesProvided} error=${runtime.errorKind ?? 'none'} validation=${(runtime.validationReasons ?? []).join(',') || 'none'}`);
+      if(evidence.rounds.slice(-3).length===3&&evidence.rounds.slice(-3).every(item=>['rate_limited','auth','config','not_configured'].includes(item.errorKind??'')))break;
     }
 
     const durations = evidence.rounds.map((item) => item.durationMs).sort((a, b) => a - b);
@@ -291,7 +298,11 @@ async function main(): Promise<void> {
     }, {});
     evidence.summary = {
       evaluationValid,
+      coverageTags:[...new Set(evidence.rounds.flatMap(item=>item.coverageTags))],
+      serializedRestoreAfterRound:evidence.serializedRestoreAfterRound,
       completedRounds: evidence.rounds.length,
+      stoppedEarly:evidence.rounds.length<20,
+      remainingRounds:20-evidence.rounds.length,
       executions,
       modelRounds,
       fallbackRounds: executions.model_fallback ?? 0,
@@ -318,7 +329,7 @@ async function main(): Promise<void> {
         max: durations.at(-1) ?? 0,
       },
     };
-    evidence.status = 'completed';
+    evidence.status = evidence.rounds.length===20?'completed':'failed';
     evidence.completedAt = new Date().toISOString();
     save();
     console.log(`SUMMARY ${JSON.stringify(evidence.summary)}`);
