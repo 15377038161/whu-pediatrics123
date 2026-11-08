@@ -21,8 +21,8 @@ export default function LoginPage() {
           </div>
           <div className="landing-hero-row">
             <div className="landing-copy">
-              <p className="landing-motto">大医精诚敬畏生命</p>
-              <p>从 12 个儿科系统进入病例，完成问诊、查体、诊断与沟通训练；每次接诊保留可回放的证据与反馈。</p>
+              <p className="landing-motto">大医精诚 敬畏生命</p>
+              <p>从多个儿科系统进入病例，完成问诊、查体、诊断与沟通训练；每次接诊保留可回放的证据与反馈。</p>
             </div>
           </div>
         </section>

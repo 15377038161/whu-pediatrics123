@@ -1135,3 +1135,57 @@ textarea { resize: vertical; }
 
 
 .released-lab-report{border:1px solid #b8cfc0;border-radius:10px;background:#fff;padding:10px;margin:10px 0;font-size:12px}.released-lab-report header{display:flex;gap:8px;justify-content:space-between;align-items:center;color:#255c49}.released-lab-report small{font-size:10px;color:#657b6b}.released-lab-report p{line-height:1.7;font-size:11px}.lab-report-scroll{overflow:auto;max-height:350px}.released-lab-report table{border-collapse:collapse;min-width:440px;width:100%;font-size:11px}.released-lab-report th,.released-lab-report td{padding:7px;border:1px solid #d8e2d8;text-align:left;white-space:normal}.released-lab-report thead{background:#eaf2e8;position:sticky;top:0}.released-lab-report tbody th{font-weight:600}
+
+/* 教师反馈（2026-11-08）：网页版整体字号偏小。移动端保留原有紧凑密度，桌面端统一抬高正文、表单与高频信息字号。 */
+@media (min-width: 768px) {
+  html, body { font-size: 17px; }
+
+  .brand-kicker { font-size: 13px; }
+  .landing-copy p { max-width: 520px; font-size: 18px; }
+  .login-field { font-size: 15px; }
+  .login-footnote, .login-stage-hint, .login-account-help, .login-stage, .login-error { font-size: 13px; }
+
+  .topbar-user, .text-link { font-size: 15px; }
+  .page-lead { font-size: 17px; }
+  .eyebrow { font-size: 13px; }
+  .section-title { font-size: 22px; }
+
+  .case-card-copy h3 { font-size: 16px; }
+  .case-note { font-size: 14px; }
+  .case-number, .case-meta, .case-card-heading .case-number, .case-insufficient-note { font-size: 12px; }
+  .symptom-list span { font-size: 13px; }
+  .entry p, .teacher-case-library p { font-size: 15px; }
+  .entry-meta { font-size: 14px; }
+  .teacher-case-stats span, .teacher-case-index a { font-size: 13px; }
+  .teacher-case-index a .case-index-id { font-size: 12px; }
+  .teacher-case-detail .case-complaint, .student-case-group summary { font-size: 14px; }
+  .resource-panel-toggle strong, .resource-filter button, .training-title span { font-size: 12px; }
+  .resource-item p { font-size: 12px; }
+  .stage-chip, .case-band { font-size: 13px; }
+  .panel-head h2 { font-size: 17px; }
+
+  .message-bubble { font-size: 15px; }
+  .composer-input-row .composer textarea { font-size: 16px; }
+  .composer-actions .voice-hold-button, .composer-send { font-size: 15px; }
+  .feedback, .evidence-item, .empty-note { font-size: 14px; }
+  .form-field label, .clinical-form fieldset.form-field legend, .stage-checklist li { font-size: 14px; }
+
+  .report-section h2 { font-size: 19px; }
+  .report-hero p, .practice-card p, .readiness-card p, .clinical-submissions p, .status-row { font-size: 15px; }
+  .student-table th, .student-table td { font-size: 14px; }
+  .quiz-stem { font-size: 17px; }
+  .studio-review p, .studio-review ul, .studio-source p, .studio-muted, .studio-checkbox { font-size: 14px; }
+  .note-panel { font-size: 14px; }
+
+  .training-shell .shared-case-record-body .record-result-text,
+  .record-result-text { font-size: 14px; }
+  .training-shell .shared-case-record-body .vital span { font-size: 11px; }
+  .training-shell .shared-case-record-body .vital em { font-size: 10px; }
+  .released-lab-report { font-size: 13px; }
+  .released-lab-report p, .released-lab-report table { font-size: 12px; }
+
+  .clinical-exam { font-size: 17px; }
+  .ce-tool-grid button>span, .ce-region-menu button, .ce-findings dt { font-size: 12px; }
+  .ce-body-label, .ce-canvas-hint, .ce-context-controls span, .ce-context-controls button, .ce-action b { font-size: 11px; }
+  .ce-result .exam-observation-detail { font-size: 13px; }
+}
