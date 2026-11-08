@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { CASE_NAME_BY_ID } from '@/domain/teacher-case-catalog';
-import { authedFetch } from '@/lib/authed-api';
+import { authedFetch,authedFetchRaw } from '@/lib/authed-api';
 
 interface PackageMetadata {
   fingerprint: string;
@@ -73,11 +73,12 @@ const statusLabels = {
 } as const;
 
 export function CasePackageImportPanel() {
-  const [busy, setBusy] = useState<'load' | 'import' | 'restore' | null>(null);
+  const [busy, setBusy] = useState<'load' | 'import' | 'restore' | 'export' | null>(null);
   const [preflight, setPreflight] = useState<PreflightResult | null>(null);
   const [result, setResult] = useState<ControlledImportResult | null>(null);
   const [restore, setRestore] = useState<RestoreResult | null>(null);
   const [error, setError] = useState('');
+  const [downloadStatus,setDownloadStatus]=useState('');
 
   const load = useCallback(async () => {
     setBusy('load');
@@ -132,6 +133,18 @@ export function CasePackageImportPanel() {
     }
   }
 
+  async function downloadSources(){
+    setBusy('export');setError('');setDownloadStatus('');
+    try{
+      const response=await authedFetchRaw('/api/teacher/case-snapshot-archive',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirmation:'RESTORE_AND_EXPORT_CASE_SOURCES'})});
+      if(!response.headers.get('content-type')?.includes('application/zip'))throw new Error('未取得可核验的原件包');
+      const url=URL.createObjectURL(await response.blob());
+      const link=document.createElement('a');link.href=url;link.download='peds-verified-case-sources.zip';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30_000);
+      setDownloadStatus(`已生成${response.headers.get('X-Case-Source-Count')??''}份来源及${response.headers.get('X-Case-Version-Count')??''}个版本的原件包，请在浏览器下载中核对。原激活绑定和历史成绩保持不变。`);
+      await load();
+    }catch(reason){setError(`原件包下载未完成：${(reason as Error).message}`);}finally{setBusy(null);}
+  }
+
   return (
     <section className="case-publication">
       <h2>固定病例包换版</h2>
@@ -148,10 +161,14 @@ export function CasePackageImportPanel() {
         <button className="btn btn-secondary" onClick={() => void restoreSources()} disabled={busy !== null}>
           {busy === 'restore' ? '核验快照并恢复中…' : '从双表快照恢复受控源文件'}
         </button>
+        <button className="btn btn-secondary" onClick={()=>void downloadSources()} disabled={busy!==null}>
+          {busy==='export'?'核验并打包中…':'恢复并下载核验原件'}
+        </button>
       </div>
       <p className="case-import-hint">
         恢复操作只读取当前教师可见的双表快照；逐版本重算内容指纹，核验一致后才写入源文件与版本档案。不接收病例正文，不修改数据库，不覆盖版本不同的当前文件。
       </p>
+      {downloadStatus&&<p role="status">{downloadStatus} 包含教师原始资料，请保存在受控本地目录。</p>}
       {error && <div className="empty-state" role="alert"><p>{error}</p></div>}
       {restore && (
         <div className="case-import-diagnostic" role="status">

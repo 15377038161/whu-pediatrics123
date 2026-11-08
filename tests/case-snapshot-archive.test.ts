@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import {unzipSync,strFromU8} from 'fflate';
 import { CASE_INDEX_NUMBER, TEACHER_CASE_CATALOG } from '../src/domain/teacher-case-catalog';
-import { buildControlledCaseManifest, reconstructCaseSnapshot, restoreControlledCaseSources, VERIFIED_CURRENT_VERSIONS, type SnapshotAnswersRow, type SnapshotFactsRow } from '../src/lib/case-snapshot-archive';
+import { buildControlledCaseManifest, exportRestoredCaseSources, reconstructCaseSnapshot, restoreControlledCaseSources, VERIFIED_CURRENT_VERSIONS, type SnapshotAnswersRow, type SnapshotFactsRow } from '../src/lib/case-snapshot-archive';
 import { computeCaseDataVersion } from '../src/lib/case-data-version';
 import { parseControlledCasePackageManifest } from '../src/lib/controlled-case-package';
 import { recordSchema } from '../src/lib/teacher-case-data';
@@ -118,6 +119,31 @@ test('53 份快照可重建固定包、版本档案与幂等清单', async () =>
     assert.equal(second.files.currentUnchanged, 53);
     assert.equal(second.files.archiveWritten, 0);
     assert.equal(second.package.fingerprint, first.package.fingerprint);
+    const audits=readdirSync(path.join(root,'source-recovery-audits'));
+    assert.equal(audits.length,2,'两次恢复的审计分别保留在私有根目录，不覆盖历史审计');
+    for(const name of audits){
+      const bytes=readFileSync(path.join(root,'source-recovery-audits',name));
+      assert.equal(name,createHash('sha256').update(bytes).digest('hex')+'.json');
+    }
+    const exported=exportRestoredCaseSources(snapshots.map(item=>item.facts),snapshots.map(item=>item.answers),second);
+    assert.equal(exported.sourceCount,53);assert.equal(exported.versionCount,53);
+    assert.equal(exported.sha256,createHash('sha256').update(exported.bytes).digest('hex'));
+    const exportedFiles=unzipSync(exported.bytes);
+    assert.equal(Object.keys(exportedFiles).length,108);
+    assert.ok(Object.keys(exportedFiles).every(name=>name==='case-package-manifest.json'||name==='source-export-manifest.json'||name.startsWith('teaching-cases/')||name.startsWith('teaching-case-versions/')));
+    const exportedSource=recordSchema.parse(JSON.parse(strFromU8(exportedFiles[`teaching-cases/${sources[0].id}.json`])));
+    assert.deepEqual(exportedSource,snapshots[0].record);
+    const modified=snapshots.map(item=>item.facts);
+    modified[0]={...modified[0],facts:{...(modified[0].facts as Record<string,unknown>),complaint:'篡改的合成主诉'}};
+    assert.throws(()=>exportRestoredCaseSources(modified,snapshots.map(item=>item.answers),second),/VERSION_MISMATCH/);
+    assert.throws(()=>exportRestoredCaseSources(snapshots.map(item=>item.facts),snapshots.map(item=>item.answers),{...second,complete:false}),/EXPORT_INCOMPLETE/);
+    const preferred=snapshots.find(item=>item.record.caseId==='teacher-异物吸入性窒息')!;
+    const newer=recordSchema.parse({...preferred.record,complaint:'合成新激活版本主诉'}),newRows=rows(newer);
+    const selectedActive=await restoreControlledCaseSources([...snapshots.map(item=>item.facts),newRows.facts],[...snapshots.map(item=>item.answers),newRows.answers],{
+      root:path.join(root,'active-version-check'),activeVersions:{...activeVersions,[newer.caseId]:newRows.facts.version},preferredVersions:{...activeVersions,[newer.caseId]:preferred.version},
+    });
+    assert.equal(selectedActive.complete,true);
+    assert.equal(selectedActive.cases.find(item=>item.caseId===newer.caseId)?.currentVersion,newRows.facts.version,'已核验的真实激活版本优先于旧固定推荐版本');
 
     const hashes = new Map(sources.map((item) => {
       const raw = readFileSync(path.join(root, 'teaching-cases', `${item.id}.json`), 'utf8');

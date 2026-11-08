@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import {zipSync,strToU8} from 'fflate';
 import { CASE_INDEX_NUMBER, TEACHER_CASE_CATALOG } from '@/domain/teacher-case-catalog';
 import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
@@ -200,6 +201,37 @@ export interface RestorePackageResult {
   cases: RestoreCaseResult[];
 }
 
+/** Only rows visible to the authenticated teacher may be passed here; no filesystem or arbitrary path export. */
+export function exportRestoredCaseSources(factsRows:SnapshotFactsRow[],answersRows:SnapshotAnswersRow[],result:RestorePackageResult){
+  const allowed=new Set(TEACHER_CASE_CATALOG.filter(item=>item.folder).map(item=>item.id));
+  if(!result.complete||result.cases.length!==allowed.size||new Set(result.cases.map(item=>item.caseId)).size!==allowed.size)throw new Error('CASE_SOURCE_EXPORT_INCOMPLETE');
+  const files:Record<string,Uint8Array>={};
+  const currentHashes=new Map<string,string>();
+  let totalBytes=0,versionCount=0;
+  function add(name:string,record:TeacherCaseData){
+    const bytes=strToU8(JSON.stringify(record,null,2));totalBytes+=bytes.byteLength;
+    if(totalBytes>64_000_000)throw new Error('CASE_SOURCE_EXPORT_TOO_LARGE');
+    files[name]=bytes;
+    return createHash('sha256').update(bytes).digest('hex');
+  }
+  for(const item of result.cases){
+    if(!allowed.has(item.caseId)||/[\\/]|\.\./.test(item.caseId)||!item.currentVersion||!item.verifiedVersions.includes(item.currentVersion))throw new Error('CASE_SOURCE_EXPORT_INCOMPLETE');
+    for(const version of item.verifiedVersions){
+      const facts=factsRows.filter(row=>row.case_id===item.caseId&&row.version===version);
+      const answers=answersRows.filter(row=>row.case_id===item.caseId&&row.version===version);
+      if(facts.length!==1||answers.length!==1)throw new Error('CASE_SOURCE_EXPORT_VERSION_INVALID');
+      const verified=reconstructCaseSnapshot(facts[0],answers[0]);
+      add(`teaching-case-versions/${item.caseId}/${verified.version}.json`,verified.record);versionCount++;
+      if(version===item.currentVersion)currentHashes.set(item.caseId,add(`teaching-cases/${item.caseId}.json`,verified.record));
+    }
+  }
+  const manifest=buildControlledCaseManifest(currentHashes);
+  files['case-package-manifest.json']=strToU8(JSON.stringify(manifest,null,2));
+  files['source-export-manifest.json']=strToU8(JSON.stringify({schemaVersion:1,sourceCount:currentHashes.size,versionCount,databaseMutation:'none',files:Object.entries(files).map(([name,bytes])=>({path:name,bytes:bytes.byteLength,sha256:createHash('sha256').update(bytes).digest('hex')}))},null,2));
+  const bytes=zipSync(files,{level:6});
+  return {bytes,sourceCount:currentHashes.size,versionCount,sha256:createHash('sha256').update(bytes).digest('hex')};
+}
+
 interface RestoreOptions {
   root?: string;
   activeVersions?: Readonly<Record<string, string>>;
@@ -299,8 +331,8 @@ export async function restoreControlledCaseSources(
       right.createdAt.localeCompare(left.createdAt) || right.version.localeCompare(left.version),
     )[0]?.version ?? null;
     let targetVersion: string | null = null;
-    if (known) targetVersion = known;
-    else if (active && available.has(active)) targetVersion = active;
+    if (active && available.has(active)) targetVersion = active;
+    else if (known) targetVersion = known;
     else {
       if (active) warnings.push(`${item.id}:active-version-unverified; using latest verified version`);
       targetVersion = latest;
@@ -371,7 +403,7 @@ export async function restoreControlledCaseSources(
     await writeAtomic(path.join(root, 'case-package-manifest.json'), rawManifest);
     fingerprint = createHash('sha256').update(rawManifest).digest('hex');
 
-    const auditDir = path.resolve(root, '..', 'review-records');
+    const auditDir = path.join(root, 'source-recovery-audits');
     const audit = {
       generatedAt: (options.now ?? new Date()).toISOString(),
       policy: {
@@ -404,7 +436,9 @@ export async function restoreControlledCaseSources(
         }))
         .sort((left, right) => left.caseId.localeCompare(right.caseId)),
     };
-    await writeAtomic(path.join(auditDir, 'case-snapshot-archive-20261105.json'), JSON.stringify(audit, null, 2));
+    const auditText = JSON.stringify(audit, null, 2);
+    const auditHash = createHash('sha256').update(auditText).digest('hex');
+    await writeAtomic(path.join(auditDir, `${auditHash}.json`), auditText);
   }
 
   const cases = plans.map((plan): RestoreCaseResult => ({

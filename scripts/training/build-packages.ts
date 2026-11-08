@@ -10,7 +10,7 @@ import { examProtocol } from '../../src/domain/exam-protocol';
 import { sourceHistoryFacts, deidentifyClinicalText } from '../../src/lib/history-dialogue';
 import { computeCaseDataVersion } from '../../src/lib/case-data-version';
 import { teachingPackageVersion } from '../../src/lib/teaching-package-store';
-import { recordSchema } from '../../src/lib/teacher-case-data';
+import { recordSchema, getKnowledgeRoot } from '../../src/lib/teacher-case-data';
 import { teachingPackageSchema, type TeachingPackage, type TeachingExam, type TeachingTest, type TeachingRubricItem } from '../../src/domain/teaching-package';
 import { extractObjectiveTestReport } from '../../src/domain/test-report-extraction';
 import { CURRICULA } from './curricula';
@@ -18,8 +18,9 @@ import { patientAppearance,allowedPostures } from '../../src/domain/patient-appe
 import { publicCaseId } from '../../src/lib/case-identity';
 import { parseAgeToDays, toAgeBand } from '../../src/domain/communication-profile';
 
-const root=path.resolve('knowledge/training-packages');
-const delivery=path.resolve('deliverables/67-cases-20261107');
+const sourceRoot=path.join(getKnowledgeRoot(),'teaching-cases');
+const root=path.resolve(process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT||'knowledge/training-packages');
+const delivery=path.resolve(process.env.PEDIATRICS_TRAINING_DELIVERY_ROOT||'deliverables/67-cases-20261107');
 for(const dir of [root,path.join(root,'packages'),path.join(root,'media'),delivery,path.join(delivery,'json')])mkdirSync(dir,{recursive:true});
 const mediaIndexPath=path.resolve('outputs/training-20261107/processed-media.json');
 const mediaIndex:Record<string,Array<{testLabel?:string;examSite?:string;fileId:string;kind:'image';caption:string}>>=existsSync(mediaIndexPath)?JSON.parse(readFileSync(mediaIndexPath,'utf8')):{};
@@ -90,10 +91,10 @@ function groupForSite(part:string):string{
 
 const entries:Record<string,string>={};const inventory=[];
 for(const [ordinal,item] of TEACHER_CASE_CATALOG.filter(item=>{
-  const sourceId=TEACHER_CASE_LINKS[item.id]?.sourceId??item.id;return existsSync(path.join('knowledge/teaching-cases',`${sourceId}.json`));
+  const sourceId=TEACHER_CASE_LINKS[item.id]?.sourceId??item.id;return existsSync(path.join(sourceRoot,`${sourceId}.json`));
 }).entries()){
   const sourceId=TEACHER_CASE_LINKS[item.id]?.sourceId??item.id;
-  const source=recordSchema.parse(JSON.parse(readFileSync(path.join('knowledge/teaching-cases',`${sourceId}.json`),'utf8')));
+  const source=recordSchema.parse(JSON.parse(readFileSync(path.join(sourceRoot,`${sourceId}.json`),'utf8')));
   const title=item.name;const curriculum=CURRICULA[sourceId.replace(/^teacher-/,'')];
   if(!curriculum)throw new Error(`CURRICULUM_MISSING:${sourceId}`);
   const sourceVersion=computeCaseDataVersion(source);
