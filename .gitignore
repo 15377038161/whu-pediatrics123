@@ -35,3 +35,6 @@ supabase/.temp/
 
 # Raw model replies and operational audit evidence stay private.
 artifacts/model-acceptance/
+
+# Temporary Git synchronization artifacts stay local, never auto-committed.
+/.codex-sync/
