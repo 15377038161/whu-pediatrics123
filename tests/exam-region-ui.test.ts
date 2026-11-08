@@ -14,8 +14,15 @@ import {EXAM_INSTRUMENTS} from '@/domain/exam-anatomy';
 
 const noop = () => undefined;
 
-test('自主查体首屏保留人物图片并提供全部器材，选择不预先透露有效组合',()=>{
+test('旧版本未声明生长测量能力时不展示尚无对应结果的新器材',()=>{
   const html=renderToStaticMarkup(createElement(ClinicalExam,{image:'/test-person.webp',alt:'合成测试患儿',posture:'standing',position:'standing',positions:['standing','supine'],onPositionChange:noop,busy:false,hygieneCompleted:false,observation:null,onExamine:noop,onCloseObservation:noop,onReplayAudio:noop}));
+  assert.equal(html.includes('ce-growth-options'),false);
+  assert.equal(html.includes('alt="婴儿秤"'),false);
+  assert.ok(html.includes('alt="软尺"'));
+});
+
+test('自主查体首屏保留人物图片并提供全部器材，选择不预先透露有效组合',()=>{
+  const html=renderToStaticMarkup(createElement(ClinicalExam,{growthMeasurements:true,image:'/test-person.webp',alt:'合成测试患儿',posture:'standing',position:'standing',positions:['standing','supine'],onPositionChange:noop,busy:false,hygieneCompleted:false,observation:null,onExamine:noop,onCloseObservation:noop,onReplayAudio:noop}));
   assert.ok(html.includes('alt="合成测试患儿"'));
   for(const tool of EXAM_INSTRUMENTS.filter(item=>item.id!=='hand-hygiene')) assert.ok(html.includes(`alt="${tool.label}"`),tool.label+'必须有图片且能自主选择');
   assert.ok(html.includes('开始检查'));

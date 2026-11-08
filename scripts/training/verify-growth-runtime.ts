@@ -8,6 +8,7 @@ import {createInitialSession,runAgentTurn} from '../../src/lib/agent-engine';
 import {readTeachingPackage} from '../../src/lib/teaching-package-store';
 import {GROWTH_TOOLS,growthPosition} from '../../src/domain/growth-exam';
 import type {SessionState,AgentEvent} from '../../src/domain/agent';
+import {projectSessionForRole} from '../../src/lib/session-projection';
 process.env.ENABLE_AI_FIXTURE='true';
 const [oldDirectory,newDirectory,output]=process.argv.slice(2);
 if(!oldDirectory||!newDirectory||!output||!path.resolve(output).startsWith(path.resolve('outputs')+path.sep))throw Error('Usage: verify-growth-runtime <old-archives> <new-archives> <private-output-json>');
@@ -27,6 +28,8 @@ const current=load(newDirectory),results=[];
 for(const pack of current.packages){
   const state=createInitialSession('growth-test','guided',pack.caseId,undefined,pack.sourceVersion);
   assert.equal(state.teachingPackageVersion,pack.version);
+  assert.equal(projectSessionForRole(state,'student').caseOptions?.growthMeasurements,true);
+  assert.deepEqual(projectSessionForRole(state,'student').caseOptions?.exams,[]);
   await runAgentTurn(state,{type:'EXAM_ACTION',data:{toolId:'hand-hygiene',bodyPartId:'hands'}},'prepare');
   for(const tool of GROWTH_TOOLS){
     const exam=pack.exams.find(exam=>exam.toolId===tool&&exam.bodyPartId==='growth')!;
@@ -53,6 +56,7 @@ for(const pack of current.packages){
 }
 const recovered=JSON.parse(JSON.stringify(historical)) as SessionState;
 assert.equal(recovered.teachingPackageVersion,oldVersion);
+assert.notEqual(projectSessionForRole(recovered,'student').caseOptions?.growthMeasurements,true,'historical version must not expose unsupported growth tools');
 assert.equal(readTeachingPackage(recovered.caseId,oldVersion,recovered.sourceSnapshotVersion)?.exams.some(exam=>GROWTH_TOOLS.some(tool=>tool===exam.toolId)),false);
 mkdirSync(path.dirname(output),{recursive:true});
 writeFileSync(output,JSON.stringify({cases:results.length,operations:results.length*GROWTH_TOOLS.length,passed:results.length,oldSessionVersionStable:true,databaseWrites:false,realLogin:false,results},null,2),{mode:0o600});

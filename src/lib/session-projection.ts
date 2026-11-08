@@ -2,6 +2,8 @@ import type { AppRole, SessionState } from '@/domain/agent';
 import { findPublicCase, publicCaseId } from '@/lib/case-identity';
 import { verifiedComplaint } from '@/lib/case-admission';
 import { readTeacherCaseData } from '@/lib/teacher-case-data';
+import {sessionTeachingPackage} from '@/lib/session-teaching';
+import {GROWTH_TOOLS} from '@/domain/growth-exam';
 
 /**
  * 学生会话公开投影（防透题，2026-10-12 第一批任务1）：
@@ -23,6 +25,10 @@ import { readTeacherCaseData } from '@/lib/teacher-case-data';
  */
 export function projectSessionForRole(session: SessionState, role: AppRole): SessionState {
   const publicSession = { ...session, caseId: publicCaseId(session.caseId) };
+  const pack=sessionTeachingPackage(session);
+  if(publicSession.caseOptions&&pack&&GROWTH_TOOLS.every(tool=>pack.exams.some(exam=>exam.toolId===tool&&exam.bodyPartId==='growth'))){
+    publicSession.caseOptions={...publicSession.caseOptions,growthMeasurements:true};
+  }
   // 工作台目录按公开ID查人物配置；教师响应也必须统一ID，避免合法病例被当成退役记录。
   if (role === 'teacher') return publicSession;
   delete publicSession.supplementalTests;
@@ -38,7 +44,7 @@ export function projectSessionForRole(session: SessionState, role: AppRole): Ses
     ...publicSession,
     caseId: publicCaseId(session.caseId),
     caseOptions: {
-      ...session.caseOptions,
+      ...(publicSession.caseOptions ?? session.caseOptions),
       sourceName: complaint ?? profile?.title ?? '真实教学病例',
       complaint: complaint ?? undefined,
       tests: [],

@@ -205,6 +205,8 @@ export interface SessionState {
   /** 病例快照版本绑定：首次加载时固定，之后（含重启后）按此版本恢复病例事实，防止召回漂移换患者。 */
   sourceSnapshotVersion?: string | null;
   caseOptions?: {
+    /** Neutral UI capability from the exact bound teaching version; not a list of positive findings. */
+    growthMeasurements?: boolean;
     sourceName: string;
     complaint?: string;
     age: string;
