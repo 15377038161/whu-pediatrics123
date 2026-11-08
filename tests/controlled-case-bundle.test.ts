@@ -13,6 +13,7 @@ import { registerControlledCase, getControlledCase } from '@/lib/controlled-case
 import { getCaseMediaLink } from '@/lib/case-media';
 import { readTeachingPackage, teachingPackageVersion } from '@/lib/teaching-package-store';
 import {controlledTrainingContentBundles, type ControlledTrainingContentReference} from '@/lib/controlled-case-registry';
+import {defaultCaseVersionDeps,resolveTeacherCaseVersion} from '@/lib/case-version-select';
 
 const hash=(b:Uint8Array)=>createHash('sha256').update(b).digest('hex');
 test('controlled object bundle preserves source version and rejects tampered bytes or wrong identity',()=>{
@@ -91,6 +92,18 @@ test('multi-source recovery binds every source/package version and fails closed 
     await ensureControlledCaseBundle(source.caseId,sourceVersion,loadArchive);
     await ensureControlledCaseBundle(source.caseId,'0'.repeat(16),loadArchive);
     assert.equal(archiveReads,1,'verified generation must not redownload for absent historical bindings');
+    const previousRoot=process.env.PEDIATRICS_KNOWLEDGE_ROOT;
+    const emptyRoot=mkdtempSync(path.join(os.tmpdir(),'peds-empty-source-'));
+    process.env.PEDIATRICS_KNOWLEDGE_ROOT=emptyRoot;
+    try{
+      assert.equal(defaultCaseVersionDeps.getLocalImportVersion(source.caseId),sourceVersion,'cold sandbox resolves a recomputed private source before unverified DB latest');
+      const resolution=await resolveTeacherCaseVersion(source.caseId,{accessToken:'synthetic-never-transmitted',role:'student',isPreview:false},{...defaultCaseVersionDeps,getActiveCaseVersion:async()=> '0'.repeat(16)});
+      assert.equal(resolution.version,'0'.repeat(16),'explicit publication binding still wins; never replace legacy active versions');
+      assert.equal(resolution.source,'active');
+    }finally{
+      if(previousRoot===undefined)delete process.env.PEDIATRICS_KNOWLEDGE_ROOT;else process.env.PEDIATRICS_KNOWLEDGE_ROOT=previousRoot;
+      rmSync(emptyRoot,{recursive:true,force:true});
+    }
   }finally{
     controlledTrainingContentBundles.splice(0,controlledTrainingContentBundles.length,...previousRegistry);
     if(previousRecovery===undefined)delete process.env.PEDIATRICS_TRAINING_RECOVERY;else process.env.PEDIATRICS_TRAINING_RECOVERY=previousRecovery;

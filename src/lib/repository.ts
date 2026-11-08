@@ -6,7 +6,8 @@ import { buildReport } from '@/lib/scoring';
 import { getSupabaseUserClient, withDatabaseRetry } from '@/lib/supabase-client';
 import { ensureCaseSnapshot, getSnapshotVersion, listCaseTests, restoreCaseSnapshotFacts, setSessionTestsCatalog } from '@/lib/case-snapshot';
 import { resolveTeacherCaseVersion } from '@/lib/case-version-select';
-import { ensureControlledCaseBundle } from '@/lib/controlled-case-bundle';
+import { ensureControlledCaseBundle,ensureControlledTrainingContent } from '@/lib/controlled-case-bundle';
+import {verifiedRecoveredSourceVersion} from '@/lib/teaching-package-store';
 import { assertCasePublishedForNewSession } from '@/lib/case-publication';
 import { isScorableCase } from '@/domain/case-classification';
 import { getPublicCase, resolveCaseId } from '@/lib/case-identity';
@@ -370,7 +371,8 @@ export class AgentRepository {
       }
       // 本地 teaching-cases 缺失时，先预热知识库召回快照（失败降级，不阻塞建会话）。
       // 教师触发时同时持久化 answers（诊断/原文/媒体，仅教师可读），学生仅持久化教学事实。
-      await ensureCaseSnapshot(caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
+      await ensureControlledTrainingContent();
+      if(!verifiedRecoveredSourceVersion(caseId))await ensureCaseSnapshot(caseId, { accessToken: this.actor.accessToken, teacher: this.actor.role === 'teacher' });
       const resolution = await resolveTeacherCaseVersion(caseId, {
         accessToken: this.actor.accessToken,
         role: this.actor.role,

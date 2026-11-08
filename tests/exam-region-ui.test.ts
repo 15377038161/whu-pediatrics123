@@ -8,8 +8,8 @@ import { ExamObservationCard, type ExamObservation } from '@/components/exam-reg
 import { partLabel } from '@/domain/exam-regions';
 import { TECHNIQUE_NOTE_BADGE, examTechniqueNote } from '@/domain/exam-technique-notes';
 import { createInitialSession, runAgentTurn } from '@/lib/agent-engine';
-import {ANATOMY_REGIONS} from '@/domain/exam-anatomy';
-import {ClinicalExam,RegionDiagram} from '@/components/clinical-exam';
+import {ClinicalExam} from '@/components/clinical-exam';
+import {examCanvasMap,EXAM_BACK_TEMPLATE} from '@/domain/exam-canvas';
 import {EXAM_INSTRUMENTS} from '@/domain/exam-anatomy';
 
 const noop = () => undefined;
@@ -19,7 +19,11 @@ test('自主查体首屏保留人物图片并提供全部器材，选择不预�
   assert.ok(html.includes('alt="合成测试患儿"'));
   for(const tool of EXAM_INSTRUMENTS.filter(item=>item.id!=='hand-hygiene')) assert.ok(html.includes(`alt="${tool.label}"`),tool.label+'必须有图片且能自主选择');
   assert.ok(html.includes('开始检查'));
-  assert.ok(html.includes('用文字选择具体部位'));
+  assert.ok(html.includes('data-interface="single-canvas"'));
+  assert.equal((html.match(/alt="合成测试患儿"/g)??[]).length,1);
+  assert.ok(html.includes('<details class="ce-temperature-options"><summary>其他测温方式</summary>'));
+  assert.equal(html.includes('ce-operation'),false);
+  assert.ok(html.includes('选择查体大部位'));
 });
 
 test('源记录会话也区分错误器材与资料缺失，三种体温计不可混用且不释放证据',async()=>{
@@ -34,13 +38,14 @@ test('源记录会话也区分错误器材与资料缺失，三种体温计不�
   }
 });
 
-test('胸部后面不显示心前区与心脏听诊区，左右标记随观察面改变',()=>{
-  const region=ANATOMY_REGIONS.find(r=>r.id==='rg-chest')!;
-  const back=renderToStaticMarkup(createElement(RegionDiagram,{region,aspect:'back',selected:null,onSelect:noop,busy:false}));
-  assert.equal(back.includes('aria-label="心前区"'),false);
-  assert.equal(back.includes('aria-label="二尖瓣听诊区"'),false);
-  assert.ok(back.includes('aria-label="右后肺野"'));
-  assert.ok(back.includes('患者左侧'));
+test('胸背定位采用背面模板，左右遵循患者方向且无心前区点',()=>{
+  const map=examCanvasMap(undefined,'standing','rg-chest','back',false);
+  assert.equal(map.image,EXAM_BACK_TEMPLATE);
+  assert.equal(map.sites.some(site=>site.id==='mitral-area'||site.id==='chest-heart'),false);
+  assert.ok(map.sites.some(site=>site.id==='right-lung-back'));
+  const left=map.sites.find(site=>site.id==='left-lung-back')!;
+  const right=map.sites.find(site=>site.id==='right-lung-back')!;
+  assert.ok(left.x<right.x);assert.equal(left.side,'left');assert.equal(right.side,'right');
 });
 
 function observation(status: 'success' | 'blocked', toolId: string, bodyPartId: string, detail: string): ExamObservation {

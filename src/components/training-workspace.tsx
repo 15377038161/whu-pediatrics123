@@ -9,6 +9,7 @@ import { EXAM_INSTRUMENTS } from '@/domain/exam-anatomy';
 import type { ExamObservation } from '@/components/exam-region-panel';
 import { NoteWriting, type NoteWritingHandle } from '@/components/note-writing';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
+import {isRepeatedExamAction} from '@/domain/exam-action-identity';
 import {diagnosticEvidenceEvents} from '@/domain/clinical-evidence';
 import { allowedPostures, patientAppearance } from '@/domain/patient-appearance';
 import { SharedCaseRecord } from '@/components/shared-case-record';
@@ -50,9 +51,9 @@ async function api<T>(url:string,init?:RequestInit):Promise<T>{
   const {authedFetch}=await import('@/lib/authed-api');return authedFetch<T>(url,init);
 }
 
-function PatientFigure({ patient, posture, position, positions, onPositionChange, onExamine, observation, onCloseObservation, onReplayAudio, busy, hygieneCompleted, showReference }: { patient: Omit<PublicCaseProfile, 'sex'> & { sex: string }; posture: 'standing' | 'supine'; position:ExamPosition; positions:ExamPosition[]; onPositionChange:(position:ExamPosition)=>void; onExamine: (part: string,tool:string,location?:ExamLocation) => void; observation: ExamObservation | null; onCloseObservation: () => void; onReplayAudio: () => void; busy: boolean; hygieneCompleted:boolean; showReference:boolean }) {
+function PatientFigure({ patient, posture, position, positions, onPositionChange, onExamine, observation, onCloseObservation, onReplayAudio, busy, hygieneCompleted, showReference, completedActions }: { patient: Omit<PublicCaseProfile, 'sex'> & { sex: string }; posture: 'standing' | 'supine'; position:ExamPosition; positions:ExamPosition[]; onPositionChange:(position:ExamPosition)=>void; onExamine: (part: string,tool:string,location?:ExamLocation) => void; observation: ExamObservation | null; onCloseObservation: () => void; onReplayAudio: () => void; busy: boolean; hygieneCompleted:boolean; showReference:boolean;completedActions:import('@/domain/exam-action-identity').RecordedExamAction[] }) {
   const appearance=patientAppearance(patient.sex,posture,patient.id,patient.age);
-  return <ClinicalExam image={appearance.src} alt={appearance.alt} assetKey={appearance.key} posture={posture} position={position} positions={positions} onPositionChange={onPositionChange} busy={busy} hygieneCompleted={hygieneCompleted} observation={observation} onExamine={onExamine} onCloseObservation={onCloseObservation} onReplayAudio={onReplayAudio} showReference={showReference}/>;
+  return <ClinicalExam image={appearance.src} alt={appearance.alt} assetKey={appearance.key} posture={posture} position={position} positions={positions} onPositionChange={onPositionChange} busy={busy} hygieneCompleted={hygieneCompleted} observation={observation} onExamine={onExamine} onCloseObservation={onCloseObservation} onReplayAudio={onReplayAudio} showReference={showReference} completedActions={completedActions}/>;
 }
 
 
@@ -163,15 +164,16 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       .finally(() => setBusy(false));
   }, [applyDraftBackfill, initialCaseId, initialSessionId, mode, practiceFocus, router, loadAttempt]);
 
+  const engagementSessionId=session?.id;
   useEffect(() => {
-    if (!session) return;
+    if (!engagementSessionId) return;
     // 使用统计：训练会话开始事件（服务端真实身份+时间+幂等落库）
-    reportSessionEvent('session_start', session.id);
+    reportSessionEvent('session_start', engagementSessionId);
     return () => {
       // 离开训练页（含跳转报告页）上报会话结束；结束事件不驱动有效时长区间
-      reportSessionEvent('session_end', session.id);
+      reportSessionEvent('session_end', engagementSessionId);
     };
-  }, [session?.id]);
+  }, [engagementSessionId]);
 
 
   // 阶段 D：语音能力真实探测（每会话一次）；探测失败按不可用处理，语音入口隐藏、文字流程不受影响
@@ -291,10 +293,13 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     return Boolean(result);
   }
   async function examine(part: string, activeTool: string, location?:ExamLocation) {
+    if(!session)return;
+    const data:Extract<AgentEvent,{type:'EXAM_ACTION'}>['data']={toolId:activeTool,bodyPartId:part,posture:effectivePosture,position:effectivePosition,location};
+    if(isRepeatedExamAction(session,data))return;
     const partName = partLabel(part);
     const toolLabel = tools.find((tool) => tool.id === activeTool)?.label ?? activeTool;
-    const result = await sendEvent({ type: 'EXAM_ACTION', data: { toolId: activeTool, bodyPartId: part, posture: effectivePosture, position:effectivePosition, location } });
-    if (!result) return;
+    const result = await sendEvent({ type: 'EXAM_ACTION', data });
+    if (!result || result.repeated) return;
     const latestEvent = result.session.events.at(-1);
     const success = latestEvent?.type === 'EXAM_ACTION' && latestEvent.correct === true;
     const detail = success ? (result.newMessages.at(-1)?.content ?? latestEvent.summary) : (result.feedback ?? latestEvent?.summary ?? '本次操作未获得有效查体结果。');
@@ -342,7 +347,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const spatialExam = !noteOpen && displayStage === 'exam';
   const drawerStage = noteOpen || displayStage === 'assessment' || displayStage === 'plan';
   function openCaseRecord(){
-    if(drawerStage || window.matchMedia('(max-width:1023px)').matches)setRecordOpen(true);
+    if(spatialExam || drawerStage || window.matchMedia('(max-width:1023px)').matches)setRecordOpen(true);
   }
   const showPatient = spatialExam;
   function openNote(){setRecordOpen(false);setNoteOpen(true);router.replace(`/student/training?session=${session!.id}&panel=note`);}
@@ -521,13 +526,13 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         </div>
       </header>
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
-      {noteOpen?<div className="training-note-workspace"><NoteWriting ref={noteRef} sessionId={session.id} embedded context={session} onComplete={()=>void finish()}/></div>:<div className="training-grid" data-patient={showPatient} data-exam={spatialExam} data-record-inline={!drawerStage && !recordOpen}>
+      {noteOpen?<div className="training-note-workspace"><NoteWriting ref={noteRef} sessionId={session.id} embedded context={session} onComplete={()=>void finish()}/></div>:<div className="training-grid" data-patient={showPatient} data-exam={spatialExam} data-record-inline={!spatialExam && !drawerStage && !recordOpen}>
         {(!spatialExam || practiceCompletion === 'exam_observation') && <section tabIndex={-1} className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={false}>
           <div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div>
           <div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮重点</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div>
         </section>}
-        {showPatient&&<section className="workspace-panel training-patient" data-mobile-hidden={false}><div className="panel-head"><h2>自主体格检查</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}</span></div><PatientFigure posture={effectivePosture} position={effectivePosition} patient={caseProfile} positions={postureOptions} onPositionChange={setPosture} onExamine={examine} observation={examObservation} onCloseObservation={() => setExamObservation(null)} onReplayAudio={replayObservationAudio} busy={busy} hygieneCompleted={hygieneCompleted} showReference={session.mode!=='osce'} /></section>}
-        {!drawerStage && !recordOpen && <section ref={recordPanelRef} tabIndex={-1} className="workspace-panel training-record" aria-label="共享病例记录" data-mobile-hidden={true}>
+        {showPatient&&<section className="workspace-panel training-patient" data-mobile-hidden={false}><div className="panel-head"><h2>自主体格检查</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}</span></div><PatientFigure posture={effectivePosture} position={effectivePosition} patient={caseProfile} positions={postureOptions} onPositionChange={setPosture} onExamine={examine} observation={examObservation} onCloseObservation={() => setExamObservation(null)} onReplayAudio={replayObservationAudio} busy={busy} hygieneCompleted={hygieneCompleted} showReference={session.mode!=='osce'} completedActions={session.events.filter(event=>event.type==='EXAM_ACTION'&&event.correct===true&&event.examAction).map(event=>event.examAction!)} /></section>}
+        {!spatialExam && !drawerStage && !recordOpen && <section ref={recordPanelRef} tabIndex={-1} className="workspace-panel training-record" aria-label="共享病例记录" data-mobile-hidden={true}>
           <SharedCaseRecord session={session} onOpenNote={openNote}  audioObservation={examObservation?.status === 'success' && examObservation.sound ? { title: examObservation.title, sound: examObservation.sound } : null} onReplayAudio={replayObservationAudio} />
         </section>}
       </div>}

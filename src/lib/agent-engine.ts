@@ -23,11 +23,12 @@ import type {
   SessionState,
   Stage,
 } from '@/domain/agent';
-import { FLAGSHIP_CASE, findExamRule, findTest, getCase, identifyHistoryIntents, type AuxiliaryTest } from '@/domain/case';
+import { FLAGSHIP_CASE, findExamRule, getCase, identifyHistoryIntents, type AuxiliaryTest } from '@/domain/case';
 import { retrieveKnowledge } from '@/domain/knowledge';
 import { getCaseTestResult, recordCaseTestOrder, refreshProjectedFacts } from '@/lib/case-snapshot';
 import { matchRequestedTest, splitRequestedTests } from '@/lib/test-name-matcher';
 import { canChildSpeak } from '@/domain/communication-profile';
+import {isRepeatedExamAction,normalizedExamAction,type RecordedExamAction} from '@/domain/exam-action-identity';
 import { resolveAuditedCommunicationProfile } from '@/lib/communication-profile-overrides';
 import { getPracticeScenario, PROVIDED_HISTORY_INTENT_IDS } from '@/domain/practice-scenarios';
 import { resolveOsceStation } from '@/domain/osce-stations';
@@ -481,16 +482,22 @@ function handleIntervention(session: SessionState, action: Extract<AgentEvent, {
 }
 
 function handleExam(session: SessionState, toolId: string, bodyPartId: string, clientEventId: string, posture?: ExamPosture, position?:ExamPosition, location?:Extract<AgentEvent,{type:"EXAM_ACTION"}>["data"]["location"]): AgentTurnResult {
+  const data={toolId,bodyPartId,posture,position,location};
+  if(isRepeatedExamAction(session,data))return {session,newMessages:[],feedback:null,repeated:true,trace:[trace('查体规则','相同检查已记录，静默忽略重复操作')]};
+  const operation=normalizedExamAction(session,data);
+  const record=(summary:string,correct:boolean,codes:string[],media?:CaseMedia[],failure?:RecordedExamAction['failure'])=>{
+    session.events.push({...clinicalEvent(clientEventId,'EXAM_ACTION','exam',summary,correct,codes,media),examAction:{...operation,...(failure?{failure}:{})}});
+  };
   const target=ANATOMY_REGIONS.flatMap(r=>r.sites).find(s=>s.id===bodyPartId);
   if(location&&((target?.aspect&&target.aspect!==location.aspect)||(bodyPartId.startsWith('left-')&&location.side!=='left')||(bodyPartId.startsWith('right-')&&location.side!=='right'))){
-    session.events.push(clinicalEvent(clientEventId,'EXAM_ACTION','exam','检查位置的左右或前后面不匹配，未释放结果',false,[]));
+    record('检查位置的左右或前后面不匹配，未释放结果',false,[],undefined,'location');
     return {session,newMessages:[],feedback:feedbackFor(session,'请核对患者左右侧及前后面，示意方向切换不能代替实际调整体位。'),trace:[trace('查体规则','具体位置核对')]};
   }
   // Validate the pairing even for source-only sessions. Missing source data and a
   // mismatched instrument are different outcomes. The old thermometer ID remains
   // readable for historical clients; new UI exposes three explicit thermometers.
   if(target&&toolId!=='hand-hygiene'&&toolId!=='thermometer'&&!instrumentsForSite(bodyPartId).includes(toolId)){
-    session.events.push(clinicalEvent(clientEventId,'EXAM_ACTION','exam','器材测量方式与当前部位不匹配，未释放结果',false,[]));
+    record('器材测量方式与当前部位不匹配，未释放结果',false,[],undefined,'pairing');
     const tool=EXAM_INSTRUMENTS.find(item=>item.id===toolId);
     const usage=toolId==='axillary-thermometer'?'腋下电子体温计应放在腋窝测量。':toolId==='infrared-thermometer'?'额温枪应对准额部测量。':toolId==='tympanic-thermometer'?'耳温计应在耳部按器材要求测量。':'';
     return {session,newMessages:[],feedback:feedbackFor(session,`${tool?.label??'所选器材'}与${anatomyLabel(bodyPartId)}不匹配，本次未获得查体结果。${usage}请重新选择器材或部位。`),trace:[trace('查体规则','器材和部位匹配检查')]};
@@ -503,7 +510,7 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   if(session.teachingPackageVersion)session.examPosition=effectivePosition;
   const positionBlocked=teachingExam?.allowedPositions?!teachingExam.allowedPositions.includes(effectivePosition):(!postureAllows(bodyPartId,effectivePosture)||(rule?.postures&&effectivePosture&&!rule.postures.includes(effectivePosture)));
   if(positionBlocked){
-    session.events.push(clinicalEvent(clientEventId,'EXAM_ACTION','exam','当前检查与实际体位不匹配，未释放结果',false,[]));
+    record('当前检查与实际体位不匹配，未释放结果',false,[],undefined,'position');
     return {session,newMessages:[],feedback:feedbackFor(session,target?.aspect==='back'?'仰卧位不能直接完成后背检查。请实际选择并协助调整为适当的侧卧、坐位等体位；切换前后面示意不会代替体位调整。':'本次检查不适用于当前实际体位，请调整体位后再试。'),trace:[trace('查体规则','实际体位与检查可达性核对')]};
   }
 
@@ -520,21 +527,21 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
     const feedbackText = isSourceCase
       ? (prepared ? '本病例资料未提供该部位与器材组合的体征记录，请换用其他检查组合或记录需补充的检查。' : '尚未完成必要准备。请先进行手卫生并向患儿说明检查。')
       : '器材与部位不匹配，未解锁任何深层体征。';
-    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', summary, false, []));
+    record(summary,false,[],undefined,prepared?'unavailable':'preparation');
     advanceStageTo(session, 'exam');
     session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, feedbackText), trace: traceItems };
   }
   // 分时点事实释放（补充单 §5）：查体项目设定了更晚的可执行阶段时阻止执行，不解锁体征证据。
   if (rule.availableFromStage && !stageReached(session.stage, rule.availableFromStage)) {
-    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}：当前阶段暂不可执行，未解锁`, false, []));
+    record(`${rule.label}：当前阶段暂不可执行，未解锁`,false,[],undefined,'stage');
     advanceStageTo(session, 'exam');
     session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, `${rule.label}需在后续阶段进行，当前阶段暂不可执行。`), trace: traceItems };
   }
   const missing = rule.requires.filter((code) => !session.unlockedEvidence.includes(code));
   if (missing.length > 0) {
-    session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}缺少必要准备动作`, false, []));
+    record(`${rule.label}缺少必要准备动作`,false,[],undefined,'preparation');
     advanceStageTo(session, 'exam');
     session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, '尚未完成必要准备。请先进行手卫生并向患儿说明检查。'), trace: [...traceItems, trace('安全校验', '阻止未完成准备的深层检查')] };
@@ -550,7 +557,7 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   if (measuredVitals.respiratoryRate !== undefined) session.vitals.respiratoryRate = measuredVitals.respiratoryRate;
   if (measuredVitals.spo2 !== undefined) session.vitals.spo2 = measuredVitals.spo2;
   // 结果释放：随事件挂载该查体项绑定的病例媒体（如有；仅图核通过媒体可登记进病例配置）
-  session.events.push(clinicalEvent(clientEventId, 'EXAM_ACTION', 'exam', `${rule.label}${session.teachingPackageVersion?`（实际体位${{standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'}[effectivePosition]}）`:''}${location?`（${{left:'患者左侧',right:'患者右侧',both:'双侧或整体',midline:'正中'}[location.side]}，${location.aspect==='front'?'前面':'后面'}）`:''}：${rule.result}`, true, [rule.evidenceCode], rule.media));
+  record(`${rule.label}${session.teachingPackageVersion?`（实际体位${{standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'}[effectivePosition]}）`:''}${location?`（${{left:'患者左侧',right:'患者右侧',both:'双侧或整体',midline:'正中'}[location.side]}，${location.aspect==='front'?'前面':'后面'}）`:''}：${rule.result}`,true,[rule.evidenceCode],rule.media);
   advanceStageTo(session, 'exam');
   session.updatedAt = now();
   const resultMessage = message('system', rule.result, { kind: 'navigation' });  session.messages.push(resultMessage);
@@ -908,7 +915,7 @@ export async function runAgentTurn(session: SessionState, event: AgentEvent, cli
     throw new Error('SESSION_EXPIRED');
   }
   if (session.events.some((item) => item.clientEventId === clientEventId)||session.testRequests?.some(item=>item.clientEventId===clientEventId)) {
-    return { session, newMessages: [], feedback: null, trace: [trace('病例状态', '重复事件已按幂等键忽略')] };
+    return { session, newMessages: [], feedback: null, ...(event.type==='EXAM_ACTION'?{repeated:true}:{}), trace: [trace('病例状态', '重复事件已按幂等键忽略')] };
   }
   // OSCE 事件-阶段门控 + 专项训练事件门控：学生不得经 API 获取当前模式不应开放的病例事实
   if (!validateEventStage(session, event)) throw new Error(session.mode === 'practice' ? 'PRACTICE_EVENT_FORBIDDEN' : 'OSCE_EVENT_STAGE_FORBIDDEN');

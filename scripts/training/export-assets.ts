@@ -1,10 +1,8 @@
 import {readFileSync,writeFileSync,mkdirSync,copyFileSync} from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {createElement} from 'react';
-import {renderToStaticMarkup} from 'react-dom/server';
-import {ANATOMY_REGIONS,EXAM_INSTRUMENTS,type AnatomyRegion} from '../../src/domain/exam-anatomy';
-import {RegionDiagram} from '../../src/components/clinical-exam';
+import {ANATOMY_REGIONS,EXAM_INSTRUMENTS} from '../../src/domain/exam-anatomy';
+import {EXAM_BACK_TEMPLATE,examCanvasMap} from '../../src/domain/exam-canvas';
 import {patientAppearance,allowedPostures} from '../../src/domain/patient-appearance';
 
 const root='deliverables/67-cases-20261107/assets';
@@ -22,14 +20,8 @@ for(const [band,age] of [['newborn','2天'],['infant','6个月'],['toddler','2�
 // Preserve preschool alternatives used by actual case hashes as well as the 20 base combinations.
 const index=JSON.parse(readFileSync('deliverables/67-cases-20261107/index.json','utf8'));
 for(const entry of index){const pack=JSON.parse(readFileSync(`knowledge/training-packages/packages/${entry.version}.json`,'utf8'));for(const asset of pack.appearanceAssets??[])if(!manifest.some(m=>m.publicPath===asset.publicPath))copy(asset.publicPath,'patients',{id:asset.assetId,posture:asset.posture,basicCombination:false});}
-const diagrams:AnatomyRegion[]=[...ANATOMY_REGIONS,{id:'rg-lower-limb-sole',label:'足底面',outline:'sole',sites:[{id:'plantar',x:67,y:59}]}];
-for(const region of diagrams)for(const aspect of region.id==='rg-chest'?['front','back'] as const:region.id==='rg-back'?['back'] as const:['front'] as const){
-  const markup=renderToStaticMarkup(createElement(RegionDiagram,{region,aspect,selected:null,onSelect:()=>{},busy:false}));
-  const svg=markup.match(/<svg[\s\S]*?<\/svg>/)?.[0];
-  if(!svg)throw new Error('DIAGRAM_MISSING');
-  const target=path.join(root,'anatomy',`${region.id}-${aspect}.svg`);
-  writeFileSync(target,svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '));
-  manifest.push({id:region.id,aspect,path:`anatomy/${path.basename(target)}`,sites:region.sites.filter(s=>!s.aspect||s.aspect===aspect),type:'authored-neutral-diagram',reviewStatus:'automated-unreviewed'});
-}
+copy(EXAM_BACK_TEMPLATE,'anatomy',{id:'shared-back',type:'authored-teaching-template',patientImage:false});
+const locations=ANATOMY_REGIONS.map(region=>({id:region.id,label:region.label,sites:region.sites,back:examCanvasMap(undefined,'standing',region.id,'back',false).sites}));
+writeFileSync(path.join(root,'anatomy','single-canvas-locations.json'),JSON.stringify(locations,null,2));
 writeFileSync(path.join(root,'manifest.json'),JSON.stringify(manifest,null,2));
-console.log(JSON.stringify({instruments:manifest.filter(m=>m.assetClass==='instrument').length,basePatients:manifest.filter(m=>m.basicCombination).length,diagrams:manifest.filter(m=>m.type==='authored-neutral-diagram').length}));
+console.log(JSON.stringify({instruments:manifest.filter(m=>m.assetClass==='instrument').length,basePatients:manifest.filter(m=>m.basicCombination).length,backTemplates:manifest.filter(m=>m.type==='authored-teaching-template').length}));

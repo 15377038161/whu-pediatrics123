@@ -62,3 +62,9 @@
 
 预览配置`PEDIATRICS_TRAINING_RECOVERY=object-storage`时，沿用`ensureControlledCaseBundle`从代码登记的不可变对象恢复来源及教学包；只接受各自重算一致的版本。该设置仅控制私有文件读取，不授权数据库导入、发布或历史重评。源已恢复但教学包未恢复时继续核验教学代次；不将16位源版本误传为20位教学版本。媒体分包以全部登记成员校验后再释放单项像素，客户端仍只接收当前会话已释放的中性媒体标识。
 
+
+## 单画布与重复查体
+
+沿用 `EXAM_ACTION`。成功事件增加可选 `examAction`：toolId、bodyPartId、position、location（side/aspect）、prepared、phase；失败事件另记failure类别。它只描述实际发生的操作，不下发隐藏配对矩阵。旧事件无此字段时不自动补定位。相同操作重复请求返回 `repeated:true`、`feedback:null`、空newMessages，不再添加临床事件；同clientEventId重试也使用此标识。客户端据此禁止重新弹窗和播报，历史结果从记录抽屉读取。
+
+新会话先完成受控代次来源加载，再选择来源版本；显式活动绑定始终优先，恢复来源不能覆盖它。恢复注册按代次顺序执行，已加载旧代次不阻止后续新代次核验。此过程不写活动绑定或历史成绩。

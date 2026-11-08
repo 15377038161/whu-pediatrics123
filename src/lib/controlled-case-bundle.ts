@@ -7,7 +7,7 @@ import { teachingPackageSchema } from '@/domain/teaching-package';
 import { recordSchema, getTeacherSourceId, type TeacherCaseData } from '@/lib/teacher-case-data';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
 import { getControlledCase, registerControlledCase } from '@/lib/controlled-case-store';
-import { readTeachingPackage, registerRecoveredTeachingPackages, teachingPackageVersion } from '@/lib/teaching-package-store';
+import { registerRecoveredTeachingPackages, teachingPackageVersion } from '@/lib/teaching-package-store';
 import {
   controlledCaseBundles as bundles,
   controlledTrainingContentBundles,
@@ -219,22 +219,8 @@ async function readArchive(fileId:string):Promise<Uint8Array>{
   const {StorageClient}=await import('coder-coding-dev-sdk');
   return new StorageClient().readFile({fileId});
 }
-export async function ensureControlledCaseBundle(caseId: string, version?: string | null, loadArchive=readArchive): Promise<void> {
-  const sourceId=getTeacherSourceId(caseId);
-  for (const ref of bundles.filter(b=>b.sourceId===sourceId && (!version || b.version===version))) {
-    if (getControlledCase(sourceId,ref.version)) continue;
-    let task=inflight.get(ref.fileId);
-    if(!task){
-      task=(async()=>{
-        const bytes=await loadArchive(ref.fileId);
-        registerControlledCase(decodeControlledCaseBundle(bytes,ref),ref.version);
-      })();inflight.set(ref.fileId,task);
-    }
-    try { await task; } finally { inflight.delete(ref.fileId); }
-  }
-  if(!version)return;
-  // A source may already be warm while its independent teaching generation is still missing.
-  if(getControlledCase(sourceId,version)&&readTeachingPackage(caseId,undefined,version))return;
+/** Recover the approved current index before resolving an unbound new session after sandbox reinitialization. */
+export async function ensureControlledTrainingContent(loadArchive=readArchive):Promise<void>{
   if(process.env.PEDIATRICS_TRAINING_RECOVERY!=='object-storage')return;
   for(const ref of controlledTrainingContentBundles){
     const key=`content:${ref.fileId}:${ref.sha256}`;
@@ -247,6 +233,22 @@ export async function ensureControlledCaseBundle(caseId: string, version?: strin
       })();inflight.set(key,task);
     }
     try{await task;}finally{inflight.delete(key);}
-    if(getControlledCase(sourceId,version)&&readTeachingPackage(caseId,undefined,version))return;
+  }
+}
+
+export async function ensureControlledCaseBundle(caseId: string, version?: string | null, loadArchive=readArchive): Promise<void> {
+  // Load all registered generations in order: a warm older package must not hide a newer current index.
+  await ensureControlledTrainingContent(loadArchive);
+  const sourceId=getTeacherSourceId(caseId);
+  for (const ref of bundles.filter(b=>b.sourceId===sourceId && (!version || b.version===version))) {
+    if (getControlledCase(sourceId,ref.version)) continue;
+    let task=inflight.get(ref.fileId);
+    if(!task){
+      task=(async()=>{
+        const bytes=await loadArchive(ref.fileId);
+        registerControlledCase(decodeControlledCaseBundle(bytes,ref),ref.version);
+      })();inflight.set(ref.fileId,task);
+    }
+    try { await task; } finally { inflight.delete(ref.fileId); }
   }
 }

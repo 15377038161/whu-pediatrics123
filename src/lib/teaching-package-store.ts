@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { teachingPackageSchema, type TeachingPackage } from '@/domain/teaching-package';
 import { resolveCaseId } from '@/lib/case-identity';
+import {getControlledCase} from '@/lib/controlled-case-store';
 
 export function teachingPackageVersion(value:Omit<TeachingPackage,'version'>|TeachingPackage):string {
   const {version: _version,...content}=value as TeachingPackage;
@@ -63,4 +64,11 @@ export function readTeachingPackage(caseId:string,version?:string|null,sourceVer
     if(sourceVersion&&sourceVersion!==record.sourceVersion)return null;
     return record;
   }catch{return null;}
+}
+
+/** A verified private source can serve as the local full-content source when the sandbox filesystem is empty. */
+export function verifiedRecoveredSourceVersion(caseId:string):string|null{
+  if(process.env.PEDIATRICS_TRAINING_RECOVERY!=='object-storage')return null;
+  const pack=readTeachingPackage(caseId);
+  return pack&&getControlledCase(pack.sourceId,pack.sourceVersion)?pack.sourceVersion:null;
 }

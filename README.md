@@ -219,4 +219,4 @@ GitHub `main` 拉取与 Coder 上线步骤见 [GitHub 与 Coder 部署交接](do
 
 教师端“病例草稿”提供“恢复并下载核验原件”：按既有教师权限与双表内容指纹恢复后，直接下载私有来源包供本地制作、差异比对与复验。运行审计保存在私有知识目录，不覆盖历史Git审计文件；接口与操作说明见[TRAINING_PACKAGE_API.md](docs/TRAINING_PACKAGE_API.md)和[TRAINING_CONTENT_AUTHORING.md](docs/TRAINING_CONTENT_AUTHORING.md)。
 
-Codex 负责全部内容和代码；Coder 仅拉取指定 GitHub 提交、安装、构建和运行。查体以人物及局部图片点选为主，学生自主选择器材，服务端校验匹配后释放该会话固定版本的客观所见与反应。操作和本地验收见 [EXAM_INTERACTION.md](docs/EXAM_INTERACTION.md)，OSCE、四专项及67例双角色最终验收范围见 [67_CASES_ACCEPTANCE_STATUS.md](docs/67_CASES_ACCEPTANCE_STATUS.md)。代码更新不代表线上发布或新病例版本已启用。
+Codex 负责全部内容和代码；Coder 仅拉取指定 GitHub 提交、安装、构建和运行。查体采用单一人物画布：大部位展开小部位按钮，密集部位在同画布放大，学生自主选择器材；服务端校验后释放固定版本所见。已完成的相同操作在重复点击和刷新后静默处理，不重复弹窗、播报或计分。默认腋下电子体温计，其他测温方式按需展开。操作和本地验收见 [EXAM_INTERACTION.md](docs/EXAM_INTERACTION.md)，OSCE、四专项及67例双角色最终验收范围见 [67_CASES_ACCEPTANCE_STATUS.md](docs/67_CASES_ACCEPTANCE_STATUS.md)。代码更新不代表线上发布或新病例版本已启用。

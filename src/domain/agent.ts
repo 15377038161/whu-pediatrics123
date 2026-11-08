@@ -97,6 +97,8 @@ export interface CaseMedia {
 }
 
 export interface ClinicalEvent {
+  /** Exact operation identity for quiet repeat suppression; legacy text is never reinterpreted as a fine location. */
+  examAction?:import('./exam-action-identity').RecordedExamAction;
   testReport?:LabReport;
   id: string;
   clientEventId: string;
@@ -259,6 +261,8 @@ export interface AgentTraceItem {
 }
 
 export interface AgentTurnResult {
+  /** Quietly reuse an existing clinical action; UI must not reopen or speak its result. */
+  repeated?:boolean;
   session: SessionState;
   newMessages: AgentMessage[];
   feedback: string | null;

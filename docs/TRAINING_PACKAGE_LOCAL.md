@@ -54,3 +54,5 @@ knowledge/training-packages/
 图片点选查体、器材持有反馈与服务器操作见 [EXAM_INTERACTION.md](EXAM_INTERACTION.md)。完整工作范围与最终67例双角色验收见 [67_CASES_ACCEPTANCE_STATUS.md](67_CASES_ACCEPTANCE_STATUS.md)。
 
 交付归档使用 `python scripts/training/package-delivery.py --date 20261108` 创建全新日期目录及压缩包；目标已存在时拒绝覆盖。仅复制当前索引引用的67个版本、媒体和素材清单，不清理安装目录中的历史版本。归档含私有来源与教师答案，不能上传公开GitHub或放入public。
+
+单画布及静默重复操作的本地浏览器步骤见EXAM_INTERACTION.md。冷启动时先核验全部受控代次来源，再解析无显式绑定的新入口；有显式活动版本的入口仍保持原版本。两个DKA入口现有活动版本与可核验包不一致，不能通过改包版本号解决。

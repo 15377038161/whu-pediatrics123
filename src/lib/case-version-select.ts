@@ -1,6 +1,7 @@
 import { getLocalImportVersion } from '@/lib/teacher-case-import';
 import { getSnapshotVersion, getDatabaseSnapshotVersion, restoreCaseSnapshotFacts } from '@/lib/case-snapshot';
 import { getActiveCaseVersion } from '@/lib/case-active-version';
+import {verifiedRecoveredSourceVersion} from '@/lib/teaching-package-store';
 
 /**
  * 教师病例会话版本选择（权威稳定序，防止完整本地材料被绑定零散召回指纹）：
@@ -23,7 +24,7 @@ export interface CaseVersionDeps {
 
 export const defaultCaseVersionDeps: CaseVersionDeps = {
   getActiveCaseVersion,
-  getLocalImportVersion,
+  getLocalImportVersion:caseId=>getLocalImportVersion(caseId)??verifiedRecoveredSourceVersion(caseId),
   getSnapshotVersion,
   getDatabaseSnapshotVersion,
   restoreCaseSnapshotFacts,

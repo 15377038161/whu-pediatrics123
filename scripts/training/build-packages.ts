@@ -17,6 +17,7 @@ import { CURRICULA } from './curricula';
 import { patientAppearance,allowedPostures } from '../../src/domain/patient-appearance';
 import { publicCaseId } from '../../src/lib/case-identity';
 import { parseAgeToDays, toAgeBand } from '../../src/domain/communication-profile';
+import {hasAffirmedSourceMention,sourceHasSystemicExamConcern} from '../../src/domain/exam-source-context';
 
 const sourceRoot=path.join(getKnowledgeRoot(),'teaching-cases');
 const root=path.resolve(process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT||'knowledge/training-packages');
@@ -136,7 +137,7 @@ for(const [ordinal,item] of TEACHER_CASE_CATALOG.filter(item=>{
     else if(original){result=original[3]+(part!==group?`。原文为${anatomyLabel(group)}整体描述，未独立分区；不能把整体所见自动定位为${anatomyLabel(part)}。`:'');origin='source';scope=part!==group?'whole-region':'local';}
     else if(related){result=`${anatomyLabel(group)}已有整体记录：${related[3]}。此处提供${anatomyLabel(part)}的操作说明，不从整体记录推断局部阴阳性。`;origin='reference';scope='whole-region';}
     else if(measurement||part==='growth'||/power|neuro|fontanelle|external-genitalia|plantar/.test(part)){result=`${protocol.normal} 本项无可核验的独立测量或分级，展示评估方法与参考，不生成患者数值。`;origin='reference';scope='reference';}
-    else if(/休克|低灌注|发绀|青紫|瘫痪|肌无力|水肿|脱水|危重|呼吸衰竭/.test(source.sections.exam+source.sections.diagnosis)){result=`${protocol.normal} 本病例存在可能影响全身表现的病情，缺失局部结果采用参考说明，不擅自补为正常。`;origin='reference';scope='reference';}
+    else if(sourceHasSystemicExamConcern(source.sections.exam,source.sections.diagnosis)){result=`${protocol.normal} 本病例存在可能影响全身表现的病情，缺失局部结果采用参考说明，不擅自补为正常。`;origin='reference';scope='reference';}
     else{result=`教学模拟设定：${protocol.normal.replace('一般正常表现：','')}。此为补充操作场景，不是原患者新增实测记录。`;origin='teaching-simulation';scope='local';}
     const region=ANATOMY_REGIONS.find(r=>r.sites.some(s=>s.id===part));
     const aspect=region?.sites.find(s=>s.id===part)?.aspect;
@@ -150,7 +151,7 @@ for(const [ordinal,item] of TEACHER_CASE_CATALOG.filter(item=>{
     const spec=TESTS.find(t=>t.label===label||t.aliases.includes(label));
     const raw=sourceResult(source.sections.tests,label);
     const hasSourceMedia=(mediaIndex[sourceId]??[]).some(m=>m.testLabel===label);
-    const brainConcern=/脑|神经|癫痫|惊厥|窒息|意识障碍|昏迷|肝豆状/.test(sourceId+source.sections.diagnosis+source.sections.exam.replace(/无[^，。；]{0,8}(?:抽搐|神经|意识障碍)|神志清楚|神清/g,''));
+    const brainConcern=hasAffirmedSourceMention(`${sourceId}\n${source.sections.diagnosis}\n${source.sections.exam}`,['脑','神经','癫痫','惊厥','窒息','意识障碍','昏迷','肝豆状']);
     const simulatedNormal=!raw&&!hasSourceMedia&&label==='头颅MRI'&&!curriculum.tests.includes(label)&&!brainConcern;
     const origin:TeachingTest['origin']=raw||hasSourceMedia?'source':simulatedNormal?'teaching-simulation':'reference';
     const rationale=simulatedNormal?'本例现有资料没有支持常规头颅MRI的神经系统指征，应优先完成与当前主要问题相关的评估；若出现新的意识、局灶神经表现或其他明确指征，可重新判断必要性。':curriculum.tests.includes(label)?`用于本例教学目标的${curriculum.focus.join('、')}评估；需结合实际病史、查体及检查风险确定时机。`:`只有相应鉴别诊断、治疗前评估、并发症或监测指征存在时才考虑；不能因最终结果正常而直接认定多余。`;

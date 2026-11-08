@@ -163,5 +163,7 @@ for entry in index:
 with (ROOT/'病例总索引.csv').open('w',encoding='utf-8-sig',newline='') as f:
     writer=csv.writer(f);writer.writerow(['序号','病例','关联类型','来源ID','原始版本','教学版本','Word','JSON'])
     for e in index:writer.writerow([e['ordinal'],e['title'],e['relation'],e['sourceId'],e['sourceVersion'],e['version'],'word/'+e['filename']+'.docx','json/'+e['filename']+'.json'])
-(Path('outputs/training-20261107')/'document-build.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
+authoring=Path(os.environ.get('PEDIATRICS_TRAINING_AUTHORING_ROOT','outputs/training-20261107'))
+authoring.mkdir(parents=True,exist_ok=True)
+(authoring/'document-build.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
 print(json.dumps({'documents':len(summary),'paragraphs':sum(r['paragraphs'] for r in summary),'pictures':sum(r['images'] for r in summary)}))
