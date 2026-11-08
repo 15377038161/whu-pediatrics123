@@ -5,7 +5,7 @@ import {Check,Hand,Stethoscope,ArrowLeft,ZoomIn,RotateCcw,X} from 'lucide-react'
 import type {ExamLocation,ExamPosition} from '@/domain/agent';
 import type {RecordedExamAction} from '@/domain/exam-action-identity';
 import {ANATOMY_REGIONS,EXAM_INSTRUMENTS,anatomyLabel,type ExamAspect} from '@/domain/exam-anatomy';
-import {examCanvasMap} from '@/domain/exam-canvas';
+import {examCanvasMap,requiredExamPosition} from '@/domain/exam-canvas';
 import type {PhotoTarget,PhotoCrop} from '@/domain/exam-photo-map';
 import {ExamObservationCard,type ExamObservation} from './exam-region-panel';
 
@@ -54,7 +54,7 @@ export function ClinicalExam({image,alt,assetKey,posture,position,positions,onPo
   const region=ANATOMY_REGIONS.find(item=>item.id===regionId),groups=regionId?detailGroups[regionId]:undefined;
   const map=examCanvasMap(assetKey,posture,regionId,aspect,zoom,group);
   const selectedInstrument=instruments.find(item=>item.id===tool);
-  const neededPosition:ExamPosition|null=/^rg-(abdomen|groin)$/.test(regionId??'')&&position!=='supine'?'supine':aspect==='back'&&position==='supine'?(positions.includes('sitting')?'sitting':'lateral'):null;
+  const neededPosition=requiredExamPosition(regionId,aspect,position,positions);
   const visibleSites=region?.sites.filter(site=>(!site.aspect||site.aspect===aspect)&&(!groups||aspect==='back'||groups[group]?.ids.includes(site.id)))??[];
   const points=map.sites.filter(site=>visibleSites.some(item=>item.id===site.id));
   const activeObservation=observation&&(observation.toolId==='hand-hygiene'||observation.bodyPartId===part&&observation.toolId===tool)?observation:null;

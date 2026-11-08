@@ -1,3 +1,4 @@
+import type {ExamPosition} from './agent';
 import {ANATOMY_REGIONS,anatomyLabel,type ExamAspect} from './exam-anatomy';
 import {photoExamMap,type PhotoTarget,type PhotoCrop} from './exam-photo-map';
 
@@ -13,4 +14,11 @@ export function examCanvasMap(assetKey:string|undefined,posture:'standing'|'supi
   })};
   const sites=photo?.sites.map(site=>zoom||!photo.crop?site:{...site,x:photo.crop.x+site.x/100*photo.crop.width,y:photo.crop.y+site.y/100*photo.crop.height})??[];
   return {image:null,crop:zoom?photo?.crop:undefined,regions:photo?.regions??[],sites};
+}
+
+/** Offer only a position that this session actually supports. */
+export function requiredExamPosition(regionId:string|null,aspect:ExamAspect,current:ExamPosition,available:ExamPosition[]):ExamPosition|null{
+  if(/^rg-(abdomen|groin)$/.test(regionId??'')&&current!=='supine')return available.includes('supine')?'supine':null;
+  if(aspect==='back'&&current==='supine')return (['sitting','lateral','standing'] as const).find(value=>available.includes(value))??null;
+  return null;
 }

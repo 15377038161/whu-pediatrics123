@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {examCanvasMap,EXAM_BACK_TEMPLATE} from '../src/domain/exam-canvas';
+import {examCanvasMap,EXAM_BACK_TEMPLATE,requiredExamPosition} from '../src/domain/exam-canvas';
 import {photoExamMap} from '../src/domain/exam-photo-map';
 import {existsSync} from 'node:fs';
 
@@ -24,4 +24,13 @@ test('general examinations retain the full patient image and back uses a real sh
 test('unknown assets do not borrow another child’s pins and no plantar pin is placed on a shoe',()=>{
   assert.deepEqual(examCanvasMap(undefined,'standing',null,'front',false).regions,[]);
   assert.equal(examCanvasMap('school-girl','standing','rg-lower-limb','front',false).sites.some(p=>p.id==='plantar'),false);
+});
+
+test('position prompts appear only when needed and never request an unsupported legacy position',()=>{
+  assert.equal(requiredExamPosition(null,'front','standing',['standing','supine']),null);
+  assert.equal(requiredExamPosition('rg-abdomen','front','standing',['standing','supine']),'supine');
+  assert.equal(requiredExamPosition('rg-abdomen','front','supine',['supine']),null);
+  assert.equal(requiredExamPosition('rg-back','back','supine',['standing','supine']),'standing');
+  assert.equal(requiredExamPosition('rg-back','back','supine',['supine','lateral']),'lateral');
+  assert.equal(requiredExamPosition('rg-back','back','supine',['supine']),null);
 });
