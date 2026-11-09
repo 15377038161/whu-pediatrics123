@@ -64,6 +64,11 @@ createServer(async(req,res)=>{
       return reply({...await getCaseMediaLink(id),caption:media.caption});
     }
     if(url.pathname.endsWith('/finish')){await runAgentTurn(session,{type:'FINISH_SESSION',data:{}},'finish-'+session.id);report=buildReport(session,session.id,{noteText:notes[0]?NOTE_TEMPLATE.map(s=>s.label+'：'+notes[0].content[s.key]).join('；'):''});return reply(projectReportForRole(report,'student'),201);}
+    if(/^\/api\/reports\/[^/]+\/review$/.test(url.pathname)){
+      if(req.method==='GET')return reply(null);
+      res.writeHead(503,{'content-type':'application/json'});
+      res.end(JSON.stringify({ok:false,error:{code:'REVIEW_FIXTURE_UNAVAILABLE',message:'本地界面适配器不调用真实综合复盘模型；请在受控服务器预览验证。',retryable:false}}));return;
+    }
     if(url.pathname.startsWith('/api/reports/'))return reply(report?projectReportForRole(report,'student'):null);
     if(url.pathname==='/api/speech/capabilities')return reply({available:false,tts:{available:false},asr:{available:false}});
     if(url.pathname==='/api/sessions'&&req.method==='POST'){

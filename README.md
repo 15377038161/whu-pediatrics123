@@ -117,7 +117,7 @@
 - `src/domain/teacher-case-catalog.ts`：由 `scripts/generate-teacher-case-catalog.py` 从病种清单和实际目录双向生成的资料登记表。
 - `src/domain/teacher-case-links.ts`：异名和具体亚型映射，不把不同亚型病例合并成一份虚构病历。
 - `src/lib/teacher-case-data.ts`：读取私有知识库中的教学文本，校验数据格式与病例来源。
-- `src/domain/content.ts`：儿科学教学内容总览（病例库、OSCE 考站、专项训练、资源库四大方向）与内容检索函数；规划中的病例与资源以 `planned` 登记，教师审核通过后再落地为正式病例版本。
+- `src/app/student/page.tsx`：按系统进入病例关卡的当前学生首页；关卡顺序与解锁由 `case-progression.ts` 统一计算。
 - `src/domain/case.ts`：版本化病例事实、体征规则和检查结果；教师材料到位后在此新增或升级病例版本。
 - `src/lib/agent-engine.ts`：统一智能体状态机与确定性临床规则。
 - `src/lib/role-agent.ts`：患儿/家长角色提示词、结构化响应校验与确定性降级。

@@ -1,7 +1,7 @@
 // 文本 LLM 使用官方 coder-coding-dev-sdk（读取平台注入的 CODER_CODING_* 凭据）。
 // 注：coze-coding-dev-sdk（0.7.x）读取 COZE_* 变量，沙箱未注入，实测调用失败。
-// TTS/ASR 已取消交付（2026-10-09）：旧 SDK 语音端点实测 404，仅说明当前接入不可用；
-// 旧包仍被保留仅因 HeaderUtils 及错误归一的 duck-typing 兼容。
+// TTS/ASR 沿用 speech.ts 的 coder 原生音频 SDK；历史旧端点 404 不代表当前整条语音链不可用。
+// coze 旧包仍用于 HeaderUtils 等既有兼容接口，不能仅因名称旧而删除依赖。
 import { APIError, Config, LLMClient, NetworkError, VERSION } from 'coder-coding-dev-sdk';
 import type { LLMConfig, Message } from 'coder-coding-dev-sdk';
 

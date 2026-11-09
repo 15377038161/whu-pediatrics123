@@ -63,5 +63,6 @@ export function parsePostVisitReview(text:string,evidence:readonly ReviewEvidenc
 }
 
 export function savedReviewMatches(review:SavedPostVisitReview|undefined,report:TrainingReport,session:SessionState):boolean{
-  return Boolean(review&&review.reportId===report.id&&review.sourceVersion===(session.sourceSnapshotVersion??null)&&review.teachingVersion===(session.teachingPackageVersion??null));
+  return Boolean(review&&review.reportId===report.id&&review.sourceVersion===(session.sourceSnapshotVersion??null)&&review.teachingVersion===(session.teachingPackageVersion??null)
+    &&postVisitReviewSchema.safeParse(review.content).success);
 }

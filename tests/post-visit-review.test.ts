@@ -42,4 +42,5 @@ test('cached feedback is returned only for the original report and source/teachi
   assert.equal(savedReviewMatches(saved,report,session),true);
   assert.equal(savedReviewMatches(saved,{...report,id:'other'},session),false);
   assert.equal(savedReviewMatches(saved,report,{...session,teachingPackageVersion:'new'}),false);
+  assert.equal(savedReviewMatches({...saved!,content:{} as NonNullable<typeof saved>['content']},report,session),false);
 });
