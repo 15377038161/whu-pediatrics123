@@ -198,6 +198,8 @@ export interface SessionState {
   };
   vitals: VitalSigns;
   reportId: string | null;
+  /** Independent, post-completion teaching explanation; never a score or a source of new patient facts. */
+  postVisitReview?: import('./post-visit-review').SavedPostVisitReview;
   /** 会话创建幂等参数指纹；历史会话无此字段。 */
   creationRequest?: string;
   examPosition?:ExamPosition;

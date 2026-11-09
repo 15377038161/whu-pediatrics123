@@ -9,6 +9,7 @@ import { findRubricForReport, isUnscoredReport, rubricStatusForDisplay, unscored
 import { practiceScenarios } from '@/domain/practice-scenarios';
 import { ReportEvidenceMedia } from '@/components/report-evidence-media';
 import { TeachingFeedbackView } from '@/components/teaching-feedback';
+import {PostVisitReviewPanel} from '@/components/post-visit-review';
 
 const dimensions: Array<{ key: keyof TrainingReport['abilities']; label: string; max: number }> = [
   { key: 'history', label: '儿科问诊', max: 25 },
@@ -236,6 +237,7 @@ export function ReportView({ report, readonly = false }: { report: TrainingRepor
   const practiceHref = practiceDeepLink(report.caseId, rankedFocusItems.map((item) => item.dimension));
   return (
     <div>
+      <PostVisitReviewPanel key={report.id} reportId={report.id} readonly={readonly}/>
       {report.teachingFeedback&&<TeachingFeedbackView feedback={report.teachingFeedback}/>}
       <section className="report-hero">
         <div className="score-ring" aria-label={unscored ? '未评分' : `总分 ${report.totalScore} 分`}><strong style={report.teachingFeedback?{fontSize:15}:undefined}>{report.teachingFeedback ? '过程记录' : unscored ? '未评分' : report.totalScore}</strong></div>

@@ -26,6 +26,8 @@ import {GROWTH_TOOLS} from '@/domain/growth-exam';
 export function projectSessionForRole(session: SessionState, role: AppRole): SessionState {
   const publicSession = { ...session, caseId: publicCaseId(session.caseId) };
   const pack=sessionTeachingPackage(session);
+  // Completed feedback has its own report/ownership gate; never return it in training events.
+  delete publicSession.postVisitReview;
   if(publicSession.caseOptions&&pack&&GROWTH_TOOLS.every(tool=>pack.exams.some(exam=>exam.toolId===tool&&exam.bodyPartId==='growth'))){
     publicSession.caseOptions={...publicSession.caseOptions,growthMeasurements:true};
   }

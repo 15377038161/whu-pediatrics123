@@ -1,3 +1,4 @@
+import {reviseExamPackage,sourceGroupForSite as groupForSite} from '../../src/domain/exam-package-revision';
 import {extractLabRows} from '../../src/domain/lab-report';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, renameSync } from 'node:fs';
@@ -83,13 +84,6 @@ function concepts(text:string):string[][]{
 }
 function criterion(section:TeachingRubricItem['section'],level:'basic'|'advanced',id:string,label:string,maxScore:number,fullAnswer:string,sourceLocator:string,evidenceCodes:string[]=[],terms?:string[][]):TeachingRubricItem{
   return {id,section,level,label,maxScore,fullAnswer,sourceLocator,evidenceCodes,concepts:terms??concepts(fullAnswer),partialAnswer:'方向正确，但尚缺本条的必要条件；只给本条一半分，不影响其他独立要点。',incorrectAnswer:'遗漏、否定应做的内容、实施相反或危险措施，或仅泛称“处理一下”而无可识别行动。',safetyCritical:/安全|危重|气道|血钾|意识|禁忌/.test(label),unsafePhrases:[]};
-}
-function groupForSite(part:string):string{
-  if(/lung|chest$/.test(part))return 'chest-lung';if(/area$|chest-heart/.test(part))return 'chest-heart';
-  if(/abdomen-|umbilicus/.test(part))return 'abdomen';if(/kidney|back/.test(part))return 'spine';
-  if(/power|plantar/.test(part))return 'neuro';if(/hip|knee|ankle|foot|elbow|wrist|shoulder/.test(part))return 'joints';
-  if(part==='scalp'||part==='fontanelle')return 'forehead';if(part==='thyroid')return 'neck';if(part==='cervical-nodes'||part==='axilla')return 'lymph-nodes';
-  if(part==='lower-limb-edema'||part==='hands'||part==='finger')return 'limbs';if(part==='nails')return 'skin';if(part==='external-genitalia')return 'groin';return part;
 }
 
 const entries:Record<string,string>={};const inventory=[];
@@ -238,6 +232,7 @@ for(const [ordinal,item] of TEACHER_CASE_CATALOG.filter(item=>{
   const total=pack.rubric.reduce((s,r)=>s+r.maxScore,0),basic=pack.rubric.filter(r=>r.level==='basic').reduce((s,r)=>s+r.maxScore,0);
   if(Math.abs(total-100)>.001||Math.abs(basic-80)>.001)throw new Error('RUBRIC_TOTAL_INVALID');
   // Recompute after schema defaults, keeping serialized bytes and version verification identical.
+  pack.exams=reviseExamPackage(pack,source.sections.exam,source.sections.diagnosis,source.sections.history).exams;
   pack.version=teachingPackageVersion(pack);
   const filename=`${String(ordinal+1).padStart(2,'0')}_${title.replace(/[<>:"/\\|?*]/g,'-')}`;
   const raw=JSON.stringify(pack,null,2);

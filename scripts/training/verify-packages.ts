@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
-import {readFileSync,existsSync,writeFileSync} from 'node:fs';
+import {readFileSync,existsSync,writeFileSync,mkdirSync} from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {teachingPackageSchema} from '../../src/domain/teaching-package';
 import {readTeachingPackage,teachingPackageVersion} from '../../src/lib/teaching-package-store';
 import {ANATOMY_REGIONS,EXAM_INSTRUMENTS,instrumentsForSite} from '../../src/domain/exam-anatomy';
 
-const root='deliverables/67-cases-20261107';const installed='knowledge/training-packages';
+const envPath=(name:string,fallback:string)=>{const value=process.env[name];return value&&value.trim().length>0?value:fallback;};
+const root=envPath('PEDIATRICS_VERIFY_PACKAGE_ROOT','deliverables/67-cases-20261107');const installed=envPath('PEDIATRICS_VERIFY_INSTALLED_ROOT','knowledge/training-packages');
+const resolvedBaselinePath=envPath('PEDIATRICS_VERIFY_BASELINE','backups/20261107-training/baseline.json');const resolvedOutput=envPath('PEDIATRICS_VERIFY_OUTPUT','outputs/training-20261107/package-validation.json');
 const index=JSON.parse(readFileSync(path.join(root,'index.json'),'utf8'));
 assert.equal(index.length,67);assert.equal(new Set(index.map((r:{sourceId:string})=>r.sourceId)).size,53);
 const totals={history:20,exam:25,tests:10,diagnosis:15,plan:20,note:5,communication:5};
@@ -38,9 +40,11 @@ for(const entry of index){
   facts+=pack.historyFacts.length;exams+=pack.exams.length;tests+=pack.tests.length;rubric+=pack.rubric.length;
 }
 for(const id of media){const digest=id.split(':')[1];const bytes=readFileSync(path.join(installed,'media',digest+'.png'));assert.equal(createHash('sha256').update(bytes).digest('hex'),digest);assert.ok(bytes.length<3_000_000);}
-const baseline=JSON.parse(readFileSync('backups/20261107-training/baseline.json','utf8'));
+if(!existsSync(resolvedBaselinePath))throw new Error('BASELINE_MISSING:'+resolvedBaselinePath);
+const baseline=JSON.parse(readFileSync(resolvedBaselinePath,'utf8'));
 for(const source of baseline.sources)assert.equal(createHash('sha256').update(readFileSync(source.path)).digest('hex').toUpperCase(),source.sha256);
 for(const tool of EXAM_INSTRUMENTS)if(tool.image)assert.ok(existsSync(path.join('public',tool.image)));
-const summary={entries:67,sources:53,sourceFilesUnchanged:baseline.sources.length,facts,exams,tests,rubric,numericReports,numericRows,testOrigins:counts,uniqueReleasedMedia:media.size,checkedAt:new Date().toISOString()};
-writeFileSync('outputs/training-20261107/package-validation.json',JSON.stringify(summary,null,2));
+const summary={entries:67,sources:53,sourceFilesUnchanged:baseline.sources.length,facts,exams,tests,rubric,numericReports,numericRows,testOrigins:counts,uniqueReleasedMedia:media.size,roots:{packageRoot:root,installedRoot:installed,baseline:resolvedBaselinePath,output:resolvedOutput},checkedAt:new Date().toISOString()};
+mkdirSync(path.dirname(resolvedOutput),{recursive:true});
+writeFileSync(resolvedOutput,JSON.stringify(summary,null,2));
 console.log(JSON.stringify(summary));

@@ -547,6 +547,21 @@ export class AgentRepository {
     }
   }
 
+  /** Append completed-session feedback only; preserve activity timestamps, operations and report scores. */
+  async savePostVisitReview(sessionId:string,review:NonNullable<SessionState['postVisitReview']>):Promise<void>{
+    const session=await this.getSession(sessionId);
+    if(session.userId!==this.actor.id)throw Error('FORBIDDEN');
+    if(session.status!=='completed'||session.reportId!==review.reportId)throw Error('REVIEW_NOT_COMPLETED');
+    if((session.sourceSnapshotVersion??null)!==review.sourceVersion||(session.teachingPackageVersion??null)!==review.teachingVersion)throw Error('REVIEW_VERSION_CONFLICT');
+    if(session.postVisitReview?.inputHash===review.inputHash)return;
+    const state={...session,postVisitReview:review};
+    if(this.isPreview()){memoryStore().sessions.set(session.id,clone(state));return;}
+    const {data,error}=await this.db().from('training_sessions').update({state})
+      .eq('id',session.id).eq('user_id',this.actor.id).eq('status','completed').select('id').maybeSingle();
+    if(error)throw error;
+    if(!data)throw Error('REVIEW_NOT_SAVED');
+  }
+
   async saveAgentCall(sessionId: string, clientEventId: string, trace: AgentTraceItem[], runtime?: AgentRuntimeSummary): Promise<void> {
     if (this.isPreview()) return;
     const db = this.db();
