@@ -5,7 +5,7 @@ import {
   APIError as CoderAPIError,
   NetworkError as CoderNetworkError,
 } from 'coder-coding-dev-sdk';
-import { AIGatewayError, classifyAIError, invokeCozeAI } from '@/lib/coze-ai';
+import { AIGatewayError, classifyAIError, invokeCozeAI, getAIConfig } from '@/lib/coze-ai';
 
 const messages = [{ role: 'user', content: '测试' }] as const;
 
@@ -190,4 +190,13 @@ test('invokeCozeAI 尊重 Retry-After 提示的下限', async () => {
   );
   assert.equal(sleeps.length, 1);
   assert.ok(sleeps[0] >= 2000);
+});
+
+
+test('每用途的超时传入SDK且关闭内部重试，避免等待预算失效或叠加',()=>{
+ const quick=getAIConfig(12000),report=getAIConfig(90000);
+ assert.equal(quick.timeout,12000);
+ assert.equal(report.timeout,90000);
+ assert.equal(quick.retryTimes,0);
+ assert.equal(report.retryTimes,0);
 });

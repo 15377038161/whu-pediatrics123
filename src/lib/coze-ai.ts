@@ -36,7 +36,7 @@ export function getAIGatewaySettings(): AIGatewaySettings {
  * （兼容旧的 COZE_WORKLOAD_IDENTITY_API_KEY / COZE_INTEGRATION_BASE_URL）；
  * 仅当显式配置 COZE_AI_API_KEY / COZE_AI_BASE_URL 时覆盖。
  */
-export function getAIConfig(): Config {
+export function getAIConfig(timeoutMs = getAIGatewaySettings().timeoutMs): Config {
   const apiKey = process.env.COZE_AI_API_KEY?.trim()
     || process.env.CODER_CODING_API_KEY?.trim()
     || process.env.CODER_CODING_MODEL_API_KEY?.trim()
@@ -50,7 +50,8 @@ export function getAIConfig(): Config {
   return new Config({
     ...(apiKey ? { apiKey } : {}),
     ...(baseUrl ? { baseUrl } : {}),
-    timeout: getAIGatewaySettings().timeoutMs,
+    timeout: timeoutMs,
+    retryTimes: 0, // The application gateway owns retries; never multiply SDK and gateway attempts.
   });
 }
 
@@ -206,9 +207,9 @@ export interface InvokeCozeAIDeps {
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-function defaultInvoke(forwardHeaders?: Record<string, string>): AIInvokeFn {
+function defaultInvoke(forwardHeaders?: Record<string, string>, timeoutMs?: number): AIInvokeFn {
   const headers = forwardHeaders && Object.keys(forwardHeaders).length > 0 ? forwardHeaders : undefined;
-  const client = new LLMClient(getAIConfig(), headers);
+  const client = new LLMClient(getAIConfig(timeoutMs), headers);
   return (messages, llmConfig) => client.invoke(messages, llmConfig);
 }
 
@@ -222,7 +223,7 @@ export async function invokeCozeAI(options: InvokeCozeAIOptions, deps?: InvokeCo
   const maxAttempts = Math.max(1, options.maxAttempts ?? settings.maxAttempts);
   const retryBaseMs = options.retryBaseMs ?? settings.retryBaseMs;
   const sleep = deps?.sleep ?? defaultSleep;
-  const invoke = deps?.invoke ?? defaultInvoke(options.forwardHeaders);
+  const invoke = deps?.invoke ?? defaultInvoke(options.forwardHeaders, timeoutMs);
 
   let lastInfo: AIErrorInfo = { kind: 'unknown', retryable: false, detail: 'no attempt executed' };
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
