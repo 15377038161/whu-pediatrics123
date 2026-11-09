@@ -21,13 +21,13 @@
 .editorHeading>p:first-child { color:var(--pine); font-size:12px; font-weight:700; letter-spacing:.08em; }
 .editorHeading h2 { margin:8px 0 10px; font:800 23px var(--font-display); }
 .editorHeading p { margin:0 0 12px; font-size:13px; color:var(--muted); }
-.questionCard { flex:none; border:1px solid #e0e9db; border-radius:14px; background:#eef3e8; color:#597650; padding:14px 16px; font-size:13px; margin-bottom:16px; line-height:1.7; }
-.questionCard p { margin:5px 0; }
-.questionCard small { color:#6b826b; font-size:11px; }
+
+
+
 .sectionEditor { flex:1; min-height:100px; width:100%; resize:none; border:1px solid #d9e5df; border-radius:14px; padding:20px; background:#fffefb; color:var(--ink); font:inherit; font-size:16px; line-height:1.9; }
-.sectionVoice { flex:none; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; color:var(--muted); font-size:12px; }
-.sectionVoice>span { flex:1 1 220px; }
-.sectionVoice>.voice-hold { flex:0 0 132px; }
+
+
+
 .sectionEditor:focus { outline:2px solid #a6cbbc; outline-offset:1px; }
 .sectionEditor::placeholder { color:#96aaa1; }
 .editorMeta { display:flex; justify-content:space-between; color:#92a69b; font-size:11px; padding:8px 0 12px; }
@@ -48,7 +48,7 @@
 .noteMissingWarn,.noteError { flex-basis:100%; margin:0; font-size:12px; }
 .noteMissingWarn { color:#936d2d; }
 @media(max-width:1100px) { .writingGrid { grid-template-columns:150px minmax(220px,1fr) 200px; gap:16px; } .thinkingPanel { padding:14px; } }
-@media(max-width:767px) { .noteIntro h1 { font-size:20px; } .noteIntro p:not(.eyebrow) { display:none; } .noteIntro { gap:8px; } .writingGrid { grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); gap:4px; } .sectionNav { display:flex; gap:5px; overflow-x:auto; overflow-y:hidden; padding:4px 0 10px; } .sectionNav>p { display:none; } .sectionNav button { flex:none; width:auto; white-space:nowrap; min-height:36px; padding:8px 10px; } .thinkingPanel { display:none; } .questionCard { padding:10px 12px; margin-bottom:10px; } .questionCard small { display:none; } .editorHeading h2 { font-size:20px; margin:4px 0 8px; } .editorHeading>p { margin-bottom:8px; } .sectionEditor { padding:14px; } .noteShell { gap:8px; } }
+@media(max-width:767px) { .noteIntro h1 { font-size:20px; } .noteIntro p:not(.eyebrow) { display:none; } .noteIntro { gap:8px; } .writingGrid { grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); gap:4px; } .sectionNav { display:flex; gap:5px; overflow-x:auto; overflow-y:hidden; padding:4px 0 10px; } .sectionNav>p { display:none; } .sectionNav button { flex:none; width:auto; white-space:nowrap; min-height:36px; padding:8px 10px; } .thinkingPanel { display:none; }   .editorHeading h2 { font-size:20px; margin:4px 0 8px; } .editorHeading>p { margin-bottom:8px; } .sectionEditor { padding:14px; } .noteShell { gap:8px; } }
 
 /* Submitted versions and the shared AI feedback panel. */
 .noteHistory {
@@ -343,7 +343,23 @@
   gap: 10px;
 }
 
-.recordImport{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--white)}
-.recordImport span{flex:1 1 260px;font-size:13px;color:var(--muted)}
+
+
 .noteActions{align-items:flex-start;gap:12px;flex-wrap:wrap}
 .noteActions>p{flex-basis:100%;margin:0}
+
+/* Writing stays central; instructions live in the right panel. */
+.noteIntro{padding:0;gap:12px;min-height:40px}
+.noteIntro h1{margin:0;font-size:21px}
+.noteToolbar{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.noteToolbar>button{min-height:34px;padding:6px 12px}
+.importStatus{font-size:12px;color:var(--pine);white-space:nowrap}
+.hintToggle{display:none}
+@media(max-width:767px){
+ .noteIntro{align-items:flex-start;gap:6px}
+ .noteIntro h1{font-size:19px;padding-top:4px;white-space:nowrap}
+ .noteToolbar{gap:5px}
+ .noteToolbar .noteSaveState{font-size:11px;flex-basis:100%;justify-content:flex-end}
+ .hintToggle{display:inline-flex}
+ .thinkingPanel[data-mobile-open='true']{display:block;position:fixed;z-index:50;top:125px;right:12px;left:12px;max-height:calc(100dvh - 150px);box-shadow:0 12px 35px #173c3c22}
+}

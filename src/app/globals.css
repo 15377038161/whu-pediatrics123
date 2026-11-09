@@ -423,9 +423,6 @@ textarea { resize: vertical; }
 .form-field { display: grid; gap: 5px; }
 .form-field label { font-size: 13px; font-weight: 800; }
 .form-field small { color: #6b7c79; }
-.voice-draft-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 5px; }
-.voice-draft-row > span { flex: 1 1 180px; color: var(--muted); font-size: 12px; line-height: 1.55; }
-.voice-draft-row > .voice-hold { flex: 0 0 132px; }
 .clinical-form fieldset.form-field { border: 0; padding: 0; margin: 0; min-inline-size: 0; }
 .clinical-form fieldset.form-field legend { padding: 0; font-size: 13px; font-weight: 800; }
 .clinical-form .checkbox-row { display: flex; align-items: flex-start; gap: 9px; padding: 7px 0; font-weight: 500; cursor: pointer; }

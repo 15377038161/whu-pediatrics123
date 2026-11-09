@@ -31,7 +31,6 @@ import { ConversationThread, type PendingConversation } from '@/components/conve
 import { reportSessionEvent } from '@/lib/engagement-tracker';
 import { fetchSpeechCapabilities } from '@/lib/speech';
 import { resolveSpeechTurnMeta, type SpeechCapabilities, type SpeechTurnMeta, type VoiceRecordingResult } from '@/domain/speech-contract';
-import { appendVoiceTranscript } from '@/domain/voice-draft';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
   { id: 'triage', label: '接诊与分诊', short: '接诊' }, { id: 'history', label: '问诊与沟通', short: '交流' },
@@ -486,8 +485,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       </form>;
       case 'plan': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_PLAN', data: { priority, detail: planDetail } }); if (result) { if (session.mode === 'osce') await navigate('communication'); else if (session.mode === 'practice') await finish(); else await navigate('history'); } }}>
         <div className="stage-intro"><p className="eyebrow">患者安全优先</p><h2>治疗计划</h2><p>首要处置写当前最先做的一件事；后续计划补充药物、监测、复评和随访，无需重复诊断依据。接受要点简答。</p></div>
-        <div className="form-field"><label htmlFor="priority">首要处置</label><input id="priority" required value={priority} onChange={(e) => setPriority(e.target.value)} placeholder="此刻最先做什么？" /><div className="voice-draft-row"><span>识别文本只追加到首要处置，可继续编辑后再提交。</span><VoiceHoldButton sessionId={session.id} disabled={busy} onResult={result=>setPriority(current=>appendVoiceTranscript(current,result.text))}/></div></div>
-        <div className="form-field"><label htmlFor="plan-detail">后续治疗与监测</label><textarea id="plan-detail" required minLength={5} value={planDetail} onChange={(e) => setPlanDetail(e.target.value)} placeholder="补充后续治疗、必要安全条件、监测与复评；不必重复上面的首要处置。" /><div className="voice-draft-row"><span>识别文本只追加到后续治疗与监测，不自动提交。</span><VoiceHoldButton sessionId={session.id} disabled={busy} onResult={result=>setPlanDetail(current=>appendVoiceTranscript(current,result.text))}/></div></div>
+        <div className="form-field"><label htmlFor="priority">首要处置</label><input id="priority" required value={priority} onChange={(e) => setPriority(e.target.value)} placeholder="此刻最先做什么？" /></div>
+        <div className="form-field"><label htmlFor="plan-detail">后续治疗与监测</label><textarea id="plan-detail" required minLength={5} value={planDetail} onChange={(e) => setPlanDetail(e.target.value)} placeholder="补充后续治疗、必要安全条件、监测与复评；不必重复上面的首要处置。" /></div>
         <button className="btn btn-primary btn-block" disabled={busy}>{session.caseOptions ? '保存治疗计划并继续' : '安全校验并继续'}</button>
       </form>;
       case 'communication': return activeScenario?.focus === 'communication'
