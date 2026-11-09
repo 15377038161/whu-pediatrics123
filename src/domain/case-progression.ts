@@ -3,9 +3,9 @@
  *
  * 口径：
  * - 已完成的病例可回看；
- * - 进行中的病例可续做；
  * - 第一个「未完成」的病例即当前可挑战的关卡；
- * - 更靠后的病例未解锁，完成后逐关推进。
+ * - 更靠后的病例一律未解锁，即使历史上存在进行中的会话也不能跳关；
+ * - 只有全部完成后才全部解锁。
  *
  * 纯函数、无副作用：输入病例顺序与会话状态，输出每关的展示状态，
  * 便于对「跨分类连续编号」「全部完成后全开」等边界做确定性测试。
@@ -29,7 +29,8 @@ export function buildLevelLocks(caseIds: string[], sessions: ProgressionSession[
   return caseIds.map((caseId, index) => {
     const completed = completedCaseIds.has(caseId);
     const ongoing = activeCaseIds.has(caseId);
-    const unlocked = ongoing || completed || firstPendingIndex === -1 || index === firstPendingIndex;
+    // active 会话只用于展示「进行中」；不能据此越过前面的未完成关。
+    const unlocked = completed || firstPendingIndex === -1 || index === firstPendingIndex;
     return { caseId, level: index + 1, completed, ongoing, unlocked };
   });
 }

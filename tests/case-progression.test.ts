@@ -16,9 +16,28 @@ test('完成第一关后第二关解锁，第三关仍锁', () => {
   assert.equal(locks[0].completed, true);
 });
 
-test('进行中的病例可续做，即使排在后面', () => {
-  const locks = buildLevelLocks(ids, [{ id: 's2', caseId: 'c', status: 'active' }]);
-  assert.equal(locks.find((lock) => lock.caseId === 'c')?.unlocked, true);
+test('当前可挑战关的进行中会话可继续', () => {
+  const locks = buildLevelLocks(ids, [{ id: 's1', caseId: 'a', status: 'active' }]);
+  assert.equal(locks.find((lock) => lock.caseId === 'a')?.unlocked, true);
+  assert.equal(locks.find((lock) => lock.caseId === 'a')?.ongoing, true);
+  assert.equal(locks.find((lock) => lock.caseId === 'b')?.unlocked, false);
+});
+
+test('后段进行中会话不能越过前面的未完成关', () => {
+  const locks = buildLevelLocks(ids, [
+    { id: 's1', caseId: 'a', status: 'active' },
+    { id: 's2', caseId: 'c', status: 'active' },
+  ]);
+  assert.deepEqual(locks.map((lock) => lock.unlocked), [true, false, false, false]);
+  assert.equal(locks.find((lock) => lock.caseId === 'c')?.ongoing, true);
+});
+
+test('完成前一关后只推进到下一关，后段 active 仍保持锁定', () => {
+  const locks = buildLevelLocks(ids, [
+    { id: 's1', caseId: 'a', status: 'completed' },
+    { id: 's2', caseId: 'c', status: 'active' },
+  ]);
+  assert.deepEqual(locks.map((lock) => lock.unlocked), [true, true, false, false]);
   assert.equal(locks.find((lock) => lock.caseId === 'c')?.ongoing, true);
 });
 
