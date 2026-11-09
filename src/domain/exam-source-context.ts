@@ -20,3 +20,16 @@ export function hasAffirmedSourceMention(text:string,terms:readonly string[]):bo
 export function sourceHasSystemicExamConcern(exam:string,diagnosis:string):boolean{
   return hasAffirmedSourceMention(`${exam}\n${diagnosis}`,['休克','低灌注','发绀','青紫','瘫痪','肌无力','水肿','脱水','危重','呼吸衰竭']);
 }
+
+/**
+ * A systemic finding must not contradict the selected local observation.  Ear-canal/
+ * tympanic-membrane and oropharyngeal morphology are independent of perfusion, oedema
+ * and neuromuscular diagnoses; their own local-positive guards still apply separately.
+ */
+export function sourceHasSystemicExamConcernForSite(exam:string,diagnosis:string,tool:string,part:string):boolean{
+  const known=`${exam}\n${diagnosis}`;
+  if(hasAffirmedSourceMention(known,['危重']))return true;
+  const independentLocalMorphology=(tool==='otoscope'&&part==='ears')||(tool==='tongue-depressor'&&part==='mouth');
+  if(independentLocalMorphology)return false;
+  return sourceHasSystemicExamConcern(exam,diagnosis);
+}

@@ -2,7 +2,7 @@ import {anatomyLabel} from './exam-anatomy';
 import {composeExamFinding,hasAbnormalMarker,type SourceExamSnippet} from './exam-finding-composer';
 import {sourceExamDefinitions} from './exam-methods';
 import {examProtocol} from './exam-protocol';
-import {hasAffirmedSourceMention,sourceHasSystemicExamConcern} from './exam-source-context';
+import {hasAffirmedSourceMention,sourceHasSystemicExamConcernForSite} from './exam-source-context';
 import type {TeachingPackage} from './teaching-package';
 
 export function sourceGroupForSite(part:string):string{
@@ -26,7 +26,6 @@ export function reviseExamPackage(original:TeachingPackage,sourceExam:string,sou
   const pack=structuredClone(original);
   const rows=sourceExamDefinitions(sourceExam).filter((row):row is string[]=>Boolean(row[3])).map(row=>row.slice(0,4) as unknown as SourceExamSnippet);
   const known=`${sourceExam}\n${knownHistory}`;
-  const systemic=sourceHasSystemicExamConcern(known,sourceDiagnosis);
   for(const exam of pack.exams){
     if(exam.origin==='source'||exam.bodyPartId==='growth')continue;
     const part=exam.bodyPartId,group=sourceGroupForSite(part);
@@ -34,8 +33,11 @@ export function reviseExamPackage(original:TeachingPackage,sourceExam:string,sou
     if(!protocol)continue;
     const terms=/general-state|neuro|power/.test(part)?['嗜睡','昏迷','精神差','精神萎靡','反应差','反应迟钝','意识不清']
       :group==='chest-lung'?['喘息','呼吸困难','呼吸费力','呼吸急促']
+      :exam.toolId==='otoscope'&&part==='ears'?['耳痛','耳漏','耳道流液','耳道流脓','听力下降','鼓膜穿孔','鼓膜充血','外耳道充血']
+      :exam.toolId==='tongue-depressor'&&part==='mouth'?['咽痛','咽部充血','扁桃体肿大','口腔疼痛','口腔溃疡','咽部分泌物','口唇发绀','口唇青紫']
       :/skin|nails|eyes/.test(part)?['皮疹','紫癜','黄疸','苍白','出血点']
       :/limbs|joints/.test(group)?['肢体疼痛','关节疼痛','关节肿胀','不能行走']:[];
+    const systemic=sourceHasSystemicExamConcernForSite(known,sourceDiagnosis,exam.toolId,part);
     const result=composeExamFinding({tool:exam.toolId,part,group,protocolNormal:protocol.normal,sourceExams:rows,
       siteConcern:systemic||hasAffirmedSourceMention(known,terms),groupAbnormal:rows.some(row=>(row[1]===group||row[1]===part)&&hasAbnormalMarker(row[3]))
         ||known.split(/[，,。；;\n]/).some(clause=>clause.includes(anatomyLabel(part))&&hasAbnormalMarker(clause)),
