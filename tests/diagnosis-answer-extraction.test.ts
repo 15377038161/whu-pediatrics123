@@ -44,10 +44,11 @@ test('真实病例原件经注入模型抽取，产出带行号与入院/出院�
   assert.equal(result.caseId, record.caseId);
   assert.match(result.version, /^[a-f0-9]{16}$/);
   assert.equal(result.cached, false);
+  // 9cfa 规范化快照将【初步诊断】与“入院诊断”独立为前两行，以下为原件物理行号。
   assert.deepEqual(result.diagnoses.map((item) => [item.sourceQuote, item.sourceLine, item.phase]), [
-    ['支气管肺炎', 1, 'admission'],
-    ['大肠埃希杆菌脑膜炎', 3, 'discharge'],
-    ['轻度贫血', 7, 'discharge'],
+    ['支气管肺炎', 3, 'admission'],
+    ['大肠埃希杆菌脑膜炎', 5, 'discharge'],
+    ['轻度贫血', 9, 'discharge'],
   ]);
   assert.deepEqual(result.management.map((item) => item.sourceQuote), ['抗感染（舒普深、美罗培南）']);
   assert.equal(result.dropped.length, 0);

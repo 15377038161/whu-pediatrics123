@@ -27,7 +27,7 @@ export function reviseExamPackage(original:TeachingPackage,sourceExam:string,sou
   const rows=sourceExamDefinitions(sourceExam).filter((row):row is string[]=>Boolean(row[3])).map(row=>row.slice(0,4) as unknown as SourceExamSnippet);
   const known=`${sourceExam}\n${knownHistory}`;
   for(const exam of pack.exams){
-    if(exam.origin==='source'||exam.bodyPartId==='growth')continue;
+    if(exam.origin==='source')continue;
     const part=exam.bodyPartId,group=sourceGroupForSite(part);
     const protocol=examProtocol(exam.toolId,part);
     if(!protocol)continue;
@@ -42,12 +42,17 @@ export function reviseExamPackage(original:TeachingPackage,sourceExam:string,sou
       siteConcern:systemic||hasAffirmedSourceMention(known,terms),groupAbnormal:rows.some(row=>(row[1]===group||row[1]===part)&&hasAbnormalMarker(row[3]))
         ||known.split(/[，,。；;\n]/).some(clause=>clause.includes(anatomyLabel(part))&&hasAbnormalMarker(clause)),
       partLabel:anatomyLabel(part),groupLabel:anatomyLabel(group)});
-    // Source records already present remain authoritative. No new source/evidence mapping in this revision.
-    if(result.origin==='source'||(result.origin==='reference'&&exam.origin!=='teaching-simulation'))continue;
+    // Original records stay authoritative. Refresh legacy reference prose so unrelated group findings
+    // cannot leak into another operation; never promote an old reference to a new source record.
+    if(result.origin==='source')continue;
     exam.result=result.result;
     exam.origin=result.origin;
     exam.scope=result.scope;
-    exam.sourceLocator=result.origin==='teaching-simulation'?'固定教学补充：器材与部位正常所见；未医学审定；非原患者新增实测':'教学操作参考：已知病情或年龄/测量限制，不补正常患者结论';
+    if(result.origin==='reference'){
+      exam.technique=protocol.technique;
+      exam.reaction=protocol.reaction;
+    }
+    exam.sourceLocator=result.origin==='teaching-simulation'?'固定教学补充：器材与部位正常所见；未医学审定；非原患者新增实测':'教学操作参考：原记录未覆盖本项，或存在年龄、测量、病情及隐私限制；不作为患者实测所见';
   }
   return pack;
 }
