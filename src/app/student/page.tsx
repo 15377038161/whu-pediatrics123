@@ -65,11 +65,26 @@ export default function StudentHome() {
     return () => { current = false; };
   }, [me.id]);
   const system = PEDIATRIC_SYSTEMS.find((item) => item.key === selected) ?? null;
-  const active = sessions.find((session) => session.status === 'active');
   // 门控只出现在分类病例层；顶层 13 个系统始终全开，不设锁。
   const cases = system && catalog
     ? catalog.filter((item) => normalizeCategory(item.category) === system.category)
     : [];
+  // 续诊入口也必须服从各系统内的顺序解锁，不能直接进入历史遗留的后段 active 会话。
+  const unlockedCaseIds = new Set(
+    catalog
+      ? PEDIATRIC_SYSTEMS.flatMap((item) =>
+          buildLevelLocks(
+            catalog
+              .filter((entry) => normalizeCategory(entry.category) === item.category)
+              .map((entry) => entry.id),
+            sessions,
+          )
+            .filter((lock) => lock.unlocked)
+            .map((lock) => lock.caseId),
+        )
+      : [],
+  );
+  const active = sessions.find((session) => session.status === 'active' && unlockedCaseIds.has(session.caseId));
   const lockOf = new Map(buildLevelLocks(cases.map((item) => item.id), sessions).map((lock) => [lock.caseId, lock]));
 
   return <div className={styles.home}>
@@ -139,7 +154,7 @@ export default function StudentHome() {
             const unlocked = lock?.unlocked ?? true;
             const levelNumber = lock?.level ?? 1;
             const target = ongoingSession ? `session=${encodeURIComponent(ongoingSession.id)}` : `mode=guided&case=${encodeURIComponent(item.id)}`;
-            const statusText = completed ? '已完成' : ongoingSession ? '进行中' : unlocked ? '开始接诊' : '未解锁';
+            const statusText = !unlocked ? '未解锁' : completed ? '已完成' : ongoingSession ? '进行中' : '开始接诊';
             return <li key={item.id}>
               {unlocked ? <Link href={`/student/training?${target}`}>
                 <span>第 {levelNumber} 关 · {statusText}</span>
