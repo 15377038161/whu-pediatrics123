@@ -33,10 +33,13 @@ test('学生 + active + 教师病例：sourceName 中性化且 tests 剥离', ()
 
 test('教师角色使用工作台可识别的公开ID，完整事实字段及内部会话保持不变', () => {
   const session = teacherSession();
+  const originalOptions = { ...session.caseOptions! };
+  const expectedOptions = { ...originalOptions, growthMeasurements: true };
   const projected = projectSessionForRole(session, 'teacher');
   assert.match(projected.caseId, /^case-/);
-  assert.deepEqual({ ...projected, caseId: session.caseId }, session);
-  assert.equal(projected.caseOptions, session.caseOptions, '教师核对字段不裁减');
+  assert.deepEqual({ ...projected, caseId: session.caseId }, { ...session, caseOptions: expectedOptions });
+  assert.deepEqual(projected.caseOptions, expectedOptions, '教师核对字段不裁减，并派生本版本生长测量能力');
+  assert.deepEqual(session.caseOptions, originalOptions, '投影不修改原会话');
   assert.equal(session.caseId, 'teacher-川崎病', '持久化ID不就地改变');
 });
 
@@ -57,8 +60,10 @@ test('教师进入合法来源病例时，响应ID可查到人物配置，不落
 test('已完成/报告待生成会话：不投影（复盘需要原始信息）', () => {
   for (const status of ['completed', 'report_pending'] as const) {
     const session = teacherSession({ status });
+    const originalOptions = { ...session.caseOptions! };
     const projected = projectSessionForRole(session, 'student');
-    assert.equal(projected.caseOptions, session.caseOptions, '完成后保留复盘字段');
+    assert.deepEqual(projected.caseOptions, { ...originalOptions, growthMeasurements: true }, '完成后保留复盘字段并派生生长测量能力');
+    assert.deepEqual(session.caseOptions, originalOptions, '投影不修改原会话');
     assert.match(projected.caseId, /^case-/);
   }
 });
@@ -74,10 +79,12 @@ test('无 caseOptions 会话仍经过公开投影', () => {
 test('列表投影：逐条应用且保持顺序', () => {
   const active = teacherSession();
   const completed = teacherSession({ status: 'completed' });
+  const originalOptions = { ...completed.caseOptions! };
   const list = projectSessionsForRole([active, completed], 'student');
   assert.equal(list.length, 2);
   assert.equal(list[0].caseOptions!.sourceName.includes('川崎'), false);
-  assert.equal(list[1].caseOptions, completed.caseOptions, '完成后保留复盘字段');
+  assert.deepEqual(list[1].caseOptions, { ...originalOptions, growthMeasurements: true }, '完成后保留复盘字段并派生生长测量能力');
+  assert.deepEqual(completed.caseOptions, originalOptions, '列表投影不修改原会话');
 });
 
 test('投影不改变持久化语义：返回对象为浅拷贝（原 session 字段不被就地修改）', () => {

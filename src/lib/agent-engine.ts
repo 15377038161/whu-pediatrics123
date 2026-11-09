@@ -614,7 +614,7 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     if(cached)request.test=supplementalTestDefinition(cached);
   }
 
-  const reason = 'testId' in data ? null : (data.reason?.trim() || null);
+  const reason = data.reason?.trim() || null;
   const newMessages: AgentMessage[] = [];
   const feedbackParts: string[] = [];
   const traceItems: AgentTraceItem[] = [trace('病例状态', 'testId' in data ? '点选检查申请' : '文本申请经服务端确定性别名匹配（未下发候选列表）')];

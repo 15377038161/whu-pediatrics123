@@ -243,7 +243,7 @@ export type AgentEvent =
   | { type: 'ASK_QUESTION'; data: { text: string; speech?: EventSpeechMeta } }
   | { type: 'DOCTOR_INTERVENTION'; data: { action: 'child_answer' | 'pause_parent' | 'comfort_child' } }
   | { type: 'EXAM_ACTION'; data: { toolId: string; bodyPartId: string; posture?: 'standing' | 'supine'; position?:ExamPosition; location?: ExamLocation } }
-  | { type: 'ORDER_TEST'; data: { testId: string } | { requestedTests: string; reason?: string } }
+  | { type: 'ORDER_TEST'; data: { testId: string; reason?: string } | { requestedTests: string; reason?: string } }
   | { type: 'SUBMIT_DECISION'; data: { diagnosis: string; secondaryDiagnosis?: string[]; summary: string; diagnosisBasis: string; differentials: string; linkedEventIds?:string[] } }
   | { type: 'SUBMIT_HISTORY_SUMMARY'; data: { summary: string } }
   | { type: 'SUBMIT_EXAM_OBSERVATION'; data: { findings: string; interpretation?: string; linkedEvidence: string[] } }

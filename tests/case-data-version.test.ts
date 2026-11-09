@@ -120,11 +120,10 @@ test('媒体版本贯穿本地读取/导入与绑定，旧版本不读取修订�
 });
 
 /**
- * 查体规则抽取（sourceExamDefinitions）本次改动较大：拆了 stethoscope×chest、补了 14 个子部位。
- * 它只在运行时生成 ExamRule[]，唯一能改指纹的通道是源文件显式声明 examRules——所以这三条一起构成
- * 「改造对已入库版本中性」的硬证据：缺省 ≡ 显式 undefined、显式有值必换版、没有源文件声明它。
+ * 缺省的运行时抽取结果不得进入版本哈希；受控源文件一旦显式保存规则、检查定义或媒体绑定，
+ * 这些固定事实就必须纳入版本。真实资料存在显式字段时，验证其 schema 与版本绑定，而不是跳过或拒绝读取。
  */
-test('查体抽取改造不动版本指纹：examRules 缺省时不参与哈希，受控源文件均未声明该字段', () => {
+test('查体规则缺省保持版本中性，受控源文件显式字段全部纳入版本指纹', () => {
   assert.ok(sourceExamDefinitions(fixture.sections.exam).length > 0, '样本病例抽不出查体规则，本断言失去意义');
   const baseline = computeCaseContentHash(fixture);
   assert.equal(computeCaseContentHash({ ...fixture, examRules: undefined }), baseline, '缺省与显式 undefined 指纹不同，抽取结果就能经此漏进哈希');
@@ -138,10 +137,15 @@ test('查体抽取改造不动版本指纹：examRules 缺省时不参与哈希�
   if (files.length === 0) return; // 受控病例包不入库，缺件环境跳过（与受控包清单同一口径）
   for (const name of files) {
     const record = recordSchema.parse(JSON.parse(readFileSync(path.join(directory, name), 'utf8')));
-    assert.equal(record.examRules, undefined, `${name} 声明了 examRules：抽取改造会改它的指纹，必须先走教师复核换版`);
-    assert.equal(record.examMedia, undefined, `${name} 声明了 examMedia：examId 键名随部位拆分变化，绑定会失联`);
-    assert.equal(record.testDefinitions, undefined, `${name} 声明了 testDefinitions`);
     assert.ok(sourceExamDefinitions(record.sections.exam).length > 0, `${name} 抽不出任何查体规则`);
     assert.equal(computeCaseDataVersion(record), computeCaseDataVersion({ ...record }), name);
+    for (const field of ['examRules', 'examMedia', 'testDefinitions'] as const) {
+      if (record[field] === undefined) continue;
+      assert.notEqual(
+        computeCaseContentHash(record),
+        computeCaseContentHash({ ...record, [field]: undefined }),
+        `${name} 的 ${field} 未纳入版本指纹，固定事实可能在旧绑定下漂移`,
+      );
+    }
   }
 });

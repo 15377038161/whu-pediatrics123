@@ -52,6 +52,12 @@ test('本地包按双版本固定；错误操作不释放媒体，刷新与索�
     await runAgentTurn(session,{type:'ORDER_TEST',data:{requestedTests:'尿常规',reason:'评估尿液变化'}},'test-synthetic');
     assert.equal(findReleasedMedia(session,media.fileId)?.fileId,media.fileId);
     assert.equal(session.events.at(-1)?.testReport?.rows[0].item,'合成表格指标');
+    const point=createInitialSession('synthetic-point-student','guided',id);
+    point.stage='exam';
+    await runAgentTurn(point,{type:'ORDER_TEST',data:{testId:'unit-test',reason:'点选后说明诊断目的'}},'test-point-purpose');
+    assert.equal(point.testRequests?.[0]?.purpose,'点选后说明诊断目的');
+    assert.match(point.events.at(-1)!.summary,/申请目的：点选后说明诊断目的/);
+    assert.ok(point.unlockedEvidence.includes('TEACH_TEST_unit-test'));
     const link=await getCaseMediaLink(media.fileId);assert.ok(link.url.startsWith('data:image/png;base64,'));assert.equal(link.fileName,null);
     session.stage='plan';
     await runAgentTurn(session,{type:'SEND_COMMUNICATION',data:{text:'我理解您的担心，我们先安排检查。'}},'explain-one');
