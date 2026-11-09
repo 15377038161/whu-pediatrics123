@@ -41,6 +41,9 @@ export async function startWavRecording(
   maxDurationMs: number = MAX_RECORDING_MS,
   onLevel?: (level: number) => void,
 ): Promise<WavRecorder> {
+  if (!window.isSecureContext) throw new MicPermissionError('当前页面不是安全连接，浏览器不允许录音。请通过HTTPS或本机localhost打开。');
+  const policy=(document as Document & {permissionsPolicy?:{allowsFeature(name:string):boolean};featurePolicy?:{allowsFeature(name:string):boolean}});
+  if((policy.permissionsPolicy??policy.featurePolicy)?.allowsFeature('microphone')===false)throw new MicPermissionError('当前内嵌预览不允许麦克风。请在独立浏览器标签打开同一HTTPS页面再试；仅开启站点权限无法解除内嵌限制。');
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new MicPermissionError('当前浏览器无法访问麦克风，请使用文字输入。');
   }
@@ -49,7 +52,7 @@ export async function startWavRecording(
     stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
   } catch (error) {
     if (error instanceof DOMException && ['NotAllowedError', 'SecurityError'].includes(error.name)) {
-      throw new MicPermissionError('麦克风权限未开启，请允许权限后重试，或直接使用文字输入。');
+      throw new MicPermissionError('浏览器未允许本次录音。若站点权限已开启，请检查系统麦克风隐私权限及内嵌预览限制，并确认授权的是当前域名。');
     }
     if (error instanceof DOMException && ['NotFoundError', 'DevicesNotFoundError'].includes(error.name)) {
       throw new MicPermissionError('未检测到可用的录音设备，请连接麦克风或使用文字输入。');

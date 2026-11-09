@@ -148,3 +148,15 @@ test('后续提示包含此前方向，避免三次机会重复同一建议', as
     return model('{"hint":"可以继续了解患儿既往就诊与处理后的变化。"}')(messages);
   } });
 });
+
+
+test('每个环节独立三次，刷新回读和旧槽保持原阶段额度',async()=>{
+ const store=new MemoryHintStore();
+ await store.insert({sessionId:'session-1',clientEventId:'direction-hint:slot:1',requestId:'legacy',stage:'history',hint:'继续了解病程',model:'test',durationMs:1});
+ for(let i=0;i<2;i++)await generateDirectionHint(session(),'h'+i,{store,generate:model()});
+ await assert.rejects(()=>generateDirectionHint(session(),'h3',{store,generate:model()}),/HINT_QUOTA_EXHAUSTED/);
+ for(let i=0;i<3;i++)await generateDirectionHint({...session(),stage:'exam'},'e'+i,{store,generate:model()});
+ assert.deepEqual(await getDirectionHintQuota(store,'session-1','history'),{used:3,remaining:0});
+ assert.deepEqual(await getDirectionHintQuota(store,'session-1','exam'),{used:3,remaining:0});
+ assert.deepEqual(await getDirectionHintQuota(store,'session-1','tests'),{used:0,remaining:3});
+});

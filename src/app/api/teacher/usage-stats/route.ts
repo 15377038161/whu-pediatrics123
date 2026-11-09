@@ -1,3 +1,4 @@
+import {resolveCaseId} from '@/lib/case-identity';
 import { NextRequest, NextResponse } from 'next/server';
 import { errorFromUnknown, fail, ok } from '@/lib/api-result';
 import { usageStatsQuerySchema } from '@/lib/engagement-schema';
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
       p_from_date: params.data.from ?? null,
       p_to_date: params.data.to ?? null,
       p_user_id: params.data.userId ?? null,
-      p_case_id: params.data.caseId ?? null,
+      p_case_id: params.data.caseId ? resolveCaseId(params.data.caseId) : null,
     };
     const load = async () => Promise.all([
       db.rpc('teacher_stats_per_student', rpcArgs),

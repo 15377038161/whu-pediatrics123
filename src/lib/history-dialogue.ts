@@ -218,6 +218,7 @@ export async function historyDialogue(session:SessionState,question:string,facts
         act==='explanation'?'本轮医生正在安抚、解释或确认理解。结合刚说的话和家长顾虑自然回应，可复述下一步的大意或澄清不明白之处；不要评价医生处置是否正确，不新增未披露病史，不把医生提到的症状说成患儿已经出现。纯交流不列事实编号。':'本轮主要在采集病史，围绕医生实际询问的内容回答。',
         '按问题对象和知情范围决定说话者。能表达的患儿回答自身感受；家长补充时间与处理。婴儿完全不说台词。双方不必每轮都说话。parentPaused为true且患儿能表达时，先让患儿说；患儿不知情则自然询问能否请家长补充，不代答。',
         'fact.actor=parent的事实只能由parent台词引用；child不能代答既往史、接种史、家族史、外院处理、检查数值或家长补充的时间。actor=child或mixed且属于患儿自身感受的事实才可由child表达。',
+        '用家长日常说法表达：不要照读“患儿、纳差、二便正常、体力体重无明显变化”等病历句式；数值、时序、否定和事实编号仍须准确。',
         '回答长度由问题决定；可围绕当前话题自然补充一项已有事实，或适量表达担忧。不要每轮反问、插话、跑题，不故意含糊事实。',
         '家长可以说自己知道的药品名称，不必把所有专业词强行替换；不讲教学分析。出生用药等患儿不知情内容由家长回答。',
         '每条台词列出实际表达的factIds，不得引用没表达的事实以获取证据。澄清或单纯礼貌表达可用空factIds。',
@@ -230,7 +231,7 @@ export async function historyDialogue(session:SessionState,question:string,facts
       ].join('\n')},{role:'user',content:JSON.stringify({act,question,profile,parentPaused:session.parentInterruption==='paused',context:session.messages.filter(m=>['student','child','parent'].includes(m.actor)).slice(-12).map(m=>({actor:m.actor,content:m.content})),memory:session.dialogueMemory??null,disclosedFactIds:session.askedIntents,facts:allowed.map(({id,text,topics,actor,timeContext,values,negativeTerms})=>({id,text,topics,actor,timeContext,values,negativeTerms})),cooperation:session.behavior.cooperation})}];
       let repairMessages:typeof messages|null=null;
       for(let modelCall=0;modelCall<2;modelCall++){
-        const result:{content:string;attempts?:number}=await(invoke??invokeCozeAI)({messages:repairMessages??messages,llmConfig:{model:process.env.COZE_AI_ROLE_MODEL||'doubao-seed-1-8-251228',temperature:0.45,thinking:'disabled',caching:'disabled'},forwardHeaders,maxAttempts:2});
+        const result:{content:string;attempts?:number}=await(invoke??invokeCozeAI)({messages:repairMessages??messages,llmConfig:{model:process.env.COZE_AI_ROLE_MODEL||'doubao-seed-1-8-251228',temperature:0.45,thinking:'disabled',caching:'disabled'},forwardHeaders,maxAttempts:1,timeoutMs:modelCall===0?12000:6000});
         attempts+=result.attempts??1;
         const raw:string=result.content.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
         const inspected=inspectHistoryDialogue(JSON.parse(raw),allowed,profile,session.stage);
@@ -263,7 +264,7 @@ export async function historyDialogue(session:SessionState,question:string,facts
   const childCanAnswer=canChildSpeak(profile)&&(childAddressed||paused)&&selection.facts.length>0&&selection.facts.every(f=>f.actor!=='parent')&&selection.facts.some(f=>f.childText);
   if(paused&&!childCanAnswer)return {dialogue:{topic:selection.topic,clarification:'家长补充许可',utterances:[{actor:'child',text:'这部分我不太记得，可以请家长补充一下吗？',factIds:[]}]},runtime:{execution:errorKind?'model_fallback':'deterministic',model:null,durationMs:Date.now()-started,...(errorKind?{errorKind,attempts}: {}),...(validationReasons.length?{validationReasons}: {})}};
   const actor=childCanAnswer?'child' as const:'parent' as const;
-  const texts=selection.facts.map(f=>actor==='child'?f.childText??f.text:f.text);
+  const texts=selection.facts.map(f=>actor==='child'?f.childText??f.text:f.text.replace(/患儿/g,'孩子').replace(/起病以来[，,]?/g,'这次不舒服以后，').replace(/食欲及睡眠欠佳/g,'吃东西和睡觉都不太好').replace(/大小便正常/g,'大小便和平时一样').replace(/无明显变化/g,'没什么明显变化'));
   const text=selection.clarification??(texts.length?texts.join('；').replace(/[；。]+$/,'')+'。':/担心|严重|危险/.test(question)?'医生，我也有些担心。您可以先了解孩子现在的情况，再告诉我们接下来怎么安排。':'您想了解哪方面的具体情况？我可以先说孩子的不舒服、这几天的变化，或者已经做过的处理。');
   return {dialogue:{topic:selection.topic,clarification:selection.clarification,utterances:[{actor,text,factIds:selection.facts.map(f=>f.id)}]},runtime:{execution:errorKind?'model_fallback':'deterministic',model:null,durationMs:Date.now()-started,...(errorKind?{errorKind,attempts}: {}),...(validationReasons.length?{validationReasons}: {})}};
 }

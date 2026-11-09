@@ -68,7 +68,7 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
       setExporting(false);
     }
   }
-  return <>
+  return <div className="teacher-student-profile">
     <a className="text-link" href="/teacher"><ArrowLeft size={14} /> 返回学生列表</a>
     <div className="section-head">
       <div>
@@ -117,5 +117,5 @@ export default function TeacherStudentProfilePage({ params }: { params: Promise<
     </div>
     {sessions.length === 0 && <div className="empty-state">该学生在你的授权范围内暂无可见训练记录（学生可能尚未训练，或训练产生于归属你班级之外的期间）。</div>}
     <TeacherStudentNotes studentId={student.id} />
-  </>;
+  </div>;
 }

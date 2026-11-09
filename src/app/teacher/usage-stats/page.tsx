@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, BarChart3, CalendarRange, Download, Filter, LoaderCircle, Timer, TrendingUp, Users, AlertTriangle } from 'lucide-react';
 import type { UsageStatsResult, StudentUsageRow } from '@/app/api/teacher/usage-stats/route';
 import { formatDate } from '@/lib/format-date';
+import type {PublicCaseProfile} from '@/domain/case-catalog';
 import { authedFetch, authedFetchRaw } from '@/lib/authed-api';
 
 const MODE_LABELS: Record<string, string> = {
@@ -68,6 +69,9 @@ function buildQuery(filters: Filters, detailUserId?: string, format?: 'csv' | 'x
 }
 
 export default function TeacherUsageStatsPage() {
+  const [students,setStudents]=useState<StudentUsageRow[]>([]);
+  const [cases,setCases]=useState<PublicCaseProfile[]>([]);
+  useEffect(()=>{let active=true;void authedFetch<PublicCaseProfile[]>('/api/cases').then(rows=>{if(active)setCases(rows);}).catch(()=>undefined);return()=>{active=false;};},[]);
   const [filters, setFilters] = useState<Filters>({ from: '', to: '', userId: '', caseId: '' });
   const [result, setResult] = useState<UsageStatsResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +102,7 @@ export default function TeacherUsageStatsPage() {
     let cancelled = false;
     authedFetch<UsageStatsResult>(buildQuery({ from: '', to: '', userId: '', caseId: '' }))
       .then((data) => {
-        if (!cancelled) setResult(data);
+        if (!cancelled) {setResult(data);setStudents(data.perStudent);}
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(cause instanceof Error ? cause.message : '统计读取失败');
@@ -153,8 +157,8 @@ export default function TeacherUsageStatsPage() {
   }, [filters]);
 
   return (
-    <div className="app-frame">
-      <main className="main-content" id="main-content">
+    <div className="teacher-usage-workspace">
+      <div className="teacher-usage-content">
         <section className="teacher-banner">
           <span className="readonly-badge"><BarChart3 size={14} /> 使用统计（只读）</span>
           <h1>学生使用统计</h1>
@@ -187,14 +191,12 @@ export default function TeacherUsageStatsPage() {
             <input type="date" value={filters.to} min={filters.from || undefined} onChange={(event) => updateFilter('to', event.target.value)} />
           </label>
           <label>
-            <span className="sr-only">学生 UUID</span>
-            <input type="text" placeholder="学生 ID（UUID，可选）" value={filters.userId} onChange={(event) => updateFilter('userId', event.target.value.trim())} />
+            <span>学生</span><select aria-label="筛选学生" value={filters.userId} onChange={event=>updateFilter('userId',event.target.value)}><option value="">全部可见学生</option>{students.map(row=><option key={row.userId} value={row.userId}>{row.displayName}{row.studentNo?` · ${row.studentNo}`:''}</option>)}</select>
           </label>
           <label>
-            <span className="sr-only">病例 ID</span>
-            <input type="text" placeholder="病例 ID（可选）" value={filters.caseId} onChange={(event) => updateFilter('caseId', event.target.value.trim())} />
+            <span>病例</span><select aria-label="筛选病例" value={filters.caseId} onChange={event=>updateFilter('caseId',event.target.value)}><option value="">全部病例</option>{cases.map(row=><option key={row.id} value={row.id}>{row.title}</option>)}</select>
           </label>
-          <div className="teacher-filter-actions">
+          <div className="teacher-filter-actions"><button type="button" className="filter-chip" disabled={loading} onClick={()=>{const empty={from:'',to:'',userId:'',caseId:''};setFilters(empty);setDetailUser(null);void load(empty);}}>重置筛选</button>
             <button type="button" className="filter-chip" data-active onClick={() => void load(filters)}>
               {loading ? <LoaderCircle size={14} className="spin" aria-hidden="true" /> : <Filter size={14} aria-hidden="true" />} 应用筛选
             </button>
@@ -334,7 +336,7 @@ export default function TeacherUsageStatsPage() {
             )}
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }

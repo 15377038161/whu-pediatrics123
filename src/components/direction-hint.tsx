@@ -55,7 +55,7 @@ export function DirectionHint({ sessionId, stage, mode }: { sessionId: string; s
       clientEventIdRef.current = null;
     } catch (cause) {
       setError(cause instanceof AuthedApiError && cause.code === 'HINT_QUOTA_EXHAUSTED'
-        ? '本次接诊的 3 次 AI 方向提示已用完。'
+        ? '当前环节的 3 次 AI 方向提示已用完。'
         : cause instanceof Error ? cause.message : 'AI 方向提示暂时不可用，请稍后重试。');
       if (cause instanceof AuthedApiError && cause.code === 'HINT_QUOTA_EXHAUSTED') setQuota({ used: 3, remaining: 0 });
     } finally {
@@ -68,13 +68,13 @@ export function DirectionHint({ sessionId, stage, mode }: { sessionId: string; s
   return <div className="direction-hint-anchor">
     <button className="btn btn-quiet direction-hint-trigger" type="button" disabled={busy || quota?.remaining === 0} aria-expanded={open} onClick={() => { if (open) setOpen(false); else void requestHint(); }}>
       {busy ? <LoaderCircle className="spin" size={15} /> : <Lightbulb size={15} />}
-      AI 提醒{quota ? ` · 剩余 ${quota.remaining} 次` : ''}
+      本环节提醒{quota ? ` · 剩余 ${quota.remaining} 次` : ''}
     </button>
     {open && <section className="direction-hint-popover" aria-label="AI 方向提示">
       <div className="direction-hint-head"><strong>仅提示下一步采集方向</strong><button className="icon-btn" type="button" aria-label="关闭 AI 方向提示" onClick={() => setOpen(false)}><X size={15} /></button></div>
       {busy && !result ? <p>正在依据本会话已获得的信息整理提示…</p> : null}
       {error ? <p role="alert">{error}</p> : null}
-      {result ? <><p>{result.hint}</p><small>不提供诊断、标准答案或处置方案；本次剩余 {result.remaining} 次。</small></> : null}
+      {result ? <><p>{result.hint}</p><small>不提供诊断、标准答案或处置方案；本环节剩余 {result.remaining} 次。</small></> : null}
       {error && !busy && quota?.remaining !== 0 ? <button className="btn btn-secondary btn-small" type="button" onClick={() => void requestHint()}>重试</button> : null}
     </section>}
   </div>;

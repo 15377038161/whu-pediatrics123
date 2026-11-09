@@ -26,7 +26,7 @@ export function ExamObservationCard({ observation, onClose, onReplayAudio, showR
         {structured ? <dl className="ce-findings"><dt>客观所见</dt><dd>{structured[1]}</dd>{showReference&&<><dt>检查过程</dt><dd>{structured[2]}</dd><dt>患儿反应</dt><dd>{structured[3]}</dd></>}</dl> : <p>{observation.detail}</p>}
       </div>
       {observation.sound && <button type="button" className="exam-auscultation" data-sound={observation.sound} onClick={onReplayAudio}><Volume2 size={15} /><span /><span /><span /><span /><span />{observation.sound === 'wheeze' ? '重播哮鸣音' : '重播湿啰音'}</button>}
-      {showReference && note && <details className="exam-technique-note">
+      {showReference && note && <details className="exam-technique-note" open={observation.status==='success'&&!structured}>
         <summary>查看操作要领与正常表现参考</summary>
         <span className="exam-technique-badge">{TECHNIQUE_NOTE_BADGE}</span>
         {note.kind === 'routine'

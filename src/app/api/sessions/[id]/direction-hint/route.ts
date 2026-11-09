@@ -28,7 +28,7 @@ function userStore(accessToken: string): DirectionHintStore {
       const { data, error } = await db.from('agent_call_records')
         .select('client_event_id,trace')
         .eq('session_id', sessionId)
-        .in('client_event_id', [1, 2, 3].map((slot) => `${DIRECTION_HINT_SLOT_PREFIX}${slot}`));
+        .in('client_event_id', [...[1,2,3].map(slot=>`${DIRECTION_HINT_SLOT_PREFIX}${slot}`),...STAGE_ORDER.flatMap(stage=>[1,2,3].map(slot=>`${DIRECTION_HINT_SLOT_PREFIX}${stage}:${slot}`))]);
       if (error) throw error;
       return (data ?? []).map((row) => ({ clientEventId: row.client_event_id, trace: row.trace }));
     },
@@ -63,7 +63,7 @@ function hintFail(error: unknown) {
     SESSION_NOT_FOUND: { message: '未找到本次接诊记录。', status: 404, retryable: false },
     HINT_DISABLED: { message: 'OSCE 考核不提供 AI 方向提示。', status: 403, retryable: false },
     HINT_UNAVAILABLE: { message: '当前身份无法使用 AI 方向提示。', status: 503, retryable: true },
-    HINT_QUOTA_EXHAUSTED: { message: '本次接诊的 3 次 AI 方向提示已用完。', status: 429, retryable: false },
+    HINT_QUOTA_EXHAUSTED: { message: '当前环节的 3 次 AI 方向提示已用完。', status: 429, retryable: false },
     HINT_REQUEST_CONFLICT: { message: '该提示请求已用于其他阶段，请刷新后重试。', status: 409, retryable: false },
     HINT_STAGE_MISMATCH: { message: '接诊阶段已变化，请刷新后重试。', status: 409, retryable: false },
     HINT_INVALID_RESPONSE: { message: 'AI 提示未通过安全校验，本次不扣次数，请重试。', status: 503, retryable: true },
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   try {
     const { id } = await context.params;
     const { user, session } = await authorizedSession(request, id);
-    return ok(await getDirectionHintQuota(userStore(user.accessToken!), session.id));
+    return ok(await getDirectionHintQuota(userStore(user.accessToken!), session.id, session.stage));
   } catch (error) {
     return hintFail(error);
   }

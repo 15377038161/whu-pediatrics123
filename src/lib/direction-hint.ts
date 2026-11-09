@@ -67,13 +67,15 @@ function storedHint(row: DirectionHintRecordRow): StoredHint | null {
   return stage.success ? { requestId: value.requestId, stage: stage.data, hint: value.hint } : null;
 }
 
-function usedSlots(rows: DirectionHintRecordRow[]): number {
-  return new Set(rows.map((row) => row.clientEventId).filter((id) => /^direction-hint:slot:[1-3]$/.test(id))).size;
+function usedSlots(rows: DirectionHintRecordRow[], stage?: Stage): number {
+  return new Set(rows.filter(row => {
+    const saved=storedHint(row);
+    return /^direction-hint:slot:(?:[a-z_]+:)?[1-3]$/.test(row.clientEventId)&&(!stage||saved?.stage===stage);
+  }).map(row=>row.clientEventId)).size;
 }
-
-function quota(rows: DirectionHintRecordRow[]) {
-  const used = usedSlots(rows);
-  return { used, remaining: Math.max(0, DIRECTION_HINT_LIMIT - used) };
+function quota(rows: DirectionHintRecordRow[], stage?: Stage) {
+  const used=usedSlots(rows,stage);
+  return {used,remaining:Math.max(0,DIRECTION_HINT_LIMIT-used)};
 }
 
 function existingResult(rows: DirectionHintRecordRow[], requestId: string, stage: Stage): DirectionHintResult | null {
@@ -81,13 +83,13 @@ function existingResult(rows: DirectionHintRecordRow[], requestId: string, stage
     const saved = storedHint(row);
     if (!saved || saved.requestId !== requestId) continue;
     if (saved.stage !== stage) throw new DirectionHintError('HINT_REQUEST_CONFLICT');
-    return { hint: saved.hint, ...quota(rows) };
+    return { hint: saved.hint, ...quota(rows, stage) };
   }
   return null;
 }
 
-export async function getDirectionHintQuota(store: DirectionHintStore, sessionId: string) {
-  return quota(await store.list(sessionId));
+export async function getDirectionHintQuota(store: DirectionHintStore, sessionId: string, stage?: Stage) {
+  return quota(await store.list(sessionId),stage);
 }
 
 export function buildDirectionHintMessages(session: Pick<SessionState, 'stage' | 'vitals' | 'events' | 'messages'>, previousHints: string[] = []): Message[] {
@@ -144,7 +146,7 @@ export async function generateDirectionHint(
   let rows = await deps.store.list(session.id);
   const before = existingResult(rows, requestId, session.stage);
   if (before) return before;
-  if (usedSlots(rows) >= DIRECTION_HINT_LIMIT) throw new DirectionHintError('HINT_QUOTA_EXHAUSTED');
+  if (usedSlots(rows, session.stage) >= DIRECTION_HINT_LIMIT) throw new DirectionHintError('HINT_QUOTA_EXHAUSTED');
 
   const now = deps.now ?? Date.now;
   const startedAt = now();
@@ -158,13 +160,13 @@ export async function generateDirectionHint(
   if (afterModel) return afterModel;
 
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    if (usedSlots(rows) >= DIRECTION_HINT_LIMIT) throw new DirectionHintError('HINT_QUOTA_EXHAUSTED');
+    if (usedSlots(rows, session.stage) >= DIRECTION_HINT_LIMIT) throw new DirectionHintError('HINT_QUOTA_EXHAUSTED');
     const occupied = new Set(rows.map((row) => row.clientEventId));
-    const slot = [1, 2, 3].find((value) => !occupied.has(`${DIRECTION_HINT_SLOT_PREFIX}${value}`));
+    const slot = [1, 2, 3].find((value) => !occupied.has(`${DIRECTION_HINT_SLOT_PREFIX}${session.stage}:${value}`));
     if (!slot) throw new DirectionHintError('HINT_QUOTA_EXHAUSTED');
     const inserted = await deps.store.insert({
       sessionId: session.id,
-      clientEventId: `${DIRECTION_HINT_SLOT_PREFIX}${slot}`,
+      clientEventId: `${DIRECTION_HINT_SLOT_PREFIX}${session.stage}:${slot}`,
       requestId,
       stage: session.stage,
       hint,
@@ -174,7 +176,7 @@ export async function generateDirectionHint(
     if (inserted === 'inserted') {
       // 已确认写入即算成功；并发下计数读失败不改变已成功的业务结果。
       const latest = await deps.store.list(session.id).catch(() => null);
-      return { hint, ...(latest ? quota(latest) : { used: Math.min(DIRECTION_HINT_LIMIT, usedSlots(rows) + 1), remaining: Math.max(0, DIRECTION_HINT_LIMIT - usedSlots(rows) - 1) }) };
+      return { hint, ...(latest ? quota(latest, session.stage) : { used: Math.min(DIRECTION_HINT_LIMIT, usedSlots(rows, session.stage) + 1), remaining: Math.max(0, DIRECTION_HINT_LIMIT - usedSlots(rows, session.stage) - 1) }) };
     }
     // 唯一键冲突后必须重读：同请求并发返回原结果，不同请求竞争则分配下一空槽。
     rows = await deps.store.list(session.id);

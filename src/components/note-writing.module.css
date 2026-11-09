@@ -342,3 +342,8 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+
+.recordImport{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--white)}
+.recordImport span{flex:1 1 260px;font-size:13px;color:var(--muted)}
+.noteActions{align-items:flex-start;gap:12px;flex-wrap:wrap}
+.noteActions>p{flex-basis:100%;margin:0}

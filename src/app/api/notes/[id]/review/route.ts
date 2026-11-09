@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
-import { LLMClient } from 'coder-coding-dev-sdk';
 import { errorFromUnknown, fail } from '@/lib/api-result';
-import { getAIConfig } from '@/lib/coze-ai';
+import { invokeCozeAI } from '@/lib/coze-ai';
+import {platformForwardHeaders} from '@/lib/platform-forward-headers';
 import { buildNoteReviewMessages, NOTE_REVIEW_PROMPT_VERSION, parseNoteReview, type StandardSectionsInput } from '@/lib/note-ai-review';
 import { buildReleasedEvidenceSummary } from '@/lib/note-evidence';
 import { projectReportForRole } from '@/lib/report-projection';
@@ -58,16 +58,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (payload: unknown) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
-      let fullText = '';
+
       try {
-        const client = new LLMClient(getAIConfig());
-        for await (const chunk of client.stream(messages, { temperature: 0.3, maxTokens: 4096 })) {
-          if (chunk.content) {
-            fullText += chunk.content;
-            send({ delta: chunk.content });
-          }
-          if (chunk.done) break;
-        }
+        const result=await invokeCozeAI({messages,forwardHeaders:platformForwardHeaders(request.headers,user.accessToken),
+          llmConfig:{model:process.env.COZE_AI_REPORT_MODEL?.trim()||'doubao-seed-1-8-251228',thinking:'enabled',temperature:0.3,maxTokens:6000},
+          timeoutMs:90000,maxAttempts:1});
+        const fullText=result.content;
         const review = parseNoteReview(fullText);
         if (review) {
           await repo.updateNoteReview(id, 'ready', review, NOTE_REVIEW_PROMPT_VERSION);

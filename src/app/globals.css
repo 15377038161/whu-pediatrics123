@@ -1189,3 +1189,18 @@ textarea { resize: vertical; }
   .ce-body-label, .ce-canvas-hint, .ce-context-controls span, .ce-context-controls button, .ce-action b { font-size: 11px; }
   .ce-result .exam-observation-detail { font-size: 13px; }
 }
+
+/* Teacher pages are inside AppShell: never nest its sidebar offset. */
+.teacher-usage-workspace,.teacher-student-profile{width:100%;min-width:0}
+.teacher-usage-content{display:grid;gap:18px}
+.teacher-student-profile{display:grid;gap:20px}
+.teacher-student-profile .section-head{padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--white);margin:0}
+.teacher-student-profile .teacher-metrics{grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin:0}
+.teacher-student-profile .section-head h1{font-size:clamp(22px,2.3vw,32px);overflow-wrap:anywhere}
+.composer-actions{align-items:flex-start;flex-wrap:wrap}
+.composer-actions .voice-hold{display:grid;grid-template-columns:minmax(120px,1fr);flex:0 1 270px}
+.composer-actions .composer-send{min-height:44px}
+.composer-actions .voice-inline-notice{margin:6px 0 0;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+
+.teacher-usage-content .student-filter label{display:grid;gap:6px;min-width:0}
+.teacher-usage-content .student-filter select{min-width:0;width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--white);font:inherit}

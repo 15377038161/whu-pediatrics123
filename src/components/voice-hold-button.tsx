@@ -94,11 +94,12 @@ export function VoiceHoldButton({ sessionId, disabled, onResult }: {
     finishingRef.current = false;
     pointerRef.current = pointerId;
     startYRef.current = startY;
-    if (pointerId !== null) target.setPointerCapture(pointerId);
+
     setNotice('');
     setCancelling(false);
     setPhase('starting');
     try {
+      if(pointerId!==null)target.setPointerCapture(pointerId);
       const recorder = await startWavRecording(MAX_RECORDING_MS, setLevel);
       if (generationRef.current !== generation || !activeRef.current) {
         recorder.cancel();
