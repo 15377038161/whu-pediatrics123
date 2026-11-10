@@ -6,6 +6,7 @@
 
 - 查体先校验器材与部位，再校验年龄适用性；不适用操作不释放患者结果。相同错误重复点击不增加反馈、证据或分数。
 - 整体原始记录可以附带独立 `localSupplement`。局部教学补充不能覆盖原记录，不能冒充新增患者实测。
+- 存在局部补充时，当前操作只释放该定位的固定结果；整体原文保留在私有包，不随着一个局部操作顺带下发其他位置。OSCE不附带手法提示。
 - 制作导出保留局部补充及来源。未解决数量为参考项加上没有局部补充的整体原始项，不能重复统计已经补齐的项。
 - `note-primary-60-v1` 校验病历60、过程40、基础80、提高20；初步诊断及依据各5分。
 - 新量表按正式提交的结构化病历段落评分。问诊/查体事件不能直接代替病历文字得分；病历读取失败与有效提交中的空白段落分别处理。
@@ -22,6 +23,14 @@
 运行相关 `note-primary-*`、`teaching-score`、`exam-authoring-selection`、`exam-fixed-teaching` 测试，并执行类型检查和 ESLint。Windows 外部 node_modules junction 下使用 `next build --webpack`；Coder 常规环境沿用现有生产构建命令。
 
 `verify-exam-revision.ts` 是合成身份的确定性工程验证，不能替代真实师生流程、临床审定或新量表逐例满分可达性验证。候选安装必须使用既有 fetch/verify-only/install 路径；新会话绑定新版，旧会话按原版恢复。
+
+## 预览冷启动
+
+`scripts/run.sh` 与自定义服务器统一使用 `DEPLOY_RUN_PORT`、`PORT`、默认5173的顺序，绑定0.0.0.0；不再依赖不存在的 `.preview` 或通过 `ss` 杀端口进程。沙箱从Git重建、生产产物缺失时，运行既有 `pnpm build` 后启动 `node dist/server.js`，保留OAuth相对跳转处理。正式发布脚本不变。
+
+该预览入口显式设置 `PEDIATRICS_TRAINING_RECOVERY=object-storage` 和 `PEDIATRICS_TRAINING_PREFER_LOCAL=1`，使用现有版本选择器给新预览会话绑定完整私有源及对应教学版。数据库活动版本、旧会话绑定和正式发布入口均不改动。若直接运行 `node dist/server.js` 而未带这两个预览变量，新会话仍可能优先数据库活动源，导致已安装的教学包因源版本不同而不被采用。真实浏览器已观察到这种缺少teachingPackageVersion的情况；安装成功不能替代双版本绑定验收。
+
+私有knowledge与构建产物不进入Git。冷启动数据沿用受控登记恢复；必要时执行现有fetch-runtime、verify-only和install。检测到网关 `KUBERNETES::SANDBOX_NOT_FOUND` 时先从Coder当前预览iframe核对沙箱域名，不把旧沙箱404判为业务路由缺失。
 
 ## 资料包
 

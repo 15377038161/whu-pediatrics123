@@ -48,7 +48,7 @@ for(const pack of current.packages){
       assert.equal(state.events.at(-1)?.correct,false);assert.equal(state.events.at(-1)?.examAction?.failure,'applicability');inapplicable++;
     }else{
       assert.ok(state.events.at(-1)?.correct===true,`OPERATION_NOT_ACCEPTED:${pack.caseId}:${exam.id}`);
-      assert.ok(state.events.at(-1)?.summary.includes(exam.result),`BOUND_RESULT_MISSING:${pack.caseId}:${exam.id}`);
+      assert.ok(state.events.at(-1)?.summary.includes(exam.localSupplement?.result??exam.result),`BOUND_RESULT_MISSING:${pack.caseId}:${exam.id}`);
       if(exam.localSupplement){assert.ok(state.events.at(-1)?.summary.includes(exam.localSupplement.result),'LOCAL_SUPPLEMENT_NOT_RELEASED');localSupplementReleases++;}
     }
     operations++;
