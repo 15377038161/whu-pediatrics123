@@ -226,3 +226,6 @@ Codex 负责全部内容和代码；Coder 仅拉取指定 GitHub 提交、安装
 生长测量器材、固定结果及新旧代次接入见 [GROWTH_EXAM_INTEGRATION](docs/GROWTH_EXAM_INTEGRATION.md)。
 
 查体固定所见修订、候选版本与全库工程核验见 [EXAM_FINDING_REVISIONS](docs/EXAM_FINDING_REVISIONS.md)。报告页综合复盘的生成、保存、权限及不改分边界见 [POST_VISIT_REVIEW](docs/POST_VISIT_REVIEW.md)。电脑端为当前界面优化和体验验收的优先范围。
+
+
+See [fixed exam and note-primary changes](docs/NOTE_PRIMARY_AND_EXAM_20261110.md).

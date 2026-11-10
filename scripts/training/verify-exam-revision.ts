@@ -1,9 +1,10 @@
+import {ageMonths,instrumentApplicability} from '../../src/domain/exam-authoring-standard';
 /** All-case exam release, mismatch, repeat and immutable old-session checks; no model/auth/database writes. */
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import path from 'node:path';
 import {decodeControlledTrainingContent,installRecoveredTrainingContent} from '../../src/lib/controlled-case-bundle';
-import {controlledTrainingContentBundles,type ControlledTrainingContentReference} from '../../src/lib/controlled-case-registry';
+import {type ControlledTrainingContentReference} from '../../src/lib/controlled-case-registry';
 import {createInitialSession,runAgentTurn} from '../../src/lib/agent-engine';
 import {readTeachingPackage} from '../../src/lib/teaching-package-store';
 import {ANATOMY_REGIONS} from '../../src/domain/exam-anatomy';
@@ -27,7 +28,7 @@ const old=load(oldDirectory);
 const historical=old.packages.map(pack=>createInitialSession('exam-revision-history','guided',pack.caseId,undefined,pack.sourceVersion));
 const before=historical.map(state=>JSON.stringify({source:state.sourceSnapshotVersion,version:state.teachingPackageVersion,exams:readTeachingPackage(state.caseId,state.teachingPackageVersion,state.sourceSnapshotVersion)?.exams}));
 const current=load(newDirectory),results=[];
-let operations=0,duplicates=0;
+let operations=0,duplicates=0,inapplicable=0,localSupplementReleases=0;
 for(const pack of current.packages){
   const state=createInitialSession('exam-revision-test','guided',pack.caseId,undefined,pack.sourceVersion);
   assert.equal(state.teachingPackageVersion,pack.version);
@@ -43,8 +44,13 @@ for(const pack of current.packages){
     const side=exam.bodyPartId.startsWith('left-')?'left':exam.bodyPartId.startsWith('right-')?'right':'midline';
     const action:Extract<AgentEvent,{type:'EXAM_ACTION'}>={type:'EXAM_ACTION',data:{toolId:exam.toolId,bodyPartId:exam.bodyPartId,position,posture:exam.postures[0],location:{side,aspect:site.aspect??exam.aspect??'front'}}};
     await runAgentTurn(state,action,`correct-${exam.id}`);
-    assert.ok(state.events.at(-1)?.correct===true,`OPERATION_NOT_ACCEPTED:${pack.caseId}:${exam.id}`);
-    assert.ok(state.events.at(-1)?.summary.includes(exam.result),`BOUND_RESULT_MISSING:${pack.caseId}:${exam.id}`);
+    if(instrumentApplicability(exam.toolId,exam.bodyPartId,ageMonths(pack.age)).status==='not_applicable'){
+      assert.equal(state.events.at(-1)?.correct,false);assert.equal(state.events.at(-1)?.examAction?.failure,'applicability');inapplicable++;
+    }else{
+      assert.ok(state.events.at(-1)?.correct===true,`OPERATION_NOT_ACCEPTED:${pack.caseId}:${exam.id}`);
+      assert.ok(state.events.at(-1)?.summary.includes(exam.result),`BOUND_RESULT_MISSING:${pack.caseId}:${exam.id}`);
+      if(exam.localSupplement){assert.ok(state.events.at(-1)?.summary.includes(exam.localSupplement.result),'LOCAL_SUPPLEMENT_NOT_RELEASED');localSupplementReleases++;}
+    }
     operations++;
     const restored=JSON.parse(JSON.stringify(state)) as SessionState;
     const count=restored.events.length,codes=[...restored.unlockedEvidence];
@@ -102,6 +108,7 @@ for(const [i,saved] of historical.entries()){
 }
 mkdirSync(path.dirname(output),{recursive:true});
 const summary={
+  inapplicable,localSupplementReleases,
   cases:results.length,
   operations,
   duplicates,

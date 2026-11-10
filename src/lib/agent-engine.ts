@@ -1,3 +1,4 @@
+import {ageMonths,instrumentApplicability} from '@/domain/exam-authoring-standard';
 import { historyDialogue, sourceHistoryFacts,disclosedHistoryCodes,conversationAct, type DialogueInvoke } from '@/lib/history-dialogue';
 import { sessionTeachingCase, sessionTeachingPackage } from '@/lib/session-teaching';
 import { readTeachingPackage } from '@/lib/teaching-package-store';
@@ -501,6 +502,14 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
     const tool=EXAM_INSTRUMENTS.find(item=>item.id===toolId);
     const usage=toolId==='axillary-thermometer'?'腋下电子体温计应放在腋窝测量。':toolId==='infrared-thermometer'?'额温枪应对准额部测量。':toolId==='tympanic-thermometer'?'耳温计应在耳部按器材要求测量。':'';
     return {session,newMessages:[],feedback:feedbackFor(session,`${tool?.label??'所选器材'}与${anatomyLabel(bodyPartId)}不匹配，本次未获得查体结果。${usage}请重新选择器材或部位。`),trace:[trace('查体规则','器材和部位匹配检查')]};
+  }
+  const boundPack=sessionTeachingPackage(session);
+  if(boundPack&&toolId!=='hand-hygiene'&&toolId!=='thermometer'){
+    const suitability=instrumentApplicability(toolId,bodyPartId,ageMonths(boundPack.age));
+    if(suitability.status==='not_applicable'){
+      record('本例年龄或检查方法不适用，未释放结果',false,[],undefined,'applicability');
+      return {session,newMessages:[],feedback:feedbackFor(session,suitability.reason),trace:[trace('查体规则','年龄与方法适用性核对')]};
+    }
   }
   if (posture) session.examPosture = posture;
   const rule = session.teachingPackageVersion ? sessionTeachingCase(session).exams.find(item=>item.toolId===toolId&&item.bodyPartId===bodyPartId) ?? null : findExamRule(session.caseId, toolId, bodyPartId, session.sourceSnapshotVersion, session.id);

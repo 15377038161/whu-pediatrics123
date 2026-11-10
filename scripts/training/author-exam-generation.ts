@@ -155,7 +155,7 @@ for(const old of decoded.packages){
   const wholeRegion=canonical.exams.filter(exam=>exam.origin==='source'&&exam.scope==='whole-region'&&!exam.localSupplement).length;
   const supplementedWholeRegion=canonical.exams.filter(exam=>exam.origin==='source'&&exam.scope==='whole-region'&&exam.localSupplement).length;
   const otherWholeRegion=canonical.exams.filter(exam=>exam.origin!=='source'&&exam.scope==='whole-region').length;
-  const remainingNonLocal=canonical.exams.filter(exam=>exam.origin==='reference'||exam.scope!=='local').length;
+  const remainingNonLocal=canonical.exams.filter(exam=>exam.origin==='reference'||exam.scope!=='local'&&!exam.localSupplement).length;
   migratedExisting+=migrations.length;fixedAxillary+=caseFixed.axillary;fixedInfrared+=caseFixed.infrared;
   fixedTympanic+=caseFixed.tympanic;fixedOximeter+=caseFixed.oximeter;fixedGrowth+=caseFixed.growth;metadataChanges+=metadata;
   remainingReference+=referenceCount;remainingWholeRegion+=wholeRegion;localSupplementsTotal+=localSupplements;wholeRegionSupplementedTotal+=supplementedWholeRegion;

@@ -40,7 +40,7 @@ for(const [caseId,version] of Object.entries(index)){
  const rows=pack.exams.map((exam,i)=>{
   const standard=detailedExamStandard(exam.toolId,exam.bodyPartId),applicability=instrumentApplicability(exam.toolId,exam.bodyPartId,months);
   const key=`${exam.toolId}:${exam.bodyPartId}`;standards.set(key,{toolId:exam.toolId,bodyPartId:exam.bodyPartId,...standard});
-  const ready=exam.origin!=='reference'&&exam.scope==='local'&&applicability.status!=='not_applicable';
+  const ready=(Boolean(exam.localSupplement)||exam.origin!=='reference'&&exam.scope==='local')&&applicability.status!=='not_applicable';
   // 已有模拟所见仅追加“操作”与“反应”展示字段，不按正常库覆盖既有医学事实。
   // source行及全部result逐字保留；标准作为制作资料，须经确定选值后再发布到runtime。
   if(exam.origin==='teaching-simulation'&&ready){
@@ -50,14 +50,14 @@ for(const [caseId,version] of Object.entries(index)){
    id:exam.id,toolId:exam.toolId,toolLabel:EXAM_INSTRUMENTS.find(t=>t.id===exam.toolId)?.label??exam.toolId,
    bodyPartId:exam.bodyPartId,bodyPartLabel:anatomyLabel(exam.bodyPartId),applicability,
    standards:{...standard,patientData:false,reviewStatus:'automated-unreviewed',referenceNote:'正常/异常为制作参考，不是两种都下发的病例答案；训练仅释放已固定的本例结果。'},
-   patient:{result:exam.result,origin:exam.origin,scope:exam.scope,sourceLocator:exam.sourceLocator,
+   patient:{result:exam.result,origin:exam.origin,scope:exam.scope,sourceLocator:exam.sourceLocator,localSupplement:exam.localSupplement,
     recordedState:exam.origin==='reference'?'undetermined':hasAbnormalMarker(exam.result)?'contains-abnormal-findings':'not-classified',
     stateClassificationNote:'只标记原文阳性候选供复核；无关键词不代表正常，不能据此自动判病。',
-    readyForLocalResult:ready,needsIndependentResult:exam.origin==='reference'||exam.scope!=='local'},
+    readyForLocalResult:ready,needsIndependentResult:exam.origin==='reference'||exam.scope!=='local'&&!exam.localSupplement},
    operation:{postures:candidate.exams[i].postures,allowedPositions:candidate.exams[i].allowedPositions,aspect:candidate.exams[i].aspect,technique:candidate.exams[i].technique,reaction:candidate.exams[i].reaction},
    evidenceCode:exam.evidenceCode,media:exam.media,
   };
-  flat.push([caseId,exam.id,item.toolLabel,item.bodyPartLabel,applicability.status,standard.normal,standard.abnormal,standard.parameters,exam.origin,exam.scope,exam.result,ready,pack.sourceVersion,pack.version]);
+  flat.push([caseId,exam.id,item.toolLabel,item.bodyPartLabel,applicability.status,standard.normal,standard.abnormal,standard.parameters,exam.origin,exam.scope,exam.result+(exam.localSupplement?'\n局部教学补充：'+exam.localSupplement.result:''),ready,pack.sourceVersion,pack.version]);
   return item;
  });
  const publicId=CASE_PUBLIC_IDS[caseId]??caseId,profile=CASE_CATALOG.find(item=>item.id===publicId);
@@ -69,7 +69,7 @@ for(const [caseId,version] of Object.entries(index)){
  // 原记录行不可因标准库、病例状态推断而改变。
  for(let i=0;i<pack.exams.length;i++)if(pack.exams[i].origin==='source'&&JSON.stringify(pack.exams[i])!==JSON.stringify(candidate.exams[i]))throw Error('SOURCE_CHANGED');
  for(let i=0;i<pack.exams.length;i++)if(pack.exams[i].result!==candidate.exams[i].result)throw Error('PATIENT_RESULT_CHANGED');
- const counts={reference:rows.filter(r=>r.patient.origin==='reference').length,wholeRegion:rows.filter(r=>r.patient.scope==='whole-region').length,notApplicable:rows.filter(r=>r.applicability.status==='not_applicable').length,conditional:rows.filter(r=>r.applicability.status==='conditional').length};
+ const counts={reference:rows.filter(r=>r.patient.origin==='reference').length,wholeRegion:rows.filter(r=>r.patient.scope==='whole-region'&&!r.patient.localSupplement).length,notApplicable:rows.filter(r=>r.applicability.status==='not_applicable').length,conditional:rows.filter(r=>r.applicability.status==='conditional').length};
  reference+=counts.reference;wholeRegion+=counts.wholeRegion;notApplicable+=counts.notApplicable;conditional+=counts.conditional;
  const body={schemaVersion:1,kind:'private-exam-authoring',caseId,sourceId:pack.sourceId,sourceVersion:pack.sourceVersion,inputTeachingVersion:pack.version,
   title:pack.title,system:PEDIATRIC_SYSTEMS[systemOrder].label,level,age:pack.age,sex:pack.sex,relation:pack.relation,relationNote:pack.relationNote,

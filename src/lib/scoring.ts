@@ -1,3 +1,4 @@
+import type {NoteSectionKey} from '@/domain/medical-note';
 import {TEACHING_ILLUSTRATIONS} from '@/domain/teaching-illustrations';
 import teachingIllustrations from '@/domain/case-teaching-illustrations.json';
 import { buildTeachingFeedback } from '@/domain/teaching-score';
@@ -21,6 +22,7 @@ function eventIdsFor(session: SessionState, codes: string[]): string[] {
  *  避免直接使用进程内快照（可能因召回漂移与绑定版本不一致）。 */
 export interface ReportReference {
   noteText?: string;
+  noteSections?: Partial<Record<NoteSectionKey,string>>;
   diagnosis?: string;
   plan?: string;
 }
@@ -61,7 +63,7 @@ export function buildReport(session: SessionState, reportId = crypto.randomUUID(
     report.decisionEvidenceReview={status:unavailableCount?'unavailable':items.length?'linked':'unlinked',items,unavailableCount,caseVersion:session.caseVersion,sourceSnapshotVersion:session.sourceSnapshotVersion??null};
   }
   const teachingPackage=sessionTeachingPackage(session);
-  if(teachingPackage)report.teachingFeedback=buildTeachingFeedback(session,teachingPackage,reference?.noteText);
+  if(teachingPackage)report.teachingFeedback=buildTeachingFeedback(session,teachingPackage,reference?.noteText,reference?.noteSections);
   return report;
 }
 

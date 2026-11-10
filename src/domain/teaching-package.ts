@@ -1,3 +1,5 @@
+import {NOTE_SECTION_KEYS} from './medical-note';
+import {notePrimaryErrors} from './note-primary-contract';
 import {labReportSchema} from './lab-report';
 import { z } from 'zod';
 import { sourceExamRuleSchema } from './source-exam-contract';
@@ -38,6 +40,7 @@ export const teachingTestSchema=z.object({
 });
 export const rubricSectionSchema=z.enum(['history','exam','tests','diagnosis','plan','note','communication']);
 export const teachingRubricItemSchema=z.object({
+  noteSection:z.enum(NOTE_SECTION_KEYS).optional(),noteComponent:z.enum(['diagnosis','basis']).optional(),
   id:z.string(),section:rubricSectionSchema,level:z.enum(['basic','advanced']),label:z.string(),maxScore:z.number().positive(),
   concepts:z.array(z.array(z.string()).min(1)).default([]),evidenceCodes:z.array(z.string()).default([]),
   fullAnswer:z.string(),partialAnswer:z.string(),incorrectAnswer:z.string(),
@@ -46,7 +49,7 @@ export const teachingRubricItemSchema=z.object({
   partialConcepts:z.array(z.array(z.string())).optional(),
 });
 export const teachingPackageSchema=z.object({
-  schemaVersion:z.literal(1),caseId:z.string(),sourceId:z.string(),sourceVersion:z.string(),version:z.string(),
+  schemaVersion:z.literal(1),caseId:z.string(),sourceId:z.string(),sourceVersion:z.string(),version:z.string(),rubricVersion:z.literal('note-primary-60-v1').optional(),
   relation:z.enum(['independent','alias','subtype']),relationNote:z.string().optional(),title:z.string(),age:z.string(),sex:z.string(),
   reviewStatus:z.literal('automated-unreviewed'),complaint:z.string(),
   persona:z.object({appearance:z.string(),caregiver:z.string(),speaking:z.string(),cooperation:z.string(),knowledgeBoundary:z.string()}),
@@ -57,7 +60,7 @@ export const teachingPackageSchema=z.object({
   management:z.array(z.object({title:z.string(),detail:z.string(),origin:teachingOriginSchema,sourceLocator:z.string()})),
   referenceNote:z.record(z.string(),z.string()),rubric:z.array(teachingRubricItemSchema),
   references:z.array(z.object({title:z.string(),url:z.string(),accessedAt:z.string()})),
-});
+}).superRefine((pack,ctx)=>{if(pack.rubricVersion==='note-primary-60-v1')for(const message of notePrimaryErrors(pack.rubric))ctx.addIssue({code:'custom',path:['rubric'],message});});
 export type TeachingPackage=z.infer<typeof teachingPackageSchema>;
 export type TeachingExam=z.infer<typeof teachingExamSchema>;
 export type TeachingTest=z.infer<typeof teachingTestSchema>;
@@ -65,6 +68,8 @@ export type TeachingRubricItem=z.infer<typeof teachingRubricItemSchema>;
 export interface TeachingFeedback {
   packageVersion:string;totalScore:number;basicScore:number;advancedScore:number;assessableMaxScore:number;
   basicMaxScore?:number;advancedMaxScore?:number;
+  rubricVersion?:'note-primary-60-v1';normalizedScore?:number|null;
+  noteProcessBreakdown?:{noteScore:number;noteMax:number;processScore:number;processMax:number};
   items:Array<{id:string;section:string;level:string;label:string;score:number;maxScore:number;status:'achieved'|'partial'|'missing'|'incorrect'|'not_assessable';explanation:string;example:string}>;
   tests:Array<{label:string;requested:boolean;requestCount?:number;purposes?:string[];necessity:TeachingTest['necessity'];rationale:string;origin:TeachingTest['origin']}>;
   materialSummary:{source:number;simulated:number;reference:number};
