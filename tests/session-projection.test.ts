@@ -6,15 +6,63 @@ import { createInitialSession } from '../src/lib/agent-engine';
 import { projectSessionForRole, projectSessionsForRole } from '../src/lib/session-projection';
 import { findPublicCase } from '../src/domain/case-catalog';
 import { patientAppearance } from '../src/domain/patient-appearance';
+import { GROWTH_TOOLS } from '../src/domain/growth-exam';
+import { teachingPackageSchema } from '../src/domain/teaching-package';
+import { registerRecoveredTeachingPackages, teachingPackageVersion } from '../src/lib/teaching-package-store';
 
 /** 学生会话公开投影（防透题，任务1b）：
  *  学生 + active：caseOptions.sourceName 中性化、tests 剥离；
  *  教师与已完成会话不投影；无 caseOptions 会话原样返回。 */
 
+const projectionCaseId = 'teacher-川崎病';
+const projectionPackage = teachingPackageSchema.parse({
+  schemaVersion: 1,
+  caseId: projectionCaseId,
+  sourceId: projectionCaseId,
+  sourceVersion: 'synthetic-projection-source-v1',
+  version: 'pending',
+  relation: 'independent',
+  title: '合成投影教学病例',
+  age: '5岁',
+  sex: '女',
+  reviewStatus: 'automated-unreviewed',
+  complaint: '合成主诉',
+  persona: { appearance: '合成外观', caregiver: '家长', speaking: '自然', cooperation: '可配合', knowledgeBoundary: '仅限合成夹具' },
+  historyFacts: [],
+  exams: GROWTH_TOOLS.map((toolId) => ({
+    id: `synthetic-${toolId}`,
+    toolId,
+    bodyPartId: 'growth',
+    label: '合成生长测量',
+    result: '教学模拟设定：仅用于投影能力测试，不代表患者测量结果。',
+    postures: [toolId === 'standing-scale' || toolId === 'stadiometer' ? 'standing' : 'supine'],
+    sourceLocator: 'synthetic-projection-fixture',
+    evidenceCode: `TEACH_EX_${toolId}_growth`,
+    origin: 'reference',
+    technique: '合成操作说明',
+    reaction: '合成配合反应',
+    interpretation: '仅用于测试投影，不作为医学结论',
+    scope: 'reference',
+    media: [],
+  })),
+  tests: [],
+  management: [],
+  referenceNote: {},
+  rubric: [],
+  references: [],
+});
+projectionPackage.version = teachingPackageVersion(projectionPackage);
+registerRecoveredTeachingPackages([projectionPackage], { [projectionCaseId]: projectionPackage.version });
+
 function teacherSession(overrides?: Partial<SessionState>): SessionState {
-  const session = createInitialSession('user-test', 'guided', 'teacher-川崎病');
+  const session = createInitialSession('user-test', 'guided', projectionCaseId);
   assert.ok(session.caseOptions, '教师病例会话应有 caseOptions');
-  return { ...session, ...overrides };
+  return {
+    ...session,
+    teachingPackageVersion: projectionPackage.version,
+    sourceSnapshotVersion: projectionPackage.sourceVersion,
+    ...overrides,
+  };
 }
 
 test('学生 + active + 教师病例：sourceName 中性化且 tests 剥离', () => {
@@ -33,10 +81,13 @@ test('学生 + active + 教师病例：sourceName 中性化且 tests 剥离', ()
 
 test('教师角色使用工作台可识别的公开ID，完整事实字段及内部会话保持不变', () => {
   const session = teacherSession();
+  const originalOptions = { ...session.caseOptions! };
+  const expectedOptions = { ...originalOptions, growthMeasurements: true };
   const projected = projectSessionForRole(session, 'teacher');
   assert.match(projected.caseId, /^case-/);
-  assert.deepEqual({ ...projected, caseId: session.caseId }, session);
-  assert.equal(projected.caseOptions, session.caseOptions, '教师核对字段不裁减');
+  assert.deepEqual({ ...projected, caseId: session.caseId }, { ...session, caseOptions: expectedOptions });
+  assert.deepEqual(projected.caseOptions, expectedOptions, '教师核对字段不裁减，并派生本版本生长测量能力');
+  assert.deepEqual(session.caseOptions, originalOptions, '投影不修改原会话');
   assert.equal(session.caseId, 'teacher-川崎病', '持久化ID不就地改变');
 });
 
@@ -57,8 +108,10 @@ test('教师进入合法来源病例时，响应ID可查到人物配置，不落
 test('已完成/报告待生成会话：不投影（复盘需要原始信息）', () => {
   for (const status of ['completed', 'report_pending'] as const) {
     const session = teacherSession({ status });
+    const originalOptions = { ...session.caseOptions! };
     const projected = projectSessionForRole(session, 'student');
-    assert.equal(projected.caseOptions, session.caseOptions, '完成后保留复盘字段');
+    assert.deepEqual(projected.caseOptions, { ...originalOptions, growthMeasurements: true }, '完成后保留复盘字段并派生生长测量能力');
+    assert.deepEqual(session.caseOptions, originalOptions, '投影不修改原会话');
     assert.match(projected.caseId, /^case-/);
   }
 });
@@ -74,10 +127,12 @@ test('无 caseOptions 会话仍经过公开投影', () => {
 test('列表投影：逐条应用且保持顺序', () => {
   const active = teacherSession();
   const completed = teacherSession({ status: 'completed' });
+  const originalOptions = { ...completed.caseOptions! };
   const list = projectSessionsForRole([active, completed], 'student');
   assert.equal(list.length, 2);
   assert.equal(list[0].caseOptions!.sourceName.includes('川崎'), false);
-  assert.equal(list[1].caseOptions, completed.caseOptions, '完成后保留复盘字段');
+  assert.deepEqual(list[1].caseOptions, { ...originalOptions, growthMeasurements: true }, '完成后保留复盘字段并派生生长测量能力');
+  assert.deepEqual(completed.caseOptions, originalOptions, '列表投影不修改原会话');
 });
 
 test('投影不改变持久化语义：返回对象为浅拷贝（原 session 字段不被就地修改）', () => {

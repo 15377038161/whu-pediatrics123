@@ -8,3 +8,10 @@ test('统一智能体事件拒绝空问诊和未知事件', () => {
   assert.equal(agentTurnSchema.safeParse({ ...base, event: { type: 'UNKNOWN', data: {} } }).success, false);
   assert.equal(agentTurnSchema.safeParse({ ...base, event: { type: 'DOCTOR_INTERVENTION', data: { action: 'comfort_child' } } }).success, true);
 });
+
+test('点选检查可附申请理由且保持字段互斥', () => {
+  const base = { sessionId: '10000000-0000-4000-8000-000000000001', clientEventId: 'client-event-001' };
+  assert.equal(agentTurnSchema.safeParse({ ...base, event: { type: 'ORDER_TEST', data: { testId: 'unit-test', reason: '评估诊断与监测目的' } } }).success, true);
+  assert.equal(agentTurnSchema.safeParse({ ...base, event: { type: 'ORDER_TEST', data: { testId: 'unit-test' } } }).success, true);
+  assert.equal(agentTurnSchema.safeParse({ ...base, event: { type: 'ORDER_TEST', data: { testId: 'unit-test', requestedTests: '尿常规', reason: '混用字段' } } }).success, false);
+});

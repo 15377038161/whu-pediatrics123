@@ -101,6 +101,59 @@ test('本地完整审核版本存在时权威优先：不查 DB、不回退召�
   assert.equal(state.restoreCalls.length, 0);
 });
 
+test('默认模式：活动版本与本地版本不同时仍绑定活动版本', async () => {
+  const previous = process.env.PEDIATRICS_TRAINING_PREFER_LOCAL;
+  delete process.env.PEDIATRICS_TRAINING_PREFER_LOCAL;
+  const state: DepState = { localVersion: 'localfull0000002', dbVersion: null, recallVersion: null, restoreCalls: [], dbQueryCount: 0, localQueryCount: 0 };
+  const deps = makeDeps(state);
+  let activeCalls = 0;
+  deps.getActiveCaseVersion = async () => { activeCalls += 1; return 'activefull00000001'; };
+  try {
+    const result = await resolveTeacherCaseVersion(CASE_ID, { accessToken: 'token-1', role: 'teacher', isPreview: false }, deps);
+    assert.deepEqual(result, { version: 'activefull00000001', source: 'active', coldStart: true });
+    assert.equal(activeCalls, 1);
+    assert.equal(state.restoreCalls.length, 1);
+  } finally {
+    if (previous === undefined) delete process.env.PEDIATRICS_TRAINING_PREFER_LOCAL;
+    else process.env.PEDIATRICS_TRAINING_PREFER_LOCAL = previous;
+  }
+});
+
+test('显式本地验收：活动版本不同也绑定本地完整来源，且不查询活动/DB版本', async () => {
+  const previous = process.env.PEDIATRICS_TRAINING_PREFER_LOCAL;
+  process.env.PEDIATRICS_TRAINING_PREFER_LOCAL = '1';
+  const state: DepState = { localVersion: 'localfull0000003', dbVersion: 'dbfull0000000007', recallVersion: 'recall000000007', restoreCalls: [], dbQueryCount: 0, localQueryCount: 0 };
+  const deps = makeDeps(state);
+  let activeCalls = 0;
+  deps.getActiveCaseVersion = async () => { activeCalls += 1; return 'activefull00000002'; };
+  try {
+    const result = await resolveTeacherCaseVersion(CASE_ID, { accessToken: 'token-1', role: 'teacher', isPreview: false }, deps);
+    assert.deepEqual(result, { version: 'localfull0000003', source: 'local', coldStart: false });
+    assert.equal(activeCalls, 0);
+    assert.equal(state.dbQueryCount, 0);
+    assert.equal(state.restoreCalls.length, 0);
+  } finally {
+    if (previous === undefined) delete process.env.PEDIATRICS_TRAINING_PREFER_LOCAL;
+    else process.env.PEDIATRICS_TRAINING_PREFER_LOCAL = previous;
+  }
+});
+
+test('显式本地验收：亚型别名按 sourceId 读取完整来源版本', async () => {
+  const previous = process.env.PEDIATRICS_TRAINING_PREFER_LOCAL;
+  process.env.PEDIATRICS_TRAINING_PREFER_LOCAL = '1';
+  const state: DepState = { localVersion: null, dbVersion: 'dbfull0000000008', recallVersion: 'recall000000008', restoreCalls: [], dbQueryCount: 0, localQueryCount: 0 };
+  const deps = makeDeps(state);
+  deps.getLocalImportVersion = (caseId) => caseId === 'teacher-儿童-肥胖症' ? '5f48641f7627155a' : null;
+  try {
+    const result = await resolveTeacherCaseVersion('teacher-单纯肥胖症', { accessToken: 'token-1', role: 'student', isPreview: false }, deps);
+    assert.deepEqual(result, { version: '5f48641f7627155a', source: 'local', coldStart: false });
+    assert.equal(state.dbQueryCount, 0, '别名来源命中后不得回退 DB 版本');
+  } finally {
+    if (previous === undefined) delete process.env.PEDIATRICS_TRAINING_PREFER_LOCAL;
+    else process.env.PEDIATRICS_TRAINING_PREFER_LOCAL = previous;
+  }
+});
+
 test('无本地冷启动：本地与召回均无版本时绑定 DB 导入版本', async () => {
   const state: DepState = { localVersion: null, dbVersion: 'dbonly0000000004', recallVersion: null, restoreCalls: [], dbQueryCount: 0, localQueryCount: 0 };
   const result = await resolve(state, 'student');

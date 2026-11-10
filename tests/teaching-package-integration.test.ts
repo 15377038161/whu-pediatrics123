@@ -27,8 +27,10 @@ test('本地包按双版本固定；错误操作不释放媒体，刷新与索�
     const bytes=Buffer.from('synthetic-image-fixture');const hash=createHash('sha256').update(bytes).digest('hex');
     writeFileSync(path.join(root,'training','media',hash+'.png'),bytes);
     const media={fileId:'training-media:'+hash,kind:'image' as const,caption:'合成检查信息'};
-    const pack=teachingPackageSchema.parse({schemaVersion:1,caseId:id,sourceId:id,sourceVersion:computeCaseDataVersion(source),version:'pending',relation:'independent',title:'合成教学',age:'8岁',sex:'男',reviewStatus:'automated-unreviewed',complaint:source.complaint,persona:{appearance:'合成',caregiver:'家长',speaking:'自然',cooperation:'可配合',knowledgeBoundary:'仅已知事实'},historyFacts:[{id:'SOURCE_HX_0_0',text:'水肿2天。',topics:['水肿及尿液变化'],actor:'parent',origin:'source',sourceLocator:'synthetic'}],exams:[{id:'unit-exam',toolId:'palpation',bodyPartId:'abdomen',label:'腹部触诊',result:'合成结果：无压痛',postures:['supine'],allowedPositions:['supine'],sourceLocator:'synthetic',evidenceCode:'TEACH_EX_palpation_abdomen',origin:'source',technique:'先解释再触诊',reaction:'合成配合动作',interpretation:'按记录',scope:'local',media:[]},{id:'unit-back',toolId:'stethoscope',bodyPartId:'right-lung-back',label:'右后肺野听诊',result:'合成后肺野所见',postures:['standing','supine'],allowedPositions:['standing','sitting','lateral'],sourceLocator:'synthetic',evidenceCode:'TEACH_EX_stethoscope_right-lung-back',origin:'reference',technique:'配合实际体位检查后肺野',reaction:'合成配合动作',interpretation:'不能直接从仰卧位完成',scope:'reference',aspect:'back',media:[]}],tests:[{report:{name:'合成尿常规',specimen:'合成',reference:'合成参考',origin:'source',rows:[{item:'合成表格指标',value:'+++',unit:'原文未注明',reportedAt:'合成时点'}]},id:'unit-test',label:'合成尿常规',aliases:['尿常规'],result:'合成结果：尿蛋白+++',origin:'source',objective:'评估',reference:'按适龄范围',necessity:'essential',rationale:'训练后解释',sourceLocator:'synthetic',media:[media]}],management:[],referenceNote:{},rubric:[],references:[]});
+    const pack=teachingPackageSchema.parse({schemaVersion:1,caseId:id,sourceId:id,sourceVersion:computeCaseDataVersion(source),version:'pending',relation:'independent',title:'合成教学',age:'8岁',sex:'男',reviewStatus:'automated-unreviewed',complaint:source.complaint,persona:{appearance:'合成',caregiver:'家长',speaking:'自然',cooperation:'可配合',knowledgeBoundary:'仅已知事实'},historyFacts:[{id:'SOURCE_HX_0_0',text:'水肿2天。',topics:['水肿及尿液变化'],actor:'parent',origin:'source',sourceLocator:'synthetic'}],exams:[{id:'unit-exam',toolId:'palpation',bodyPartId:'abdomen',label:'腹部触诊',result:'合成结果：无压痛',postures:['supine'],allowedPositions:['supine'],sourceLocator:'synthetic',evidenceCode:'TEACH_EX_palpation_abdomen',origin:'source',technique:'先解释再触诊',reaction:'合成配合动作',interpretation:'按记录',scope:'whole-region',media:[],localSupplement:{result:'固定局部教学补充：腹部局部触诊柔软，无固定压痛。',rationale:'合成整体原记录未提供局部独立所见，本补充仅用于测试分层投影。',state:'normal',origin:'teaching-simulation',scope:'local',sourceLocator:'synthetic-local-supplement',reviewStatus:'automated-unreviewed'}},{id:'unit-back',toolId:'stethoscope',bodyPartId:'right-lung-back',label:'右后肺野听诊',result:'合成后肺野所见',postures:['standing','supine'],allowedPositions:['standing','sitting','lateral'],sourceLocator:'synthetic',evidenceCode:'TEACH_EX_stethoscope_right-lung-back',origin:'reference',technique:'配合实际体位检查后肺野',reaction:'合成配合动作',interpretation:'不能直接从仰卧位完成',scope:'reference',aspect:'back',media:[]}],tests:[{report:{name:'合成尿常规',specimen:'合成',reference:'合成参考',origin:'source',rows:[{item:'合成表格指标',value:'+++',unit:'原文未注明',reportedAt:'合成时点'}]},id:'unit-test',label:'合成尿常规',aliases:['尿常规'],result:'合成结果：尿蛋白+++',origin:'source',objective:'评估',reference:'按适龄范围',necessity:'essential',rationale:'训练后解释',sourceLocator:'synthetic',media:[media]}],management:[],referenceNote:{},rubric:[],references:[]});
     pack.version=teachingPackageVersion(pack);
+    const withoutSupplement=structuredClone(pack);delete withoutSupplement.exams[0].localSupplement;
+    assert.notEqual(teachingPackageVersion(withoutSupplement),pack.version,'局部教学补充必须进入内容哈希');
     writeFileSync(path.join(root,'training','packages',pack.version+'.json'),JSON.stringify(pack));
     writeFileSync(path.join(root,'training','index.json'),JSON.stringify({entries:{[id]:pack.version}}));
     let session=createInitialSession('synthetic-student','guided',id);
@@ -52,6 +54,12 @@ test('本地包按双版本固定；错误操作不释放媒体，刷新与索�
     await runAgentTurn(session,{type:'ORDER_TEST',data:{requestedTests:'尿常规',reason:'评估尿液变化'}},'test-synthetic');
     assert.equal(findReleasedMedia(session,media.fileId)?.fileId,media.fileId);
     assert.equal(session.events.at(-1)?.testReport?.rows[0].item,'合成表格指标');
+    const point=createInitialSession('synthetic-point-student','guided',id);
+    point.stage='exam';
+    await runAgentTurn(point,{type:'ORDER_TEST',data:{testId:'unit-test',reason:'点选后说明诊断目的'}},'test-point-purpose');
+    assert.equal(point.testRequests?.[0]?.purpose,'点选后说明诊断目的');
+    assert.match(point.events.at(-1)!.summary,/申请目的：点选后说明诊断目的/);
+    assert.ok(point.unlockedEvidence.includes('TEACH_TEST_unit-test'));
     const link=await getCaseMediaLink(media.fileId);assert.ok(link.url.startsWith('data:image/png;base64,'));assert.equal(link.fileName,null);
     session.stage='plan';
     await runAgentTurn(session,{type:'SEND_COMMUNICATION',data:{text:'我理解您的担心，我们先安排检查。'}},'explain-one');
@@ -70,7 +78,9 @@ test('本地包按双版本固定；错误操作不释放媒体，刷新与索�
     await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'hand-hygiene',bodyPartId:'hands'}},'osce-prep');
     const osceExam=await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'palpation',bodyPartId:'abdomen',position:'supine'}},'osce-exam');
     assert.equal(osce.events.at(-1)?.correct,true);
-    assert.ok(osceExam.newMessages.some(m=>m.content.includes('合成结果：无压痛')));
+    assert.equal(osceExam.newMessages.some(m=>m.content.includes('合成结果：无压痛')),false,'整体原记录保留私有包，局部检查不附带披露');
+    assert.ok(osceExam.newMessages.some(m=>m.content.includes('局部教学补充')&&m.content.includes('固定局部教学补充：腹部局部触诊柔软')&&m.content.includes('非原患者实测')));
+    assert.equal(JSON.stringify(osceExam.newMessages).includes('本补充仅用于测试分层投影'),false,'制作期 rationale 不得下发');
     const osceReference=await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'stethoscope',bodyPartId:'right-lung-back',position:'lateral',location:{side:'right',aspect:'back'}}},'osce-reference');
     const osceOutput=JSON.stringify({exam:osceExam.newMessages,reference:osceReference.newMessages,session:projectSessionForRole(osce,'student')});
     for(const hidden of ['先解释再触诊','配合实际体位检查后肺野','合成配合动作','合成后肺野所见'])assert.equal(osceOutput.includes(hidden),false,hidden+'不应成为闭卷站提示');

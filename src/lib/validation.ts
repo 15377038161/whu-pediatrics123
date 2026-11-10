@@ -54,12 +54,12 @@ export const agentTurnSchema = z.object({
     z.object({ type: z.literal('ASK_QUESTION'), data: z.object({ text: z.string().trim().min(1).max(500), speech: eventSpeechMetaSchema.optional() }).strict() }),
     z.object({ type: z.literal('DOCTOR_INTERVENTION'), data: z.object({ action: z.enum(['child_answer', 'pause_parent', 'comfort_child']) }) }),
     z.object({ type: z.literal('EXAM_ACTION'), data: z.object({ toolId: z.string().min(1).max(60), bodyPartId: z.string().min(1).max(60), posture: z.enum(['standing', 'supine']).optional(), position:z.enum(['standing','supine','sitting','lateral','prone']).optional(), location: z.object({ side:z.enum(['left','right','both','midline']),aspect:z.enum(['front','back']) }).strict().optional() }) }),
-    // 任务2 双契约：学生自主文本申请（requestedTests，一次可多项，服务端确定性匹配）；
-    // 旧 testId 点选路径保留兼容（历史会话续答/既有测试），二者互斥、strict 防字段混用。
+    // 双契约：文本申请由服务端确定性匹配；testId 精确点选可附同样的申请理由。
+    // 两种字段互斥，strict 防止混用；省略 reason 时保持旧行为。
     z.object({
       type: z.literal('ORDER_TEST'),
       data: z.union([
-        z.object({ testId: z.string().min(1).max(60) }).strict(),
+        z.object({ testId: z.string().min(1).max(60), reason: z.string().trim().max(300).optional() }).strict(),
         z.object({ requestedTests: z.string().trim().min(1).max(400), reason: z.string().trim().max(300).optional() }).strict(),
       ]),
     }),

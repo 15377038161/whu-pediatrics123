@@ -41,7 +41,7 @@ const RESPIRATORY_RATE_PATTERNS: readonly RegExp[] = [
   /呼吸\s*[:：]?\s*(\d{1,3})\s*(?:次\/分|\/min)/,
 ];
 const SPO2_PATTERNS: readonly RegExp[] = [
-  /(?:S\s*p\s*O\s*[₂2]?|血氧(?:饱和度)?)\s*[:：]?\s*(?:为|是)?\s*(\d{2,3})\s*%?/i,
+  /(?:S\s*p\s*O\s*[₂2]?|血氧(?:饱和度)?)\s*(?:读数\s*)?[:：]?\s*(?:为|是)?\s*(\d{2,3})\s*%?/i,
 ];
 
 function matchInRange(text: string, patterns: readonly RegExp[], min: number, max: number): number | null {

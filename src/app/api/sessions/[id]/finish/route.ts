@@ -9,7 +9,7 @@ import { attachCaseAnalysis } from '@/lib/case-analysis-report';
 import {projectReportForRole} from '@/lib/report-projection';
 import { isUnscoredReport } from '@/domain/training-rubric';
 import { restoreCaseSnapshotReference } from '@/lib/case-snapshot';
-import { NOTE_TEMPLATE } from '@/domain/medical-note';
+import { type NoteSectionKey, NOTE_TEMPLATE } from '@/domain/medical-note';
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -29,14 +29,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       ? await restoreCaseSnapshotReference(session.caseId, session.sourceSnapshotVersion, user.accessToken, user.role, session.id)
       : null;
     let noteText:string|undefined;
+    let noteSections:Partial<Record<NoteSectionKey,string>>|undefined;
     if(session.teachingPackageVersion){
       try{
         const notes=await repository.listMyNotes(session.id);
         const latest=notes[0];
+        noteSections=latest?{...latest.content}:{};
         noteText=latest?NOTE_TEMPLATE.filter(section=>latest.content[section.key]?.trim()).map(section=>`${section.label}：${latest.content[section.key]}`).join('；'):'';
       }catch{console.warn('[teaching-feedback] note read unavailable');}
     }
-    const report = buildReport(session, session.id, {...reference,...(noteText!==undefined?{noteText}: {})});
+    const report = buildReport(session, session.id, {...reference,...(noteText!==undefined?{noteText,noteSections}: {})});
     // 灰度影子分：只附加 caseAnalysis，不改 totalScore；失败不阻塞报告生成。
     await attachCaseAnalysis(report, session);
     session.reportId = report.id;
