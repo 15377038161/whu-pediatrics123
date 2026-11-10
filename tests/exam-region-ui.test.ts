@@ -78,6 +78,20 @@ test('双层反馈：第一层是病例原文，第二层强制带未审核徽�
   }
 });
 
+test('整体原记录与局部教学补充在同一张结果内明确分层',()=>{
+  const detail='【整体原记录 + 局部教学补充】整体原记录：腹软。\n【局部教学补充 · 非原患者实测】固定局部教学补充：局部无固定压痛。\n操作：合成操作\n配合反应：合成反应';
+  const html=renderToStaticMarkup(createElement(ExamObservationCard,{
+    observation:observation('success','palpation','abdomen',detail),onClose:noop,onReplayAudio:noop,
+  }));
+  assert.ok(html.includes('整体原记录 + 局部教学补充'));
+  assert.ok(html.includes('整体原记录：腹软。'));
+  assert.ok(html.includes('局部教学补充 · 非原患者实测'));
+  assert.ok(html.includes('固定局部教学补充：局部无固定压痛。'));
+  const first=html.indexOf('exam-observation-detail'),second=html.indexOf('exam-technique-note');
+  assert.ok(first>-1&&second>first);
+  assert.equal(html.slice(first,second).includes('一般正常表现'),false,'通用参考不得混入整体原文和局部补充');
+});
+
 test('本例无记录时保留诚实占位，第二层仍给要领但不补造正常值', () => {
   const placeholder = '本病例资料未提供该检查的体征记录，请换用其他检查组合或记录需补充的检查。';
   const html = renderToStaticMarkup(createElement(ExamObservationCard, {

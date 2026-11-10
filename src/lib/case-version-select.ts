@@ -2,6 +2,7 @@ import { getLocalImportVersion } from '@/lib/teacher-case-import';
 import { getSnapshotVersion, getDatabaseSnapshotVersion, restoreCaseSnapshotFacts } from '@/lib/case-snapshot';
 import { getActiveCaseVersion } from '@/lib/case-active-version';
 import {verifiedRecoveredSourceVersion} from '@/lib/teaching-package-store';
+import { TEACHER_CASE_LINKS } from '@/domain/teacher-case-links';
 
 /**
  * 教师病例会话版本选择（权威稳定序，防止完整本地材料被绑定零散召回指纹）：
@@ -46,7 +47,10 @@ export interface VersionSelectOptions {
 }
 
 export async function resolveTeacherCaseVersion(caseId: string, options: VersionSelectOptions, deps: CaseVersionDeps = defaultCaseVersionDeps): Promise<VersionResolution> {
-  if (!options.isPreview && options.accessToken) {
+  // 仅用于本地私有教学代次验收：显式开启时，新会话优先绑定本地完整来源及其教学包。
+  // 默认（包括生产）仍优先数据库活动版本；旧会话始终按原绑定版本读取，不经过此选择器。
+  const preferLocal = process.env.PEDIATRICS_TRAINING_PREFER_LOCAL === '1';
+  if (!preferLocal && !options.isPreview && options.accessToken) {
     const active = await deps.getActiveCaseVersion(caseId, options.accessToken);
     if (active) {
       const local = deps.getLocalImportVersion(caseId);
@@ -58,7 +62,9 @@ export async function resolveTeacherCaseVersion(caseId: string, options: Version
       return { version: active, source: 'active', coldStart: true };
     }
   }
-  const local = deps.getLocalImportVersion(caseId);
+  const decodedCaseId = decodeURIComponent(caseId);
+  const localLookupId = preferLocal ? TEACHER_CASE_LINKS[decodedCaseId]?.sourceId ?? decodedCaseId : caseId;
+  const local = deps.getLocalImportVersion(localLookupId);
   if (local) return { version: local, source: 'local', coldStart: false };
   if (!options.isPreview && options.accessToken) {
     const dbVersion = await deps.getDatabaseSnapshotVersion(caseId, options.accessToken);

@@ -1,6 +1,17 @@
 import type { SessionState } from '@/domain/agent';
 import { getCase, type FlagshipCase } from '@/domain/case';
 import { readTeachingPackage } from './teaching-package-store';
+import type {TeachingExam} from '@/domain/teaching-package';
+
+function examResult(exam:TeachingExam,mode:SessionState['mode']):string{
+  const origin=exam.origin==='source'?'原记录':exam.origin==='reference'?'操作与参考说明':'教学模拟';
+  if(mode==='osce'&&exam.origin==='reference')return '【操作与参考说明】该项缺少独立患者查体记录，本次不提供患者结论或测量值。请记录已完成的检查及资料局限。';
+  const original=exam.localSupplement
+    ?`【整体原记录 + 局部教学补充】整体原记录：${exam.result}`
+    :`【${origin}】${exam.result}`;
+  const supplement=exam.localSupplement?`\n【局部教学补充 · 非原患者实测】${exam.localSupplement.result}`:'';
+  return mode==='osce'?original+supplement:[original+supplement,`操作：${exam.technique}`,`配合反应：${exam.reaction}`].join('\n');
+}
 
 export function sessionTeachingPackage(session:SessionState){
   return session.teachingPackageVersion?readTeachingPackage(session.caseId,session.teachingPackageVersion,session.sourceSnapshotVersion):null;
@@ -12,11 +23,7 @@ export function sessionTeachingCase(session:SessionState):FlagshipCase {
   return {...base,
     exams:[...base.exams.filter(e=>e.evidenceCode==='EX_PREP'),...pack.exams.map(exam=>({
       id:exam.id,toolId:exam.toolId,bodyPartId:exam.bodyPartId,label:exam.label,evidenceCode:exam.evidenceCode,
-      result:session.mode==='osce'
-        ? exam.origin==='reference'
-          ? '【操作与参考说明】该项缺少独立患者查体记录，本次不提供患者结论或测量值。请记录已完成的检查及资料局限。'
-          : `【${exam.origin==='source'?'原记录':'教学模拟'}】${exam.result}`
-        : [`【${exam.origin==='source'?'原记录':exam.origin==='reference'?'操作与参考说明':'教学模拟'}】${exam.result}`,`操作：${exam.technique}`,`配合反应：${exam.reaction}`].join('\n'),
+      result:examResult(exam,session.mode),
       requires:['EX_PREP'],risk:'attention' as const,postures:exam.postures,media:exam.media,
     }))],
     tests:pack.tests.map(test=>({id:test.id,report:test.report,label:test.label,aliases:test.aliases,indication:'按临床问题申请后查看结果',

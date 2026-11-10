@@ -6,15 +6,63 @@ import { createInitialSession } from '../src/lib/agent-engine';
 import { projectSessionForRole, projectSessionsForRole } from '../src/lib/session-projection';
 import { findPublicCase } from '../src/domain/case-catalog';
 import { patientAppearance } from '../src/domain/patient-appearance';
+import { GROWTH_TOOLS } from '../src/domain/growth-exam';
+import { teachingPackageSchema } from '../src/domain/teaching-package';
+import { registerRecoveredTeachingPackages, teachingPackageVersion } from '../src/lib/teaching-package-store';
 
 /** 学生会话公开投影（防透题，任务1b）：
  *  学生 + active：caseOptions.sourceName 中性化、tests 剥离；
  *  教师与已完成会话不投影；无 caseOptions 会话原样返回。 */
 
+const projectionCaseId = 'teacher-川崎病';
+const projectionPackage = teachingPackageSchema.parse({
+  schemaVersion: 1,
+  caseId: projectionCaseId,
+  sourceId: projectionCaseId,
+  sourceVersion: 'synthetic-projection-source-v1',
+  version: 'pending',
+  relation: 'independent',
+  title: '合成投影教学病例',
+  age: '5岁',
+  sex: '女',
+  reviewStatus: 'automated-unreviewed',
+  complaint: '合成主诉',
+  persona: { appearance: '合成外观', caregiver: '家长', speaking: '自然', cooperation: '可配合', knowledgeBoundary: '仅限合成夹具' },
+  historyFacts: [],
+  exams: GROWTH_TOOLS.map((toolId) => ({
+    id: `synthetic-${toolId}`,
+    toolId,
+    bodyPartId: 'growth',
+    label: '合成生长测量',
+    result: '教学模拟设定：仅用于投影能力测试，不代表患者测量结果。',
+    postures: [toolId === 'standing-scale' || toolId === 'stadiometer' ? 'standing' : 'supine'],
+    sourceLocator: 'synthetic-projection-fixture',
+    evidenceCode: `TEACH_EX_${toolId}_growth`,
+    origin: 'reference',
+    technique: '合成操作说明',
+    reaction: '合成配合反应',
+    interpretation: '仅用于测试投影，不作为医学结论',
+    scope: 'reference',
+    media: [],
+  })),
+  tests: [],
+  management: [],
+  referenceNote: {},
+  rubric: [],
+  references: [],
+});
+projectionPackage.version = teachingPackageVersion(projectionPackage);
+registerRecoveredTeachingPackages([projectionPackage], { [projectionCaseId]: projectionPackage.version });
+
 function teacherSession(overrides?: Partial<SessionState>): SessionState {
-  const session = createInitialSession('user-test', 'guided', 'teacher-川崎病');
+  const session = createInitialSession('user-test', 'guided', projectionCaseId);
   assert.ok(session.caseOptions, '教师病例会话应有 caseOptions');
-  return { ...session, ...overrides };
+  return {
+    ...session,
+    teachingPackageVersion: projectionPackage.version,
+    sourceSnapshotVersion: projectionPackage.sourceVersion,
+    ...overrides,
+  };
 }
 
 test('学生 + active + 教师病例：sourceName 中性化且 tests 剥离', () => {

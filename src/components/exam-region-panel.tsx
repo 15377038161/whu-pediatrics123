@@ -19,7 +19,7 @@ export function ExamObservationCard({ observation, onClose, onReplayAudio, showR
     <div className="exam-observation" data-status={observation.status} role="status">
       <div className="exam-observation-head">
         <span className="exam-observation-icon">{observation.status === 'success' ? <Stethoscope /> : <AlertTriangle />}</span>
-        <p><small>{observation.status === 'success' ? observation.toolId === 'hand-hygiene' ? '检查准备已完成' : observation.detail.includes('【教学模拟】')?'本例所见 · 教学模拟设定':observation.detail.includes('【操作与参考说明】')?'操作与参考说明':'本例所见 · 摘自病例原始记录' : '本例未获得结果'}</small><strong>{observation.title}</strong></p>
+        <p><small>{observation.status === 'success' ? observation.toolId === 'hand-hygiene' ? '检查准备已完成' : observation.detail.includes('【局部教学补充')?'整体原记录 + 局部教学补充':observation.detail.includes('【教学模拟】')?'本例所见 · 教学模拟设定':observation.detail.includes('【操作与参考说明】')?'操作与参考说明':'本例所见 · 摘自病例原始记录' : '本例未获得结果'}</small><strong>{observation.title}</strong></p>
         <button type="button" onClick={onClose} aria-label="关闭查体反馈"><X size={16} /></button>
       </div>
       <div className="exam-observation-detail">

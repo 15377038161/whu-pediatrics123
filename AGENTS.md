@@ -75,6 +75,7 @@ tests/                      # 测试
 - **生产启动**：`pnpm start`（node dist/server.js）
 - **验证**：`pnpm validate`（typecheck + lint + test）
 - **环境变量**：`.env`（业务配置：Supabase 凭据 + 超星 OAuth，参考 `.env.example`）、`.env.local`（仅 preview 覆盖，Next.js 中优先级高于 `.env`，禁止在其中放空值业务变量，否则会覆盖 `.env` 的有效值）
+- **本地教学代次验收**：仅可在本地预览进程显式设置 `PEDIATRICS_TRAINING_PREFER_LOCAL=1`，使新会话跳过数据库活动来源优先级并绑定已安装的本地完整来源/教学包；默认不设置，生产禁止设置。旧会话始终按原绑定版本读取，本地包仍须通过完整来源版本、内容指纹与教学包哈希校验，不得以该开关绕过版本守卫
 
 ## 数据库与认证集成状态
 

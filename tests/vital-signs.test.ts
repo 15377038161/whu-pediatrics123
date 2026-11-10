@@ -40,6 +40,7 @@ test('查体原文提取：T/R/P 与 SpO₂ 分别落位，心率不会被误认
     respiratoryRate: 32,
   });
   assert.deepEqual(extractVitalSigns('静息状态SpO₂ 93%，脉搏124次/分。'), { heartRate: 124, spo2: 93 });
+  assert.deepEqual(extractVitalSigns('教学模拟设定：本次 SpO₂ 读数为 99%，脉率为 90 次/分。'), { spo2: 99 });
   assert.deepEqual(extractVitalSigns('经皮血氧饱和度 91%，HR 148次/分，RR 44次/分'), {
     heartRate: 148,
     respiratoryRate: 44,

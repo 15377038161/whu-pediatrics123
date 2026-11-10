@@ -11,12 +11,23 @@ export const historyFactSchema = z.object({
 });
 export type HistoryFact = z.infer<typeof historyFactSchema>;
 const mediaSchema=z.object({fileId:z.string(),kind:z.literal('image'),caption:z.string()});
+export const examLocalSupplementSchema=z.object({
+  result:z.string().trim().min(15).max(5000),
+  rationale:z.string().trim().min(10).max(1000),
+  state:z.enum(['normal','abnormal','mixed']),
+  origin:z.literal('teaching-simulation'),scope:z.literal('local'),
+  sourceLocator:z.string().trim().min(1).max(300),reviewStatus:z.literal('automated-unreviewed'),
+}).strict();
 export const teachingExamSchema=sourceExamRuleSchema.extend({
   id:z.string(), evidenceCode:z.string(), origin:teachingOriginSchema,
   technique:z.string(), reaction:z.string(), interpretation:z.string(),
   allowedPositions:z.array(z.enum(['standing','supine','sitting','lateral','prone'])).optional(),
   scope:z.enum(['local','whole-region','reference']), aspect:z.enum(['front','back']).optional(),
-  media:z.array(mediaSchema).default([]),
+  media:z.array(mediaSchema).default([]),localSupplement:examLocalSupplementSchema.optional(),
+}).superRefine((exam,ctx)=>{
+  if(exam.localSupplement&&(exam.origin!=='source'||exam.scope!=='whole-region'))ctx.addIssue({
+    code:z.ZodIssueCode.custom,path:['localSupplement'],message:'LOCAL_SUPPLEMENT_REQUIRES_WHOLE_SOURCE',
+  });
 });
 export const teachingTestSchema=z.object({
   report:labReportSchema.optional(),
