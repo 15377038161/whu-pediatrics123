@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Stethoscope, Volume2, X } from 'lucide-react';
+import { AlertTriangle, Check, Stethoscope, Volume2, X } from 'lucide-react';
 import { TECHNIQUE_NOTE_BADGE, examTechniqueNote } from '@/domain/exam-technique-notes';
 
 export type ExamObservation = {
@@ -11,6 +11,13 @@ export type ExamObservation = {
   status: 'success' | 'blocked';
   sound: 'fine-crackles' | 'wheeze' | null;
 };
+
+/** Keep results in the shared record so the patient and anatomical targets stay visible. */
+export function ExamOperationFeedback({observation,onClose,onReplayAudio,showReference=true}:{observation:ExamObservation|null;onClose:()=>void;onReplayAudio:()=>void;showReference?:boolean}){
+  if(!observation)return null;
+  if(observation.status==='blocked')return <aside className="ce-feedback-error" aria-label="查体错误提示"><ExamObservationCard observation={observation} onClose={onClose} onReplayAudio={onReplayAudio} showReference={showReference}/></aside>;
+  return <div className="ce-feedback-saved" role="status"><Check size={16}/><span><strong>{observation.title}已记录</strong><small>详细所见见共享病例记录</small></span><button type="button" aria-label="关闭查体反馈" onClick={onClose}><X size={15}/></button></div>;
+}
 
 export function ExamObservationCard({ observation, onClose, onReplayAudio, showReference = true }: { observation: ExamObservation; onClose: () => void; onReplayAudio: () => void; showReference?: boolean }) {
   const note = examTechniqueNote(observation.toolId, observation.bodyPartId);
@@ -36,4 +43,3 @@ export function ExamObservationCard({ observation, onClose, onReplayAudio, showR
     </div>
   );
 }
-

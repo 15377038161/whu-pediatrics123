@@ -1184,7 +1184,7 @@ textarea { resize: vertical; }
   .clinical-exam { font-size: 17px; }
   .ce-tool-grid button>span, .ce-region-menu button, .ce-findings dt { font-size: 12px; }
   .ce-body-label, .ce-canvas-hint, .ce-context-controls span, .ce-context-controls button, .ce-action b { font-size: 11px; }
-  .ce-result .exam-observation-detail { font-size: 13px; }
+  .ce-feedback-error .exam-observation-detail { font-size: 13px; }
 }
 
 /* Teacher pages are inside AppShell: never nest its sidebar offset. */

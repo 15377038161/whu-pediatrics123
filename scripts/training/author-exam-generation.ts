@@ -141,6 +141,7 @@ for(const old of decoded.packages){
   canonical=teachingPackageSchema.parse(canonical);
   const {exams:oldExams,version:_oldVersion,...oldRest}=old;
   const {exams:newExams,version:_newVersion,...newRest}=canonical;
+  void _oldVersion;void _newVersion;
   if(!same(oldRest,newRest)||oldExams.length!==newExams.length)throw Error(`UNRELATED_CONTENT_CHANGED:${old.caseId}`);
   for(let index=0;index<oldExams.length;index++){
     if(oldExams[index].origin==='source'){

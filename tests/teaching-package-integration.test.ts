@@ -78,8 +78,8 @@ test('本地包按双版本固定；错误操作不释放媒体，刷新与索�
     await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'hand-hygiene',bodyPartId:'hands'}},'osce-prep');
     const osceExam=await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'palpation',bodyPartId:'abdomen',position:'supine'}},'osce-exam');
     assert.equal(osce.events.at(-1)?.correct,true);
-    assert.ok(osceExam.newMessages.some(m=>m.content.includes('合成结果：无压痛')));
-    assert.ok(osceExam.newMessages.some(m=>m.content.includes('整体原记录 + 局部教学补充')&&m.content.includes('固定局部教学补充：腹部局部触诊柔软')&&m.content.includes('非原患者实测')));
+    assert.equal(osceExam.newMessages.some(m=>m.content.includes('合成结果：无压痛')),false,'整体原记录保留私有包，局部检查不附带披露');
+    assert.ok(osceExam.newMessages.some(m=>m.content.includes('局部教学补充')&&m.content.includes('固定局部教学补充：腹部局部触诊柔软')&&m.content.includes('非原患者实测')));
     assert.equal(JSON.stringify(osceExam.newMessages).includes('本补充仅用于测试分层投影'),false,'制作期 rationale 不得下发');
     const osceReference=await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'stethoscope',bodyPartId:'right-lung-back',position:'lateral',location:{side:'right',aspect:'back'}}},'osce-reference');
     const osceOutput=JSON.stringify({exam:osceExam.newMessages,reference:osceReference.newMessages,session:projectSessionForRole(osce,'student')});
