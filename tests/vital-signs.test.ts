@@ -40,6 +40,7 @@ test('查体原文提取：T/R/P 与 SpO₂ 分别落位，心率不会被误认
     respiratoryRate: 32,
   });
   assert.deepEqual(extractVitalSigns('静息状态SpO₂ 93%，脉搏124次/分。'), { heartRate: 124, spo2: 93 });
+  assert.deepEqual(extractVitalSigns('SPO2 维持在97%（给氧时）以上。'), { spo2: 97 });
   assert.deepEqual(extractVitalSigns('教学模拟设定：本次 SpO₂ 读数为 99%，脉率为 90 次/分。'), { spo2: 99 });
   assert.deepEqual(extractVitalSigns('经皮血氧饱和度 91%，HR 148次/分，RR 44次/分'), {
     heartRate: 148,
@@ -67,6 +68,7 @@ test('展示合并：本轮查体覆盖接诊记录，问诊值只补空缺，�
   });
   const examEvent = event({
     summary: '体温测量：病例记录：T36.4℃',
+    measurements: [{metric:'temperature',value:36.4,unit:'℃',method:'耳温',site:'耳部',origin:'source',sourceLocator:'SOURCE_EX_1',sourceTimepoint:null,measuredAt:new Date(Date.now()+2000).toISOString()}],
     createdAt: new Date(Date.now() + 2000).toISOString(),
   });
 
@@ -75,7 +77,9 @@ test('展示合并：本轮查体覆盖接诊记录，问诊值只补空缺，�
     [historyEvent, examEvent],
     [question, answer],
   ));
-  assert.deepEqual(withExam.temperature, { value: 36.4, source: 'exam' }, '本轮实测应覆盖问诊里的最高体温');
+  assert.equal(withExam.temperature.value, 36.4, '本轮实测应覆盖问诊里的最高体温');
+  assert.equal(withExam.temperature.source, 'exam');
+  assert.deepEqual(withExam.temperature.measurement, examEvent.measurements?.[0]);
   assert.equal(withExam.heartRate.value, null);
   assert.equal(withExam.heartRate.source, null);
 
@@ -106,4 +110,20 @@ test('失败的查体不产生体征；未获得项目保持 null', () => {
   ));
   assert.equal(displayed.temperature.value, null);
   assert.equal(displayed.temperature.source, null);
+});
+
+test('教学模拟血氧参与显示与回填，但来源不能冒充原患者实测', () => {
+  const simulated = event({
+    summary: '手指检查：教学模拟设定：本次 SpO₂ 读数为 99%，脉率为 90 次/分。不是原患者新增实测。',
+    measurements: [{metric:'spo2',value:99,unit:'%',method:'固定教学模拟值',site:'手指',origin:'teaching-simulation',sourceLocator:'TEACH_EX_oximeter_finger',sourceTimepoint:null,measuredAt:new Date().toISOString()}],
+    evidenceCodes: ['TEACH_EX_oximeter_finger'],
+  });
+  const displayed = resolveDisplayedVitals(sessionWith(
+    { temperature: null, heartRate: null, respiratoryRate: null, spo2: null },
+    [simulated],
+    [],
+  ));
+  assert.equal(displayed.spo2.value, 99);
+  assert.equal(displayed.spo2.source, 'simulation');
+  assert.deepEqual(displayed.spo2.measurement, simulated.measurements?.[0]);
 });

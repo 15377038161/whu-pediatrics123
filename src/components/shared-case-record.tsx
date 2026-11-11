@@ -5,6 +5,7 @@ import { ClipboardPen, Search, Volume2, X, Maximize2 } from 'lucide-react';
 import type { SessionState } from '@/domain/agent';
 import { getCaseRecordEntries, searchCaseRecordEntries, type CaseRecordCategory } from '@/domain/case-record';
 import { resolveDisplayedVitals, VITAL_SOURCE_LABELS } from '@/domain/vital-signs';
+import { formatVitalMeasurement } from '@/domain/vital-measurement';
 import {LabReportView} from '@/components/lab-report-view';
 import { CaseMediaGallery } from '@/components/case-media-gallery';
 
@@ -40,6 +41,13 @@ export function SharedCaseRecord({
   const entries = useMemo(() => getCaseRecordEntries(session), [session]);
   const records = useMemo(() => searchCaseRecordEntries(entries, category, query), [entries, category, query]);
   const vitals = useMemo(() => resolveDisplayedVitals(session), [session]);
+  const intake = session.caseOptions?.intake;
+  const vitalCards = [
+    { code: 'temperature', label: '体温 ℃', ...vitals.temperature, suffix: '' },
+    { code: 'heartRate', label: '心率 /min', ...vitals.heartRate, suffix: '' },
+    { code: 'respiratoryRate', label: '呼吸 /min', ...vitals.respiratoryRate, suffix: '' },
+    { code: 'spo2', label: 'SpO₂', ...vitals.spo2, suffix: '%' },
+  ] as const;
   const latestRecordId = entries.at(-1)?.event.id ?? '';
 
   useEffect(() => {
@@ -64,12 +72,26 @@ export function SharedCaseRecord({
     </div>
     <div className="panel-body shared-case-record-body">
       <section className="record-vitals" aria-labelledby="record-vitals-title">
-        <div className="record-section-head"><h3 id="record-vitals-title">生命体征</h3><span>接诊记录与本轮问诊/查体已获得；未获得的项目如实显示未记录</span></div>
+        <div className="record-section-head"><h3 id="record-vitals-title">生命体征</h3><span>初始记录与本轮测量分开标注；教学模拟会明确说明</span></div>
         <div className="vitals">
-          <div className="vital"><strong>{vitals.temperature.value ?? '未记录'}</strong><span>体温 ℃</span>{vitals.temperature.source && <em>{VITAL_SOURCE_LABELS[vitals.temperature.source]}</em>}</div>
-          <div className="vital"><strong>{vitals.heartRate.value ?? '未记录'}</strong><span>心率 /min</span>{vitals.heartRate.source && <em>{VITAL_SOURCE_LABELS[vitals.heartRate.source]}</em>}</div>
-          <div className="vital"><strong>{vitals.respiratoryRate.value ?? '未记录'}</strong><span>呼吸 /min</span>{vitals.respiratoryRate.source && <em>{VITAL_SOURCE_LABELS[vitals.respiratoryRate.source]}</em>}</div>
-          <div className="vital"><strong>{vitals.spo2.value === null ? '未记录' : `${vitals.spo2.value}%`}</strong><span>SpO₂</span>{vitals.spo2.source && <em>{VITAL_SOURCE_LABELS[vitals.spo2.source]}</em>}</div>
+          {vitalCards.map((card) => {
+            const initial = intake?.initialVitals.find((item) => item.code === card.code);
+            const sourceLabel = card.source ? VITAL_SOURCE_LABELS[card.source] : null;
+            const initialContext = card.source === 'initial' && initial
+              ? [initial.timepoint, initial.method, initial.site].filter((item): item is string => Boolean(item))
+              : [];
+            const contextNote = card.source === 'initial' && initial && initialContext.length === 0 ? '原记录未注明测量时点或方式' : null;
+            const measurementContext = card.measurement
+              ? [card.measurement.method, card.measurement.site, `本次操作 ${card.measurement.measuredAt.replace('T', ' ').slice(0, 16)} UTC`]
+              : [];
+            const sourceLocator = card.measurement?.sourceLocator ?? initial?.sourceLocator;
+            return <div className="vital" data-status={card.value === null ? 'missing' : 'obtained'} key={card.code} title={sourceLocator ? `记录来源：${sourceLocator}` : undefined}>
+              <strong>{card.value === null ? (initial ? '原资料未记录' : '未记录') : `${card.value}${card.suffix}`}</strong>
+              <span>{card.label}</span>
+              <em>{sourceLabel ?? (initial ? '原资料未记录 · 可在查体中测量' : '未记录')}</em>
+              {(initialContext.length > 0 || contextNote || measurementContext.length > 0) && <small>{[...initialContext, ...measurementContext, contextNote].filter(Boolean).join(' · ')}</small>}
+            </div>;
+          })}
         </div>
       </section>
       <section className="record-timeline-section" aria-labelledby="record-timeline-title">
@@ -101,6 +123,7 @@ export function SharedCaseRecord({
                 <div className="shared-record-detail">
                   {entry.event.testReport&&<LabReportView report={entry.event.testReport}/>}
                   {entry.category !== 'history' && (entry.event.testReport?<details><summary>核对原始文字与申请目的</summary><p className="record-result-text">{entry.event.summary}</p></details>:<p className="record-result-text">{entry.event.summary}</p>)}
+                  {entry.event.measurements&&entry.event.measurements.length>0&&<ul className="record-measurements" aria-label="本次结构化测量结果">{entry.event.measurements.map(measurement=><li key={`${entry.event.id}-${measurement.metric}`}>{formatVitalMeasurement(measurement)}</li>)}</ul>}
                   {entry.answers.length > 0 ? <div className="record-answer-list">{entry.answers.map((answer, index) => <p key={`${entry.event.id}-${index}`}><span>{answer.actor === 'parent' ? '家长回答' : '患儿回答'}</span>{answer.content}</p>)}</div> : null}
                   {entry.category === 'history' && entry.answers.length === 0 ? <p className="record-detail-muted">未关联到可展示的家长或患儿回答。</p> : null}
                   {entry.event.media && entry.event.media.length > 0

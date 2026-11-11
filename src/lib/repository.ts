@@ -425,6 +425,7 @@ export class AgentRepository {
           const fresh = createInitialSession(this.actor.id, mode, caseId, practiceFocus, coldStartVersion, session.id);
           session.caseVersion = fresh.caseVersion;
           session.caseOptions = fresh.caseOptions;
+          session.initialVitals = fresh.initialVitals;
           session.vitals = fresh.vitals;
           session.messages = fresh.messages;
           session.updatedAt = new Date().toISOString();

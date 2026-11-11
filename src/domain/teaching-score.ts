@@ -72,7 +72,7 @@ export function buildTeachingFeedback(session:SessionState,pack:TeachingPackage,
       const ratio=clinicalEvidenceRatio(session.decision?.diagnosisBasis??'',records);
       judgement={ratio,status:ratio===1?'achieved':ratio===.5?'partial':'missing',explanation:ratio===1?'依据中有来自不同环节的已获得临床信息；简洁表达即可。':ratio===.5?'已联系一类实际临床信息，尚需补充其他环节证据或解释。':'尚未定位到与实际取得记录一致的临床内容；仅写“病史、查体、检查”不算具体依据。'};
     }
-    return {id:item.id,section:item.section,level:item.level,label:item.label,score:item.maxScore*judgement.ratio,maxScore:item.maxScore,status:judgement.status,explanation:judgement.explanation,example:item.fullAnswer};
+    return {id:item.id,section:item.section,...(item.reportSection?{reportSection:item.reportSection}:{}),level:item.level,label:item.label,...(item.noteSection?{noteSection:item.noteSection}:{}),...(item.noteComponent?{noteComponent:item.noteComponent}:{}),score:item.maxScore*judgement.ratio,maxScore:item.maxScore,status:judgement.status,explanation:judgement.explanation,example:item.fullAnswer};
   });
   const round=(n:number)=>Math.round(n*100)/100;
   const rawTotal=items.reduce((n,i)=>n+i.score,0),assessable=items.filter(i=>i.status!=='not_assessable').reduce((n,i)=>n+i.maxScore,0);

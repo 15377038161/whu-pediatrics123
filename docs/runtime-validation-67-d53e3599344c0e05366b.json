@@ -1,0 +1,3568 @@
+{
+  "mode": "isolated-recovery",
+  "entries": 67,
+  "passed": 67,
+  "mediaVerified": 1042,
+  "mediaCheck": "full",
+  "acceptanceBoundary": {
+    "databaseWrites": 0,
+    "realModelCalls": 0,
+    "realBrowserFlows": 0,
+    "inputFixture": "installed-reference-note",
+    "scoresRepresentStudentPerformance": false,
+    "note": "本地确定性引擎、资料、评分和角色投影验收；不代表真实页面、真实模型或学生临床成绩。"
+  },
+  "results": [
+    {
+      "caseId": "teacher-再生障碍性贫血",
+      "title": "再生障碍性贫血",
+      "version": "3513c45265dfed28848b",
+      "teachingPackageVersion": "3513c45265dfed28848b",
+      "sourceSnapshotVersion": "643f8495b534a333",
+      "intake": {
+        "anonymousPatientId": "PEDS-9085147E",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 69.1,
+        "assessableMaxScore": 96,
+        "normalizedScore": 71.98,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 51.8,
+          "noteMax": 60,
+          "processScore": 17.3,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 27,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-急性肾小球肾炎",
+      "title": "急性肾小球肾炎",
+      "version": "19b93a1e03cd12c3bf56",
+      "teachingPackageVersion": "19b93a1e03cd12c3bf56",
+      "sourceSnapshotVersion": "4440187c4775fe50",
+      "intake": {
+        "anonymousPatientId": "PEDS-DA66AE28",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 63.25,
+        "assessableMaxScore": 98,
+        "normalizedScore": 64.54,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 14.25,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 28,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿败血症",
+      "title": "新生儿败血症",
+      "version": "9f7cc8d88221b92847f0",
+      "teachingPackageVersion": "9f7cc8d88221b92847f0",
+      "sourceSnapshotVersion": "fff889dba9233f1b",
+      "intake": {
+        "anonymousPatientId": "PEDS-27053A4A",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 66.55,
+        "assessableMaxScore": 98,
+        "normalizedScore": 67.91,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 17.55,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-异物吸入性窒息",
+      "title": "异物吸入性窒息",
+      "version": "b70dcb31cabad36802e3",
+      "teachingPackageVersion": "b70dcb31cabad36802e3",
+      "sourceSnapshotVersion": "7838e2aa1c4c53af",
+      "intake": {
+        "anonymousPatientId": "PEDS-49AF4985",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 60.3,
+        "assessableMaxScore": 96,
+        "normalizedScore": 62.81,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 45.5,
+          "noteMax": 60,
+          "processScore": 14.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 17,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿rh溶血性黄疸",
+      "title": "新生儿RH溶血性黄疸",
+      "version": "945244a697c4243e623f",
+      "teachingPackageVersion": "945244a697c4243e623f",
+      "sourceSnapshotVersion": "e15510ecda00cba7",
+      "intake": {
+        "anonymousPatientId": "PEDS-AE9AF5AE",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.55,
+        "assessableMaxScore": 98,
+        "normalizedScore": 66.89,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 16.55,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 19,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-单纯肥胖症",
+      "title": "单纯肥胖症",
+      "version": "6e330879cae45e8ec509",
+      "teachingPackageVersion": "6e330879cae45e8ec509",
+      "sourceSnapshotVersion": "5f48641f7627155a",
+      "intake": {
+        "anonymousPatientId": "PEDS-BE9886C4",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 62.6,
+        "assessableMaxScore": 96,
+        "normalizedScore": 65.21,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 46.5,
+          "noteMax": 60,
+          "processScore": 16.1,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-急性喘息性支气管炎",
+      "title": "急性喘息性支气管炎",
+      "version": "75a7a366caf52b650a62",
+      "teachingPackageVersion": "75a7a366caf52b650a62",
+      "sourceSnapshotVersion": "5be48bfd5e9b58c7",
+      "intake": {
+        "anonymousPatientId": "PEDS-7833DA1D",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 58.8,
+        "assessableMaxScore": 94,
+        "normalizedScore": 62.55,
+        "basicMaxScore": 76,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47,
+          "noteMax": 60,
+          "processScore": 11.8,
+          "processMax": 34
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 18,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-先天性肾上腺皮质增生症",
+      "title": "先天性肾上腺皮质增生症",
+      "version": "6df6ac389e6a36793b3d",
+      "teachingPackageVersion": "6df6ac389e6a36793b3d",
+      "sourceSnapshotVersion": "99d2910de3c8c18e",
+      "intake": {
+        "anonymousPatientId": "PEDS-C7E8A672",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 62.7,
+        "assessableMaxScore": 96,
+        "normalizedScore": 65.31,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47.5,
+          "noteMax": 60,
+          "processScore": 15.2,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 28,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-急性毛细支气管炎",
+      "title": "急性毛细支气管炎",
+      "version": "e844c1dc421be446ba47",
+      "teachingPackageVersion": "e844c1dc421be446ba47",
+      "sourceSnapshotVersion": "7e85f01ebd51bd0c",
+      "intake": {
+        "anonymousPatientId": "PEDS-2FE0BE7C",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 58.55,
+        "assessableMaxScore": 94,
+        "normalizedScore": 62.29,
+        "basicMaxScore": 76,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 46,
+          "noteMax": 60,
+          "processScore": 12.55,
+          "processMax": 34
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 17,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-儿童-肥胖症",
+      "title": "儿童 肥胖症",
+      "version": "9d119546e045af9a7597",
+      "teachingPackageVersion": "9d119546e045af9a7597",
+      "sourceSnapshotVersion": "5f48641f7627155a",
+      "intake": {
+        "anonymousPatientId": "PEDS-BE9886C4",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 62.6,
+        "assessableMaxScore": 96,
+        "normalizedScore": 65.21,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 46.5,
+          "noteMax": 60,
+          "processScore": 16.1,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-传染性单核细胞增多症",
+      "title": "传染性单核细胞增多症",
+      "version": "2db3c6f1712fabae83d0",
+      "teachingPackageVersion": "2db3c6f1712fabae83d0",
+      "sourceSnapshotVersion": "4a2f23d986deb6bf",
+      "intake": {
+        "anonymousPatientId": "PEDS-681DB5EF",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 63.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 66.46,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47.5,
+          "noteMax": 60,
+          "processScore": 16.3,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 13,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-重症肺炎",
+      "title": "重症肺炎",
+      "version": "6b0049c652481f131fed",
+      "teachingPackageVersion": "6b0049c652481f131fed",
+      "sourceSnapshotVersion": "3307b61547d5d316",
+      "intake": {
+        "anonymousPatientId": "PEDS-4DE58E27",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 61.8,
+        "assessableMaxScore": 94,
+        "normalizedScore": 65.74,
+        "basicMaxScore": 76,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 46.5,
+          "noteMax": 60,
+          "processScore": 15.3,
+          "processMax": 34
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 21,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-先天性肌无力综合征",
+      "title": "先天性肌无力综合征",
+      "version": "41cceaba89c24e247f5f",
+      "teachingPackageVersion": "41cceaba89c24e247f5f",
+      "sourceSnapshotVersion": "f17f17fcdaeaa3c6",
+      "intake": {
+        "anonymousPatientId": "PEDS-77532B3D",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 62.55,
+        "assessableMaxScore": 94,
+        "normalizedScore": 66.54,
+        "basicMaxScore": 76,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 13.55,
+          "processMax": 34
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 43,
+      "mediaLinks": 4,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-急性白血病",
+      "title": "急性白血病",
+      "version": "b06f110d0b93dd5da4c1",
+      "teachingPackageVersion": "b06f110d0b93dd5da4c1",
+      "sourceSnapshotVersion": "0a7529b8860f2faa",
+      "intake": {
+        "anonymousPatientId": "PEDS-F84E27AE",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.25,
+        "assessableMaxScore": 98,
+        "normalizedScore": 66.58,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 51,
+          "noteMax": 60,
+          "processScore": 14.25,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 29,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-急性肾衰竭",
+      "title": "急性肾衰竭",
+      "version": "0d301779b6b5d4b50a7c",
+      "teachingPackageVersion": "0d301779b6b5d4b50a7c",
+      "sourceSnapshotVersion": "540f318b2df4e925",
+      "intake": {
+        "anonymousPatientId": "PEDS-91591D96",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 63.8,
+        "assessableMaxScore": 98,
+        "normalizedScore": 65.1,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 48,
+          "noteMax": 60,
+          "processScore": 15.8,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 49,
+      "mediaLinks": 4,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-中枢性性早熟",
+      "title": "中枢性性早熟",
+      "version": "2755b5cf19e7fb20eb00",
+      "teachingPackageVersion": "2755b5cf19e7fb20eb00",
+      "sourceSnapshotVersion": "3d16322f3d6a38ef",
+      "intake": {
+        "anonymousPatientId": "PEDS-5A55B668",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 61.4,
+        "assessableMaxScore": 98,
+        "normalizedScore": 62.65,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47.5,
+          "noteMax": 60,
+          "processScore": 13.9,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 18,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿abo溶血性黄疸",
+      "title": "新生儿ABO溶血性黄疸",
+      "version": "14a6baa6200768fcbe46",
+      "teachingPackageVersion": "14a6baa6200768fcbe46",
+      "sourceSnapshotVersion": "f11dfe9acfb61137",
+      "intake": {
+        "anonymousPatientId": "PEDS-0B953468",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.8,
+        "assessableMaxScore": 98,
+        "normalizedScore": 67.14,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 50,
+          "noteMax": 60,
+          "processScore": 15.8,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 30,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-毛细支气管炎",
+      "title": "毛细支气管炎",
+      "version": "d752c1a20ecc07c6ab85",
+      "teachingPackageVersion": "d752c1a20ecc07c6ab85",
+      "sourceSnapshotVersion": "7e85f01ebd51bd0c",
+      "intake": {
+        "anonymousPatientId": "PEDS-2FE0BE7C",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 58.55,
+        "assessableMaxScore": 94,
+        "normalizedScore": 62.29,
+        "basicMaxScore": 76,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 46,
+          "noteMax": 60,
+          "processScore": 12.55,
+          "processMax": 34
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 17,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿胎粪吸入肺炎",
+      "title": "新生儿胎粪吸入肺炎",
+      "version": "f9bb340a9c3bd44a8134",
+      "teachingPackageVersion": "f9bb340a9c3bd44a8134",
+      "sourceSnapshotVersion": "e1781ec12aa49479",
+      "intake": {
+        "anonymousPatientId": "PEDS-17D1F948",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 70.5,
+        "assessableMaxScore": 96,
+        "normalizedScore": 73.44,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 21.5,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 24,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-细菌性肠炎",
+      "title": "细菌性肠炎",
+      "version": "d948c0abb9139f4d4c3e",
+      "teachingPackageVersion": "d948c0abb9139f4d4c3e",
+      "sourceSnapshotVersion": "19eb3bb732d3b723",
+      "intake": {
+        "anonymousPatientId": "PEDS-455D4897",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 61.5,
+        "assessableMaxScore": 96,
+        "normalizedScore": 64.06,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 46.2,
+          "noteMax": 60,
+          "processScore": 15.3,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-轮状病毒性肠炎",
+      "title": "轮状病毒性肠炎",
+      "version": "28cbdc9206509102e917",
+      "teachingPackageVersion": "28cbdc9206509102e917",
+      "sourceSnapshotVersion": "22f64934f6199683",
+      "intake": {
+        "anonymousPatientId": "PEDS-70EA7382",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 47.95,
+        "assessableMaxScore": 96,
+        "normalizedScore": 49.95,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 39.95,
+          "noteMax": 60,
+          "processScore": 8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 21,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-泌尿道感染",
+      "title": "泌尿道感染",
+      "version": "fb1ec883b7019fd81bad",
+      "teachingPackageVersion": "fb1ec883b7019fd81bad",
+      "sourceSnapshotVersion": "0f7c93b95d8e0521",
+      "intake": {
+        "anonymousPatientId": "PEDS-187C28D8",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 62,
+        "assessableMaxScore": 96,
+        "normalizedScore": 64.58,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 48,
+          "noteMax": 60,
+          "processScore": 14,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 17,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-糖原贮积病",
+      "title": "糖原贮积病",
+      "version": "d41cf11909b2bcc34057",
+      "teachingPackageVersion": "d41cf11909b2bcc34057",
+      "sourceSnapshotVersion": "dd824540193c3650",
+      "intake": {
+        "anonymousPatientId": "PEDS-EF9D55A3",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 59.5,
+        "assessableMaxScore": 98,
+        "normalizedScore": 60.71,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 46,
+          "noteMax": 60,
+          "processScore": 13.5,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 28,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-川崎病",
+      "title": "川崎病",
+      "version": "18783b6c19ac0b93139c",
+      "teachingPackageVersion": "18783b6c19ac0b93139c",
+      "sourceSnapshotVersion": "e4da92f85a02862f",
+      "intake": {
+        "anonymousPatientId": "PEDS-3F1998F0",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 62.8,
+        "assessableMaxScore": 98,
+        "normalizedScore": 64.08,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47,
+          "noteMax": 60,
+          "processScore": 15.8,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 26,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿胎粪吸入性肺炎",
+      "title": "新生儿胎粪吸入性肺炎",
+      "version": "2143a91c7eb742867b4e",
+      "teachingPackageVersion": "2143a91c7eb742867b4e",
+      "sourceSnapshotVersion": "e1781ec12aa49479",
+      "intake": {
+        "anonymousPatientId": "PEDS-17D1F948",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 70.5,
+        "assessableMaxScore": 96,
+        "normalizedScore": 73.44,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 21.5,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 24,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-中枢神经系统脱髓鞘病",
+      "title": "中枢神经系统脱髓鞘病",
+      "version": "43c4689a619a750d752c",
+      "teachingPackageVersion": "43c4689a619a750d752c",
+      "sourceSnapshotVersion": "7e0d077f7910d3ad",
+      "intake": {
+        "anonymousPatientId": "PEDS-B730120F",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 63.55,
+        "assessableMaxScore": 98,
+        "normalizedScore": 64.85,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 45,
+          "noteMax": 60,
+          "processScore": 18.55,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 30,
+      "mediaLinks": 3,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-外周性性早熟",
+      "title": "外周性性早熟",
+      "version": "d026fd50098967567de7",
+      "teachingPackageVersion": "d026fd50098967567de7",
+      "sourceSnapshotVersion": "3c2153d1ca7728c2",
+      "intake": {
+        "anonymousPatientId": "PEDS-8B408B9C",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 64.4,
+        "assessableMaxScore": 98,
+        "normalizedScore": 65.71,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 15.4,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 15,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-婴儿胆汁淤积症-巨细胞病毒",
+      "title": "婴儿胆汁淤积症（巨细胞病毒）",
+      "version": "1900522aaedcedf0df2b",
+      "teachingPackageVersion": "1900522aaedcedf0df2b",
+      "sourceSnapshotVersion": "63b9499d525c9971",
+      "intake": {
+        "anonymousPatientId": "PEDS-71D5BD88",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 64.05,
+        "assessableMaxScore": 98,
+        "normalizedScore": 65.36,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 48.5,
+          "noteMax": 60,
+          "processScore": 15.55,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 27,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-矮小症",
+      "title": "矮小症",
+      "version": "5cb5c06a8f09935d2273",
+      "teachingPackageVersion": "5cb5c06a8f09935d2273",
+      "sourceSnapshotVersion": "1863d7e5de5bfc26",
+      "intake": {
+        "anonymousPatientId": "PEDS-6224984C",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 68.54,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 16.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-癫痫",
+      "title": "癫痫",
+      "version": "5831ca07ad1bb5b1e03f",
+      "teachingPackageVersion": "5831ca07ad1bb5b1e03f",
+      "sourceSnapshotVersion": "1ef60beab8ee1416",
+      "intake": {
+        "anonymousPatientId": "PEDS-13CA6489",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 57.3,
+        "assessableMaxScore": 96,
+        "normalizedScore": 59.69,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 43.5,
+          "noteMax": 60,
+          "processScore": 13.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 17,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-糖原贮积病iv型",
+      "title": "糖原贮积病IV型",
+      "version": "eaa7e67d8ed1e46bc615",
+      "teachingPackageVersion": "eaa7e67d8ed1e46bc615",
+      "sourceSnapshotVersion": "dd824540193c3650",
+      "intake": {
+        "anonymousPatientId": "PEDS-EF9D55A3",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 59.5,
+        "assessableMaxScore": 98,
+        "normalizedScore": 60.71,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 46,
+          "noteMax": 60,
+          "processScore": 13.5,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 28,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-结核性脑炎",
+      "title": "结核性脑炎",
+      "version": "f3a5aa35b33dbf0875e4",
+      "teachingPackageVersion": "f3a5aa35b33dbf0875e4",
+      "sourceSnapshotVersion": "391083ecf68525b8",
+      "intake": {
+        "anonymousPatientId": "PEDS-328345A3",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 66.3,
+        "assessableMaxScore": 98,
+        "normalizedScore": 67.65,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 48.5,
+          "noteMax": 60,
+          "processScore": 17.8,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 33,
+      "mediaLinks": 3,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-大叶性肺炎",
+      "title": "大叶性肺炎",
+      "version": "c8be478ef0f232cf0ca9",
+      "teachingPackageVersion": "c8be478ef0f232cf0ca9",
+      "sourceSnapshotVersion": "56e26c1ac1156c5f",
+      "intake": {
+        "anonymousPatientId": "PEDS-8492890F",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 57.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 60.21,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 44,
+          "noteMax": 60,
+          "processScore": 13.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 22,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-蚕豆病",
+      "title": "蚕豆病",
+      "version": "ddd5e151b4167d7871cb",
+      "teachingPackageVersion": "ddd5e151b4167d7871cb",
+      "sourceSnapshotVersion": "7b11b44563484343",
+      "intake": {
+        "anonymousPatientId": "PEDS-856BDA8A",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 60,
+        "assessableMaxScore": 96,
+        "normalizedScore": 62.5,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47.5,
+          "noteMax": 60,
+          "processScore": 12.5,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 26,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-肺炎支原体性肺炎",
+      "title": "肺炎支原体性肺炎",
+      "version": "cedb693d44261315fc0d",
+      "teachingPackageVersion": "cedb693d44261315fc0d",
+      "sourceSnapshotVersion": "56e26c1ac1156c5f",
+      "intake": {
+        "anonymousPatientId": "PEDS-8492890F",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 57.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 60.21,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 44,
+          "noteMax": 60,
+          "processScore": 13.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 22,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-先天性肌无力",
+      "title": "先天性肌无力",
+      "version": "853ec986def417a001d7",
+      "teachingPackageVersion": "853ec986def417a001d7",
+      "sourceSnapshotVersion": "f17f17fcdaeaa3c6",
+      "intake": {
+        "anonymousPatientId": "PEDS-77532B3D",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 62.55,
+        "assessableMaxScore": 94,
+        "normalizedScore": 66.54,
+        "basicMaxScore": 76,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 13.55,
+          "processMax": 34
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 43,
+      "mediaLinks": 4,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-婴儿胆汁淤积症-巨细胞病毒感染",
+      "title": "婴儿胆汁淤积症（巨细胞病毒感染）",
+      "version": "89e94a85298a6e355b10",
+      "teachingPackageVersion": "89e94a85298a6e355b10",
+      "sourceSnapshotVersion": "63b9499d525c9971",
+      "intake": {
+        "anonymousPatientId": "PEDS-71D5BD88",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 64.05,
+        "assessableMaxScore": 98,
+        "normalizedScore": 65.36,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 48.5,
+          "noteMax": 60,
+          "processScore": 15.55,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 27,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-急性喉炎",
+      "title": "急性喉炎",
+      "version": "10ef040adba8a9818836",
+      "teachingPackageVersion": "10ef040adba8a9818836",
+      "sourceSnapshotVersion": "ca4b32d174d66a95",
+      "intake": {
+        "anonymousPatientId": "PEDS-997CE4C2",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 60.3,
+        "assessableMaxScore": 94,
+        "normalizedScore": 64.15,
+        "basicMaxScore": 76,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47,
+          "noteMax": 60,
+          "processScore": 13.3,
+          "processMax": 34
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 12,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-特发性血小板减少性紫癜",
+      "title": "特发性血小板减少性紫癜",
+      "version": "8c60e4647a308b26b024",
+      "teachingPackageVersion": "8c60e4647a308b26b024",
+      "sourceSnapshotVersion": "b8c5c9b92a3f6f21",
+      "intake": {
+        "anonymousPatientId": "PEDS-148E01BA",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 67.05,
+        "assessableMaxScore": 96,
+        "normalizedScore": 69.84,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 50.5,
+          "noteMax": 60,
+          "processScore": 16.55,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 25,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-肝豆状核变性",
+      "title": "肝豆状核变性",
+      "version": "8ac5abfd3563b86e77bc",
+      "teachingPackageVersion": "8ac5abfd3563b86e77bc",
+      "sourceSnapshotVersion": "2d6343846c472bf9",
+      "intake": {
+        "anonymousPatientId": "PEDS-58D0635F",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 64,
+        "assessableMaxScore": 96,
+        "normalizedScore": 66.67,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 45.5,
+          "noteMax": 60,
+          "processScore": 18.5,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 19,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-支气管哮喘",
+      "title": "支气管哮喘",
+      "version": "18a204a369835a346324",
+      "teachingPackageVersion": "18a204a369835a346324",
+      "sourceSnapshotVersion": "48df9bf06dd03b94",
+      "intake": {
+        "anonymousPatientId": "PEDS-C8E25A89",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 59.55,
+        "assessableMaxScore": 94,
+        "normalizedScore": 63.35,
+        "basicMaxScore": 76,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47,
+          "noteMax": 60,
+          "processScore": 12.55,
+          "processMax": 34
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 15,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-生长激素缺乏症-矮小症",
+      "title": "生长激素缺乏症、矮小症",
+      "version": "c32045c95b9bd6fa7523",
+      "teachingPackageVersion": "c32045c95b9bd6fa7523",
+      "sourceSnapshotVersion": "1863d7e5de5bfc26",
+      "intake": {
+        "anonymousPatientId": "PEDS-6224984C",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 68.54,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 16.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-1型糖尿病伴有酮症酸中毒",
+      "title": "1型糖尿病伴有酮症酸中毒",
+      "version": "12afa477c92c9f92ecbb",
+      "teachingPackageVersion": "12afa477c92c9f92ecbb",
+      "sourceSnapshotVersion": "85de76a667884e12",
+      "intake": {
+        "anonymousPatientId": "PEDS-DA0CB295",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 68.3,
+        "assessableMaxScore": 98,
+        "normalizedScore": 69.69,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 50,
+          "noteMax": 60,
+          "processScore": 18.3,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 12,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-癫痫全面性发作阵挛性发作",
+      "title": "癫痫全面性发作阵挛性发作",
+      "version": "fbca11064ff7f5d11b34",
+      "teachingPackageVersion": "fbca11064ff7f5d11b34",
+      "sourceSnapshotVersion": "1ef60beab8ee1416",
+      "intake": {
+        "anonymousPatientId": "PEDS-13CA6489",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 57.3,
+        "assessableMaxScore": 96,
+        "normalizedScore": 59.69,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 43.5,
+          "noteMax": 60,
+          "processScore": 13.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 17,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-急性百草枯中毒",
+      "title": "急性百草枯中毒",
+      "version": "da5812f19989efcb0707",
+      "teachingPackageVersion": "da5812f19989efcb0707",
+      "sourceSnapshotVersion": "851b18dd4400c01c",
+      "intake": {
+        "anonymousPatientId": "PEDS-46C88BDD",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.8,
+        "assessableMaxScore": 98,
+        "normalizedScore": 67.14,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49.5,
+          "noteMax": 60,
+          "processScore": 16.3,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 50,
+      "mediaLinks": 4,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-化脓性脑膜炎",
+      "title": "化脓性脑膜炎",
+      "version": "229bf248b492339b9eb8",
+      "teachingPackageVersion": "229bf248b492339b9eb8",
+      "sourceSnapshotVersion": "b7afa2eb7fea5588",
+      "intake": {
+        "anonymousPatientId": "PEDS-AEF494FC",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.8,
+        "assessableMaxScore": 98,
+        "normalizedScore": 67.14,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49.5,
+          "noteMax": 60,
+          "processScore": 16.3,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 32,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-风湿热",
+      "title": "风湿热",
+      "version": "2d39e6f898c0ec550bb8",
+      "teachingPackageVersion": "2d39e6f898c0ec550bb8",
+      "sourceSnapshotVersion": "fb48cf0c165e8d37",
+      "intake": {
+        "anonymousPatientId": "PEDS-F00BB125",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 61.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 64.38,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 48,
+          "noteMax": 60,
+          "processScore": 13.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 29,
+      "mediaLinks": 3,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-肺不张",
+      "title": "肺不张",
+      "version": "39a3a7303b1fb255d870",
+      "teachingPackageVersion": "39a3a7303b1fb255d870",
+      "sourceSnapshotVersion": "e69753018532427a",
+      "intake": {
+        "anonymousPatientId": "PEDS-5AE991D5",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 59.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 62.29,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47,
+          "noteMax": 60,
+          "processScore": 12.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 21,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿化脓性脑膜炎",
+      "title": "新生儿化脓性脑膜炎",
+      "version": "03eabb7cbfb80db9f178",
+      "teachingPackageVersion": "03eabb7cbfb80db9f178",
+      "sourceSnapshotVersion": "d84429e7d8849c68",
+      "intake": {
+        "anonymousPatientId": "PEDS-F7416174",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 68.3,
+        "assessableMaxScore": 98,
+        "normalizedScore": 69.69,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 50,
+          "noteMax": 60,
+          "processScore": 18.3,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 25,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-暴发性心肌炎",
+      "title": "暴发性心肌炎",
+      "version": "3373e6cc6c9b40646106",
+      "teachingPackageVersion": "3373e6cc6c9b40646106",
+      "sourceSnapshotVersion": "4c21a6b619afa522",
+      "intake": {
+        "anonymousPatientId": "PEDS-542FE1EF",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 61.3,
+        "assessableMaxScore": 96,
+        "normalizedScore": 63.85,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 45.5,
+          "noteMax": 60,
+          "processScore": 15.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 37,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-肺炎支原体肺炎",
+      "title": "肺炎支原体肺炎",
+      "version": "331064bdf04fc6bc2a75",
+      "teachingPackageVersion": "331064bdf04fc6bc2a75",
+      "sourceSnapshotVersion": "56e26c1ac1156c5f",
+      "intake": {
+        "anonymousPatientId": "PEDS-8492890F",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 57.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 60.21,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 44,
+          "noteMax": 60,
+          "processScore": 13.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 22,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-传染行单核细胞增多症",
+      "title": "传染行单核细胞增多症",
+      "version": "6f466f2f7c4843f336c6",
+      "teachingPackageVersion": "6f466f2f7c4843f336c6",
+      "sourceSnapshotVersion": "4a2f23d986deb6bf",
+      "intake": {
+        "anonymousPatientId": "PEDS-681DB5EF",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 63.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 66.46,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47.5,
+          "noteMax": 60,
+          "processScore": 16.3,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 13,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-肾病综合征",
+      "title": "肾病综合征",
+      "version": "a8c849a69f31fd581b7f",
+      "teachingPackageVersion": "a8c849a69f31fd581b7f",
+      "sourceSnapshotVersion": "dff734ae57cde6dd",
+      "intake": {
+        "anonymousPatientId": "PEDS-72463F20",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 63.75,
+        "assessableMaxScore": 96,
+        "normalizedScore": 66.41,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 48.5,
+          "noteMax": 60,
+          "processScore": 15.25,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿缺血缺氧性脑病",
+      "title": "新生儿缺血缺氧性脑病",
+      "version": "b63737d1309795eaebd2",
+      "teachingPackageVersion": "b63737d1309795eaebd2",
+      "sourceSnapshotVersion": "ff9c2777e168fa11",
+      "intake": {
+        "anonymousPatientId": "PEDS-7844744F",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 62.55,
+        "assessableMaxScore": 98,
+        "normalizedScore": 63.83,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 48,
+          "noteMax": 60,
+          "processScore": 14.55,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-病毒性脑炎",
+      "title": "病毒性脑炎",
+      "version": "1eba9e09ff536b7849e3",
+      "teachingPackageVersion": "1eba9e09ff536b7849e3",
+      "sourceSnapshotVersion": "2594bcad9fa89a45",
+      "intake": {
+        "anonymousPatientId": "PEDS-8197E090",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 59.45,
+        "assessableMaxScore": 98,
+        "normalizedScore": 60.66,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 43.9,
+          "noteMax": 60,
+          "processScore": 15.55,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 28,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-中枢性尿崩症",
+      "title": "中枢性尿崩症",
+      "version": "479f047e8e0b140bdff5",
+      "teachingPackageVersion": "479f047e8e0b140bdff5",
+      "sourceSnapshotVersion": "8399007092abff43",
+      "intake": {
+        "anonymousPatientId": "PEDS-DE9B4879",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 46.8,
+        "assessableMaxScore": 98,
+        "normalizedScore": 47.76,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 37.5,
+          "noteMax": 60,
+          "processScore": 9.3,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 24,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿肺炎",
+      "title": "新生儿肺炎",
+      "version": "c0adba2d2b380e2dda88",
+      "teachingPackageVersion": "c0adba2d2b380e2dda88",
+      "sourceSnapshotVersion": "9781895ad6f581a1",
+      "intake": {
+        "anonymousPatientId": "PEDS-5BA3CE9C",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 68.54,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49.5,
+          "noteMax": 60,
+          "processScore": 16.3,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿高胆红素血症",
+      "title": "新生儿高胆红素血症",
+      "version": "2392d4929ff184855597",
+      "teachingPackageVersion": "2392d4929ff184855597",
+      "sourceSnapshotVersion": "1f57511b96db9b5a",
+      "intake": {
+        "anonymousPatientId": "PEDS-0C36080D",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 64.55,
+        "assessableMaxScore": 98,
+        "normalizedScore": 65.87,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 15.55,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 18,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-心律失常-阵发性室上性心动过速",
+      "title": "心律失常（阵发性室上性心动过速）",
+      "version": "31633c93839a3af2b79b",
+      "teachingPackageVersion": "31633c93839a3af2b79b",
+      "sourceSnapshotVersion": "e4f426ece906a139",
+      "intake": {
+        "anonymousPatientId": "PEDS-86D5E127",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 58.3,
+        "assessableMaxScore": 98,
+        "normalizedScore": 59.49,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 44.5,
+          "noteMax": 60,
+          "processScore": 13.8,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-过敏性紫癜",
+      "title": "过敏性紫癜",
+      "version": "1ed5828f06f1b0f3130f",
+      "teachingPackageVersion": "1ed5828f06f1b0f3130f",
+      "sourceSnapshotVersion": "3d64ffa02809860c",
+      "intake": {
+        "anonymousPatientId": "PEDS-1B1B7D2D",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 61.8,
+        "assessableMaxScore": 96,
+        "normalizedScore": 64.37,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 46,
+          "noteMax": 60,
+          "processScore": 15.8,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 21,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-心律失常-室上性心动过速",
+      "title": "心律失常 室上性心动过速",
+      "version": "005f539ae03fa6b3f694",
+      "teachingPackageVersion": "005f539ae03fa6b3f694",
+      "sourceSnapshotVersion": "e4f426ece906a139",
+      "intake": {
+        "anonymousPatientId": "PEDS-86D5E127",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 58.3,
+        "assessableMaxScore": 98,
+        "normalizedScore": 59.49,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 44.5,
+          "noteMax": 60,
+          "processScore": 13.8,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 20,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-发热性惊厥",
+      "title": "发热性惊厥",
+      "version": "375f51e0ebc55f570227",
+      "teachingPackageVersion": "375f51e0ebc55f570227",
+      "sourceSnapshotVersion": "a8a74b096101d2f9",
+      "intake": {
+        "anonymousPatientId": "PEDS-0EC8B9AE",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 59.1,
+        "assessableMaxScore": 94,
+        "normalizedScore": 62.87,
+        "basicMaxScore": 76,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 47.3,
+          "noteMax": 60,
+          "processScore": 11.8,
+          "processMax": 34
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 15,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿呼吸窘迫综合征",
+      "title": "新生儿呼吸窘迫综合征",
+      "version": "885bf0fbfc8e5159c765",
+      "teachingPackageVersion": "885bf0fbfc8e5159c765",
+      "sourceSnapshotVersion": "8651193aac23a7d5",
+      "intake": {
+        "anonymousPatientId": "PEDS-19839C4F",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.85,
+        "assessableMaxScore": 96,
+        "normalizedScore": 68.59,
+        "basicMaxScore": 78,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 48.5,
+          "noteMax": 60,
+          "processScore": 17.35,
+          "processMax": 36
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 25,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-i型糖尿病伴有酮症酸中毒",
+      "title": "I型糖尿病伴有酮症酸中毒",
+      "version": "e09ca2ac8557b96bcd12",
+      "teachingPackageVersion": "e09ca2ac8557b96bcd12",
+      "sourceSnapshotVersion": "85de76a667884e12",
+      "intake": {
+        "anonymousPatientId": "PEDS-DA0CB295",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 68.3,
+        "assessableMaxScore": 98,
+        "normalizedScore": 69.69,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 50,
+          "noteMax": 60,
+          "processScore": 18.3,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 12,
+      "mediaLinks": 1,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-噬血细胞综合征",
+      "title": "噬血细胞综合征",
+      "version": "95a53043a9b94c7e13c2",
+      "teachingPackageVersion": "95a53043a9b94c7e13c2",
+      "sourceSnapshotVersion": "0fcd716cf9d311cb",
+      "intake": {
+        "anonymousPatientId": "PEDS-46CB6A98",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 73.8,
+        "assessableMaxScore": 98,
+        "normalizedScore": 75.31,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 49,
+          "noteMax": 60,
+          "processScore": 24.8,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 31,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-新生儿重度窒息",
+      "title": "新生儿重度窒息",
+      "version": "07c9715f3f2f522e1671",
+      "teachingPackageVersion": "07c9715f3f2f522e1671",
+      "sourceSnapshotVersion": "827194cdee9b00ae",
+      "intake": {
+        "anonymousPatientId": "PEDS-7D56C2D6",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 67,
+        "assessableMaxScore": 98,
+        "normalizedScore": 68.37,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 50,
+          "noteMax": 60,
+          "processScore": 17,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 30,
+      "mediaLinks": 4,
+      "passed": true,
+      "events": 9
+    },
+    {
+      "caseId": "teacher-急性白血病-急性淋巴细胞白血病",
+      "title": "急性白血病-急性淋巴细胞白血病",
+      "version": "587a08bda7401759b19b",
+      "teachingPackageVersion": "587a08bda7401759b19b",
+      "sourceSnapshotVersion": "0a7529b8860f2faa",
+      "intake": {
+        "anonymousPatientId": "PEDS-F84E27AE",
+        "vitals": 4,
+        "pending": 3
+      },
+      "flows": {
+        "guided": true,
+        "osce": true,
+        "historyPractice": true,
+        "examPractice": true,
+        "safetyPractice": true,
+        "communicationPractice": true
+      },
+      "submissions": {
+        "diagnosis": true,
+        "treatment": true,
+        "communication": true,
+        "medicalNote": true,
+        "immutableSnapshot": true
+      },
+      "rubric": {
+        "version": "note-primary-60-v1",
+        "rawScore": 65.25,
+        "assessableMaxScore": 98,
+        "normalizedScore": 66.58,
+        "basicMaxScore": 80,
+        "advancedMaxScore": 18,
+        "noteProcessBreakdown": {
+          "noteScore": 51,
+          "noteMax": 60,
+          "processScore": 14.25,
+          "processMax": 38
+        },
+        "sevenSections": true
+      },
+      "roleEvidence": {
+        "studentCatalogHidden": true,
+        "studentAnswerHidden": true,
+        "teacherReferenceVisible": true,
+        "studentReferenceHidden": true,
+        "scoreImmutableAcrossRoles": true
+      },
+      "mediaReferences": 29,
+      "mediaLinks": 2,
+      "passed": true,
+      "events": 9
+    }
+  ]
+}

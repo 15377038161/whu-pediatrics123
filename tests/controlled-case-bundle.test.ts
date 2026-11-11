@@ -150,3 +150,18 @@ test('a shared media archive validates all registered members, coalesces reads a
     rmSync(root,{recursive:true,force:true});
   }
 });
+
+test('identical verified media can be reused across generation archives without weakening conflict checks',()=>{
+  const raw=strToU8('same-pixels-across-controlled-generations');
+  const sha256=hash(raw);
+  const descriptor={sha256,path:`runtime/media/${sha256}.png`,bytes:raw.length,archive:'generation-a.zip',fileId:`training-media:${sha256}`};
+  const reference=(archive:string,fileId:string):ControlledTrainingContentReference=>({
+    fileId,sha256:hash(strToU8(fileId)),bytes:1,archive:'content.zip',
+    media:[{fileId:`${fileId}-media`,sha256:hash(strToU8(archive)),bytes:1,archive}],
+    expected:{entries:0,sources:0,media:1},
+  });
+  const content=(media:typeof descriptor)=>({sources:[],packages:[],entries:{},media:new Map([[media.sha256,media]]),embeddedMedia:new Map()});
+  installRecoveredTrainingContent(content(descriptor),reference(descriptor.archive,'generation-a'));
+  assert.doesNotThrow(()=>installRecoveredTrainingContent(content({...descriptor,archive:'generation-b.zip'}),reference('generation-b.zip','generation-b')));
+  assert.throws(()=>installRecoveredTrainingContent(content({...descriptor,archive:'generation-c.zip',bytes:descriptor.bytes+1}),reference('generation-c.zip','generation-c')),/TRAINING_CONTENT_MEDIA_CONFLICT/);
+});

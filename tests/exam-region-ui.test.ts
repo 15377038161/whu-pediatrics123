@@ -33,6 +33,17 @@ test('自主查体首屏保留人物图片并提供全部器材，选择不预�
   assert.ok(html.includes('选择查体大部位'));
 });
 
+test('手卫生是查体区顶部醒目的第1步，一次确认保留准备证据且完成后不可重复',()=>{
+  const props={image:'/test-person.webp',alt:'合成测试患儿',posture:'standing' as const,position:'standing' as const,positions:['standing','supine'] as Array<'standing'|'supine'>,onPositionChange:noop,busy:false,observation:null,onExamine:noop,onCloseObservation:noop,onReplayAudio:noop};
+  const pending=renderToStaticMarkup(createElement(ClinicalExam,{...props,hygieneCompleted:false}));
+  assert.ok(pending.includes('第 1 步：先完成手卫生与检查说明'));
+  assert.ok(pending.includes('确认并完成准备'));
+  assert.ok(pending.indexOf('ce-prep-step')<pending.indexOf('ce-toolbar'));
+  const done=renderToStaticMarkup(createElement(ClinicalExam,{...props,hygieneCompleted:true}));
+  assert.ok(done.includes('准备证据已记录，可以继续选择器材和部位。'));
+  assert.ok(done.includes('data-done="true"'));
+});
+
 test('源记录会话也区分错误器材与资料缺失，三种体温计不可混用且不释放证据',async()=>{
   const session=createInitialSession('wrong-tool-probe','immersive');
   for(const [toolId,bodyPartId] of [['axillary-thermometer','forehead'],['infrared-thermometer','axilla'],['tympanic-thermometer','eyes']] as const){

@@ -19,6 +19,8 @@ import { patientAppearance,allowedPostures } from '../../src/domain/patient-appe
 import { publicCaseId } from '../../src/lib/case-identity';
 import { parseAgeToDays, toAgeBand } from '../../src/domain/communication-profile';
 import {hasAffirmedSourceMention,sourceHasSystemicExamConcern} from '../../src/domain/exam-source-context';
+import {buildNotePrimaryRubric} from '../../src/domain/note-primary-rubric';
+import {NOTE_PRIMARY_VERSION} from '../../src/domain/note-primary-contract';
 
 const sourceRoot=path.join(getKnowledgeRoot(),'teaching-cases');
 const root=path.resolve(process.env.PEDIATRICS_TRAINING_PACKAGE_ROOT||'knowledge/training-packages');
@@ -229,11 +231,15 @@ for(const [ordinal,item] of TEACHER_CASE_CATALOG.filter(item=>{
   const relationNote=relation==='independent'?'独立来源病例。':relation==='alias'?`入口“${title}”与来源“${sourceName}”为名称或写法关联，使用同一患者事实；不代表另一名患者。`:`${subtypeNotes[item.id]??'关联入口完整沿用同一来源患者事实。'} 原始诊断和检查结果不因入口名称改变。`;
   const content:Omit<TeachingPackage,'version'>={schemaVersion:1,caseId:item.id,sourceId,sourceVersion,relation,relationNote,title,age:source.age,sex:source.sex,reviewStatus:'automated-unreviewed',complaint:deidentifyClinicalText(source.complaint),persona:{appearance:`${source.age}、${source.sex}；采用相应年龄段与性别的通用教学形象，原病情外观依据查体原记录，不由头像推断。`,caregiver:'照护者身份与性别仅在原文有依据时确定，否则使用“家长/照护者”；不固定称妈妈。',speaking:!childCanSpeak?'以照护者陈述为主，婴儿无语义台词；非语言表现独立记录。':'按年龄与病情安排患儿回答自身感受，照护者补充病程、出生和治疗信息，不故意答非所问。',cooperation:'按解释与安抚调整配合方式；不随机改变病情，不为增加难度强行哭闹。',knowledgeBoundary:'仅知道已提供的生活观察与既往获知情况，不提供隐藏诊断、评分点或尚未进行的检查结果。'},roleState:{childCanSpeak,reason:infant?'年龄尚不适于语义应答':impaired?'原查体明确记录交流受限的意识或语言状态':band==='unknown'?'年龄资料不足':'年龄允许，限于已知主观感受',sourceLocator:impaired?'sections.exam':'age'},appearanceAssets:allowedPostures(source.age).flatMap(posture=>{const asset=patientAppearance(source.sex,posture,publicCaseId(item.id),source.age);return asset.src?[{assetId:asset.key,posture,publicPath:asset.src}]:[];}),historyFacts,questions,exams,tests,management:[...actions.map((detail,i)=>({title:`原诊疗经过 ${i+1}`,detail,origin:'source' as const,sourceLocator:`sections.plan#${i}`})),{title:'教学安全与复评',detail:curriculum.safety,origin:'reference',sourceLocator:curriculum.guide}],referenceNote,rubric,references:[{title:'原病例五段记录及附件（本地受控保存）',url:'local:source',accessedAt:'2026-11-07'},{title:'本病教学补充核对资料',url:curriculum.guide,accessedAt:'2026-11-07'},{title:'WHO 儿科检查与问诊原则',url:'https://www.ncbi.nlm.nih.gov/sites/books/NBK154441/',accessedAt:'2026-11-07'}]};
   const pack=teachingPackageSchema.parse({...content,version:teachingPackageVersion(content)});
+  pack.rubric=buildNotePrimaryRubric(pack);
+  pack.rubricVersion=NOTE_PRIMARY_VERSION;
+  pack.version=teachingPackageVersion(pack);
   const total=pack.rubric.reduce((s,r)=>s+r.maxScore,0),basic=pack.rubric.filter(r=>r.level==='basic').reduce((s,r)=>s+r.maxScore,0);
   if(Math.abs(total-100)>.001||Math.abs(basic-80)>.001)throw new Error('RUBRIC_TOTAL_INVALID');
-  // Recompute after schema defaults, keeping serialized bytes and version verification identical.
+  // Recompute after schema defaults and exam revision; validate the exact published package again.
   pack.exams=reviseExamPackage(pack,source.sections.exam,source.sections.diagnosis,source.sections.history).exams;
   pack.version=teachingPackageVersion(pack);
+  teachingPackageSchema.parse(pack);
   const filename=`${String(ordinal+1).padStart(2,'0')}_${title.replace(/[<>:"/\\|?*]/g,'-')}`;
   const raw=JSON.stringify(pack,null,2);
   writeFileSync(path.join(root,'packages',`${pack.version}.json`),raw);writeFileSync(path.join(delivery,'json',`${filename}.json`),raw);

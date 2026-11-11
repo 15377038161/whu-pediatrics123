@@ -28,7 +28,12 @@ export function projectSessionForRole(session: SessionState, role: AppRole): Ses
   const pack=sessionTeachingPackage(session);
   // Completed feedback has its own report/ownership gate; never return it in training events.
   delete publicSession.postVisitReview;
-  if(publicSession.caseOptions&&pack&&GROWTH_TOOLS.every(tool=>pack.exams.some(exam=>exam.toolId===tool&&exam.bodyPartId==='growth'))){
+  // Triage facts are disclosed only from the exact package version bound to this session.
+  // Historical packages have no intake field and retain their previous response shape.
+  if(publicSession.caseOptions&&pack?.intake){
+    publicSession.caseOptions={...publicSession.caseOptions,intake:pack.intake};
+  }
+  if(publicSession.caseOptions&&pack&&GROWTH_TOOLS.every(tool=>pack.exams.some(exam=>exam.toolId===tool&&exam.bodyPartId==='growth'))){ 
     publicSession.caseOptions={...publicSession.caseOptions,growthMeasurements:true};
   }
   // 工作台目录按公开ID查人物配置；教师响应也必须统一ID，避免合法病例被当成退役记录。

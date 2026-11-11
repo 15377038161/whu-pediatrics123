@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { ClinicalEvent } from '@/domain/agent';
+import type { CaseIntake } from '@/domain/case-intake';
 import { createInitialSession } from '@/lib/agent-engine';
 import { SharedCaseRecord } from '@/components/shared-case-record';
 
@@ -36,4 +37,16 @@ test('诚实占位只用于查体，问诊与辅助检查条目不受影响', ()
     event('t1', 'ORDER_TEST', '血常规：白细胞 12.3×10⁹/L'),
   ]);
   assert.ok(!html.includes(PLACEHOLDER), '辅助检查结果多为文字/报告，不套用查体口径');
+});
+
+test('共享病例记录不再渲染独立接诊基本信息模块，但保留生命体征', () => {
+  const session = createInitialSession('exam-placeholder-probe', 'immersive');
+  session.caseOptions = {
+    sourceName: '测试病例', age: '8岁', sex: '女', hasSource: true, exams: [], tests: [],
+    intake: { initialVitals: [{ code: 'spo2', sourceLocator: 'source.vitals.spo2' }] } as CaseIntake,
+  };
+  const html = renderToStaticMarkup(createElement(SharedCaseRecord, { session, onOpenNote: () => undefined }));
+  assert.ok(html.includes('生命体征'));
+  assert.equal(html.includes('接诊基本信息'), false);
+  assert.equal(html.includes('case-intake-summary'), false);
 });

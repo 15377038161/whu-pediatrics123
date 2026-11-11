@@ -1,8 +1,10 @@
-import {NOTE_SECTION_KEYS} from './medical-note';
+import {NOTE_SECTION_KEYS, type NoteSectionKey} from './medical-note';
 import {notePrimaryErrors} from './note-primary-contract';
 import {labReportSchema} from './lab-report';
 import { z } from 'zod';
 import { sourceExamRuleSchema } from './source-exam-contract';
+import { caseIntakeSchema } from './case-intake';
+import { fixedVitalMeasurementSchema } from './vital-measurement';
 
 export const teachingOriginSchema = z.enum(['source','teaching-simulation','reference']);
 export const historyFactSchema = z.object({
@@ -25,11 +27,19 @@ export const teachingExamSchema=sourceExamRuleSchema.extend({
   technique:z.string(), reaction:z.string(), interpretation:z.string(),
   allowedPositions:z.array(z.enum(['standing','supine','sitting','lateral','prone'])).optional(),
   scope:z.enum(['local','whole-region','reference']), aspect:z.enum(['front','back']).optional(),
+  /** 固定病例测量定义；实际 measuredAt 只在学生成功操作时写入会话事件。 */
+  measurements:z.array(fixedVitalMeasurementSchema).max(4).optional(),
   media:z.array(mediaSchema).default([]),localSupplement:examLocalSupplementSchema.optional(),
 }).superRefine((exam,ctx)=>{
   if(exam.localSupplement&&(exam.origin!=='source'||exam.scope!=='whole-region'))ctx.addIssue({
     code:z.ZodIssueCode.custom,path:['localSupplement'],message:'LOCAL_SUPPLEMENT_REQUIRES_WHOLE_SOURCE',
   });
+  const metrics=new Set<string>();
+  for(const [index,measurement] of (exam.measurements??[]).entries()){
+    if(measurement.origin!==exam.origin)ctx.addIssue({code:'custom',path:['measurements',index,'origin'],message:'MEASUREMENT_ORIGIN_MUST_MATCH_EXAM'});
+    if(metrics.has(measurement.metric))ctx.addIssue({code:'custom',path:['measurements',index,'metric'],message:'DUPLICATE_MEASUREMENT_METRIC'});
+    metrics.add(measurement.metric);
+  }
 });
 export const teachingTestSchema=z.object({
   report:labReportSchema.optional(),
@@ -41,6 +51,8 @@ export const teachingTestSchema=z.object({
 export const rubricSectionSchema=z.enum(['history','exam','tests','diagnosis','plan','note','communication']);
 export const teachingRubricItemSchema=z.object({
   noteSection:z.enum(NOTE_SECTION_KEYS).optional(),noteComponent:z.enum(['diagnosis','basis']).optional(),
+  /** Display grouping only. Scoring always uses section, so note-primary 60/40 cannot drift. */
+  reportSection:rubricSectionSchema.optional(),
   id:z.string(),section:rubricSectionSchema,level:z.enum(['basic','advanced']),label:z.string(),maxScore:z.number().positive(),
   concepts:z.array(z.array(z.string()).min(1)).default([]),evidenceCodes:z.array(z.string()).default([]),
   fullAnswer:z.string(),partialAnswer:z.string(),incorrectAnswer:z.string(),
@@ -52,6 +64,8 @@ export const teachingPackageSchema=z.object({
   schemaVersion:z.literal(1),caseId:z.string(),sourceId:z.string(),sourceVersion:z.string(),version:z.string(),rubricVersion:z.literal('note-primary-60-v1').optional(),
   relation:z.enum(['independent','alias','subtype']),relationNote:z.string().optional(),title:z.string(),age:z.string(),sex:z.string(),
   reviewStatus:z.literal('automated-unreviewed'),complaint:z.string(),
+  /** Optional only for historical packages. New generations bind the exact triage disclosure set. */
+  intake:caseIntakeSchema.optional(),
   persona:z.object({appearance:z.string(),caregiver:z.string(),speaking:z.string(),cooperation:z.string(),knowledgeBoundary:z.string()}),
   roleState:z.object({childCanSpeak:z.boolean(),reason:z.string(),sourceLocator:z.string()}).optional(),
   appearanceAssets:z.array(z.object({assetId:z.string(),posture:z.enum(['standing','supine']),publicPath:z.string()})).optional(),
@@ -70,7 +84,7 @@ export interface TeachingFeedback {
   basicMaxScore?:number;advancedMaxScore?:number;
   rubricVersion?:'note-primary-60-v1';normalizedScore?:number|null;
   noteProcessBreakdown?:{noteScore:number;noteMax:number;processScore:number;processMax:number};
-  items:Array<{id:string;section:string;level:string;label:string;score:number;maxScore:number;status:'achieved'|'partial'|'missing'|'incorrect'|'not_assessable';explanation:string;example:string}>;
+  items:Array<{id:string;section:string;reportSection?:TeachingRubricItem['section'];level:string;label:string;noteSection?:NoteSectionKey;noteComponent?:'diagnosis'|'basis';score:number;maxScore:number;status:'achieved'|'partial'|'missing'|'incorrect'|'not_assessable';explanation:string;example:string}>;
   tests:Array<{label:string;requested:boolean;requestCount?:number;purposes?:string[];necessity:TeachingTest['necessity'];rationale:string;origin:TeachingTest['origin']}>;
   materialSummary:{source:number;simulated:number;reference:number};
   disclaimer:string;

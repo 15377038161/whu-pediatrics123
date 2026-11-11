@@ -35,7 +35,8 @@ import { getPracticeScenario, PROVIDED_HISTORY_INTENT_IDS } from '@/domain/pract
 import { resolveOsceStation } from '@/domain/osce-stations';
 import { renderRoleReply } from '@/lib/role-agent';
 import { findSupplementalTest, supplementalTestDefinition, resolveTestSupplements, uniqueModalityTest, type TestSupplementInvoke } from '@/lib/test-result-supplement';
-import { extractVitalSigns } from '@/domain/vital-signs';
+import { fixedMeasurementsForTeachingExam } from '@/domain/exam-vital-measurements';
+import { releaseVitalMeasurements, type VitalMeasurement } from '@/domain/vital-measurement';
 
 /** 开单 RPC 注入缝：生产默认指向 case-snapshot 封装；仅测试注入 503/守卫拒绝失败路径，
  *  不改变业务判定与守卫逻辑（不绕过归属/版本/已下单校验）。 */
@@ -153,6 +154,7 @@ export function createInitialSession(userId: string, mode: SessionMode, caseId =
       hiddenExposureRevealed: false,
       cooperation: teachingPackage?65:35,
     },
+    initialVitals: { ...pediatricCase.initialVitals },
     vitals: { ...pediatricCase.initialVitals },
     reportId: null,
     ...(pediatricCase.sourceFacts !== undefined ? { caseOptions: {
@@ -214,6 +216,7 @@ export function refreshSourceSession(session: SessionState): SessionState {
   const fresh = createInitialSession(session.userId, session.mode, session.caseId, session.practiceFocus ?? undefined, session.sourceSnapshotVersion, session.id);
   session.caseVersion = fresh.caseVersion;
   session.caseOptions = fresh.caseOptions;
+  session.initialVitals = fresh.initialVitals;
   session.vitals = fresh.vitals;
   session.messages = [...fresh.messages, ...session.messages.filter((item) => item.actor === 'student')];
   session.events = session.events.filter((event) => ['SUBMIT_DECISION', 'SUBMIT_PLAN', 'SEND_COMMUNICATION', 'DOCTOR_INTERVENTION', 'NAVIGATE_STAGE', 'FINISH_SESSION'].includes(event.type)).map((event) => ({ ...event, correct: null }));
@@ -486,8 +489,12 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   const data={toolId,bodyPartId,posture,position,location};
   if(isRepeatedExamAction(session,data))return {session,newMessages:[],feedback:null,repeated:true,trace:[trace('查体规则','相同检查已记录，静默忽略重复操作')]};
   const operation=normalizedExamAction(session,data);
-  const record=(summary:string,correct:boolean,codes:string[],media?:CaseMedia[],failure?:RecordedExamAction['failure'])=>{
-    session.events.push({...clinicalEvent(clientEventId,'EXAM_ACTION','exam',summary,correct,codes,media),examAction:{...operation,...(failure?{failure}:{})}});
+  const record=(summary:string,correct:boolean,codes:string[],media?:CaseMedia[],failure?:RecordedExamAction['failure'],measurements?:VitalMeasurement[])=>{
+    session.events.push({
+      ...clinicalEvent(clientEventId,'EXAM_ACTION','exam',summary,correct,codes,media),
+      examAction:{...operation,...(failure?{failure}:{})},
+      ...(measurements?.length?{measurements}:{}),
+    });
   };
   const target=ANATOMY_REGIONS.flatMap(r=>r.sites).find(s=>s.id===bodyPartId);
   if(location&&((target?.aspect&&target.aspect!==location.aspect)||(bodyPartId.startsWith('left-')&&location.side!=='left')||(bodyPartId.startsWith('right-')&&location.side!=='right'))){
@@ -557,16 +564,18 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   }
   session.unlockedEvidence = uniq([...session.unlockedEvidence, rule.evidenceCode]);
   if (rule.id === 'prep-hygiene') session.preparationActions = uniq([...session.preparationActions, rule.id]);
-  if (rule.evidenceCode === 'EX_SPO2' && getCase(session.caseId, session.sourceSnapshotVersion, session.id).sourceFacts === undefined) session.vitals.spo2 = 92;
-  // 实测值回写：体温/心率/呼吸/血氧等测量类查体成功后，生命体征卡片与报告跟随最新实测；
-  // 只提取结果原文中的明确数值，提取不到不改动既有记录。
-  const measuredVitals = extractVitalSigns(rule.result);
-  if (measuredVitals.temperature !== undefined) session.vitals.temperature = measuredVitals.temperature;
-  if (measuredVitals.heartRate !== undefined) session.vitals.heartRate = measuredVitals.heartRate;
-  if (measuredVitals.respiratoryRate !== undefined) session.vitals.respiratoryRate = measuredVitals.respiratoryRate;
-  if (measuredVitals.spo2 !== undefined) session.vitals.spo2 = measuredVitals.spo2;
-  // 结果释放：随事件挂载该查体项绑定的病例媒体（如有；仅图核通过媒体可登记进病例配置）
-  record(`${rule.label}${session.teachingPackageVersion?`（实际体位${{standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'}[effectivePosition]}）`:''}${location?`（${{left:'患者左侧',right:'患者右侧',both:'双侧或整体',midline:'正中'}[location.side]}，${location.aspect==='front'?'前面':'后面'}）`:''}：${rule.result}`,true,[rule.evidenceCode],rule.media);
+  const measuredAt=now();
+  const definitions=boundPack&&teachingExam?fixedMeasurementsForTeachingExam(boundPack,teachingExam):[];
+  const measurements=releaseVitalMeasurements(definitions,measuredAt);
+  if(rule.evidenceCode==='EX_SPO2'&&getCase(session.caseId,session.sourceSnapshotVersion,session.id).sourceFacts===undefined){
+    measurements.push(...releaseVitalMeasurements([{
+      metric:'spo2',value:92,unit:'%',method:'脉搏血氧仪',site:'手指',origin:'source',
+      sourceLocator:'内置病例既有血氧查体结果',sourceTimepoint:null,
+    }],measuredAt));
+  }
+  for(const measurement of measurements)session.vitals[measurement.metric]=measurement.value;
+  // 结果释放：测量数值只来自绑定病例的结构化定义，不从描述文字临时提取。
+  record(`${rule.label}${session.teachingPackageVersion?`（实际体位${{standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'}[effectivePosition]}）`:''}${location?`（${{left:'患者左侧',right:'患者右侧',both:'双侧或整体',midline:'正中'}[location.side]}，${location.aspect==='front'?'前面':'后面'}）`:''}：${rule.result}`,true,[rule.evidenceCode],rule.media,undefined,measurements);
   advanceStageTo(session, 'exam');
   session.updatedAt = now();
   const resultMessage = message('system', rule.result, { kind: 'navigation' });  session.messages.push(resultMessage);
@@ -608,7 +617,7 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
   }
   if (requests.length === 0) throw new Error('TEST_REQUEST_EMPTY');
 
-  // Resolve ordinary names within source reports; only missing results may be synthesized.
+  // 原始目录/逐字摘录优先；仅无原始结果且申请明确时生成带标识的 AI 教学模拟。
   for(const request of requests){
     if(request.test)continue;
     const cached=findSupplementalTest(session,request.requested);
@@ -645,9 +654,11 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     newMessages.push(onceMessage);
   };
   for (const request of requests) {
-    // 未匹配：记录申请与「资料未提供」，不记下单、不解锁证据（fail-closed，不编造）
+    // 未匹配或模型不可用：仅记录申请，不解锁证据；不伪称已经取得原文或模拟结果。
     if (!request.test) {
-      const detail = request.status === 'ambiguous' ? '请说明检查部位或具体项目，当前申请尚未匹配。' : '检查申请已记录（做/不做计入本次诊疗思路）；本病例原始资料未提供该项结果，平台不生成模拟结果。';
+      const detail = request.status === 'ambiguous'
+        ? '请说明检查部位或具体项目，当前申请尚未匹配。'
+        : '检查申请已记录（做/不做计入本次诊疗思路）；本病例原始资料未提供该项结果，当前也未取得可用的 AI 教学模拟，请明确申请后重试。';
       pushOrderEventOnce(`「${request.requested}」：${detail}`);
       pushMessageOnce(`「${request.requested}」：${detail}`);
       feedbackParts.push(`「${request.requested}」：${detail}`);
@@ -727,7 +738,7 @@ async function handleTest(session: SessionState, data: OrderTestData, clientEven
     session.messages.push(resultMessage);
     newMessages.push(resultMessage);
     feedbackParts.push(test.appropriate === null ? `已打开${test.label}检查记录。` : test.appropriate ? `${test.label}与当前证据相符。` : `当前证据不支持常规选择${test.label}，已记录低价值检查。`);
-    traceItems.push(trace('病例状态', '记录检查选择并解锁预置结果'), trace('安全校验', '判断检查适宜性'));
+    traceItems.push(trace('病例状态', test.id.startsWith('supplement-') ? '记录检查选择并释放原文摘录或带标识的教学模拟' : '记录检查选择并解锁预置结果'), trace('安全校验', '判断检查适宜性'));
   }
   advanceStageTo(session, 'tests');
   session.updatedAt = now();

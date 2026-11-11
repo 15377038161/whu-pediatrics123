@@ -1,5 +1,6 @@
 import type {LabReport} from './lab-report';
 import type { DiagnosisPointResult } from './diagnosis-answer';
+import type { CaseIntake } from './case-intake';
 
 export type AppRole = 'student' | 'teacher';
 export type SessionMode = 'guided' | 'practice' | 'osce' | 'immersive';
@@ -109,6 +110,8 @@ export interface ClinicalEvent {
   evidenceCodes: string[];
   /** 本次操作随结果释放的病例媒体（如该检查对应的报告图片）；仅在结果实际释放时挂载，缺省无媒体。 */
   media?: CaseMedia[];
+  /** 成功测量后由服务端写入的结构化结果；错配、资料不足和重复操作不会新增该字段。 */
+  measurements?: import('./vital-measurement').VitalMeasurement[];
   createdAt: string;
 }
 
@@ -119,12 +122,15 @@ export interface VitalSigns {
   spo2: number | null;
 }
 
-/** Session-only verbatim extractions from the bound source reports. Never imported into the real source snapshot. */
+/** Session-only source extracts or explicitly labelled teaching simulations. Never imported into the source snapshot. */
 export interface SupplementalTest {
-  // 'generated' 只存在于 2026-11-05 之前落库的历史记录；新记录一律 'source'，历史合成结果不再复用。
-  id:string; requested:string; label:string; result:string; origin:'source'|'generated';
+  // 'generated' 只存在于历史记录且永不复用；新模拟必须使用 teaching-simulation 并明确非原患者实测。
+  id:string; requested:string; label:string; result:string;
+  origin:'source'|'generated'|'teaching-simulation';
   sourceTestIds:string[]; sourceQuotes:string[]; model:string; createdAt:string;
   sourceSnapshotVersion:string|null;
+  /** AI 教学模拟与原文摘录均绑定会话创建时的教学包版本；历史记录可为空。 */
+  teachingPackageVersion?:string|null;
 }
 
 export interface SessionState {
@@ -196,6 +202,8 @@ export interface SessionState {
     hiddenExposureRevealed: boolean;
     cooperation: number;
   };
+  /** 接诊时的不可变快照；vitals 保存当前最新值，历史会话可缺省。 */
+  initialVitals?: VitalSigns;
   vitals: VitalSigns;
   reportId: string | null;
   /** Independent, post-completion teaching explanation; never a score or a source of new patient facts. */
@@ -209,6 +217,8 @@ export interface SessionState {
   caseOptions?: {
     /** Neutral UI capability from the exact bound teaching version; not a list of positive findings. */
     growthMeasurements?: boolean;
+    /** Version-pinned triage disclosure; absent on historical packages and non-teacher cases. */
+    intake?: CaseIntake;
     sourceName: string;
     complaint?: string;
     age: string;

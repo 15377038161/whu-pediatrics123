@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { randomUUID } from 'node:crypto';
 import { parse as parseQuery } from 'node:querystring';
 import type { IncomingMessage } from 'node:http';
 import type { UrlWithParsedQuery } from 'node:url';
@@ -55,6 +56,11 @@ function startSyncWorker(): void {
 app.prepare().then(() => {
   const server = createServer(async (req, res) => {
     const startedAt = Date.now();
+    const upstreamRequestId = req.headers['x-request-id'];
+    const requestId = (typeof upstreamRequestId === 'string' ? upstreamRequestId.trim() : '') || randomUUID();
+    const method = req.method || 'UNKNOWN';
+    const pathname = (req.url || '/').split('?')[0];
+    res.setHeader('x-request-id', requestId);
     // 沙箱网关会把「相对 Location」改写为代理前缀路径（/sandboxes/<id>/proxy/5173/...），
     // 而该前缀路径请求不会被网关剥离即透传给应用，导致浏览器 404。
     // 统一在出口处把相对 Location 补全为对外 https 绝对 URL，网关对绝对 Location 不做前缀改写。
@@ -76,15 +82,22 @@ app.prepare().then(() => {
     try {
       await handle(req, res, parseRequestUrl(req));
     } catch (error) {
-      console.error('Request handling failed', req.url, error);
+      console.error(JSON.stringify({
+        timestamp: new Date().toISOString(), requestId, method, pathname,
+        errorType: error instanceof Error ? error.name : 'UnknownError',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      }));
       res.statusCode = 500;
       res.end('Internal server error');
     } finally {
-      // 全局请求日志：仅记录方法/路径/状态/耗时与 cookie 名（不含值），供部署后运行日志读取。
-      const cookieNames = (req.headers.cookie || '').split(';').map((c) => c.split('=')[0].trim()).filter(Boolean).join(',');
-      console.log(
-        `[req] ${new Date().toISOString()} ${req.method} ${req.url?.split('?')[0]} -> ${res.statusCode} ${Date.now() - startedAt}ms cookies:${cookieNames || 'none'}`,
-      );
+      const logLevel = (process.env.LOG_LEVEL || 'debug').toLowerCase();
+      if (logLevel === 'debug' || logLevel === 'info') {
+        console.log(JSON.stringify({
+          timestamp: new Date().toISOString(), requestId, method, pathname,
+          status: res.statusCode, durationMs: Date.now() - startedAt,
+        }));
+      }
     }
   });
   server.listen(port, hostname, () => {

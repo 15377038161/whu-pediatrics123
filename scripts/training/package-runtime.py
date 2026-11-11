@@ -28,9 +28,12 @@ for case_id,version in index['entries'].items():
             assert sha(raw_image)==digest and len(raw_image)<3_000_000
             media[f'runtime/media/{digest}.png']=raw_image
 assert len(sources)==53
+source_root=knowledge/'teaching-cases'
+if not source_root.is_dir():source_root=knowledge/'source-cases'
+assert source_root.is_dir(),'SOURCE_CASE_DIRECTORY_MISSING'
 for case_id in sorted(sources):
     assert case_id.startswith('teacher-') and not any(c in case_id for c in '/\\') and '..' not in case_id
-    payload[f'source-cases/{case_id}.json']=(knowledge/'teaching-cases'/f'{case_id}.json').read_bytes()
+    payload[f'source-cases/{case_id}.json']=(source_root/f'{case_id}.json').read_bytes()
 payload['runtime/index.json']=(runtime/'index.json').read_bytes()
 out.mkdir(parents=True)
 files=[];archives=[]

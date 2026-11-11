@@ -1,26 +1,19 @@
 import type { SessionState, VitalSigns } from '@/domain/agent';
-import { getCaseRecordEntries } from '@/domain/case-record';
+import type {VitalMeasurement} from '@/domain/vital-measurement';
 
-/**
- * 生命体征的确定性提取与展示合并。
- *
- * 来源只有三种，全部是会话里已经真实出现过的文字：
- * - initial：接诊时病例记录/初筛已有的值；
- * - exam：本轮查体成功释放的结果（体温计、血氧仪等）；
- * - history：本轮问诊中家长/患儿明确说出的数值（如「最高烧到39度」）。
- *
- * 只做数字提取，不做推断、不补正常值；提取不到就保持 null，界面显示未记录。
- * 问诊值只填空缺，不覆盖接诊记录或本轮实测；本轮实测覆盖接诊记录（同一时点的最新测量）。
- */
-
-export type VitalSource = 'initial' | 'exam' | 'history';
+export type VitalSource = 'initial' | 'exam' | 'simulation' | 'history';
 export type VitalField = keyof VitalSigns;
-export interface DisplayedVital { value: number | null; source: VitalSource | null }
+export interface DisplayedVital {
+  value: number | null;
+  source: VitalSource | null;
+  measurement?: VitalMeasurement;
+}
 export type DisplayedVitals = Record<VitalField, DisplayedVital>;
 
 export const VITAL_SOURCE_LABELS: Record<VitalSource, string> = {
   initial: '接诊记录',
-  exam: '本轮查体',
+  exam: '本轮查体 · 原病例记录值',
+  simulation: '教学模拟测量 · 非原患者实测',
   history: '病史提供',
 };
 
@@ -41,7 +34,7 @@ const RESPIRATORY_RATE_PATTERNS: readonly RegExp[] = [
   /呼吸\s*[:：]?\s*(\d{1,3})\s*(?:次\/分|\/min)/,
 ];
 const SPO2_PATTERNS: readonly RegExp[] = [
-  /(?:S\s*p\s*O\s*[₂2]?|血氧(?:饱和度)?)\s*(?:读数\s*)?[:：]?\s*(?:为|是)?\s*(\d{2,3})\s*%?/i,
+  /(?:S\s*p\s*O\s*[₂2]?|血氧(?:饱和度)?)\s*(?:(?:读数(?:为|是)?|维持在|保持(?:为|在)?|为|是)\s*)?[:：]?\s*(\d{2,3})\s*%?/i,
 ];
 
 function matchInRange(text: string, patterns: readonly RegExp[], min: number, max: number): number | null {
@@ -54,7 +47,7 @@ function matchInRange(text: string, patterns: readonly RegExp[], min: number, ma
   return null;
 }
 
-/** 从一段病例文字中提取生命体征；没有明确数值时返回空对象，不猜测。 */
+/** Used for authoring and already-released caregiver/child history. Runtime exam release never calls this extractor. */
 export function extractVitalSigns(text: string): Partial<VitalSigns> {
   if (!text.trim()) return {};
   const result: Partial<VitalSigns> = {};
@@ -69,36 +62,47 @@ export function extractVitalSigns(text: string): Partial<VitalSigns> {
   return result;
 }
 
-function initialDisplay(value: number | null): DisplayedVital {
-  return value === null ? { value: null, source: null } : { value, source: 'initial' };
+function emptyVitals(): VitalSigns {
+  return {temperature:null,heartRate:null,respiratoryRate:null,spo2:null};
 }
 
-/** 把会话中已释放的查体结果与问诊回答合并到生命体征展示。 */
-export function resolveDisplayedVitals(session: Pick<SessionState, 'events' | 'messages' | 'vitals'>): DisplayedVitals {
+function initialSnapshot(session: Pick<SessionState,'initialVitals'|'vitals'|'caseOptions'>): VitalSigns {
+  if(session.initialVitals)return session.initialVitals;
+  const intake=session.caseOptions?.intake;
+  if(!intake)return session.vitals;
+  const snapshot=emptyVitals();
+  for(const vital of intake.initialVitals)if(vital.status==='recorded')snapshot[vital.code]=vital.value;
+  return snapshot;
+}
+
+/** Initial values are immutable; released history fills gaps, and structured exam measurements take precedence. */
+export function resolveDisplayedVitals(
+  session: Pick<SessionState, 'events' | 'messages' | 'vitals' | 'initialVitals' | 'caseOptions'>,
+): DisplayedVitals {
+  const initial=initialSnapshot(session);
   const displayed: DisplayedVitals = {
-    temperature: initialDisplay(session.vitals.temperature),
-    heartRate: initialDisplay(session.vitals.heartRate),
-    respiratoryRate: initialDisplay(session.vitals.respiratoryRate),
-    spo2: initialDisplay(session.vitals.spo2),
+    temperature: {value:initial.temperature,source:initial.temperature===null?null:'initial'},
+    heartRate: {value:initial.heartRate,source:initial.heartRate===null?null:'initial'},
+    respiratoryRate: {value:initial.respiratoryRate,source:initial.respiratoryRate===null?null:'initial'},
+    spo2: {value:initial.spo2,source:initial.spo2===null?null:'initial'},
   };
-  // 本轮实测优先：同一字段按事件顺序取最后一次成功查体。
+  const historyValues: Partial<VitalSigns> = {};
+  for (const message of session.messages) {
+    if (message.kind !== 'dialogue' || (message.actor !== 'parent' && message.actor !== 'child')) continue;
+    Object.assign(historyValues, extractVitalSigns(message.content));
+  }
+  for (const field of FIELDS) {
+    const value = historyValues[field];
+    if (displayed[field].value === null && value !== undefined) displayed[field] = { value, source: 'history' };
+  }
   for (const event of session.events) {
     if (event.type !== 'EXAM_ACTION' || event.correct !== true) continue;
-    const measured = extractVitalSigns(event.summary);
-    for (const field of FIELDS) {
-      const value = measured[field];
-      if (value !== undefined) displayed[field] = { value, source: 'exam' };
-    }
-  }
-  // 问诊值只补空缺，不覆盖接诊记录或本轮实测。
-  for (const entry of getCaseRecordEntries(session)) {
-    if (entry.category !== 'history') continue;
-    for (const answer of entry.answers) {
-      const reported = extractVitalSigns(answer.content);
-      for (const field of FIELDS) {
-        const value = reported[field];
-        if (value !== undefined && displayed[field].value === null) displayed[field] = { value, source: 'history' };
-      }
+    for (const measurement of event.measurements ?? []) {
+      displayed[measurement.metric] = {
+        value:measurement.value,
+        source:measurement.origin==='teaching-simulation'?'simulation':'exam',
+        measurement,
+      };
     }
   }
   return displayed;

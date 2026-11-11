@@ -157,8 +157,10 @@ export function installRecoveredTrainingContent(content:RecoveredTrainingContent
   for(const archive of reference.media)recoveredMediaArchives.set(archive.archive,archive);
   for(const [sha256,descriptor] of content.media){
     const existing=recoveredMedia.get(sha256);
-    if(existing&&JSON.stringify(existing)!==JSON.stringify(descriptor))throw new Error('TRAINING_CONTENT_MEDIA_CONFLICT');
-    recoveredMedia.set(sha256,descriptor);
+    // Re-uploading identical pixels under a new generation/archive is valid. The content hash,
+    // byte length, path and deterministic media id must remain identical; archive location is not media identity.
+    if(existing&&(existing.fileId!==descriptor.fileId||existing.path!==descriptor.path||existing.bytes!==descriptor.bytes||existing.sha256!==descriptor.sha256))throw new Error('TRAINING_CONTENT_MEDIA_CONFLICT');
+    if(!existing)recoveredMedia.set(sha256,descriptor);
     const embedded=content.embeddedMedia.get(sha256);if(embedded)cacheMedia(descriptor.fileId,embedded);
   }
 }

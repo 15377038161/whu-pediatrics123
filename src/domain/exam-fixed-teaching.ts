@@ -4,6 +4,7 @@ import {assessGrowth} from './growth-assessment';
 import {growthMeasurement} from './growth-exam';
 import type {ExamSelectionItem} from './exam-authoring-selection';
 import type {TeachingExam,TeachingPackage} from './teaching-package';
+import type {FixedVitalMeasurement} from './vital-measurement';
 
 /** Fixed teaching scenarios only. These values are never presented as original patient measurements. */
 export const FIXED_AXILLARY_TEMPERATURE_C = 36.7;
@@ -93,15 +94,32 @@ function fixedPulseRate(months:number):number {
   return 80;
 }
 
+export function fixedTeachingOximeterMeasurement(age:string):FixedVitalMeasurement|null {
+  if(ageMonths(age)===null)return null;
+  return {
+    metric:'spo2',value:99,unit:'%',method:'脉搏血氧仪，室内空气、末梢灌注良好且信号稳定',site:'手指',
+    origin:'teaching-simulation',sourceLocator:'固定教学模拟：原资料无 SpO₂ 数值；非原患者新增实测；未医学审定',sourceTimepoint:null,
+  };
+}
+
+/** Shared fixed scenario text. Callers decide whether their source-safety policy permits it. */
+export function fixedTeachingOximeterResult(age:string):string|null {
+  const months=ageMonths(age);
+  const measurement=fixedTeachingOximeterMeasurement(age);
+  if(months===null||!measurement)return null;
+  const pulse=fixedPulseRate(months);
+  return `教学模拟设定：室内空气、末梢灌注良好且信号稳定时，本次 SpO₂ 读数为 ${measurement.value}%，脉率为 ${pulse} 次/分。数值仅用于适龄探头操作、信号核对与规范记录训练，不是原患者新增实测，也不用于推算氧疗目标或心肺诊断。`;
+}
+
 export function fixedOximeterSelection(pack:TeachingPackage,exam:TeachingExam):ExamSelectionItem|null {
   if(exam.origin!=='reference'||exam.toolId!=='oximeter')return null;
   const months=ageMonths(pack.age);
   if(months===null||months<3||hasOriginalCardiorespiratoryValue(pack)||hasCardiorespiratoryConcern(pack))return null;
   if(instrumentApplicability(exam.toolId,exam.bodyPartId,months).status==='not_applicable')return null;
-  const pulse=fixedPulseRate(months);
+  const result=fixedTeachingOximeterResult(pack.age);
+  if(!result)return null;
   return {
-    id:exam.id,state:'normal',origin:'teaching-simulation',
-    result:`教学模拟设定：室内空气、末梢灌注良好且信号稳定时，本次 SpO₂ 读数为 99%，脉率为 ${pulse} 次/分。数值仅用于适龄探头操作、信号核对与规范记录训练，不是原患者新增实测，也不用于推算氧疗目标或心肺诊断。`,
+    id:exam.id,state:'normal',origin:'teaching-simulation',result,
     rationale:'原资料没有血氧、脉率或心率数值，未见被肯定的心肺、低氧、氧疗或循环异常；按年龄设置固定测量教学场景。',
   };
 }
