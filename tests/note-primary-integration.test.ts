@@ -23,3 +23,12 @@ test('legacy rubric still grades the original flattened note',()=>{
  const legacy={...pack,rubricVersion:undefined,rubric:[{...item,evidenceCodes:[]}]} as TeachingPackage;
  assert.equal(buildTeachingFeedback(session,legacy,'咳嗽一天').totalScore,3);
 });
+
+test('reusing a legacy evidence id never bypasses the submitted-note boundary',()=>{
+ const point={...item,id:'diagnosis-evidence',noteSection:'preliminaryDiagnosis',concepts:[['咳嗽'],['发热']]} as TeachingRubricItem;
+ const current={...pack,rubric:[point]} as TeachingPackage;
+ const earlier={...session,decision:{diagnosisBasis:'已在前序表单填写'}} as unknown as SessionState;
+ assert.equal(buildTeachingFeedback(earlier,current,'',{preliminaryDiagnosis:'咳嗽伴发热'}).totalScore,3);
+ assert.equal(buildTeachingFeedback(earlier,current,'',{}).items[0].status,'missing');
+ assert.equal(buildTeachingFeedback(earlier,current,'旧草稿').items[0].status,'not_assessable');
+});

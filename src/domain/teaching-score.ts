@@ -68,7 +68,7 @@ export function buildTeachingFeedback(session:SessionState,pack:TeachingPackage,
     const primaryNote=pack.rubricVersion==='note-primary-60-v1'&&item.section==='note';
     const selectedNote=primaryNote?submittedSectionText(item.noteSection,noteSections):noteText;
     let judgement=unavailableCheck?{ratio:0,status:'not_assessable' as const,explanation:'本项仅有参考说明，缺少可核验患者结果；不将材料缺失算作学生漏做。'}:item.section==='note'&&selectedNote===undefined?{ratio:0,status:'not_assessable' as const,explanation:'本次未取得可核验的病历提交，暂不计入可评价满分；不把读取失败当作学生漏写。'}:gradeTeachingPoint(primaryNote?{...item,evidenceCodes:[]}:item,primaryNote?selectedNote??'':bySection[item.section],eventCodes,purpose);
-    if(item.id==='diagnosis-evidence'){
+    if(item.id==='diagnosis-evidence'&&item.section==='diagnosis'){
       const ratio=clinicalEvidenceRatio(session.decision?.diagnosisBasis??'',records);
       judgement={ratio,status:ratio===1?'achieved':ratio===.5?'partial':'missing',explanation:ratio===1?'依据中有来自不同环节的已获得临床信息；简洁表达即可。':ratio===.5?'已联系一类实际临床信息，尚需补充其他环节证据或解释。':'尚未定位到与实际取得记录一致的临床内容；仅写“病史、查体、检查”不算具体依据。'};
     }
