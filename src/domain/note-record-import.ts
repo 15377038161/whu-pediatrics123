@@ -18,9 +18,24 @@ export function noteFromReleasedRecords(session:Pick<SessionState,'events'|'mess
   return Object.fromEntries(Object.entries(sections).filter(([,rows])=>rows.length).map(([key,rows])=>[key,`【本轮已获得记录，待整理】\n${[...new Set(rows)].join('\n\n')}`]));
 }
 
-/** Re-import does not overwrite student writing or duplicate an earlier import. */
+const IMPORT_HEADER='【本轮已获得记录，待整理】';
+
+function recordBlocks(value:string):string[]{
+  return value.split(/\n{2,}/).map(block=>block.trim()).filter(block=>block&&block!==IMPORT_HEADER);
+}
+
+/** Fill blank sections; append only newly released blocks to earlier imports without rewriting student text. */
 export function fillEmptyNoteSections(draft:NoteContent,records:Partial<NoteContent>):NoteContent{
   const next={...draft};
-  for(const key of Object.keys(records) as (keyof NoteContent)[])if(!next[key].trim())next[key]=records[key]??'';
+  for(const key of Object.keys(records) as (keyof NoteContent)[]){
+    const incoming=records[key]?.trim();
+    if(!incoming)continue;
+    const current=next[key].trim();
+    if(!current){next[key]=incoming;continue;}
+    if(!current.includes(IMPORT_HEADER))continue;
+    const existing=new Set(recordBlocks(current));
+    const missing=recordBlocks(incoming).filter(block=>!existing.has(block));
+    if(missing.length)next[key]=`${next[key].trimEnd()}\n\n${missing.join('\n\n')}`;
+  }
   return next;
 }

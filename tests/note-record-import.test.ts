@@ -37,3 +37,16 @@ test('导入只填空白，不覆盖已写内容，重复导入不重复追加',
  assert.deepEqual(fillEmptyNoteSections(next,records),next);
  assert.equal(draft.presentIllness,'');
 });
+
+test('首次导入后仅追加新测量，保留学生整理且重复导入幂等',()=>{
+ const header='【本轮已获得记录，待整理】';
+ const initialRecords={physicalExam:`${header}\n\n手卫生与检查说明已完成\n\nSpO₂ 99 %；手指`};
+ const first=fillEmptyNoteSections(normalizeNoteContent({}),initialRecords);
+ const edited={...first,physicalExam:`${first.physicalExam}\n\n学生整理：末梢灌注良好。`};
+ const latestRecords={physicalExam:`${initialRecords.physicalExam}\n\n体温 36.4 ℃；腋下电子体温计；腋窝`};
+ const next=fillEmptyNoteSections(edited,latestRecords);
+ assert.match(next.physicalExam,/学生整理：末梢灌注良好。/);
+ assert.match(next.physicalExam,/体温 36\.4 ℃；腋下电子体温计；腋窝/);
+ assert.equal(next.physicalExam.match(/SpO₂ 99 %；手指/g)?.length,1);
+ assert.deepEqual(fillEmptyNoteSections(next,latestRecords),next);
+});

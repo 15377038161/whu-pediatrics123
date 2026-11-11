@@ -17,8 +17,6 @@ export const VITAL_SOURCE_LABELS: Record<VitalSource, string> = {
   history: '病史提供',
 };
 
-const FIELDS: readonly VitalField[] = ['temperature', 'heartRate', 'respiratoryRate', 'spo2'];
-
 const TEMPERATURE_PATTERNS: readonly RegExp[] = [
   /(?:^|[^A-Za-z])T\s*[:：]?\s*(\d{2}(?:\.\d{1,2})?)\s*(?:℃|度)/i,
   /体温\s*[:：]?\s*(\d{2}(?:\.\d{1,2})?)\s*(?:℃|度)/,
@@ -75,7 +73,7 @@ function initialSnapshot(session: Pick<SessionState,'initialVitals'|'vitals'|'ca
   return snapshot;
 }
 
-/** Initial values are immutable; released history fills gaps, and structured exam measurements take precedence. */
+/** Released intake/history values remain visible as fallbacks; a successful structured exam measurement updates its corresponding card. */
 export function resolveDisplayedVitals(
   session: Pick<SessionState, 'events' | 'messages' | 'vitals' | 'initialVitals' | 'caseOptions'>,
 ): DisplayedVitals {
@@ -91,7 +89,7 @@ export function resolveDisplayedVitals(
     if (message.kind !== 'dialogue' || (message.actor !== 'parent' && message.actor !== 'child')) continue;
     Object.assign(historyValues, extractVitalSigns(message.content));
   }
-  for (const field of FIELDS) {
+  for (const field of ['temperature','heartRate','respiratoryRate','spo2'] as const) {
     const value = historyValues[field];
     if (displayed[field].value === null && value !== undefined) displayed[field] = { value, source: 'history' };
   }

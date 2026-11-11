@@ -1,0 +1,1288 @@
+TAP version 13
+# Subtest: 诊断关联原记录/快照独立/不因勾选加分：demo
+ok 1 - 诊断关联原记录/快照独立/不因勾选加分：demo
+  ---
+  duration_ms: 68.925736
+  type: 'test'
+  ...
+# Subtest: 诊断关联原记录/快照独立/不因勾选加分：teacher-川崎病
+ok 2 - 诊断关联原记录/快照独立/不因勾选加分：teacher-川崎病
+  ---
+  duration_ms: 38.58553
+  type: 'test'
+  ...
+# Subtest: 准备/未解锁/他会话/伪造或非临床事件不能关联，拒绝前不改提交及事件
+ok 3 - 准备/未解锁/他会话/伪造或非临床事件不能关联，拒绝前不改提交及事件
+  ---
+  duration_ms: 3.839004
+  type: 'test'
+  ...
+# Subtest: 关联字段有界且旧客户端省略时兼容；损坏历史定位记不可还原不编造证据
+ok 4 - 关联字段有界且旧客户端省略时兼容；损坏历史定位记不可还原不编造证据
+  ---
+  duration_ms: 3.380114
+  type: 'test'
+  ...
+# Subtest: 占位串判定：空值与三种未记录写法
+ok 5 - 占位串判定：空值与三种未记录写法
+  ---
+  duration_ms: 0.922523
+  type: 'test'
+  ...
+# Subtest: 真实年龄性别不当占位
+ok 6 - 真实年龄性别不当占位
+  ---
+  duration_ms: 0.24899
+  type: 'test'
+  ...
+# Subtest: 快照为占位时沿用已解析值，真实值以快照为准
+ok 7 - 快照为占位时沿用已解析值，真实值以快照为准
+  ---
+  duration_ms: 0.826997
+  type: 'test'
+  ...
+# Subtest: dev 脚本监听 0.0.0.0 且端口来自 DEPLOY_RUN_PORT
+ok 8 - dev 脚本监听 0.0.0.0 且端口来自 DEPLOY_RUN_PORT
+  ---
+  duration_ms: 1.186747
+  type: 'test'
+  ...
+# Subtest: dev 脚本不包含历史硬编码端口 8765 与回环绑定
+ok 9 - dev 脚本不包含历史硬编码端口 8765 与回环绑定
+  ---
+  duration_ms: 0.291878
+  type: 'test'
+  ...
+# Subtest: 生产入口 server.ts 端口优先级 DEPLOY_RUN_PORT > PORT > 5173，默认监听 0.0.0.0
+ok 10 - 生产入口 server.ts 端口优先级 DEPLOY_RUN_PORT > PORT > 5173，默认监听 0.0.0.0
+  ---
+  duration_ms: 0.239901
+  type: 'test'
+  ...
+# Subtest: 构建产物入口与 dev 监听契约未被其它脚本改写为固定端口
+ok 11 - 构建产物入口与 dev 监听契约未被其它脚本改写为固定端口
+  ---
+  duration_ms: 0.362646
+  type: 'test'
+  ...
+# Subtest: resolveLinePhases：入院/出院声明逐行继承，未声明前为 unspecified
+ok 12 - resolveLinePhases：入院/出院声明逐行继承，未声明前为 unspecified
+  ---
+  duration_ms: 2.148943
+  type: 'test'
+  ...
+# Subtest: 抽取结果带原件行号与入院/出院归属，重名诊断定位到首次出现行
+ok 13 - 抽取结果带原件行号与入院/出院归属，重名诊断定位到首次出现行
+  ---
+  duration_ms: 2.095496
+  type: 'test'
+  ...
+# Subtest: 红线：原件里没有的诊断一律丢弃并如实回报，不进标答
+ok 14 - 红线：原件里没有的诊断一律丢弃并如实回报，不进标答
+  ---
+  duration_ms: 0.714466
+  type: 'test'
+  ...
+# Subtest: 只折叠空白差异：模型漏掉空格仍算逐字命中，改字则不命中
+ok 15 - 只折叠空白差异：模型漏掉空格仍算逐字命中，改字则不命中
+  ---
+  duration_ms: 0.547405
+  type: 'test'
+  ...
+# Subtest: 叙述段（出院情况/查体）不能被当成诊断条目，但会出现在丢弃清单里
+ok 16 - 叙述段（出院情况/查体）不能被当成诊断条目，但会出现在丢弃清单里
+  ---
+  duration_ms: 0.621954
+  type: 'test'
+  ...
+# Subtest: 处理要点从 plan 原文摘取，允许叙述段（plan 本身就是叙述体）
+ok 17 - 处理要点从 plan 原文摘取，允许叙述段（plan 本身就是叙述体）
+  ---
+  duration_ms: 0.356162
+  type: 'test'
+  ...
+# Subtest: 整段复制与过短引用都被挡下，超长条目按截断回报
+ok 18 - 整段复制与过短引用都被挡下，超长条目按截断回报
+  ---
+  duration_ms: 0.46123
+  type: 'test'
+  ...
+# Subtest: 超出条数上限时截断并说明，不静默丢条目
+ok 19 - 超出条数上限时截断并说明，不静默丢条目
+  ---
+  duration_ms: 0.475574
+  type: 'test'
+  ...
+# Subtest: 跨行引用仍可核对（子串命中），只是定位不到单行
+ok 20 - 跨行引用仍可核对（子串命中），只是定位不到单行
+  ---
+  duration_ms: 0.542847
+  type: 'test'
+  ...
+# Subtest: parseExtractionResponse：接受裸 JSON 与代码围栏，拒绝非 JSON
+ok 21 - parseExtractionResponse：接受裸 JSON 与代码围栏，拒绝非 JSON
+  ---
+  duration_ms: 1.473941
+  type: 'test'
+  ...
+# Subtest: 提示词写死「只准逐字摘取、原件没有不许编造」并附原件两段
+ok 22 - 提示词写死「只准逐字摘取、原件没有不许编造」并附原件两段
+  ---
+  duration_ms: 0.405422
+  type: 'test'
+  ...
+# Subtest: 合成原件经注入模型抽取，产出带行号与入院/出院归属的可核对条目
+ok 23 - 合成原件经注入模型抽取，产出带行号与入院/出院归属的可核对条目
+  ---
+  duration_ms: 4.593799
+  type: 'test'
+  ...
+# Subtest: 同一病例内容指纹命中缓存，不重复消耗模型配额
+ok 24 - 同一病例内容指纹命中缓存，不重复消耗模型配额
+  ---
+  duration_ms: 0.856244
+  type: 'test'
+  ...
+# Subtest: 模型编造的诊断被服务端挡下并如实回报，不会变成标答
+ok 25 - 模型编造的诊断被服务端挡下并如实回报，不会变成标答
+  ---
+  duration_ms: 0.658805
+  type: 'test'
+  ...
+# Subtest: 模型输出不合法 / 调用失败 / 全部被丢弃，都明确报错而不是返回半成品
+ok 26 - 模型输出不合法 / 调用失败 / 全部被丢弃，都明确报错而不是返回半成品
+  ---
+  duration_ms: 1.463436
+  type: 'test'
+  ...
+# Subtest: 原件缺失或诊断/计划全空时不调用模型
+ok 27 - 原件缺失或诊断/计划全空时不调用模型
+  ---
+  duration_ms: 0.740844
+  type: 'test'
+  ...
+# Subtest: 绑定历史版本时按该版本原件抽取，缓存键随内容指纹变化
+ok 28 - 绑定历史版本时按该版本原件抽取，缓存键随内容指纹变化
+  ---
+  duration_ms: 1.011144
+  type: 'test'
+  ...
+# Subtest: 完整答案得满分
+ok 29 - 完整答案得满分
+  ---
+  duration_ms: 4.277647
+  type: 'test'
+  ...
+# Subtest: 同义写法算命中，归一化忽略标点空格
+ok 30 - 同义写法算命中，归一化忽略标点空格
+  ---
+  duration_ms: 0.430568
+  type: 'test'
+  ...
+# Subtest: 把并列诊断填在第一诊断位时第一诊断判错
+ok 31 - 把并列诊断填在第一诊断位时第一诊断判错
+  ---
+  duration_ms: 0.67751
+  type: 'test'
+  ...
+# Subtest: 只填第一诊断时其余维度得 0，缺口逐条列出
+ok 32 - 只填第一诊断时其余维度得 0，缺口逐条列出
+  ---
+  duration_ms: 0.552696
+  type: 'test'
+  ...
+# Subtest: 诊断依据与处理原则按覆盖率给分
+ok 33 - 诊断依据与处理原则按覆盖率给分
+  ---
+  duration_ms: 0.710384
+  type: 'test'
+  ...
+# Subtest: 无鉴别诊断标准答案时该项不占分
+ok 34 - 无鉴别诊断标准答案时该项不占分
+  ---
+  duration_ms: 0.406113
+  type: 'test'
+  ...
+# Subtest: 并列诊断标答为空时不白送 20 分，也不占满分
+ok 35 - 并列诊断标答为空时不白送 20 分，也不占满分
+  ---
+  duration_ms: 0.484563
+  type: 'test'
+  ...
+# Subtest: 诊断依据标答为空时该项不计入满分
+ok 36 - 诊断依据标答为空时该项不计入满分
+  ---
+  duration_ms: 0.301763
+  type: 'test'
+  ...
+# Subtest: 处理原则标答为空时该项不计入满分
+ok 37 - 处理原则标答为空时该项不计入满分
+  ---
+  duration_ms: 0.506577
+  type: 'test'
+  ...
+# Subtest: 除第一诊断外全部为空时，满分只有 30 分
+ok 38 - 除第一诊断外全部为空时，满分只有 30 分
+  ---
+  duration_ms: 0.506566
+  type: 'test'
+  ...
+# Subtest: AI 逐点判分：命中/部分/未命中按比例计分，且不超过该段满分
+ok 39 - AI 逐点判分：命中/部分/未命中按比例计分，且不超过该段满分
+  ---
+  duration_ms: 0.461708
+  type: 'test'
+  ...
+# Subtest: 空提交不能被外部判定送分，治疗不足按部分命中扣分并标记阶段
+ok 40 - 空提交不能被外部判定送分，治疗不足按部分命中扣分并标记阶段
+  ---
+  duration_ms: 0.373896
+  type: 'test'
+  ...
+# Subtest: 逐点判分全部命中时该段拿满，全部缺失时该段为 0
+ok 41 - 逐点判分全部命中时该段拿满，全部缺失时该段为 0
+  ---
+  duration_ms: 0.260762
+  type: 'test'
+  ...
+# Subtest: 空输入与超长输入都不抛错
+ok 42 - 空输入与超长输入都不抛错
+  ---
+  duration_ms: 0.546392
+  type: 'test'
+  ...
+# Subtest: 并列诊断超过两项时给出界面提示
+ok 43 - 并列诊断超过两项时给出界面提示
+  ---
+  duration_ms: 0.184398
+  type: 'test'
+  ...
+# Subtest: 免责声明写明教师提供标答且不计入临床成绩
+ok 44 - 免责声明写明教师提供标答且不计入临床成绩
+  ---
+  duration_ms: 0.24211
+  type: 'test'
+  ...
+# Subtest: 引擎守卫：缺 diagnosisBasis 或依据过短（<10字）被拒绝
+ok 45 - 引擎守卫：缺 diagnosisBasis 或依据过短（<10字）被拒绝
+  ---
+  duration_ms: 3.81709
+  type: 'test'
+  ...
+# Subtest: 提交成功：diagnosisBasis 完整保存进会话决策
+ok 46 - 提交成功：diagnosisBasis 完整保存进会话决策
+  ---
+  duration_ms: 0.860122
+  type: 'test'
+  ...
+# Subtest: Zod 契约：缺 diagnosisBasis 的 SUBMIT_DECISION 不通过校验
+ok 47 - Zod 契约：缺 diagnosisBasis 的 SUBMIT_DECISION 不通过校验
+  ---
+  duration_ms: 2.828498
+  type: 'test'
+  ...
+# Subtest: 历史兼容：无 diagnosisBasis 的旧 decision 仍可生成报告
+ok 48 - 历史兼容：无 diagnosisBasis 的旧 decision 仍可生成报告
+  ---
+  duration_ms: 1.788249
+  type: 'test'
+  ...
+# Subtest: 三次成功占满固定槽，第四次在调用模型前拒绝
+ok 49 - 三次成功占满固定槽，第四次在调用模型前拒绝
+  ---
+  duration_ms: 61.146022
+  type: 'test'
+  ...
+# Subtest: 同请求标记重试返回原提示，不重复占槽；跨阶段复用被拒绝
+ok 50 - 同请求标记重试返回原提示，不重复占槽；跨阶段复用被拒绝
+  ---
+  duration_ms: 1.054691
+  type: 'test'
+  ...
+# Subtest: 模型失败、结构失败和答案越界均不落额度
+ok 51 - 模型失败、结构失败和答案越界均不落额度
+  ---
+  duration_ms: 1.764395
+  type: 'test'
+  ...
+# Subtest: 不同请求并发最多三次成功；同请求并发只占一个槽
+ok 52 - 不同请求并发最多三次成功；同请求并发只占一个槽
+  ---
+  duration_ms: 10.092613
+  type: 'test'
+  ...
+# Subtest: 额度按会话隔离，路由匿名/教师/OSCE 均 fail-closed
+ok 53 - 额度按会话隔离，路由匿名/教师/OSCE 均 fail-closed
+  ---
+  duration_ms: 22.868325
+  type: 'test'
+  ...
+# Subtest: 后续提示包含此前方向，避免三次机会重复同一建议
+ok 54 - 后续提示包含此前方向，避免三次机会重复同一建议
+  ---
+  duration_ms: 0.782769
+  type: 'test'
+  ...
+# Subtest: 每个环节独立三次，刷新回读和旧槽保持原阶段额度
+ok 55 - 每个环节独立三次，刷新回读和旧槽保持原阶段额度
+  ---
+  duration_ms: 54.941031
+  type: 'test'
+  ...
+# Subtest: repeated valid exam is quiet, stable after serialization, and does not add records, speech or score evidence
+ok 56 - repeated valid exam is quiet, stable after serialization, and does not add records, speech or score evidence
+  ---
+  duration_ms: 7.142564
+  type: 'test'
+  ...
+# Subtest: repeated wrong tool does not repeat feedback; completing preparation allows a previously blocked operation
+ok 57 - repeated wrong tool does not repeat feedback; completing preparation allows a previously blocked operation
+  ---
+  duration_ms: 1.8868
+  type: 'test'
+  ...
+# Subtest: historical coarse evidence does not impersonate a new localized check
+ok 58 - historical coarse evidence does not impersonate a new localized check
+  ---
+  duration_ms: 0.701444
+  type: 'test'
+  ...
+# Subtest: selection rejects stale binding without mutating original
+ok 59 - selection rejects stale binding without mutating original
+  ---
+  duration_ms: 2.895756
+  type: 'test'
+  ...
+# Subtest: selection rejects changing original source or unknown row
+ok 60 - selection rejects changing original source or unknown row
+  ---
+  duration_ms: 0.751082
+  type: 'test'
+  ...
+# Subtest: selection does not silently overwrite an existing fixed teaching result
+ok 61 - selection does not silently overwrite an existing fixed teaching result
+  ---
+  duration_ms: 0.336104
+  type: 'test'
+  ...
+# Subtest: every existing tool/site has explicit normal, abnormal, units/reference and method
+ok 62 - every existing tool/site has explicit normal, abnormal, units/reference and method
+  ---
+  duration_ms: 3.64839
+  type: 'test'
+  ...
+# Subtest: age, thermometer and fontanelle applicability are explicit
+ok 63 - age, thermometer and fontanelle applicability are explicit
+  ---
+  duration_ms: 0.807158
+  type: 'test'
+  ...
+# Subtest: standards do not mix visible and auscultatory patient results
+ok 64 - standards do not mix visible and auscultatory patient results
+  ---
+  duration_ms: 0.602915
+  type: 'test'
+  ...
+# Subtest: single canvas converts local coordinates back to the full image, and uses the same image for zoom
+ok 65 - single canvas converts local coordinates back to the full image, and uses the same image for zoom
+  ---
+  duration_ms: 44.46832
+  type: 'test'
+  ...
+# Subtest: general examinations retain the full patient image and back uses a real shared teaching image
+ok 66 - general examinations retain the full patient image and back uses a real shared teaching image
+  ---
+  duration_ms: 1.368615
+  type: 'test'
+  ...
+# Subtest: plantar detail uses the prepared sole image with patient-side pins and returns to the original person
+ok 67 - plantar detail uses the prepared sole image with patient-side pins and returns to the original person
+  ---
+  duration_ms: 1.270363
+  type: 'test'
+  ...
+# Subtest: unknown assets do not borrow another child’s pins and no plantar pin is placed on a shoe
+ok 68 - unknown assets do not borrow another child’s pins and no plantar pin is placed on a shoe
+  ---
+  duration_ms: 0.709894
+  type: 'test'
+  ...
+# Subtest: position prompts appear only when needed and never request an unsupported legacy position
+ok 69 - position prompts appear only when needed and never request an unsupported legacy position
+  ---
+  duration_ms: 1.372851
+  type: 'test'
+  ...
+# Subtest: denied findings remain negative; a contrasting positive cannot become normal
+ok 70 - denied findings remain negative; a contrasting positive cannot become normal
+  ---
+  duration_ms: 2.313018
+  type: 'test'
+  ...
+# Subtest: exact source stays verbatim; a group finding never acquires local precision
+ok 71 - exact source stays verbatim; a group finding never acquires local precision
+  ---
+  duration_ms: 64.666328
+  type: 'test'
+  ...
+# Subtest: different methods never substitute observations or disclose another requested result
+ok 72 - different methods never substitute observations or disclose another requested result
+  ---
+  duration_ms: 0.627043
+  type: 'test'
+  ...
+# Subtest: abnormal or systemic context blocks blanket normal simulation
+ok 73 - abnormal or systemic context blocks blanket normal simulation
+  ---
+  duration_ms: 2.009642
+  type: 'test'
+  ...
+# Subtest: missing measurements and age-sensitive grading never invent readings
+ok 74 - missing measurements and age-sensitive grading never invent readings
+  ---
+  duration_ms: 0.501557
+  type: 'test'
+  ...
+# Subtest: normal templates stay within the selected method and location
+ok 75 - normal templates stay within the selected method and location
+  ---
+  duration_ms: 0.807762
+  type: 'test'
+  ...
+# Subtest: fixed axillary temperature requires an unresolved age-appropriate row without source temperature facts
+ok 76 - fixed axillary temperature requires an unresolved age-appropriate row without source temperature facts
+  ---
+  duration_ms: 1.978769
+  type: 'test'
+  ...
+# Subtest: fixed axillary temperature preserves affirmative concerns and every original numeric temperature
+ok 77 - fixed axillary temperature preserves affirmative concerns and every original numeric temperature
+  ---
+  duration_ms: 0.701191
+  type: 'test'
+  ...
+# Subtest: fixed axillary temperature allows an explicit negative history but not young infants or source rows
+ok 78 - fixed axillary temperature allows an explicit negative history but not young infants or source rows
+  ---
+  duration_ms: 0.537631
+  type: 'test'
+  ...
+# Subtest: infrared, tympanic and oximeter values are independent fixed scenarios with safety gates
+ok 79 - infrared, tympanic and oximeter values are independent fixed scenarios with safety gates
+  ---
+  duration_ms: 1.084064
+  type: 'test'
+  ...
+# Subtest: growth values use age anchors but never overwrite measurements or conflict with growth risks
+ok 80 - growth values use age anchors but never overwrite measurements or conflict with growth risks
+  ---
+  duration_ms: 2.537042
+  type: 'test'
+  ...
+# Subtest: local supplement changes only the new field and participates in the package hash
+ok 81 - local supplement changes only the new field and participates in the package hash
+  ---
+  duration_ms: 6.653313
+  type: 'test'
+  ...
+# Subtest: local supplement rejects local source rows, reference rows and stale bindings
+ok 82 - local supplement rejects local source rows, reference rows and stale bindings
+  ---
+  duration_ms: 1.420051
+  type: 'test'
+  ...
+# Subtest: 查体记录无媒体时如实说明未提供实拍图，不留白
+ok 83 - 查体记录无媒体时如实说明未提供实拍图，不留白
+  ---
+  duration_ms: 18.219903
+  type: 'test'
+  ...
+# Subtest: 查体记录已释放媒体时不再声明未提供实拍图
+ok 84 - 查体记录已释放媒体时不再声明未提供实拍图
+  ---
+  duration_ms: 4.379288
+  type: 'test'
+  ...
+# Subtest: 诚实占位只用于查体，问诊与辅助检查条目不受影响
+ok 85 - 诚实占位只用于查体，问诊与辅助检查条目不受影响
+  ---
+  duration_ms: 3.385349
+  type: 'test'
+  ...
+# Subtest: 共享病例记录不再渲染独立接诊基本信息模块，但保留生命体征
+ok 86 - 共享病例记录不再渲染独立接诊基本信息模块，但保留生命体征
+  ---
+  duration_ms: 56.462829
+  type: 'test'
+  ...
+# Subtest: 眼部检查不因睁眼字样泄露整项Glasgow评分，保留独立瞳孔和对光反射
+ok 87 - 眼部检查不因睁眼字样泄露整项Glasgow评分，保留独立瞳孔和对光反射
+  ---
+  duration_ms: 6.989616
+  type: 'test'
+  ...
+# Subtest: 乳房发育视诊与结节触诊分别取原文，不用心肺听诊替代
+ok 88 - 乳房发育视诊与结节触诊分别取原文，不用心肺听诊替代
+  ---
+  duration_ms: 0.587286
+  type: 'test'
+  ...
+# Subtest: 源记录中的结膜和巩膜证据可由眼部检查取得，不混入口咽结果
+ok 89 - 源记录中的结膜和巩膜证据可由眼部检查取得，不混入口咽结果
+  ---
+  duration_ms: 0.649759
+  type: 'test'
+  ...
+# Subtest: 口咽检查保留扁桃体分度及局部分泌物续段，不吸收心肺结果
+ok 90 - 口咽检查保留扁桃体分度及局部分泌物续段，不吸收心肺结果
+  ---
+  duration_ms: 0.339736
+  type: 'test'
+  ...
+# Subtest: 浅表淋巴结记录由淋巴结触诊取得，阳性阴性均保留，不混入头面检查
+ok 91 - 浅表淋巴结记录由淋巴结触诊取得，阳性阴性均保留，不混入头面检查
+  ---
+  duration_ms: 1.435014
+  type: 'test'
+  ...
+# Subtest: 脑膜刺激征“颈稍抵抗”归入颈部视诊，不虚构正常颈软
+ok 92 - 脑膜刺激征“颈稍抵抗”归入颈部视诊，不虚构正常颈软
+  ---
+  duration_ms: 0.217304
+  type: 'test'
+  ...
+# Subtest: 腹部视触叩听与反射分别取对应原文片段，不传播完整查体答案
+ok 93 - 腹部视触叩听与反射分别取对应原文片段，不传播完整查体答案
+  ---
+  duration_ms: 0.419002
+  type: 'test'
+  ...
+# Subtest: 出血点/瘀点瘀斑归入皮肤视诊，牙龈出血归入口咽，不遗漏皮肤黏膜出血证据（ITP 实审驱动）
+ok 94 - 出血点/瘀点瘀斑归入皮肤视诊，牙龈出血归入口咽，不遗漏皮肤黏膜出血证据（ITP 实审驱动）
+  ---
+  duration_ms: 0.227117
+  type: 'test'
+  ...
+# Subtest: 痰鸣音归入肺部听诊，呼吸稍促归入胸部视诊，震颤归入胸部触诊
+ok 95 - 痰鸣音归入肺部听诊，呼吸稍促归入胸部视诊，震颤归入胸部触诊
+  ---
+  duration_ms: 0.510122
+  type: 'test'
+  ...
+# Subtest: 缺陷a：心与肺的听诊结果分开，不混成一坨
+ok 96 - 缺陷a：心与肺的听诊结果分开，不混成一坨
+  ---
+  duration_ms: 0.695888
+  type: 'test'
+  ...
+# Subtest: 缺陷b：黄疸与皮疹归皮肤，精神/面色反应归一般状态，巩膜归眼部
+ok 97 - 缺陷b：黄疸与皮疹归皮肤，精神/面色反应归一般状态，巩膜归眼部
+  ---
+  duration_ms: 0.319696
+  type: 'test'
+  ...
+# Subtest: 缺陷c：腹肌稍紧张被腹部触诊命中，不因“稍”字漏掉
+ok 98 - 缺陷c：腹肌稍紧张被腹部触诊命中，不因“稍”字漏掉
+  ---
+  duration_ms: 0.333686
+  type: 'test'
+  ...
+# Subtest: 缺陷d：巴宾斯基征与病理征阳性归神经系统检查，不只认“巴氏”
+ok 99 - 缺陷d：巴宾斯基征与病理征阳性归神经系统检查，不只认“巴氏”
+  ---
+  duration_ms: 0.205656
+  type: 'test'
+  ...
+# Subtest: 缺陷e：仰卧位限定部位由 SUPINE_ONLY_PARTS 统一给出，新增腹部类部位不再绕过
+ok 100 - 缺陷e：仰卧位限定部位由 SUPINE_ONLY_PARTS 统一给出，新增腹部类部位不再绕过
+  ---
+  duration_ms: 0.23143
+  type: 'test'
+  ...
+# Subtest: 新增部位各有归属：头围/耳鼻鼻/脊柱关节/肝脾腹股沟/指甲/生命体征
+ok 101 - 新增部位各有归属：头围/耳鼻鼻/脊柱关节/肝脾腹股沟/指甲/生命体征
+  ---
+  duration_ms: 0.61298
+  type: 'test'
+  ...
+# Subtest: 神经系统阴性体征归入神经系统与反射检查，不丢失关键阴性（ITP 颅内出血警示评估）
+ok 102 - 神经系统阴性体征归入神经系统与反射检查，不丢失关键阴性（ITP 颅内出血警示评估）
+  ---
+  duration_ms: 0.198195
+  type: 'test'
+  ...
+# Subtest: 对光反射归眼部与瞳孔检查，淋巴结/扁桃体/肝脾/肠鸣音/神经系统各归其位（DKA 原文形态）
+ok 103 - 对光反射归眼部与瞳孔检查，淋巴结/扁桃体/肝脾/肠鸣音/神经系统各归其位（DKA 原文形态）
+  ---
+  duration_ms: 0.201981
+  type: 'test'
+  ...
+# Subtest: 原始反射与腹壁反射不丢，胸廓叩诊与肺部叩诊各按部位归位
+ok 104 - 原始反射与腹壁反射不丢，胸廓叩诊与肺部叩诊各按部位归位
+  ---
+  duration_ms: 0.247509
+  type: 'test'
+  ...
+# Subtest: 裸词关键词不跨部位串味：压痛只归所在部位，肺叩诊不进腹部
+ok 105 - 裸词关键词不跨部位串味：压痛只归所在部位，肺叩诊不进腹部
+  ---
+  duration_ms: 0.25376
+  type: 'test'
+  ...
+# Subtest: 没有记录不补正常值；腹部新请求需仰卧，历史请求保留兼容
+ok 106 - 没有记录不补正常值；腹部新请求需仰卧，历史请求保留兼容
+  ---
+  duration_ms: 0.275482
+  type: 'test'
+  ...
+# Subtest: success is a compact acknowledgement without duplicating detailed findings over the patient
+ok 107 - success is a compact acknowledgement without duplicating detailed findings over the patient
+  ---
+  duration_ms: 11.665522
+  type: 'test'
+  ...
+# Subtest: a blocked operation retains its precise error outside the patient figure
+ok 108 - a blocked operation retains its precise error outside the patient figure
+  ---
+  duration_ms: 2.956622
+  type: 'test'
+  ...
+# Subtest: no observation produces no stale feedback
+ok 109 - no observation produces no stale feedback
+  ---
+  duration_ms: 0.46883
+  type: 'test'
+  ...
+# Subtest: new normal simulation does not mutate originals, scoring, media or the input object
+ok 110 - new normal simulation does not mutate originals, scoring, media or the input object
+  ---
+  duration_ms: 5.188552
+  type: 'test'
+  ...
+# Subtest: history and diagnosis risks prevent blanket normals; previously simulated conflict is removed
+ok 111 - history and diagnosis risks prevent blanket normals; previously simulated conflict is removed
+  ---
+  duration_ms: 4.257326
+  type: 'test'
+  ...
+# Subtest: local ear and oropharyngeal morphology can be simulated despite unrelated systemic risks
+ok 112 - local ear and oropharyngeal morphology can be simulated despite unrelated systemic risks
+  ---
+  duration_ms: 0.773157
+  type: 'test'
+  ...
+# Subtest: local positives and critical illness keep independent morphology as reference
+ok 113 - local positives and critical illness keep independent morphology as reference
+  ---
+  duration_ms: 0.713415
+  type: 'test'
+  ...
+# Subtest: measurement references expose units and recording conditions without inventing readings
+ok 114 - measurement references expose units and recording conditions without inventing readings
+  ---
+  duration_ms: 1.572164
+  type: 'test'
+  ...
+# Subtest: fontanelle, reflex and plantar references require independent age-appropriate records
+ok 115 - fontanelle, reflex and plantar references require independent age-appropriate records
+  ---
+  duration_ms: 0.504909
+  type: 'test'
+  ...
+# Subtest: 所有已登记人物体位均有独立照片定位，未知素材不套用另一张照片坐标
+ok 116 - 所有已登记人物体位均有独立照片定位，未知素材不套用另一张照片坐标
+  ---
+  duration_ms: 12.648854
+  type: 'test'
+  ...
+# Subtest: 婴儿手部和新生儿手部按各自卧姿定位，不把成人垂手坐标放到婴儿腿上
+ok 117 - 婴儿手部和新生儿手部按各自卧姿定位，不把成人垂手坐标放到婴儿腿上
+  ---
+  duration_ms: 0.552172
+  type: 'test'
+  ...
+# Subtest: 无缓存不算过期（正常路径：本地文件/共享键，无恢复态缓存）
+ok 118 - 无缓存不算过期（正常路径：本地文件/共享键，无恢复态缓存）
+  ---
+  duration_ms: 1.010691
+  type: 'test'
+  ...
+# Subtest: 已执行查体但缓存 exam 仍剥离 → 过期（需刷新）
+ok 119 - 已执行查体但缓存 exam 仍剥离 → 过期（需刷新）
+  ---
+  duration_ms: 3.325923
+  type: 'test'
+  ...
+# Subtest: 已执行查体且 exam 已扩展 → 不过期
+ok 120 - 已执行查体且 exam 已扩展 → 不过期
+  ---
+  duration_ms: 0.203472
+  type: 'test'
+  ...
+# Subtest: 已开单但缓存 tests 仍剥离 → 过期（需刷新）
+ok 121 - 已开单但缓存 tests 仍剥离 → 过期（需刷新）
+  ---
+  duration_ms: 0.163477
+  type: 'test'
+  ...
+# Subtest: 已开单且 tests 已扩展 → 不过期
+ok 122 - 已开单且 tests 已扩展 → 不过期
+  ---
+  duration_ms: 0.2603
+  type: 'test'
+  ...
+# Subtest: 查体已扩展但检查仍剥离 → 过期（部分剥离即刷新）
+ok 123 - 查体已扩展但检查仍剥离 → 过期（部分剥离即刷新）
+  ---
+  duration_ms: 0.144914
+  type: 'test'
+  ...
+# Subtest: 无任何证据时剥离态不算过期（剥离即门控语义本身）
+ok 124 - 无任何证据时剥离态不算过期（剥离即门控语义本身）
+  ---
+  duration_ms: 0.207458
+  type: 'test'
+  ...
+# Subtest: 旧版本未声明生长测量能力时不展示尚无对应结果的新器材
+ok 125 - 旧版本未声明生长测量能力时不展示尚无对应结果的新器材
+  ---
+  duration_ms: 26.584172
+  type: 'test'
+  ...
+# Subtest: 自主查体首屏保留人物图片并提供全部器材，选择不预先透露有效组合
+ok 126 - 自主查体首屏保留人物图片并提供全部器材，选择不预先透露有效组合
+  ---
+  duration_ms: 9.05839
+  type: 'test'
+  ...
+# Subtest: 手卫生并入器材网格第一项，一次确认保留准备证据且完成后不可重复
+ok 127 - 手卫生并入器材网格第一项，一次确认保留准备证据且完成后不可重复
+  ---
+  duration_ms: 40.263791
+  type: 'test'
+  ...
+# Subtest: 源记录会话也区分错误器材与资料缺失，三种体温计不可混用且不释放证据
+ok 128 - 源记录会话也区分错误器材与资料缺失，三种体温计不可混用且不释放证据
+  ---
+  duration_ms: 4.307851
+  type: 'test'
+  ...
+# Subtest: 胸背定位采用背面模板，左右遵循患者方向且无心前区点
+ok 129 - 胸背定位采用背面模板，左右遵循患者方向且无心前区点
+  ---
+  duration_ms: 0.390329
+  type: 'test'
+  ...
+# Subtest: 双层反馈：第一层是病例原文，第二层强制带未审核徽标且不冒充本例所见
+ok 130 - 双层反馈：第一层是病例原文，第二层强制带未审核徽标且不冒充本例所见
+  ---
+  duration_ms: 2.43721
+  type: 'test'
+  ...
+# Subtest: 整体原记录与局部教学补充在同一张结果内明确分层
+ok 131 - 整体原记录与局部教学补充在同一张结果内明确分层
+  ---
+  duration_ms: 1.775339
+  type: 'test'
+  ...
+# Subtest: 本例无记录时保留诚实占位，第二层仍给要领但不补造正常值
+ok 132 - 本例无记录时保留诚实占位，第二层仍给要领但不补造正常值
+  ---
+  duration_ms: 1.885291
+  type: 'test'
+  ...
+# Subtest: 闭卷站保留患者所见，隐藏通用操作要领及历史结构化结果中的过程提示
+ok 133 - 闭卷站保留患者所见，隐藏通用操作要领及历史结构化结果中的过程提示
+  ---
+  duration_ms: 1.634561
+  type: 'test'
+  ...
+# Subtest: 未经临床审核的第二层文案永不进入会话事件、反馈或角色消息（评分证据链只吃第一层）
+ok 134 - 未经临床审核的第二层文案永不进入会话事件、反馈或角色消息（评分证据链只吃第一层）
+  ---
+  duration_ms: 1.56333
+  type: 'test'
+  ...
+# Subtest: 新目录覆盖全部规范部位，左右肺野按患者方向定位
+ok 135 - 新目录覆盖全部规范部位，左右肺野按患者方向定位
+  ---
+  duration_ms: 2.061579
+  type: 'test'
+  ...
+# Subtest: 三个测温器材分开，错误部位不可选；肌力不用叩诊锤代替
+ok 136 - 三个测温器材分开，错误部位不可选；肌力不用叩诊锤代替
+  ---
+  duration_ms: 0.377848
+  type: 'test'
+  ...
+# Subtest: 可选操作均有规范说明，旧部位标签仍可读
+ok 137 - 可选操作均有规范说明，旧部位标签仍可读
+  ---
+  duration_ms: 1.64924
+  type: 'test'
+  ...
+# Subtest: negative source findings do not trigger the systemic-positive guard
+ok 138 - negative source findings do not trigger the systemic-positive guard
+  ---
+  duration_ms: 1.561736
+  type: 'test'
+  ...
+# Subtest: positive, uncertain and contrasting findings retain the conservative guard
+ok 139 - positive, uncertain and contrasting findings retain the conservative guard
+  ---
+  duration_ms: 0.334408
+  type: 'test'
+  ...
+# Subtest: brain-reference selection respects negation without treating uncertainty as normal
+ok 140 - brain-reference selection respects negation without treating uncertainty as normal
+  ---
+  duration_ms: 0.196696
+  type: 'test'
+  ...
+# Subtest: site-specific systemic guards preserve neuromuscular reflex conflicts
+ok 141 - site-specific systemic guards preserve neuromuscular reflex conflicts
+  ---
+  duration_ms: 0.27551
+  type: 'test'
+  ...
+# Subtest: independent local morphology is not blocked by unrelated systemic findings
+ok 142 - independent local morphology is not blocked by unrelated systemic findings
+  ---
+  duration_ms: 0.214349
+  type: 'test'
+  ...
+# Subtest: 三站齐全且 id 唯一
+ok 143 - 三站齐全且 id 唯一
+  ---
+  duration_ms: 1.60491
+  type: 'test'
+  ...
+# Subtest: 每个站内入口都指向真实存在的路由，不留死链
+ok 144 - 每个站内入口都指向真实存在的路由，不留死链
+  ---
+  duration_ms: 0.689034
+  type: 'test'
+  ...
+# Subtest: 状态标签覆盖三种状态，且 partial/missing 必须写清缺口
+ok 145 - 状态标签覆盖三种状态，且 partial/missing 必须写清缺口
+  ---
+  duration_ms: 0.335103
+  type: 'test'
+  ...
+# Subtest: 每一站都写明官方考法与本平台缺口
+ok 146 - 每一站都写明官方考法与本平台缺口
+  ---
+  duration_ms: 0.207943
+  type: 'test'
+  ...
+# Subtest: 科室加练不混入三站，且必须声明不属于执医考项
+ok 147 - 科室加练不混入三站，且必须声明不属于执医考项
+  ---
+  duration_ms: 0.324938
+  type: 'test'
+  ...
+# Subtest: 已知缺口清单非空且每条都具体
+ok 148 - 已知缺口清单非空且每条都具体
+  ---
+  duration_ms: 0.196338
+  type: 'test'
+  ...
+# Subtest: 入口不得重复链接同一标签
+ok 149 - 入口不得重复链接同一标签
+  ---
+  duration_ms: 0.162879
+  type: 'test'
+  ...
+# Subtest: 徽标文案一字不改，且强制标注非本例所见与未审核
+ok 150 - 徽标文案一字不改，且强制标注非本例所见与未审核
+  ---
+  duration_ms: 0.980925
+  type: 'test'
+  ...
+# Subtest: 抽取规则覆盖的每个组合都是常规组合，要领与正常表现均非空且为一般规律表述
+ok 151 - 抽取规则覆盖的每个组合都是常规组合，要领与正常表现均非空且为一般规律表述
+  ---
+  duration_ms: 0.608066
+  type: 'test'
+  ...
+# Subtest: 任何合法组合都不返回 null，且不把通用要领伪装成本例所见
+ok 152 - 任何合法组合都不返回 null，且不把通用要领伪装成本例所见
+  ---
+  duration_ms: 37.201579
+  type: 'test'
+  ...
+# Subtest: 未知器材或部位返回 null，不用空文案掩盖拼写错误
+ok 153 - 未知器材或部位返回 null，不用空文案掩盖拼写错误
+  ---
+  duration_ms: 0.390354
+  type: 'test'
+  ...
+# Subtest: 非常规组合明确说不是常规检查，并指出该部位常规用什么器材
+ok 154 - 非常规组合明确说不是常规检查，并指出该部位常规用什么器材
+  ---
+  duration_ms: 0.429683
+  type: 'test'
+  ...
+# Subtest: 默认收起：触发器 aria-expanded=false，浮层 hidden，首屏不铺小字
+ok 155 - 默认收起：触发器 aria-expanded=false，浮层 hidden，首屏不铺小字
+  ---
+  duration_ms: 64.931519
+  type: 'test'
+  ...
+# Subtest: 正文仍在 DOM 内，展开无需二次请求；浮层带 role=note 与同名 aria-label
+ok 156 - 正文仍在 DOM 内，展开无需二次请求；浮层带 role=note 与同名 aria-label
+  ---
+  duration_ms: 5.886164
+  type: 'test'
+  ...
+# Subtest: icon 变体用 aria-label 承载文字，pill 变体把标签显示出来
+ok 157 - icon 变体用 aria-label 承载文字，pill 变体把标签显示出来
+  ---
+  duration_ms: 3.266077
+  type: 'test'
+  ...
+# Subtest: align 控制浮层方向，避免靠左触发器的浮层溢出屏幕
+ok 158 - align 控制浮层方向，避免靠左触发器的浮层溢出屏幕
+  ---
+  duration_ms: 2.672348
+  type: 'test'
+  ...
+# Subtest: className 透传，便于按位置补外边距
+ok 159 - className 透传，便于按位置补外边距
+  ---
+  duration_ms: 1.426738
+  type: 'test'
+  ...
+# Subtest: 训练页说明改为如实口径，不再声称缺项由 AI 补全
+ok 160 - 训练页说明改为如实口径，不再声称缺项由 AI 补全
+  ---
+  duration_ms: 0.808766
+  type: 'test'
+  ...
+# Subtest: 阶段提示：查体关联项与诊断依据的核验说明收进备注，阻塞原因保持常显
+ok 161 - 阶段提示：查体关联项与诊断依据的核验说明收进备注，阻塞原因保持常显
+  ---
+  duration_ms: 0.634253
+  type: 'test'
+  ...
+# Subtest: 报告说明：量表与口径收进备注，未评分说明仍常显
+ok 162 - 报告说明：量表与口径收进备注，未评分说明仍常显
+  ---
+  duration_ms: 0.45513
+  type: 'test'
+  ...
+# Subtest: 样式：旧 .training-info 规则下线，备注浮层不改变周边版面高度
+ok 163 - 样式：旧 .training-info 规则下线，备注浮层不改变周边版面高度
+  ---
+  duration_ms: 1.308852
+  type: 'test'
+  ...
+# Subtest: 显式 testDefinitions 驱动目录、下单与单行结果，旧快照保留回退且权限不放宽
+ok 164 - 显式 testDefinitions 驱动目录、下单与单行结果，旧快照保留回退且权限不放宽
+  ---
+  duration_ms: 6103.718308
+  type: 'test'
+  ...
+# Subtest: reference=null 合法finish：报告生成与再读取无标准答案回填
+ok 165 - reference=null 合法finish：报告生成与再读取无标准答案回填
+  ---
+  duration_ms: 7.395215
+  type: 'test'
+  ...
+# Subtest: reference=null 过程分语义：无过程证据的学生只得过程反馈低分
+ok 166 - reference=null 过程分语义：无过程证据的学生只得过程反馈低分
+  ---
+  duration_ms: 1.0501
+  type: 'test'
+  ...
+# Subtest: 内存隔离：学生 B 不得读学生 A 的报告
+ok 167 - 内存隔离：学生 B 不得读学生 A 的报告
+  ---
+  duration_ms: 1.606155
+  type: 'test'
+  ...
+# Subtest: GROWTH_ANCHORS：0–120 个月教材锚点单调且端点正确
+ok 168 - GROWTH_ANCHORS：0–120 个月教材锚点单调且端点正确
+  ---
+  duration_ms: 2.035784
+  type: 'test'
+  ...
+# Subtest: GROWTH_DISCLAIMER：声明教学口径并要求标准差曲线
+ok 169 - GROWTH_DISCLAIMER：声明教学口径并要求标准差曲线
+  ---
+  duration_ms: 0.411485
+  type: 'test'
+  ...
+# Subtest: MILESTONES：11 条里程碑双栏完整且月龄递增
+ok 170 - MILESTONES：11 条里程碑双栏完整且月龄递增
+  ---
+  duration_ms: 0.219968
+  type: 'test'
+  ...
+# Subtest: ageLabel：整岁不带月、非整岁带月
+ok 171 - ageLabel：整岁不带月、非整岁带月
+  ---
+  duration_ms: 0.211656
+  type: 'test'
+  ...
+# Subtest: assessGrowth：七项指标齐备且顺序固定
+ok 172 - assessGrowth：七项指标齐备且顺序固定
+  ---
+  duration_ms: 1.151531
+  type: 'test'
+  ...
+# Subtest: assessGrowth(6)：体重走 1–6 个月公式并展示手算
+ok 173 - assessGrowth(6)：体重走 1–6 个月公式并展示手算
+  ---
+  duration_ms: 0.310912
+  type: 'test'
+  ...
+# Subtest: assessGrowth(3)：公式估算与锚点典型值的偏差被明示
+ok 174 - assessGrowth(3)：公式估算与锚点典型值的偏差被明示
+  ---
+  duration_ms: 0.294499
+  type: 'test'
+  ...
+# Subtest: assessGrowth(9)：体重走 7–12 个月公式，典型值按锚点内插
+ok 175 - assessGrowth(9)：体重走 7–12 个月公式，典型值按锚点内插
+  ---
+  duration_ms: 0.278707
+  type: 'test'
+  ...
+# Subtest: assessGrowth(36)：3 岁体重 14 kg、身高走 2–6 岁公式 96 cm
+ok 176 - assessGrowth(36)：3 岁体重 14 kg、身高走 2–6 岁公式 96 cm
+  ---
+  duration_ms: 0.737305
+  type: 'test'
+  ...
+# Subtest: assessGrowth(96)：8 岁身高走 7–10 岁公式并给出青春期警示
+ok 177 - assessGrowth(96)：8 岁身高走 7–10 岁公式并给出青春期警示
+  ---
+  duration_ms: 0.62511
+  type: 'test'
+  ...
+# Subtest: assessGrowth(18)：2 岁内身高不给线性公式，典型值由锚点内插
+ok 178 - assessGrowth(18)：2 岁内身高不给线性公式，典型值由锚点内插
+  ---
+  duration_ms: 0.29194
+  type: 'test'
+  ...
+# Subtest: assessGrowth(12)：头围 46 cm、胸围≈头围交叉点、乳牙 6–8 颗
+ok 179 - assessGrowth(12)：头围 46 cm、胸围≈头围交叉点、乳牙 6–8 颗
+  ---
+  duration_ms: 0.214088
+  type: 'test'
+  ...
+# Subtest: assessGrowth(60)：5 岁胸围按头围 + (岁数 − 1) 推算
+ok 180 - assessGrowth(60)：5 岁胸围按头围 + (岁数 − 1) 推算
+  ---
+  duration_ms: 0.245704
+  type: 'test'
+  ...
+# Subtest: assessGrowth(5)：乳牙尚未萌出的表述不写成 0 颗
+ok 181 - assessGrowth(5)：乳牙尚未萌出的表述不写成 0 颗
+  ---
+  duration_ms: 0.195067
+  type: 'test'
+  ...
+# Subtest: assessGrowth(30)：乳牙出齐；assessGrowth(84)：补恒牙替换正文
+ok 182 - assessGrowth(30)：乳牙出齐；assessGrowth(84)：补恒牙替换正文
+  ---
+  duration_ms: 0.30183
+  type: 'test'
+  ...
+# Subtest: assessGrowth：前囟/上臂围正文与教材事实串一致
+ok 183 - assessGrowth：前囟/上臂围正文与教材事实串一致
+  ---
+  duration_ms: 0.310018
+  type: 'test'
+  ...
+# Subtest: assessGrowth：里程碑取不晚于当前月龄的最近三条
+ok 184 - assessGrowth：里程碑取不晚于当前月龄的最近三条
+  ---
+  duration_ms: 0.248735
+  type: 'test'
+  ...
+# Subtest: assessGrowth：非法与超范围月龄类型化拒绝
+ok 185 - assessGrowth：非法与超范围月龄类型化拒绝
+  ---
+  duration_ms: 0.240867
+  type: 'test'
+  ...
+# Subtest: assessGrowth：0 与 120 个月为可用端点
+ok 186 - assessGrowth：0 与 120 个月为可用端点
+  ---
+  duration_ms: 0.173154
+  type: 'test'
+  ...
+# Subtest: assessGrowth：小数月龄四舍五入到整月
+ok 187 - assessGrowth：小数月龄四舍五入到整月
+  ---
+  duration_ms: 0.158712
+  type: 'test'
+  ...
+# Subtest: inferAgeFromGrowth(weight 9.5)：命中 12 个月锚点
+ok 188 - inferAgeFromGrowth(weight 9.5)：命中 12 个月锚点
+  ---
+  duration_ms: 0.567216
+  type: 'test'
+  ...
+# Subtest: inferAgeFromGrowth：锚点之间线性内插
+ok 189 - inferAgeFromGrowth：锚点之间线性内插
+  ---
+  duration_ms: 0.206216
+  type: 'test'
+  ...
+# Subtest: inferAgeFromGrowth(teeth)：乳牙数反解为月龄区间
+ok 190 - inferAgeFromGrowth(teeth)：乳牙数反解为月龄区间
+  ---
+  duration_ms: 2.305046
+  type: 'test'
+  ...
+# Subtest: inferAgeFromGrowth：越界与未知指标类型化拒绝
+ok 191 - inferAgeFromGrowth：越界与未知指标类型化拒绝
+  ---
+  duration_ms: 0.477544
+  type: 'test'
+  ...
+# Subtest: 正反双向互洽：反推月龄再正向评估回到同一锚点带
+ok 192 - 正反双向互洽：反推月龄再正向评估回到同一锚点带
+  ---
+  duration_ms: 0.437156
+  type: 'test'
+  ...
+# Subtest: measurement extraction releases only the requested quantity and original unit
+ok 193 - measurement extraction releases only the requested quantity and original unit
+  ---
+  duration_ms: 2.490451
+  type: 'test'
+  ...
+# Subtest: birth values, changes, parental measurements and dose units do not become patient readings
+ok 194 - birth values, changes, parental measurements and dose units do not become patient readings
+  ---
+  duration_ms: 0.460616
+  type: 'test'
+  ...
+# Subtest: growth tools are limited to growth site with explicit measurement positions
+ok 195 - growth tools are limited to growth site with explicit measurement positions
+  ---
+  duration_ms: 0.776236
+  type: 'test'
+  ...
+# Subtest: 问诊和解释按内容识别，解释时不给模型尚未披露的病史
+ok 196 - 问诊和解释按内容识别，解释时不给模型尚未披露的病史
+  ---
+  duration_ms: 8.514444
+  type: 'test'
+  ...
+# Subtest: 新病例包拆成细事实，剂量与药物相邻，旧编号规则保持
+ok 197 - 新病例包拆成细事实，剂量与药物相邻，旧编号规则保持
+  ---
+  duration_ms: 2.343868
+  type: 'test'
+  ...
+# Subtest: 未实际说出的引用不计分，漏说关键数值仅记部分证据
+ok 198 - 未实际说出的引用不计分，漏说关键数值仅记部分证据
+  ---
+  duration_ms: 66.031216
+  type: 'test'
+  ...
+# Subtest: 承接追问使用上一问的用药主题，不把“之后呢”当作无资料
+ok 199 - 承接追问使用上一问的用药主题，不把“之后呢”当作无资料
+  ---
+  duration_ms: 1.608814
+  type: 'test'
+  ...
+# Subtest: 概括询问起病时只回答主诉对应的时间，不倾倒既往和排便日期
+ok 200 - 概括询问起病时只回答主诉对应的时间，不倾倒既往和排便日期
+  ---
+  duration_ms: 4.248466
+  type: 'test'
+  ...
+# Subtest: 模型选择不受前置三句截断，且只解锁实际引用的事实
+ok 201 - 模型选择不受前置三句截断，且只解锁实际引用的事实
+  ---
+  duration_ms: 2.125304
+  type: 'test'
+  ...
+# Subtest: 不存在的事实、捏造数值、未到阶段及婴儿台词均拒绝
+ok 202 - 不存在的事实、捏造数值、未到阶段及婴儿台词均拒绝
+  ---
+  duration_ms: 1.637946
+  type: 'test'
+  ...
+# Subtest: 模型降级只返回安全校验原因码，不包含模型原文或私有事实
+ok 203 - 模型降级只返回安全校验原因码，不包含模型原文或私有事实
+  ---
+  duration_ms: 1.518068
+  type: 'test'
+  ...
+# Subtest: 首次绑定失败最多纠错一次，第二次仍须通过同一校验器
+ok 204 - 首次绑定失败最多纠错一次，第二次仍须通过同一校验器
+  ---
+  duration_ms: 1.942566
+  type: 'test'
+  ...
+# Subtest: 否定句中的有症状子串不误判，真正阴性翻转仍拒绝
+ok 205 - 否定句中的有症状子串不误判，真正阴性翻转仍拒绝
+  ---
+  duration_ms: 1.207833
+  type: 'test'
+  ...
+# Subtest: 保留关键阴性，不允许改成相反症状，也不允许角色给标准诊断
+ok 206 - 保留关键阴性，不允许改成相反症状，也不允许角色给标准诊断
+  ---
+  duration_ms: 0.634527
+  type: 'test'
+  ...
+# Subtest: 中文数词保持原值可用，改天为周或用同义词翻转阴性仍拒绝
+ok 207 - 中文数词保持原值可用，改天为周或用同义词翻转阴性仍拒绝
+  ---
+  duration_ms: 1.067874
+  type: 'test'
+  ...
+# Subtest: 中文范围、孕周和常见单位只做有源事实的等价转换
+ok 208 - 中文范围、孕周和常见单位只做有源事实的等价转换
+  ---
+  duration_ms: 1.232517
+  type: 'test'
+  ...
+# Subtest: 指示性这一次不算次数，新增病史次数仍须拒绝
+ok 209 - 指示性这一次不算次数，新增病史次数仍须拒绝
+  ---
+  duration_ms: 0.697357
+  type: 'test'
+  ...
+# Subtest: 空编号只允许纯不确定性表达，不能夹带医学否定或阳性结论
+ok 210 - 空编号只允许纯不确定性表达，不能夹带医学否定或阳性结论
+  ---
+  duration_ms: 1.762598
+  type: 'test'
+  ...
+# Subtest: 直接问能表达的儿童自身感受可由儿童回答，出生用药仍由家长补充
+ok 211 - 直接问能表达的儿童自身感受可由儿童回答，出生用药仍由家长补充
+  ---
+  duration_ms: 0.6973
+  type: 'test'
+  ...
+# Subtest: 来源事实保持原索引证据码，身份字段先脱敏
+ok 212 - 来源事实保持原索引证据码，身份字段先脱敏
+  ---
+  duration_ms: 0.387387
+  type: 'test'
+  ...
+# Subtest: 三类角色各20轮上下文与刷新恢复，模拟模型无越界输出
+ok 213 - 三类角色各20轮上下文与刷新恢复，模拟模型无越界输出
+  ---
+  duration_ms: 84.636284
+  type: 'test'
+  ...
+1..213
+# tests 213
+# suites 0
+# pass 213
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19288.007848

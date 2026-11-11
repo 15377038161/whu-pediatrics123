@@ -33,15 +33,20 @@ test('自主查体首屏保留人物图片并提供全部器材，选择不预�
   assert.ok(html.includes('选择查体大部位'));
 });
 
-test('手卫生是查体区顶部醒目的第1步，一次确认保留准备证据且完成后不可重复',()=>{
+test('手卫生并入器材网格第一项，一次确认保留准备证据且完成后不可重复',()=>{
   const props={image:'/test-person.webp',alt:'合成测试患儿',posture:'standing' as const,position:'standing' as const,positions:['standing','supine'] as Array<'standing'|'supine'>,onPositionChange:noop,busy:false,observation:null,onExamine:noop,onCloseObservation:noop,onReplayAudio:noop};
   const pending=renderToStaticMarkup(createElement(ClinicalExam,{...props,hygieneCompleted:false}));
-  assert.ok(pending.includes('第 1 步：先完成手卫生与检查说明'));
-  assert.ok(pending.includes('确认并完成准备'));
-  assert.ok(pending.indexOf('ce-prep-step')<pending.indexOf('ce-toolbar'));
+  assert.ok(pending.includes('<div class="ce-tool-grid"><button class="ce-preparation-tool"'));
+  assert.ok(pending.includes('aria-label="手卫生与检查说明"'));
+  assert.equal(pending.includes('ce-toolbar'),false);
+  assert.equal(pending.includes('ce-intro'),false);
+  assert.equal(pending.includes('在人物上完成查体'),false);
+  assert.equal(pending.includes('选择器材，点大部位，再选小部位'),false);
+  assert.ok(pending.indexOf('ce-preparation-tool')<pending.indexOf('alt="视诊"'));
   const done=renderToStaticMarkup(createElement(ClinicalExam,{...props,hygieneCompleted:true}));
-  assert.ok(done.includes('准备证据已记录，可以继续选择器材和部位。'));
+  assert.ok(done.includes('aria-label="手卫生与说明已完成"'));
   assert.ok(done.includes('data-done="true"'));
+  assert.ok(done.includes('disabled=""'));
 });
 
 test('源记录会话也区分错误器材与资料缺失，三种体温计不可混用且不释放证据',async()=>{

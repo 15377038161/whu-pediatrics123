@@ -1,0 +1,1759 @@
+TAP version 13
+# Subtest: 学生 FID1385 负例：机构 ID 单独不再提权（安全修正后）
+ok 1 - 学生 FID1385 负例：机构 ID 单独不再提权（安全修正后）
+  ---
+  duration_ms: 4.630617
+  type: 'test'
+  ...
+# Subtest: 1385 教师角色正例：可信服务端角色授予教师
+ok 2 - 1385 教师角色正例：可信服务端角色授予教师
+  ---
+  duration_ms: 0.415038
+  type: 'test'
+  ...
+# Subtest: 1385 显式测试教师 UID 白名单正例（无教师角色时的唯一提权途径）
+ok 3 - 1385 显式测试教师 UID 白名单正例（无教师角色时的唯一提权途径）
+  ---
+  duration_ms: 0.570393
+  type: 'test'
+  ...
+# Subtest: 武汉大学普通学生不会获得教师权限或教师端入口
+ok 4 - 武汉大学普通学生不会获得教师权限或教师端入口
+  ---
+  duration_ms: 0.757196
+  type: 'test'
+  ...
+# Subtest: 武汉大学教师按超星教师角色获得双端权限，不依赖 UID 白名单
+ok 5 - 武汉大学教师按超星教师角色获得双端权限，不依赖 UID 白名单
+  ---
+  duration_ms: 0.489328
+  type: 'test'
+  ...
+# Subtest: 武汉大学学生即使 UID 被误加白名单也不能获得教师权限
+ok 6 - 武汉大学学生即使 UID 被误加白名单也不能获得教师权限
+  ---
+  duration_ms: 0.376666
+  type: 'test'
+  ...
+# Subtest: 其他机构教师仍需同时满足教师角色与 UID 白名单
+ok 7 - 其他机构教师仍需同时满足教师角色与 UID 白名单
+  ---
+  duration_ms: 0.566527
+  type: 'test'
+  ...
+# Subtest: 教师身份可进入学生端和教师端，学生身份只能进入学生端
+ok 8 - 教师身份可进入学生端和教师端，学生身份只能进入学生端
+  ---
+  duration_ms: 0.349545
+  type: 'test'
+  ...
+# Subtest: 部署缺少私有资料时仍显示年龄、性别、真实主诉
+ok 9 - 部署缺少私有资料时仍显示年龄、性别、真实主诉
+  ---
+  duration_ms: 5.444816
+  type: 'test'
+  ...
+# Subtest: 随机资格选择：零例、一例、当前病例、同源别名、多例
+ok 10 - 随机资格选择：零例、一例、当前病例、同源别名、多例
+  ---
+  duration_ms: 1.792109
+  type: 'test'
+  ...
+# Subtest: 专项/OSCE 随机池：可评分守卫前移，取不到的病例不进池，真实目录一例都不能被误滤
+ok 11 - 专项/OSCE 随机池：可评分守卫前移，取不到的病例不进池，真实目录一例都不能被误滤
+  ---
+  duration_ms: 3.764366
+  type: 'test'
+  ...
+# Subtest: 资格池不依赖本地病例事实；可玩性探测按本地/缓存/DB 判断，缺件病例不会被假装可玩
+ok 12 - 资格池不依赖本地病例事实；可玩性探测按本地/缓存/DB 判断，缺件病例不会被假装可玩
+  ---
+  duration_ms: 0.893941
+  type: 'test'
+  ...
+# Subtest: OSCE 随机开例走通：抽到病例、按随机站 15:00 计时、站点写进会话供门控复用
+ok 13 - OSCE 随机开例走通：抽到病例、按随机站 15:00 计时、站点写进会话供门控复用
+  ---
+  duration_ms: 4027.735932
+  type: 'test'
+  ...
+# Subtest: 接诊不补造主诉、不泄漏病种，不接受缺省占位
+ok 14 - 接诊不补造主诉、不泄漏病种，不接受缺省占位
+  ---
+  duration_ms: 0.557581
+  type: 'test'
+  ...
+# Subtest: 创建请求：互斥参数、请求身份隔离、重试返回同一会话
+ok 15 - 创建请求：互斥参数、请求身份隔离、重试返回同一会话
+  ---
+  duration_ms: 3.847166
+  type: 'test'
+  ...
+# Subtest: 报告固定最终学生依据，修订不重写已生成报告
+ok 16 - 报告固定最终学生依据，修订不重写已生成报告
+  ---
+  duration_ms: 1.846367
+  type: 'test'
+  ...
+# Subtest: 客户端目录和active学生响应不通过病例ID泄漏病种，历史ID仍可解析
+ok 17 - 客户端目录和active学生响应不通过病例ID泄漏病种，历史ID仍可解析
+  ---
+  duration_ms: 1.360725
+  type: 'test'
+  ...
+# Subtest: 动态问诊按问题意图选择回答者，且不提前泄露隐藏接触史
+ok 18 - 动态问诊按问题意图选择回答者，且不提前泄露隐藏接触史
+  ---
+  duration_ms: 5.43078
+  type: 'test'
+  ...
+# Subtest: 一轮复合问题可以解锁多个明确问诊意图
+ok 19 - 一轮复合问题可以解锁多个明确问诊意图
+  ---
+  duration_ms: 0.667367
+  type: 'test'
+  ...
+# Subtest: 医生干预改变家长插话和患儿情绪状态
+ok 20 - 医生干预改变家长插话和患儿情绪状态
+  ---
+  duration_ms: 1.016397
+  type: 'test'
+  ...
+# Subtest: 语音提问经确认发送后记录语音轮元数据，文字提问不产生语音字段
+ok 21 - 语音提问经确认发送后记录语音轮元数据，文字提问不产生语音字段
+  ---
+  duration_ms: 1.555629
+  type: 'test'
+  ...
+# Subtest: 学生说出的沟通干预可被自然语言识别并保留原话
+ok 22 - 学生说出的沟通干预可被自然语言识别并保留原话
+  ---
+  duration_ms: 0.670402
+  type: 'test'
+  ...
+# Subtest: 同一句安抚与临床追问会同时更新患儿状态并解锁问诊事实
+ok 23 - 同一句安抚与临床追问会同时更新患儿状态并解锁问诊事实
+  ---
+  duration_ms: 0.711151
+  type: 'test'
+  ...
+# Subtest: 查体必须同时满足准备动作、器材和部位
+ok 24 - 查体必须同时满足准备动作、器材和部位
+  ---
+  duration_ms: 2.002813
+  type: 'test'
+  ...
+# Subtest: 相同 clientEventId 按幂等规则忽略
+ok 25 - 相同 clientEventId 按幂等规则忽略
+  ---
+  duration_ms: 0.651614
+  type: 'test'
+  ...
+# Subtest: OSCE 模式隐藏提示且阶段回退被固定规则拒绝（无环境开关依赖）
+ok 26 - OSCE 模式隐藏提示且阶段回退被固定规则拒绝（无环境开关依赖）
+  ---
+  duration_ms: 1.798979
+  type: 'test'
+  ...
+# Subtest: 训练模式把家长沟通留在会话中心并允许查体后继续问诊
+ok 27 - 训练模式把家长沟通留在会话中心并允许查体后继续问诊
+  ---
+  duration_ms: 0.974938
+  type: 'test'
+  ...
+# Subtest: OSCE 沟通推进至沟通阶段且回退导航被固定规则拒绝
+ok 28 - OSCE 沟通推进至沟通阶段且回退导航被固定规则拒绝
+  ---
+  duration_ms: 0.614884
+  type: 'test'
+  ...
+# Subtest: 女童病例使用独立病例版本、应答事实与查体结果
+ok 29 - 女童病例使用独立病例版本、应答事实与查体结果
+  ---
+  duration_ms: 0.792524
+  type: 'test'
+  ...
+# Subtest: 专项训练会话保留明确训练重点
+ok 30 - 专项训练会话保留明确训练重点
+  ---
+  duration_ms: 0.309341
+  type: 'test'
+  ...
+# Subtest: 沉浸式会话保留统一病例内核并初始化场景状态
+ok 31 - 沉浸式会话保留统一病例内核并初始化场景状态
+  ---
+  duration_ms: 0.963577
+  type: 'test'
+  ...
+# Subtest: 全部教师病例均可创建训练、沉浸式与OSCE会话
+ok 32 - 全部教师病例均可创建训练、沉浸式与OSCE会话
+  ---
+  duration_ms: 42.329103
+  type: 'test'
+  ...
+# Subtest: 历史占位会话升级后清理肺炎事实，并采用过程记录报告
+ok 33 - 历史占位会话升级后清理肺炎事实，并采用过程记录报告
+  ---
+  duration_ms: 2.345307
+  type: 'test'
+  ...
+# Subtest: 教师病例处置不会统一改善血氧，历史缺资料版本不被新模拟病例替换
+ok 34 - 教师病例处置不会统一改善血氧，历史缺资料版本不被新模拟病例替换
+  ---
+  duration_ms: 4.244428
+  type: 'test'
+  ...
+# Subtest: 真实问诊可识别咳嗽特点与院前用药
+ok 35 - 真实问诊可识别咳嗽特点与院前用药
+  ---
+  duration_ms: 0.543149
+  type: 'test'
+  ...
+# Subtest: OSCE 问诊阶段直发查体/检查/诊断事件被服务端拒绝，沉浸式保持自由探索
+ok 36 - OSCE 问诊阶段直发查体/检查/诊断事件被服务端拒绝，沉浸式保持自由探索
+  ---
+  duration_ms: 1.31524
+  type: 'test'
+  ...
+# Subtest: plan 后继续问诊：stage 不回退（history 不因 plan 误切沟通）
+ok 37 - plan 后继续问诊：stage 不回退（history 不因 plan 误切沟通）
+  ---
+  duration_ms: 0.927507
+  type: 'test'
+  ...
+# Subtest: resamplePcm：48kHz → 16kHz 目标长度为源长度的 1/3
+ok 38 - resamplePcm：48kHz → 16kHz 目标长度为源长度的 1/3
+  ---
+  duration_ms: 3.494596
+  type: 'test'
+  ...
+# Subtest: resamplePcm：恒幅直流信号重采样后幅值不变（插值端点无畸变）
+ok 39 - resamplePcm：恒幅直流信号重采样后幅值不变（插值端点无畸变）
+  ---
+  duration_ms: 0.314696
+  type: 'test'
+  ...
+# Subtest: resamplePcm：同采样率直通返回原数组，不引入插值误差
+ok 40 - resamplePcm：同采样率直通返回原数组，不引入插值误差
+  ---
+  duration_ms: 0.177796
+  type: 'test'
+  ...
+# Subtest: resamplePcm：空数据安全，返回空数组不抛错
+ok 41 - resamplePcm：空数据安全，返回空数组不抛错
+  ---
+  duration_ms: 0.144001
+  type: 'test'
+  ...
+# Subtest: encodeWavBytes：44 字节 RIFF 头 + 单声道 16bit PCM + 采样率写入正确
+ok 42 - encodeWavBytes：44 字节 RIFF 头 + 单声道 16bit PCM + 采样率写入正确
+  ---
+  duration_ms: 0.527501
+  type: 'test'
+  ...
+# Subtest: concatPcmChunks：按顺序拼接为单段，总长度一致
+ok 43 - concatPcmChunks：按顺序拼接为单段，总长度一致
+  ---
+  duration_ms: 0.88846
+  type: 'test'
+  ...
+# Subtest: MAX_ASR_BASE64_LENGTH 与服务端公式一致，16kHz 降采样后 120s 录音远低于上限
+ok 44 - MAX_ASR_BASE64_LENGTH 与服务端公式一致，16kHz 降采样后 120s 录音远低于上限
+  ---
+  duration_ms: 0.257858
+  type: 'test'
+  ...
+# Subtest: 网关缺 SDK 会话直接回登录；本地 Cookie 回退保留，已登录请求携带令牌
+ok 45 - 网关缺 SDK 会话直接回登录；本地 Cookie 回退保留，已登录请求携带令牌
+  ---
+  duration_ms: 35.310823
+  type: 'test'
+  ...
+# Subtest: OSCE 回退导航被固定规则拒绝（无环境开关依赖）
+ok 46 - OSCE 回退导航被固定规则拒绝（无环境开关依赖）
+  ---
+  duration_ms: 3.660524
+  type: 'test'
+  ...
+# Subtest: 普通训练返回补查：业务阶段不回退，补开检查成功
+ok 47 - 普通训练返回补查：业务阶段不回退，补开检查成功
+  ---
+  duration_ms: 4.039837
+  type: 'test'
+  ...
+# [role-agent] structured reply fallback (rate_limited 429)
+# Subtest: 普通训练返回修改诊断：重交成功，业务阶段保持，决策更新
+ok 48 - 普通训练返回修改诊断：重交成功，业务阶段保持，决策更新
+  ---
+  duration_ms: 2509.010073
+  type: 'test'
+  ...
+# Subtest: explicit entry version overrides local file and newest DB; aliases retain independent pin
+ok 49 - explicit entry version overrides local file and newest DB; aliases retain independent pin
+  ---
+  duration_ms: 1.229767
+  type: 'test'
+  ...
+# Subtest: missing active teacher snapshot fails closed instead of choosing other data
+ok 50 - missing active teacher snapshot fails closed instead of choosing other data
+  ---
+  duration_ms: 0.619098
+  type: 'test'
+  ...
+# Subtest: preview does not read publication metadata
+ok 51 - preview does not read publication metadata
+  ---
+  duration_ms: 0.217643
+  type: 'test'
+  ...
+# Subtest: 生成标答：模型输出经解析、原文回校后进入 auto
+ok 52 - 生成标答：模型输出经解析、原文回校后进入 auto
+  ---
+  duration_ms: 10.176108
+  type: 'test'
+  ...
+# Subtest: 生成标答：模型失败或输出非法时不硬造，标记 not_assessable
+ok 53 - 生成标答：模型失败或输出非法时不硬造，标记 not_assessable
+  ---
+  duration_ms: 0.580813
+  type: 'test'
+  ...
+# Subtest: 生成标答：AI 塞入原件没有的诊断时整例不可评分
+ok 54 - 生成标答：AI 塞入原件没有的诊断时整例不可评分
+  ---
+  duration_ms: 0.615815
+  type: 'test'
+  ...
+# Subtest: AI 逐点判分：命中/部分/未命中进入确定性汇总
+ok 55 - AI 逐点判分：命中/部分/未命中进入确定性汇总
+  ---
+  duration_ms: 2.351703
+  type: 'test'
+  ...
+# Subtest: AI 逐点判分：证据引文不在学生原文时降为未命中并计数
+ok 56 - AI 逐点判分：证据引文不在学生原文时降为未命中并计数
+  ---
+  duration_ms: 0.776145
+  type: 'test'
+  ...
+# Subtest: 有鉴别诊断时原始满分 110，报告百分比折算为 100
+ok 57 - 有鉴别诊断时原始满分 110，报告百分比折算为 100
+  ---
+  duration_ms: 0.455053
+  type: 'test'
+  ...
+# Subtest: AI 判分失败时回退关键词匹配，但不回退成“写了就给分”
+ok 58 - AI 判分失败时回退关键词匹配，但不回退成“写了就给分”
+  ---
+  duration_ms: 0.592283
+  type: 'test'
+  ...
+# Subtest: 人工改判入口不调用模型
+ok 59 - 人工改判入口不调用模型
+  ---
+  duration_ms: 0.624517
+  type: 'test'
+  ...
+# Subtest: 解析模型输出：允许代码围栏与前后解释文字
+ok 60 - 解析模型输出：允许代码围栏与前后解释文字
+  ---
+  duration_ms: 3.501887
+  type: 'test'
+  ...
+# Subtest: 解析模型输出：缺段/多字段/非法 JSON 一律拒绝
+ok 61 - 解析模型输出：缺段/多字段/非法 JSON 一律拒绝
+  ---
+  duration_ms: 1.39429
+  type: 'test'
+  ...
+# Subtest: 原文回校：每条候选必须能在原件对应段找到，空白差异可容忍
+ok 62 - 原文回校：每条候选必须能在原件对应段找到，空白差异可容忍
+  ---
+  duration_ms: 0.974892
+  type: 'test'
+  ...
+# Subtest: 原文回校：原件没有的得分点被丢弃并回报原因
+ok 63 - 原文回校：原件没有的得分点被丢弃并回报原因
+  ---
+  duration_ms: 0.424758
+  type: 'test'
+  ...
+# Subtest: 原文回校：诊断名不在诊断段时整例不可评分，不硬造
+ok 64 - 原文回校：诊断名不在诊断段时整例不可评分，不硬造
+  ---
+  duration_ms: 0.18201
+  type: 'test'
+  ...
+# Subtest: 原文回校：证据全部被丢弃时整例不可评分
+ok 65 - 原文回校：证据全部被丢弃时整例不可评分
+  ---
+  duration_ms: 0.18181
+  type: 'test'
+  ...
+# Subtest: 原文回校：原件没有鉴别诊断时不硬造，该段标记不适用
+ok 66 - 原文回校：原件没有鉴别诊断时不硬造，该段标记不适用
+  ---
+  duration_ms: 0.410863
+  type: 'test'
+  ...
+# Subtest: 原文回校：重复得分点去重，重复 id 自动改名
+ok 67 - 原文回校：重复得分点去重，重复 id 自动改名
+  ---
+  duration_ms: 0.203417
+  type: 'test'
+  ...
+# Subtest: 标答记录形状校验
+ok 68 - 标答记录形状校验
+  ---
+  duration_ms: 0.684387
+  type: 'test'
+  ...
+# Subtest: DKA 试点：生成标答保留 6 条依据、6 条处理，原件无鉴别诊断则不计该段
+ok 69 - DKA 试点：生成标答保留 6 条依据、6 条处理，原件无鉴别诊断则不计该段
+  ---
+  duration_ms: 5.057625
+  type: 'test'
+  ...
+# Subtest: DKA 试点：全对答案拿到 100/100，且无漏项
+ok 70 - DKA 试点：全对答案拿到 100/100，且无漏项
+  ---
+  duration_ms: 2.417139
+  type: 'test'
+  ...
+# Subtest: DKA 试点：部分答案按命中点数计分，不因为写了字给满段分
+ok 71 - DKA 试点：部分答案按命中点数计分，不因为写了字给满段分
+  ---
+  duration_ms: 0.547859
+  type: 'test'
+  ...
+# Subtest: DKA 试点：错误诊断和错误处理得 0 分
+ok 72 - DKA 试点：错误诊断和错误处理得 0 分
+  ---
+  duration_ms: 0.712679
+  type: 'test'
+  ...
+# Subtest: DKA 试点：只写对第一诊断只拿 30 分，不会被白送依据/处理分
+ok 73 - DKA 试点：只写对第一诊断只拿 30 分，不会被白送依据/处理分
+  ---
+  duration_ms: 0.640723
+  type: 'test'
+  ...
+# Subtest: 开关默认关闭；病例白名单默认只含 DKA
+ok 74 - 开关默认关闭；病例白名单默认只含 DKA
+  ---
+  duration_ms: 3.879169
+  type: 'test'
+  ...
+# Subtest: 开关关闭时报告完全不变
+ok 75 - 开关关闭时报告完全不变
+  ---
+  duration_ms: 0.629214
+  type: 'test'
+  ...
+# Subtest: DKA 开启时附加影子分，不改旧总分
+ok 76 - DKA 开启时附加影子分，不改旧总分
+  ---
+  duration_ms: 3.347208
+  type: 'test'
+  ...
+# Subtest: 诊断与治疗均未提交时仍附加零分明细，不改旧总分
+ok 77 - 诊断与治疗均未提交时仍附加零分明细，不改旧总分
+  ---
+  duration_ms: 0.938907
+  type: 'test'
+  ...
+# Subtest: 非白名单病例不附加影子分
+ok 78 - 非白名单病例不附加影子分
+  ---
+  duration_ms: 0.452259
+  type: 'test'
+  ...
+# Subtest: 标答未生成时附加 not_assessable，不阻塞报告
+ok 79 - 标答未生成时附加 not_assessable，不阻塞报告
+  ---
+  duration_ms: 0.428151
+  type: 'test'
+  ...
+# Subtest: 影子分组件渲染试点分、逐点状态与漏项
+ok 80 - 影子分组件渲染试点分、逐点状态与漏项
+  ---
+  duration_ms: 11.46622
+  type: 'test'
+  ...
+# Subtest: 标答表不可用时附加 STORE_UNAVAILABLE，不抛错
+ok 81 - 标答表不可用时附加 STORE_UNAVAILABLE，不抛错
+  ---
+  duration_ms: 0.499668
+  type: 'test'
+  ...
+# Subtest: 标答抽取路由：匿名401、学生403、参数无效422、未知病例404（不触模型）
+ok 82 - 标答抽取路由：匿名401、学生403、参数无效422、未知病例404（不触模型）
+  ---
+  duration_ms: 80.143015
+  type: 'test'
+  ...
+# Subtest: 标答记录与数据库行可往返
+ok 83 - 标答记录与数据库行可往返
+  ---
+  duration_ms: 5.471165
+  type: 'test'
+  ...
+# Subtest: not_assessable 记录不携带 key_json 也能回读
+ok 84 - not_assessable 记录不携带 key_json 也能回读
+  ---
+  duration_ms: 0.660776
+  type: 'test'
+  ...
+# Subtest: 缺字段或非法状态的行按无记录处理，不抛错
+ok 85 - 缺字段或非法状态的行按无记录处理，不抛错
+  ---
+  duration_ms: 0.615099
+  type: 'test'
+  ...
+# Subtest: 媒体/释放配置仅写私有载荷，普通facts不新增媒体或释放信息
+ok 86 - 媒体/释放配置仅写私有载荷，普通facts不新增媒体或释放信息
+  ---
+  duration_ms: 3.688448
+  type: 'test'
+  ...
+# Subtest: 导入调用链（合成HTTP上游）：迁移缺失先拒绝；历史缺配置不伪记unchanged；新版本配置写私有表
+ok 87 - 导入调用链（合成HTTP上游）：迁移缺失先拒绝；历史缺配置不伪记unchanged；新版本配置写私有表
+  ---
+  duration_ms: 21.641269
+  type: 'test'
+  ...
+# Subtest: 隔离Postgres：私有配置持久化、RLS拒绝学生、历史NULL保留、迁移可重放
+ok 88 - 隔离Postgres：私有配置持久化、RLS拒绝学生、历史NULL保留、迁移可重放
+  ---
+  duration_ms: 7768.684169
+  type: 'test'
+  ...
+# Subtest: 学科归一：5 对同义分类合并，目录分类数收敛
+ok 89 - 学科归一：5 对同义分类合并，目录分类数收敛
+  ---
+  duration_ms: 1.489739
+  type: 'test'
+  ...
+# Subtest: 资料完备度三档：53 原件来源 + 14 关联来源
+ok 90 - 资料完备度三档：53 原件来源 + 14 关联来源
+  ---
+  duration_ms: 0.680469
+  type: 'test'
+  ...
+# Subtest: 可评分守卫：明确就绪的演示与材料病例可进入训练，资料不足状态仍拒绝
+ok 91 - 可评分守卫：明确就绪的演示与材料病例可进入训练，资料不足状态仍拒绝
+  ---
+  duration_ms: 0.458065
+  type: 'test'
+  ...
+# Subtest: 搜索分页：病例库默认 9/页，页数正确
+ok 92 - 搜索分页：病例库默认 9/页，页数正确
+  ---
+  duration_ms: 0.508926
+  type: 'test'
+  ...
+# Subtest: 九宫格分页：相邻页不重复，末页保留全部余项
+ok 93 - 九宫格分页：相邻页不重复，末页保留全部余项
+  ---
+  duration_ms: 0.597265
+  type: 'test'
+  ...
+# Subtest: 搜索分页：关键词 + 学科 + 来源组合筛选
+ok 94 - 搜索分页：关键词 + 学科 + 来源组合筛选
+  ---
+  duration_ms: 0.499372
+  type: 'test'
+  ...
+# Subtest: 防透题：教师病例标题与可搜索文本不含病种名
+ok 95 - 防透题：教师病例标题与可搜索文本不含病种名
+  ---
+  duration_ms: 0.511389
+  type: 'test'
+  ...
+# Subtest: 搜索分页：无结果显示空页且不越界
+ok 96 - 搜索分页：无结果显示空页且不越界
+  ---
+  duration_ms: 0.282174
+  type: 'test'
+  ...
+# Subtest: 搜索分页：请求越界页码收敛到末页
+ok 97 - 搜索分页：请求越界页码收敛到末页
+  ---
+  duration_ms: 2.211959
+  type: 'test'
+  ...
+# Subtest: 目录不再含已退役合成演示病例
+ok 98 - 目录不再含已退役合成演示病例
+  ---
+  duration_ms: 0.52025
+  type: 'test'
+  ...
+# Subtest: 最近选择：键按用户隔离，读写互不泄露
+ok 99 - 最近选择：键按用户隔离，读写互不泄露
+  ---
+  duration_ms: 1.236226
+  type: 'test'
+  ...
+# Subtest: 最近选择：容量 6 上限、去重置顶、损坏数据降级为空
+ok 100 - 最近选择：容量 6 上限、去重置顶、损坏数据降级为空
+  ---
+  duration_ms: 0.38673
+  type: 'test'
+  ...
+# Subtest: 搜索文本包含标题/学科/主诉（大小写不敏感由调用方保证 lower）
+ok 101 - 搜索文本包含标题/学科/主诉（大小写不敏感由调用方保证 lower）
+  ---
+  duration_ms: 0.151429
+  type: 'test'
+  ...
+# Subtest: 同一原件不变时，处置、诊断、生命体征和身份等固定事实修订必须换版
+ok 102 - 同一原件不变时，处置、诊断、生命体征和身份等固定事实修订必须换版
+  ---
+  duration_ms: 2.470141
+  type: 'test'
+  ...
+# Subtest: 内容指纹稳定于对象属性顺序、CRLF和审核元数据，但原文内容、顺序、媒体绑定均有影响
+ok 103 - 内容指纹稳定于对象属性顺序、CRLF和审核元数据，但原文内容、顺序、媒体绑定均有影响
+  ---
+  duration_ms: 0.933828
+  type: 'test'
+  ...
+# Subtest: 真实本地读取/导入/绑定共用v2指纹，旧字段或旧原件指纹不能读取修改后的本地患者
+ok 104 - 真实本地读取/导入/绑定共用v2指纹，旧字段或旧原件指纹不能读取修改后的本地患者
+  ---
+  duration_ms: 4.199532
+  type: 'test'
+  ...
+# Subtest: 检查/查体媒体绑定和释放时点变动必须换版，不能让旧会话静默换图或提前释放
+ok 105 - 检查/查体媒体绑定和释放时点变动必须换版，不能让旧会话静默换图或提前释放
+  ---
+  duration_ms: 1.603464
+  type: 'test'
+  ...
+# Subtest: 媒体版本贯穿本地读取/导入与绑定，旧版本不读取修订绑定
+ok 106 - 媒体版本贯穿本地读取/导入与绑定，旧版本不读取修订绑定
+  ---
+  duration_ms: 2.426666
+  type: 'test'
+  ...
+# Subtest: 查体规则缺省保持版本中性，受控源文件显式字段全部纳入版本指纹
+ok 107 - 查体规则缺省保持版本中性，受控源文件显式字段全部纳入版本指纹
+  ---
+  duration_ms: 4.202687
+  type: 'test'
+  ...
+# Subtest: 模板按临床顺序分段，原文完整保留，图片教学目标不混入结果
+ok 108 - 模板按临床顺序分段，原文完整保留，图片教学目标不混入结果
+  ---
+  duration_ms: 54.443136
+  type: 'test'
+  ...
+# Subtest: 同名字段冲突不擅自选择；缺少的结果不编造正常
+ok 109 - 同名字段冲突不擅自选择；缺少的结果不编造正常
+  ---
+  duration_ms: 1.175008
+  type: 'test'
+  ...
+# Subtest: 模板文件夹说明不应误报重复病种名称
+ok 110 - 模板文件夹说明不应误报重复病种名称
+  ---
+  duration_ms: 0.825842
+  type: 'test'
+  ...
+# Subtest: 空表格单元格不把下一字段标题当作病例事实
+ok 111 - 空表格单元格不把下一字段标题当作病例事实
+  ---
+  duration_ms: 0.76454
+  type: 'test'
+  ...
+# Subtest: 含身份字段或长编号必须提示，不修改源事实
+ok 112 - 含身份字段或长编号必须提示，不修改源事实
+  ---
+  duration_ms: 0.896953
+  type: 'test'
+  ...
+# Subtest: UTF-8文本、无效编码、旧doc、空文件、伪docx与过大文件
+ok 113 - UTF-8文本、无效编码、旧doc、空文件、伪docx与过大文件
+  ---
+  duration_ms: 12.0027
+  type: 'test'
+  ...
+# Subtest: 有效Word表格文字按原顺序读取，HTML不作为可执行页面返回
+ok 114 - 有效Word表格文字按原顺序读取，HTML不作为可执行页面返回
+  ---
+  duration_ms: 104.985205
+  type: 'test'
+  ...
+# Subtest: 解压后过大档案在Word读取之前拒绝
+ok 115 - 解压后过大档案在Word读取之前拒绝
+  ---
+  duration_ms: 771.486229
+  type: 'test'
+  ...
+# Subtest: 报告冻结材料版本；旧报告无版本或事件ID时不猜图、不重算
+ok 116 - 报告冻结材料版本；旧报告无版本或事件ID时不猜图、不重算
+  ---
+  duration_ms: 85.015632
+  type: 'test'
+  ...
+# Subtest: 复盘重建仅补已有正确查体事件，保留历史图片且不创建证据或操作
+ok 117 - 复盘重建仅补已有正确查体事件，保留历史图片且不创建证据或操作
+  ---
+  duration_ms: 1.776535
+  type: 'test'
+  ...
+# Subtest: 隔离Postgres：14入口只投影已有正确查体证据对应媒体，准备/错操作/错版本不放图
+ok 118 - 隔离Postgres：14入口只投影已有正确查体证据对应媒体，准备/错操作/错版本不放图
+  ---
+  duration_ms: 9065.157276
+  type: 'test'
+  ...
+# Subtest: 67 入口沿用受控清单编号并保留已退出入口空号
+ok 119 - 67 入口沿用受控清单编号并保留已退出入口空号
+  ---
+  duration_ms: 1.878389
+  type: 'test'
+  ...
+# Subtest: 主入口与别名使用新版编号而不继承旧数组下标
+ok 120 - 主入口与别名使用新版编号而不继承旧数组下标
+  ---
+  duration_ms: 0.216542
+  type: 'test'
+  ...
+# Subtest: 受控初始化保留私有绑定、原文特殊字符及旧版；同版本幂等回读，不改发布决定
+ok 121 - 受控初始化保留私有绑定、原文特殊字符及旧版；同版本幂等回读，不改发布决定
+  ---
+  duration_ms: 7926.623596
+  type: 'test'
+  ...
+# Subtest: 错误租户、缺绑定迁移或已关闭RLS时，在事实写入前拒绝
+ok 122 - 错误租户、缺绑定迁移或已关闭RLS时，在事实写入前拒绝
+  ---
+  duration_ms: 17215.110355
+  type: 'test'
+  ...
+# Subtest: 已有同版本缺绑定或事实被改变时，拒绝伪记成功且保留原数据
+ok 123 - 已有同版本缺绑定或事实被改变时，拒绝伪记成功且保留原数据
+  ---
+  duration_ms: 4953.870888
+  type: 'test'
+  ...
+# Subtest: 七项测量展示状态不会混用
+ok 124 - 七项测量展示状态不会混用
+  ---
+  duration_ms: 1.657748
+  type: 'test'
+  ...
+# Subtest: 缺失或待核对项目禁止夹带患者数值
+ok 125 - 缺失或待核对项目禁止夹带患者数值
+  ---
+  duration_ms: 1.91424
+  type: 'test'
+  ...
+# Subtest: 检查结果释放：绑定媒体随事件挂载；未绑定项事件无 media 字段（向后兼容）
+ok 126 - 检查结果释放：绑定媒体随事件挂载；未绑定项事件无 media 字段（向后兼容）
+  ---
+  duration_ms: 5.279671
+  type: 'test'
+  ...
+# Subtest: 查体结果释放：绑定媒体随事件挂载
+ok 127 - 查体结果释放：绑定媒体随事件挂载
+  ---
+  duration_ms: 2.108533
+  type: 'test'
+  ...
+# Subtest: 分时点门控：未到回报时点不挂载媒体；到达后释放时挂载并可解析
+ok 128 - 分时点门控：未到回报时点不挂载媒体；到达后释放时挂载并可解析
+  ---
+  duration_ms: 1.636016
+  type: 'test'
+  ...
+# Subtest: 教师病例 testMedia/examMedia 元数据：schema 解析 → createSourceCase 应用 → 释放挂载（全链路）
+ok 129 - 教师病例 testMedia/examMedia 元数据：schema 解析 → createSourceCase 应用 → 释放挂载（全链路）
+  ---
+  duration_ms: 66.390227
+  type: 'test'
+  ...
+# Subtest: 初始状态只有第一关解锁
+ok 130 - 初始状态只有第一关解锁
+  ---
+  duration_ms: 1.837095
+  type: 'test'
+  ...
+# Subtest: 完成第一关后第二关解锁，第三关仍锁
+ok 131 - 完成第一关后第二关解锁，第三关仍锁
+  ---
+  duration_ms: 0.324811
+  type: 'test'
+  ...
+# Subtest: 当前可挑战关的进行中会话可继续
+ok 132 - 当前可挑战关的进行中会话可继续
+  ---
+  duration_ms: 0.232375
+  type: 'test'
+  ...
+# Subtest: 后段进行中会话不能越过前面的未完成关
+ok 133 - 后段进行中会话不能越过前面的未完成关
+  ---
+  duration_ms: 0.272258
+  type: 'test'
+  ...
+# Subtest: 完成前一关后只推进到下一关，后段 active 仍保持锁定
+ok 134 - 完成前一关后只推进到下一关，后段 active 仍保持锁定
+  ---
+  duration_ms: 0.31748
+  type: 'test'
+  ...
+# Subtest: 全部完成后不再有锁
+ok 135 - 全部完成后不再有锁
+  ---
+  duration_ms: 0.205263
+  type: 'test'
+  ...
+# Subtest: 跳关完成不越过当前可挑战关卡：只解锁第一个未完成项
+ok 136 - 跳关完成不越过当前可挑战关卡：只解锁第一个未完成项
+  ---
+  duration_ms: 0.25935
+  type: 'test'
+  ...
+# Subtest: 空病例列表与空会话不抛错
+ok 137 - 空病例列表与空会话不抛错
+  ---
+  duration_ms: 39.542748
+  type: 'test'
+  ...
+# Subtest: 前置：三个发布测试目标均为有效来源病例
+ok 138 - 前置：三个发布测试目标均为有效来源病例
+  ---
+  duration_ms: 1.371504
+  type: 'test'
+  ...
+# Subtest: 未知病例 ID：setCasePublication 在目录校验处拒绝 CASE_NOT_FOUND（不触达数据库）
+ok 139 - 未知病例 ID：setCasePublication 在目录校验处拒绝 CASE_NOT_FOUND（不触达数据库）
+  ---
+  duration_ms: 0.848507
+  type: 'test'
+  ...
+# Subtest: 有来源病例：目录校验通过并可下架/重新上架（保留审计字段）
+ok 140 - 有来源病例：目录校验通过并可下架/重新上架（保留审计字段）
+  ---
+  duration_ms: 188.005973
+  type: 'test'
+  ...
+# Subtest: 版本激活：双表快照齐全时写入精确版本并保留下架状态
+ok 141 - 版本激活：双表快照齐全时写入精确版本并保留下架状态
+  ---
+  duration_ms: 21.172183
+  type: 'test'
+  ...
+# Subtest: 版本激活：任一快照表缺行时失败关闭且不写发布表
+ok 142 - 版本激活：任一快照表缺行时失败关闭且不写发布表
+  ---
+  duration_ms: 82.298718
+  type: 'test'
+  ...
+# Subtest: 版本激活：非法指纹在数据库访问前拒绝
+ok 143 - 版本激活：非法指纹在数据库访问前拒绝
+  ---
+  duration_ms: 0.378688
+  type: 'test'
+  ...
+# Subtest: 学生新建守卫：已下架病例抛 CASE_UNPUBLISHED
+ok 144 - 学生新建守卫：已下架病例抛 CASE_UNPUBLISHED
+  ---
+  duration_ms: 19.18197
+  type: 'test'
+  ...
+# Subtest: 教师豁免：应用层教师角色直接放行（仍可预览复核已下架病例）
+ok 145 - 教师豁免：应用层教师角色直接放行（仍可预览复核已下架病例）
+  ---
+  duration_ms: 0.772704
+  type: 'test'
+  ...
+# Subtest: 白名单教师豁免：数据库 app_is_teacher=true 时学生角色也放行
+ok 146 - 白名单教师豁免：数据库 app_is_teacher=true 时学生角色也放行
+  ---
+  duration_ms: 64.488547
+  type: 'test'
+  ...
+# Subtest: 非 teacher- 病例与无令牌预览态：不触发发布守卫（fail-open 仅限预览语义）
+ok 147 - 非 teacher- 病例与无令牌预览态：不触发发布守卫（fail-open 仅限预览语义）
+  ---
+  duration_ms: 1.732052
+  type: 'test'
+  ...
+# Subtest: 教师发布状态对照：包含有效来源病例（含已下架状态与理由）
+ok 148 - 教师发布状态对照：包含有效来源病例（含已下架状态与理由）
+  ---
+  duration_ms: 5.224955
+  type: 'test'
+  ...
+# Subtest: 目录过滤：eligibleAdmissions 剔除三例已下架病例，其余已发布条目保留
+ok 149 - 目录过滤：eligibleAdmissions 剔除三例已下架病例，其余已发布条目保留
+  ---
+  duration_ms: 2.930917
+  type: 'test'
+  ...
+# Subtest: 随机/下一病例：selectAdmission 重复抽取不命中三例已下架病例
+ok 150 - 随机/下一病例：selectAdmission 重复抽取不命中三例已下架病例
+  ---
+  duration_ms: 2.121721
+  type: 'test'
+  ...
+# Subtest: 源码契约：会话恢复（getSession）不校验发布状态，仅新建会话（createSession）调用守卫
+ok 151 - 源码契约：会话恢复（getSession）不校验发布状态，仅新建会话（createSession）调用守卫
+  ---
+  duration_ms: 0.598898
+  type: 'test'
+  ...
+# Subtest: 源码契约：新建会话路由将 CASE_UNPUBLISHED 映射为 403（服务端拒绝，非仅前端隐藏）
+ok 152 - 源码契约：新建会话路由将 CASE_UNPUBLISHED 映射为 403（服务端拒绝，非仅前端隐藏）
+  ---
+  duration_ms: 0.245291
+  type: 'test'
+  ...
+# Subtest: 源码契约：发布管理写入接口保留教师身份 + 数据库白名单双重门禁
+ok 153 - 源码契约：发布管理写入接口保留教师身份 + 数据库白名单双重门禁
+  ---
+  duration_ms: 0.252893
+  type: 'test'
+  ...
+# Subtest: 共享记录只使用已释放事件及本会话实际parent/child回答
+ok 154 - 共享记录只使用已释放事件及本会话实际parent/child回答
+  ---
+  duration_ms: 4.495003
+  type: 'test'
+  ...
+# Subtest: 共享记录分类与搜索覆盖问题、实际回答和检查结果
+ok 155 - 共享记录分类与搜索覆盖问题、实际回答和检查结果
+  ---
+  duration_ms: 1.113984
+  type: 'test'
+  ...
+# Subtest: 无有效证据的问诊与未关联学生消息不产生虚构回答
+ok 156 - 无有效证据的问诊与未关联学生消息不产生虚构回答
+  ---
+  duration_ms: 0.279314
+  type: 'test'
+  ...
+# Subtest: 快照重建逐字段还原记录，篡改事实即拒绝指纹
+ok 157 - 快照重建逐字段还原记录，篡改事实即拒绝指纹
+  ---
+  duration_ms: 6.117066
+  type: 'test'
+  ...
+# Subtest: 53 份快照可重建固定包、版本档案与幂等清单
+ok 158 - 53 份快照可重建固定包、版本档案与幂等清单
+  ---
+  duration_ms: 1023.29894
+  type: 'test'
+  ...
+# Subtest: 人口学提取：患儿句式（常规来源形态）
+ok 159 - 人口学提取：患儿句式（常规来源形态）
+  ---
+  duration_ms: 2.028007
+  type: 'test'
+  ...
+# Subtest: 人口学提取：患者句式（肝豆状核变性来源形态，头部占位不抢答）
+ok 160 - 人口学提取：患者句式（肝豆状核变性来源形态，头部占位不抢答）
+  ---
+  duration_ms: 0.595346
+  type: 'test'
+  ...
+# Subtest: 人口学提取：性别声明（男/女性形态均可）
+ok 161 - 人口学提取：性别声明（男/女性形态均可）
+  ---
+  duration_ms: 0.188577
+  type: 'test'
+  ...
+# Subtest: 人口学提取：新生儿"男婴/女婴"形态不丢
+ok 162 - 人口学提取：新生儿"男婴/女婴"形态不丢
+  ---
+  duration_ms: 0.194747
+  type: 'test'
+  ...
+# Subtest: 人口学提取：拒绝"患者女儿"误命中与"性别：性别未记录"占位
+ok 163 - 人口学提取：拒绝"患者女儿"误命中与"性别：性别未记录"占位
+  ---
+  duration_ms: 0.293372
+  type: 'test'
+  ...
+# Subtest: 人口学提取：患儿句式"男童/女童"识别且年龄保留（Codex复现漏性别修复）
+ok 164 - 人口学提取：患儿句式"男童/女童"识别且年龄保留（Codex复现漏性别修复）
+  ---
+  duration_ms: 0.203746
+  type: 'test'
+  ...
+# Subtest: 人口学提取：显式声明"性别：男童/女童"识别
+ok 165 - 人口学提取：显式声明"性别：男童/女童"识别
+  ---
+  duration_ms: 0.243818
+  type: 'test'
+  ...
+# Subtest: 人口学提取：照护者女性/患者女儿/性别未知仍不得推成患儿性别
+ok 166 - 人口学提取：照护者女性/患者女儿/性别未知仍不得推成患儿性别
+  ---
+  duration_ms: 0.244887
+  type: 'test'
+  ...
+# Subtest: 人口学提取：患者句式"男童/女童/男婴/女婴"组合识别（合成工程边界）
+ok 167 - 人口学提取：患者句式"男童/女童/男婴/女婴"组合识别（合成工程边界）
+  ---
+  duration_ms: 0.46604
+  type: 'test'
+  ...
+# Subtest: 人口学提取：冲突时患儿/患者句式优先于性别声明（合成工程边界）
+ok 168 - 人口学提取：冲突时患儿/患者句式优先于性别声明（合成工程边界）
+  ---
+  duration_ms: 0.576778
+  type: 'test'
+  ...
+# Subtest: 人口学提取：母亲/女儿等照护者性别不冒充患者（合成工程边界）
+ok 169 - 人口学提取：母亲/女儿等照护者性别不冒充患者（合成工程边界）
+  ---
+  duration_ms: 0.265122
+  type: 'test'
+  ...
+# Subtest: 召回分段：诊疗经过内入院完善相关检查不夺走处置正文
+ok 170 - 召回分段：诊疗经过内入院完善相关检查不夺走处置正文
+  ---
+  duration_ms: 41.20187
+  type: 'test'
+  ...
+# Subtest: 召回分段：明确新检查章节及方括号标题仍可切换
+ok 171 - 召回分段：明确新检查章节及方括号标题仍可切换
+  ---
+  duration_ms: 0.857353
+  type: 'test'
+  ...
+# Subtest: 召回分段：编号诊断不会命中find中第一个查体规则
+ok 172 - 召回分段：编号诊断不会命中find中第一个查体规则
+  ---
+  duration_ms: 0.727329
+  type: 'test'
+  ...
+# Subtest: 召回分段：入院检查初始段仍可识别，媒体噪声不混入处置
+ok 173 - 召回分段：入院检查初始段仍可识别，媒体噪声不混入处置
+  ---
+  duration_ms: 0.453481
+  type: 'test'
+  ...
+# Subtest: 关联入口：保留入口归属/绑定版本，按固定来源恢复、下单、逐项读取与重进
+ok 174 - 关联入口：保留入口归属/绑定版本，按固定来源恢复、下单、逐项读取与重进
+  ---
+  duration_ms: 9999.734549
+  type: 'test'
+  ...
+# Subtest: 原件导出沿用真实身份与白名单守卫：匿名、学生和非白名单教师均无文件响应
+ok 175 - 原件导出沿用真实身份与白名单守卫：匿名、学生和非白名单教师均无文件响应
+  ---
+  duration_ms: 996.055948
+  type: 'test'
+  ...
+# Subtest: 病例工作室真实路由 + 合成Auth上游：匿名/学生/白名单失败拒绝，导入类 action 已收口返回 410
+ok 176 - 病例工作室真实路由 + 合成Auth上游：匿名/学生/白名单失败拒绝，导入类 action 已收口返回 410
+  ---
+  duration_ms: 123.754901
+  type: 'test'
+  ...
+# Subtest: 检查结果解码：待回报不带结果/媒体，已释放只认同一检查的图片元数据
+ok 177 - 检查结果解码：待回报不带结果/媒体，已释放只认同一检查的图片元数据
+  ---
+  duration_ms: 1.976131
+  type: 'test'
+  ...
+# Subtest: 隔离Postgres：已下单+绑定版本+阶段后只释放该项媒体，14关联不越过入口/归属
+ok 178 - 隔离Postgres：已下单+绑定版本+阶段后只释放该项媒体，14关联不越过入口/归属
+  ---
+  duration_ms: 8337.780703
+  type: 'test'
+  ...
+# Subtest: 批量验收脚本无隔离确认/无凭据时在登录前失败关闭
+ok 179 - 批量验收脚本无隔离确认/无凭据时在登录前失败关闭
+  ---
+  duration_ms: 3111.401692
+  type: 'test'
+  ...
+# Subtest: 本地资料更新后按精确历史内容恢复；错指纹/错病例及非法版本拒绝，不用新版覆盖旧会话
+ok 180 - 本地资料更新后按精确历史内容恢复；错指纹/错病例及非法版本拒绝，不用新版覆盖旧会话
+  ---
+  duration_ms: 81.618343
+  type: 'test'
+  ...
+# Subtest: 完整 DB 版本与部分召回版本并存：优先 DB 完整导入版本，学生不预取教师直读
+ok 181 - 完整 DB 版本与部分召回版本并存：优先 DB 完整导入版本，学生不预取教师直读
+  ---
+  duration_ms: 1.547986
+  type: 'test'
+  ...
+# Subtest: 完整 DB 版本与部分召回版本并存：教师触发直读恢复
+ok 182 - 完整 DB 版本与部分召回版本并存：教师触发直读恢复
+  ---
+  duration_ms: 45.981622
+  type: 'test'
+  ...
+# Subtest: 本地完整审核版本存在时权威优先：不查 DB、不回退召回
+ok 183 - 本地完整审核版本存在时权威优先：不查 DB、不回退召回
+  ---
+  duration_ms: 0.447989
+  type: 'test'
+  ...
+# Subtest: 默认模式：活动版本与本地版本不同时仍绑定活动版本
+ok 184 - 默认模式：活动版本与本地版本不同时仍绑定活动版本
+  ---
+  duration_ms: 1.71749
+  type: 'test'
+  ...
+# Subtest: 显式本地验收：活动版本不同也绑定本地完整来源，且不查询活动/DB版本
+ok 185 - 显式本地验收：活动版本不同也绑定本地完整来源，且不查询活动/DB版本
+  ---
+  duration_ms: 0.64748
+  type: 'test'
+  ...
+# Subtest: 显式本地验收：亚型别名按 sourceId 读取完整来源版本
+ok 186 - 显式本地验收：亚型别名按 sourceId 读取完整来源版本
+  ---
+  duration_ms: 0.435706
+  type: 'test'
+  ...
+# Subtest: 无本地冷启动：本地与召回均无版本时绑定 DB 导入版本
+ok 187 - 无本地冷启动：本地与召回均无版本时绑定 DB 导入版本
+  ---
+  duration_ms: 0.49508
+  type: 'test'
+  ...
+# Subtest: DB 与本地均无、仅有召回版本：绑定召回指纹兜底
+ok 188 - DB 与本地均无、仅有召回版本：绑定召回指纹兜底
+  ---
+  duration_ms: 0.379019
+  type: 'test'
+  ...
+# Subtest: 恢复失败不回退：全部来源不可用返回 null（资料不足，不绑定漂移数据）
+ok 189 - 恢复失败不回退：全部来源不可用返回 null（资料不足，不绑定漂移数据）
+  ---
+  duration_ms: 0.791174
+  type: 'test'
+  ...
+# Subtest: 预览身份不查询 DB 版本（预览走进程内存，不触碰数据库）
+ok 190 - 预览身份不查询 DB 版本（预览走进程内存，不触碰数据库）
+  ---
+  duration_ms: 0.651927
+  type: 'test'
+  ...
+# Subtest: 旧会话固定版本：getCase 按绑定版本取事实，版本不一致返回资料不足形态
+ok 191 - 旧会话固定版本：getCase 按绑定版本取事实，版本不一致返回资料不足形态
+  ---
+  duration_ms: 11.855029
+  type: 'test'
+  ...
+# Subtest: 旧会话版本漂移防护：绑定的召回指纹缓存缺失时不回退其他版本
+ok 192 - 旧会话版本漂移防护：绑定的召回指纹缓存缺失时不回退其他版本
+  ---
+  duration_ms: 0.73867
+  type: 'test'
+  ...
+# Subtest: 别名映射一致性：caseId 经 TEACHER_CASE_LINKS 解析到唯一 sourceId（版本缓存键不串）
+ok 193 - 别名映射一致性：caseId 经 TEACHER_CASE_LINKS 解析到唯一 sourceId（版本缓存键不串）
+  ---
+  duration_ms: 0.49335
+  type: 'test'
+  ...
+# 无法发起超星登录: 超星OAuth配置不完整
+# 无法发起超星登录: 必须选择登录机构
+# Subtest: 超星配置缺失时只返回明确错误页
+ok 194 - 超星配置缺失时只返回明确错误页
+  ---
+  duration_ms: 6.625604
+  type: 'test'
+  ...
+# Subtest: 多个裸 FID 使用单按钮，并优先以 1385 测试单位识别双归属账号
+ok 195 - 多个裸 FID 使用单按钮，并优先以 1385 测试单位识别双归属账号
+  ---
+  duration_ms: 10.08068
+  type: 'test'
+  ...
+# Subtest: 可显式覆盖多机构单按钮的优先识别 FID
+ok 196 - 可显式覆盖多机构单按钮的优先识别 FID
+  ---
+  duration_ms: 2.647176
+  type: 'test'
+  ...
+# Subtest: 凭据完整且未设置总开关时默认启用超星登录
+ok 197 - 凭据完整且未设置总开关时默认启用超星登录
+  ---
+  duration_ms: 1.06996
+  type: 'test'
+  ...
+# Subtest: 显式关闭总开关时隐藏超星登录入口
+ok 198 - 显式关闭总开关时隐藏超星登录入口
+  ---
+  duration_ms: 0.821258
+  type: 'test'
+  ...
+# Subtest: 多个具名机构未选择时返回机构错误而不是配置缺失
+ok 199 - 多个具名机构未选择时返回机构错误而不是配置缺失
+  ---
+  duration_ms: 1.704144
+  type: 'test'
+  ...
+# Subtest: 缺少签名登录上下文的回调在访问超星前即被拒绝
+ok 200 - 缺少签名登录上下文的回调在访问超星前即被拒绝
+  ---
+  duration_ms: 1.311598
+  type: 'test'
+  ...
+# Subtest: 回调机构必须与发起登录时选择的机构一致
+ok 201 - 回调机构必须与发起登录时选择的机构一致
+  ---
+  duration_ms: 1.900725
+  type: 'test'
+  ...
+# Subtest: 学习通课程直达 URL
+    # Subtest: 仅接受有效的 HTTPS 地址
+    ok 1 - 仅接受有效的 HTTPS 地址
+      ---
+      duration_ms: 1.634965
+      type: 'test'
+      ...
+    # Subtest: 空值、非 HTTPS、凭据 URL 与非法地址均不渲染入口
+    ok 2 - 空值、非 HTTPS、凭据 URL 与非法地址均不渲染入口
+      ---
+      duration_ms: 0.432959
+      type: 'test'
+      ...
+    1..2
+ok 202 - 学习通课程直达 URL
+  ---
+  duration_ms: 4.362265
+  type: 'suite'
+  ...
+# Subtest: 超星OAuth配置 - FID解析
+    # Subtest: 解析单个FID
+    ok 1 - 解析单个FID
+      ---
+      duration_ms: 1.487617
+      type: 'test'
+      ...
+    # Subtest: 解析带名称的FID
+    ok 2 - 解析带名称的FID
+      ---
+      duration_ms: 0.211228
+      type: 'test'
+      ...
+    # Subtest: 解析多个FID
+    ok 3 - 解析多个FID
+      ---
+      duration_ms: 50.454311
+      type: 'test'
+      ...
+    # Subtest: 解析多个带名称的FID
+    ok 4 - 解析多个带名称的FID
+      ---
+      duration_ms: 0.652046
+      type: 'test'
+      ...
+    # Subtest: 处理混合格式
+    ok 5 - 处理混合格式
+      ---
+      duration_ms: 0.460696
+      type: 'test'
+      ...
+    # Subtest: 忽略空条目
+    ok 6 - 忽略空条目
+      ---
+      duration_ms: 0.312967
+      type: 'test'
+      ...
+    # Subtest: 去重FID
+    ok 7 - 去重FID
+      ---
+      duration_ms: 0.28362
+      type: 'test'
+      ...
+    1..7
+ok 203 - 超星OAuth配置 - FID解析
+  ---
+  duration_ms: 56.793153
+  type: 'test'
+  ...
+# Subtest: 超星OAuth配置 - 回调地址生成
+    # Subtest: 使用显式配置的CHAOXING_REDIRECT_URI
+    ok 1 - 使用显式配置的CHAOXING_REDIRECT_URI
+      ---
+      duration_ms: 0.715762
+      type: 'test'
+      ...
+    # Subtest: 从COZE_PROJECT_DOMAIN_DEFAULT生成（带https）
+    ok 2 - 从COZE_PROJECT_DOMAIN_DEFAULT生成（带https）
+      ---
+      duration_ms: 0.427502
+      type: 'test'
+      ...
+    # Subtest: 从COZE_PROJECT_DOMAIN_DEFAULT生成（不带协议）
+    ok 3 - 从COZE_PROJECT_DOMAIN_DEFAULT生成（不带协议）
+      ---
+      duration_ms: 0.174719
+      type: 'test'
+      ...
+    # Subtest: 两者都缺失时抛出错误
+    ok 4 - 两者都缺失时抛出错误
+      ---
+      duration_ms: 0.528711
+      type: 'test'
+      ...
+    1..4
+ok 204 - 超星OAuth配置 - 回调地址生成
+  ---
+  duration_ms: 3.141322
+  type: 'test'
+  ...
+# Subtest: 超星OAuth配置 - 教师权限逻辑
+    # Subtest: UID在白名单且角色匹配时授予教师权限
+    ok 1 - UID在白名单且角色匹配时授予教师权限
+      ---
+      duration_ms: 0.361771
+      type: 'test'
+      ...
+    # Subtest: UID不在白名单时拒绝教师权限
+    ok 2 - UID不在白名单时拒绝教师权限
+      ---
+      duration_ms: 1.819594
+      type: 'test'
+      ...
+    # Subtest: 角色不匹配时拒绝教师权限
+    ok 3 - 角色不匹配时拒绝教师权限
+      ---
+      duration_ms: 0.158957
+      type: 'test'
+      ...
+    # Subtest: 白名单为空时全部拒绝
+    ok 4 - 白名单为空时全部拒绝
+      ---
+      duration_ms: 0.116456
+      type: 'test'
+      ...
+    # Subtest: 匹配多种教师角色名称
+    ok 5 - 匹配多种教师角色名称
+      ---
+      duration_ms: 0.339528
+      type: 'test'
+      ...
+    1..5
+ok 205 - 超星OAuth配置 - 教师权限逻辑
+  ---
+  duration_ms: 3.402821
+  type: 'test'
+  ...
+# Subtest: 超星OAuth配置 - 安全重定向路径验证
+    # Subtest: 接受有效的内部路径
+    ok 1 - 接受有效的内部路径
+      ---
+      duration_ms: 0.182574
+      type: 'test'
+      ...
+    # Subtest: 拒绝以//开头的路径
+    ok 2 - 拒绝以//开头的路径
+      ---
+      duration_ms: 0.091497
+      type: 'test'
+      ...
+    # Subtest: 拒绝外部URL
+    ok 3 - 拒绝外部URL
+      ---
+      duration_ms: 0.125002
+      type: 'test'
+      ...
+    # Subtest: 拒绝非斜杠开头的路径
+    ok 4 - 拒绝非斜杠开头的路径
+      ---
+      duration_ms: 0.096591
+      type: 'test'
+      ...
+    # Subtest: 处理null和undefined
+    ok 5 - 处理null和undefined
+      ---
+      duration_ms: 0.088311
+      type: 'test'
+      ...
+    1..5
+ok 206 - 超星OAuth配置 - 安全重定向路径验证
+  ---
+  duration_ms: 1.059195
+  type: 'test'
+  ...
+# Subtest: 网络错误与服务端错误按指数退避重试
+ok 207 - 网络错误与服务端错误按指数退避重试
+  ---
+  duration_ms: 2.007095
+  type: 'test'
+  ...
+# Subtest: 限流类4xx继续重试，凭据或字段类4xx直接失败
+ok 208 - 限流类4xx继续重试，凭据或字段类4xx直接失败
+  ---
+  duration_ms: 0.248841
+  type: 'test'
+  ...
+# Subtest: 可重试错误最多尝试八次
+ok 209 - 可重试错误最多尝试八次
+  ---
+  duration_ms: 0.174504
+  type: 'test'
+  ...
+# Subtest: 真实 SQL：有效成绩取同病例最高，未评分及历史全不可评估证据排除，无成绩学生保留
+ok 210 - 真实 SQL：有效成绩取同病例最高，未评分及历史全不可评估证据排除，无成绩学生保留
+  ---
+  duration_ms: 8271.797726
+  type: 'test'
+  ...
+# Subtest: 班级积分榜领域聚合
+    # Subtest: 公开 UUID/内部 ID、别名与亚型按 sourceId 合并，每源只取最高分，同分采用 1、1、3 排名
+    ok 1 - 公开 UUID/内部 ID、别名与亚型按 sourceId 合并，每源只取最高分，同分采用 1、1、3 排名
+      ---
+      duration_ms: 50.539765
+      type: 'test'
+      ...
+    # Subtest: 无成绩学生保留在榜单，非法分数或越界分数被拒绝
+    ok 2 - 无成绩学生保留在榜单，非法分数或越界分数被拒绝
+      ---
+      duration_ms: 1.224895
+      type: 'test'
+      ...
+    1..2
+ok 211 - 班级积分榜领域聚合
+  ---
+  duration_ms: 52.922819
+  type: 'suite'
+  ...
+# Subtest: 旧申请-审批流程停用：request/review 不再被 schema 接受
+ok 212 - 旧申请-审批流程停用：request/review 不再被 schema 接受
+  ---
+  duration_ms: 1.857532
+  type: 'test'
+  ...
+# Subtest: 学生自助动作映射受控 RPC：initial_select/skip/change_once/archive
+ok 213 - 学生自助动作映射受控 RPC：initial_select/skip/change_once/archive
+  ---
+  duration_ms: 65.572536
+  type: 'test'
+  ...
+# Subtest: 幂等 requestId 必填且 8-64 字符（服务端同口径校验）
+ok 214 - 幂等 requestId 必填且 8-64 字符（服务端同口径校验）
+  ---
+  duration_ms: 4.026026
+  type: 'test'
+  ...
+# Subtest: 管理请求不接受仅 cxid 自动提权；必须确认具体账号
+ok 215 - 管理请求不接受仅 cxid 自动提权；必须确认具体账号
+  ---
+  duration_ms: 0.823908
+  type: 'test'
+  ...
+# Subtest: 数据库拒绝、格式错误与不可用服务区分，异常正文不泄漏
+ok 216 - 数据库拒绝、格式错误与不可用服务区分，异常正文不泄漏
+  ---
+  duration_ms: 7.771212
+  type: 'test'
+  ...
+# Subtest: 班级自助流程状态冲突错误映射到 409 与明确文案
+ok 217 - 班级自助流程状态冲突错误映射到 409 与明确文案
+  ---
+  duration_ms: 4.762914
+  type: 'test'
+  ...
+# Subtest: 名单允许单个编号，保留学号前导零和 CSV 转义
+ok 218 - 名单允许单个编号，保留学号前导零和 CSV 转义
+  ---
+  duration_ms: 6.4607
+  type: 'test'
+  ...
+# Subtest: 名单拒绝缺编号、重复、错误表头和不完整 CSV，不静默覆盖
+ok 219 - 名单拒绝缺编号、重复、错误表头和不完整 CSV，不静默覆盖
+  ---
+  duration_ms: 1.168278
+  type: 'test'
+  ...
+# Subtest: 班级数据库（is_active=boolean）：授权、可信匹配、审核、跨班隔离
+ok 220 - 班级数据库（is_active=boolean）：授权、可信匹配、审核、跨班隔离
+  ---
+  duration_ms: 9106.039464
+  type: 'test'
+  ...
+# Subtest: 班级数据库（is_active=integer）：授权、可信匹配、审核、跨班隔离
+ok 221 - 班级数据库（is_active=integer）：授权、可信匹配、审核、跨班隔离
+  ---
+  duration_ms: 5311.803331
+  type: 'test'
+  ...
+# Subtest: batch requests persist one stable row without losing evidence, summaries or media
+ok 222 - batch requests persist one stable row without losing evidence, summaries or media
+  ---
+  duration_ms: 2.807652
+  type: 'test'
+  ...
+# Subtest: unmatched batch requests remain unscored and have a unique conflict key
+ok 223 - unmatched batch requests remain unscored and have a unique conflict key
+  ---
+  duration_ms: 0.289021
+  type: 'test'
+  ...
+# Subtest: PROCEDURES：8 项技能操作目录完整且 slug 唯一
+ok 224 - PROCEDURES：8 项技能操作目录完整且 slug 唯一
+  ---
+  duration_ms: 2.255905
+  type: 'test'
+  ...
+# Subtest: isProcedureComplete：8 项操作全部通过完整性校验
+ok 225 - isProcedureComplete：8 项操作全部通过完整性校验
+  ---
+  duration_ms: 0.64634
+  type: 'test'
+  ...
+# Subtest: 四大穿刺：适应证与禁忌症均不少于 3 条
+ok 226 - 四大穿刺：适应证与禁忌症均不少于 3 条
+  ---
+  duration_ms: 0.200872
+  type: 'test'
+  ...
+# Subtest: skin-prep-draping：消毒范围与铺巾下垂距离量化到条
+ok 227 - skin-prep-draping：消毒范围与铺巾下垂距离量化到条
+  ---
+  duration_ms: 0.376082
+  type: 'test'
+  ...
+# Subtest: surgical-gowning / sterile-gloving：无菌区与污染判定明确
+ok 228 - surgical-gowning / sterile-gloving：无菌区与污染判定明确
+  ---
+  duration_ms: 0.224799
+  type: 'test'
+  ...
+# Subtest: lumbar-puncture：儿童取 L4–L5、压力与留取量、术后平卧 4–6 小时
+ok 229 - lumbar-puncture：儿童取 L4–L5、压力与留取量、术后平卧 4–6 小时
+  ---
+  duration_ms: 0.216248
+  type: 'test'
+  ...
+# Subtest: thoracentesis：抽气/抽液穿刺点区分，儿童限量与胸膜反应处置
+ok 230 - thoracentesis：抽气/抽液穿刺点区分，儿童限量与胸膜反应处置
+  ---
+  duration_ms: 0.271441
+  type: 'test'
+  ...
+# Subtest: abdominal-paracentesis：Z 形路径、排空膀胱与 SBP 阈值
+ok 231 - abdominal-paracentesis：Z 形路径、排空膀胱与 SBP 阈值
+  ---
+  duration_ms: 0.177115
+  type: 'test'
+  ...
+# Subtest: bone-marrow-aspiration：按年龄选部位、抽取量 0.2–0.5 mL、儿童不做胸骨穿刺
+ok 232 - bone-marrow-aspiration：按年龄选部位、抽取量 0.2–0.5 mL、儿童不做胸骨穿刺
+  ---
+  duration_ms: 0.428849
+  type: 'test'
+  ...
+# Subtest: pediatric-cpr：按压深度频率与比例、除颤能量阶梯
+ok 233 - pediatric-cpr：按压深度频率与比例、除颤能量阶梯
+  ---
+  duration_ms: 53.47782
+  type: 'test'
+  ...
+# Subtest: pediatric-cpr：建立高级气道后通气 20–30 次/分（儿科口径，非成人 10 次/分）
+ok 234 - pediatric-cpr：建立高级气道后通气 20–30 次/分（儿科口径，非成人 10 次/分）
+  ---
+  duration_ms: 0.975247
+  type: 'test'
+  ...
+# Subtest: pediatric-cpr：肾上腺素、胺碘酮、葡萄糖剂量与骨内通路
+ok 235 - pediatric-cpr：肾上腺素、胺碘酮、葡萄糖剂量与骨内通路
+  ---
+  duration_ms: 0.872746
+  type: 'test'
+  ...
+# Subtest: pediatric-cpr：强调通气与氧合同等重要
+ok 236 - pediatric-cpr：强调通气与氧合同等重要
+  ---
+  duration_ms: 0.422988
+  type: 'test'
+  ...
+# Subtest: findProcedure：未收录 slug 返回 null，收录 slug 返回同名条目
+ok 237 - findProcedure：未收录 slug 返回 null，收录 slug 返回同名条目
+  ---
+  duration_ms: 0.504693
+  type: 'test'
+  ...
+# Subtest: sources：每项操作都有教材或指南出处
+ok 238 - sources：每项操作都有教材或指南出处
+  ---
+  duration_ms: 2.077644
+  type: 'test'
+  ...
+# Subtest: ITP 逐例审核覆盖：意识/痛苦/知情范围/发育备注注入，年龄默认档其余字段保留
+ok 239 - ITP 逐例审核覆盖：意识/痛苦/知情范围/发育备注注入，年龄默认档其余字段保留
+  ---
+  duration_ms: 1.481597
+  type: 'test'
+  ...
+# Subtest: 公开 opaque ID 与 URL 编码 ID 均命中同一覆盖（resolveCaseId 归一）
+ok 240 - 公开 opaque ID 与 URL 编码 ID 均命中同一覆盖（resolveCaseId 归一）
+  ---
+  duration_ms: 0.32767
+  type: 'test'
+  ...
+# Subtest: 无覆盖病例保持年龄默认档且知情范围 unknown（不凭空填值）
+ok 241 - 无覆盖病例保持年龄默认档且知情范围 unknown（不凭空填值）
+  ---
+  duration_ms: 0.216379
+  type: 'test'
+  ...
+# Subtest: domain 客户端安全表不含任何逐例审核病种名（防泄题进客户端 bundle）
+ok 242 - domain 客户端安全表不含任何逐例审核病种名（防泄题进客户端 bundle）
+  ---
+  duration_ms: 0.820361
+  type: 'test'
+  ...
+# Subtest: controlled object bundle preserves source version and rejects tampered bytes or wrong identity
+ok 243 - controlled object bundle preserves source version and rejects tampered bytes or wrong identity
+  ---
+  duration_ms: 12.094689
+  type: 'test'
+  ...
+# Subtest: multi-source recovery binds every source/package version and fails closed on missing or mismatched content
+ok 244 - multi-source recovery binds every source/package version and fails closed on missing or mismatched content
+  ---
+  duration_ms: 92.956258
+  type: 'test'
+  ...
+# Subtest: a shared media archive validates all registered members, coalesces reads and caches verified pixels privately
+ok 245 - a shared media archive validates all registered members, coalesces reads and caches verified pixels privately
+  ---
+  duration_ms: 10.413917
+  type: 'test'
+  ...
+# Subtest: identical verified media can be reused across generation archives without weakening conflict checks
+ok 246 - identical verified media can be reused across generation archives without weakening conflict checks
+  ---
+  duration_ms: 0.849088
+  type: 'test'
+  ...
+# Subtest: 固定候选包：53 源病例、67 入口，全部通过哈希/schema/教学完整性校验
+ok 247 - 固定候选包：53 源病例、67 入口，全部通过哈希/schema/教学完整性校验 # SKIP knowledge/case-package-manifest.json 不存在：需先以教师身份运行受控快照恢复生成清单
+  ---
+  duration_ms: 0.904407
+  type: 'test'
+  ...
+# Subtest: manifest 边界：重复入口、来源错配和额外哈希路径均拒绝
+ok 248 - manifest 边界：重复入口、来源错配和额外哈希路径均拒绝 # SKIP knowledge/case-package-manifest.json 不存在：需先以教师身份运行受控快照恢复生成清单
+  ---
+  duration_ms: 0.146483
+  type: 'test'
+  ...
+# Subtest: 导入输入：只接受当前包指纹与包内病例 ID，拒绝空选择、未知 ID 和额外字段
+ok 249 - 导入输入：只接受当前包指纹与包内病例 ID，拒绝空选择、未知 ID 和额外字段 # SKIP knowledge/case-package-manifest.json 不存在：需先以教师身份运行受控快照恢复生成清单
+  ---
+  duration_ms: 0.100324
+  type: 'test'
+  ...
+# Subtest: 双表逐例回读：精确版本匹配；失败但双表已写入可恢复为已核对
+ok 250 - 双表逐例回读：精确版本匹配；失败但双表已写入可恢复为已核对
+  ---
+  duration_ms: 0.592313
+  type: 'test'
+  ...
+# Subtest: live: 接入配置可描述且凭据来源明确
+ok 251 - live: 接入配置可描述且凭据来源明确 # SKIP set AI_LIVE_TEST=1 to run live Coze AI integration tests
+  ---
+  duration_ms: 0.916409
+  type: 'test'
+  ...
+# Subtest: live: 功能测试 - 真实问诊应答生成连续 8 次调用
+ok 252 - live: 功能测试 - 真实问诊应答生成连续 8 次调用 # SKIP set AI_LIVE_TEST=1 to run live Coze AI integration tests
+  ---
+  duration_ms: 0.193879
+  type: 'test'
+  ...
+# Subtest: live: 功能测试 - 完整业务链路（创建会话→问诊轮次）
+ok 253 - live: 功能测试 - 完整业务链路（创建会话→问诊轮次） # SKIP set AI_LIVE_TEST=1 to run live Coze AI integration tests
+  ---
+  duration_ms: 0.111288
+  type: 'test'
+  ...
+# Subtest: live: 压力测试 - 24 次调用并发 8
+ok 254 - live: 压力测试 - 24 次调用并发 8 # SKIP set AI_LIVE_TEST=1 to run live Coze AI integration tests
+  ---
+  duration_ms: 0.103228
+  type: 'test'
+  ...
+# Subtest: classifyAIError 官方 coder-coding-dev-sdk 错误类分类（当前文本链路实际抛出）
+ok 255 - classifyAIError 官方 coder-coding-dev-sdk 错误类分类（当前文本链路实际抛出）
+  ---
+  duration_ms: 1.611957
+  type: 'test'
+  ...
+# Subtest: invokeCozeAI 官方 SDK 错误类触发限流退避重试（当前文本链路覆盖）
+ok 256 - invokeCozeAI 官方 SDK 错误类触发限流退避重试（当前文本链路覆盖）
+  ---
+  duration_ms: 0.830706
+  type: 'test'
+  ...
+# Subtest: invokeCozeAI 官方 SDK 认证错误不重试直接抛出
+ok 257 - invokeCozeAI 官方 SDK 认证错误不重试直接抛出
+  ---
+  duration_ms: 0.77831
+  type: 'test'
+  ...
+# Subtest: classifyAIError 覆盖限流、权限、超时、服务端、网络与非法请求
+ok 258 - classifyAIError 覆盖限流、权限、超时、服务端、网络与非法请求
+  ---
+  duration_ms: 1.414366
+  type: 'test'
+  ...
+# Subtest: invokeCozeAI 首次成功直接返回且不触发退避
+ok 259 - invokeCozeAI 首次成功直接返回且不触发退避
+  ---
+  duration_ms: 0.326251
+  type: 'test'
+  ...
+# Subtest: invokeCozeAI 限流后按指数退避重试成功
+ok 260 - invokeCozeAI 限流后按指数退避重试成功
+  ---
+  duration_ms: 0.390746
+  type: 'test'
+  ...
+# Subtest: invokeCozeAI 重试耗尽后抛出带分类的 AIGatewayError
+ok 261 - invokeCozeAI 重试耗尽后抛出带分类的 AIGatewayError
+  ---
+  duration_ms: 0.786316
+  type: 'test'
+  ...
+# Subtest: invokeCozeAI 认证异常不重试直接降级抛出
+ok 262 - invokeCozeAI 认证异常不重试直接降级抛出
+  ---
+  duration_ms: 0.415269
+  type: 'test'
+  ...
+# Subtest: invokeCozeAI 单次超时按超时分类并重试
+ok 263 - invokeCozeAI 单次超时按超时分类并重试
+  ---
+  duration_ms: 21.536054
+  type: 'test'
+  ...
+# Subtest: invokeCozeAI 尊重 Retry-After 提示的下限
+ok 264 - invokeCozeAI 尊重 Retry-After 提示的下限
+  ---
+  duration_ms: 1.283374
+  type: 'test'
+  ...
+# Subtest: 每用途的超时传入SDK且关闭内部重试，避免等待预算失效或叠加
+ok 265 - 每用途的超时传入SDK且关闭内部重试，避免等待预算失效或叠加
+  ---
+  duration_ms: 0.526383
+  type: 'test'
+  ...
+1..265
+# tests 288
+# suites 2
+# pass 281
+# fail 0
+# cancelled 0
+# skipped 7
+# todo 0
+# duration_ms 86316.21402
