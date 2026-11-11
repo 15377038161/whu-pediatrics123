@@ -114,7 +114,8 @@ export function contextualHistorySelection(session:SessionState,question:string,
   const ranked=facts.map(fact=>({fact,score:terms.filter(term=>fact.text.includes(term)).length*3+fact.topics.filter(t=>topics.includes(t)).length*2}))
     .filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
   const complaint=facts.find(f=>f.id==='SOURCE_HX_-2');
-  const generalOnset=!continuation&&topics.length===1&&topics[0]==='起病与病程'&&/什么时候|最早|最开始|何时/.test(question)&&/开始|不舒服|起病|发病/.test(question);
+  const generalDuration=!continuation&&topics.includes('起病与病程')&&/多久|多长时间|几天/.test(question)&&!/住院|出生|既往|大便|小便|吃药|用药|治疗|接种|过敏/.test(question);
+  const generalOnset=!continuation&&topics.includes('起病与病程')&&((topics.length===1&&/什么时候|最早|最开始|何时/.test(question)&&/开始|不舒服|起病|发病/.test(question))||generalDuration);
   if(complaint&&generalOnset){
     const comparable=(text:string)=>text.replace(/^(?:主诉|现病史)[：:\s]*/,'').replace(/[，,；;。!?？\s]/g,'');
     const summary=comparable(complaint.text);
@@ -205,6 +206,7 @@ export async function historyDialogue(session:SessionState,question:string,facts
   const started=Date.now();
   const allowed=facts.filter(f=>(!f.availableFromStage||stageReached(session.stage,f.availableFromStage))&&(act==='question'||session.askedIntents.includes(f.id)||/^SOURCE_HX_-[12]$/.test(f.id)));
   const selection=contextualHistorySelection(session,question,allowed);
+  const promptFacts=act==='question'?selection.facts:allowed;
   let errorKind:string|undefined;
   let validationReasons:string[]=[];
   let attempts=0;
@@ -228,13 +230,13 @@ export async function historyDialogue(session:SessionState,question:string,facts
         '不要为了自然口语补写精神还行、睡眠正常、尿色正常、已接种疫苗等未登记结论。部分有依据、部分未知时不要混在一条空编号台词中；未知内容使用上述安全句式。',
         '若后续消息含validationReasons，那是本轮校验器生成的纠错任务；仅按上述安全规则修正上一条助手JSON并返回完整JSON，不解释原因。',
         '严格JSON：{"topic":"当前话题","clarification":null,"utterances":[{"actor":"child或parent","text":"自然口语","factIds":["事实编号"]}]}。最多3条台词。',
-      ].join('\n')},{role:'user',content:JSON.stringify({act,question,profile,parentPaused:session.parentInterruption==='paused',context:session.messages.filter(m=>['student','child','parent'].includes(m.actor)).slice(-12).map(m=>({actor:m.actor,content:m.content})),memory:session.dialogueMemory??null,disclosedFactIds:session.askedIntents,facts:allowed.map(({id,text,topics,actor,timeContext,values,negativeTerms})=>({id,text,topics,actor,timeContext,values,negativeTerms})),cooperation:session.behavior.cooperation})}];
+      ].join('\n')},{role:'user',content:JSON.stringify({act,question,profile,parentPaused:session.parentInterruption==='paused',context:session.messages.filter(m=>['student','child','parent'].includes(m.actor)).slice(-12).map(m=>({actor:m.actor,content:m.content})),memory:session.dialogueMemory??null,disclosedFactIds:session.askedIntents,facts:promptFacts.map(({id,text,topics,actor,timeContext,values,negativeTerms})=>({id,text,topics,actor,timeContext,values,negativeTerms})),cooperation:session.behavior.cooperation})}];
       let repairMessages:typeof messages|null=null;
       for(let modelCall=0;modelCall<2;modelCall++){
         const result:{content:string;attempts?:number}=await(invoke??invokeCozeAI)({messages:repairMessages??messages,llmConfig:{model:process.env.COZE_AI_ROLE_MODEL||'doubao-seed-1-8-251228',temperature:0.45,thinking:'disabled',caching:'disabled'},forwardHeaders,maxAttempts:1,timeoutMs:modelCall===0?12000:6000});
         attempts+=result.attempts??1;
         const raw:string=result.content.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
-        const inspected=inspectHistoryDialogue(JSON.parse(raw),allowed,profile,session.stage);
+        const inspected=inspectHistoryDialogue(JSON.parse(raw),promptFacts,profile,session.stage);
         validationReasons=inspected.issues.map(issue=>`${issue.code}@${issue.utteranceIndex}`);
         const validated=inspected.dialogue;
         const pausedParentMismatch=Boolean(validated&&session.parentInterruption==='paused'&&canChildSpeak(profile)&&validated.utterances.some(u=>u.actor==='parent'));
@@ -264,7 +266,10 @@ export async function historyDialogue(session:SessionState,question:string,facts
   const childCanAnswer=canChildSpeak(profile)&&(childAddressed||paused)&&selection.facts.length>0&&selection.facts.every(f=>f.actor!=='parent')&&selection.facts.some(f=>f.childText);
   if(paused&&!childCanAnswer)return {dialogue:{topic:selection.topic,clarification:'家长补充许可',utterances:[{actor:'child',text:'这部分我不太记得，可以请家长补充一下吗？',factIds:[]}]},runtime:{execution:errorKind?'model_fallback':'deterministic',model:null,durationMs:Date.now()-started,...(errorKind?{errorKind,attempts}: {}),...(validationReasons.length?{validationReasons}: {})}};
   const actor=childCanAnswer?'child' as const:'parent' as const;
-  const texts=selection.facts.map(f=>actor==='child'?f.childText??f.text:f.text.replace(/患儿/g,'孩子').replace(/起病以来[，,]?/g,'这次不舒服以后，').replace(/食欲及睡眠欠佳/g,'吃东西和睡觉都不太好').replace(/大小便正常/g,'大小便和平时一样').replace(/无明显变化/g,'没什么明显变化'));
-  const text=selection.clarification??(texts.length?texts.join('；').replace(/[；。]+$/,'')+'。':/担心|严重|危险/.test(question)?'医生，我也有些担心。您可以先了解孩子现在的情况，再告诉我们接下来怎么安排。':'您想了解哪方面的具体情况？我可以先说孩子的不舒服、这几天的变化，或者已经做过的处理。');
-  return {dialogue:{topic:selection.topic,clarification:selection.clarification,utterances:[{actor,text,factIds:selection.facts.map(f=>f.id)}]},runtime:{execution:errorKind?'model_fallback':'deterministic',model:null,durationMs:Date.now()-started,...(errorKind?{errorKind,attempts}: {}),...(validationReasons.length?{validationReasons}: {})}};
+  const spokenFacts=selection.facts.flatMap(f=>{
+    const text=(actor==='child'?f.childText??f.text:f.text.replace(/患儿/g,'孩子').replace(/起病以来[，,]?/g,'这次不舒服以后，').replace(/食欲及睡眠欠佳/g,'吃东西和睡觉都不太好').replace(/大小便正常/g,'大小便和平时一样').replace(/无明显变化/g,'没什么明显变化')).trim();
+    return !text||/^这次不舒服以后[，,]?$/.test(text)?[]:[{fact:f,text}];
+  });
+  const text=selection.clarification??(spokenFacts.length?spokenFacts.map(item=>item.text).join('；').replace(/[；。]+$/,'')+'。':/担心|严重|危险/.test(question)?'医生，我也有些担心。您可以先了解孩子现在的情况，再告诉我们接下来怎么安排。':'您想了解哪方面的具体情况？我可以先说孩子的不舒服、这几天的变化，或者已经做过的处理。');
+  return {dialogue:{topic:selection.topic,clarification:selection.clarification,utterances:[{actor,text,factIds:spokenFacts.map(item=>item.fact.id)}]},runtime:{execution:errorKind?'model_fallback':'deterministic',model:null,durationMs:Date.now()-started,...(errorKind?{errorKind,attempts}: {}),...(validationReasons.length?{validationReasons}: {})}};
 }

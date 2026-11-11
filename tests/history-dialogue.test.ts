@@ -59,10 +59,46 @@ test('概括询问起病时只回答主诉对应的时间，不倾倒既往和�
   assert.equal(result.dialogue.utterances.some(u=>/住院|大便/.test(u.text)),false);
   assert.ok(contextualHistorySelection(state(),'以前是什么时候住院的？',onset).facts.some(f=>f.id==='past'),'specific past-history question must retain its facts');
 });
-test('模型选择不受前置三句截断，且只解锁实际引用的事实',async()=>{
+test('持续与年龄追问只取当前主题，模型和降级都不倾倒整段现病史',async()=>{
+  const scoped:HistoryFact[]=[
+    {id:'SOURCE_HX_-2',text:'发热、咳嗽伴声嘶1天',topics:['主要不适'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_-1',text:'孩子8岁27天，女。',topics:['年龄与性别'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_3_0',text:'患儿1天前无明显诱因出现发热',topics:['起病与病程','发热与处理'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_3_1',text:'最高体温为39℃',topics:['发热与处理'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_3_5',text:'无吸气性呼吸困难',topics:['呼吸相关症状'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_4_0',text:'起病以来',topics:['起病与病程'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_4_1',text:'食欲及睡眠欠佳',topics:['一般状态、进食及排泄'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+  ];
+  assert.deepEqual(contextualHistorySelection(state(),'持续多久了？',scoped).facts.map(f=>f.id),['SOURCE_HX_-2']);
+  assert.deepEqual(contextualHistorySelection(state(),'多大了？',scoped).facts.map(f=>f.id),['SOURCE_HX_-1']);
+  let modelFactIds:string[]=[];
+  const model=await historyDialogue(state(),'持续多久了？',scoped,profile,undefined,async input=>{
+    const payload=JSON.parse(input.messages[1].content as string);
+    modelFactIds=payload.facts.map((fact:HistoryFact)=>fact.id);
+    return {content:JSON.stringify({topic:'主要不适',clarification:null,utterances:[{actor:'parent',text:'发热、咳嗽和声音嘶哑1天了。',factIds:['SOURCE_HX_-2']}]})};
+  });
+  assert.equal(model.runtime.execution,'model');
+  assert.deepEqual(modelFactIds,['SOURCE_HX_-2']);
+  const durationFallback=await historyDialogue(state(),'持续多久了？',scoped,profile,undefined,async()=>{throw Error('synthetic model unavailable');});
+  assert.equal(durationFallback.runtime.execution,'model_fallback');
+  assert.match(durationFallback.dialogue.utterances[0].text,/1天/);
+  assert.doesNotMatch(durationFallback.dialogue.utterances[0].text,/39℃|呼吸|8岁|起病以来|食欲|睡眠/);
+  const ageFallback=await historyDialogue(state(),'多大了？',scoped,profile,undefined,async()=>{throw Error('synthetic model unavailable');});
+  assert.match(ageFallback.dialogue.utterances[0].text,/8岁27天/);
+  assert.doesNotMatch(ageFallback.dialogue.utterances[0].text,/发热|咳嗽|起病以来|食欲|睡眠/);
+});
+
+
+test('模型只在筛选上下文内选择且不受前三句截断，只解锁实际引用的事实',async()=>{
   const many=Array.from({length:7},(_,i)=>({...facts[0],id:`fact-${i}`,text:`已有事实${i}。`}));
-  const result=await historyDialogue(state(),'补充说说相关情况',many,profile,undefined,async()=>({content:JSON.stringify({topic:'本轮主题',utterances:[{actor:'parent',text:'已有事实6。',factIds:['fact-6']}]})}));
-  assert.equal(result.runtime.execution,'model');assert.deepEqual(result.dialogue.utterances[0].factIds,['fact-6']);
+  let selectedId='';
+  const result=await historyDialogue(state(),'咳嗽多久了？',many,profile,undefined,async input=>{
+    const payload=JSON.parse(input.messages[1].content as string);
+    const selected=payload.facts.at(-1) as HistoryFact;
+    selectedId=selected.id;
+    return {content:JSON.stringify({topic:'本轮主题',utterances:[{actor:'parent',text:selected.text,factIds:[selected.id]}]})};
+  });
+  assert.equal(result.runtime.execution,'model');assert.deepEqual(result.dialogue.utterances[0].factIds,[selectedId]);
 });
 test('不存在的事实、捏造数值、未到阶段及婴儿台词均拒绝',()=>{
   const reply=(text:string,id:string)=>({topic:'测试',utterances:[{actor:'parent',text,factIds:[id]}]});
