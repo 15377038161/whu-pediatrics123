@@ -48,6 +48,16 @@ test('查体原文提取：T/R/P 与 SpO₂ 分别落位，心率不会被误认
   });
 });
 
+test('SpO₂ 措辞变体：修饰词插在中间也要能提取，否则测量成功后共享体征不会更新', () => {
+  assert.deepEqual(extractVitalSigns('适龄探头信号稳定时，SpO₂固定读数96%。'), { spo2: 96 });
+  assert.deepEqual(extractVitalSigns('SpO₂ 读数为 92%'), { spo2: 92 });
+  // 脉率刻意不映射为 heartRate：脉搏短绌时脉率<心率，合并会给出错误心率
+  assert.deepEqual(extractVitalSigns('稳定信号下 SpO₂为93%，脉率113次/分。'), { spo2: 93 });
+  assert.deepEqual(extractVitalSigns('稳定信号下 SpO₂为93%，心率113次/分。'), { heartRate: 113, spo2: 93 });
+  // 没有 % 时不猜数值，避免把其它数字误当饱和度
+  assert.deepEqual(extractVitalSigns('SpO₂以百分号记录，低灌注时不生成数值。'), {});
+});
+
 test('问诊原文提取：家长说「最高烧到39度」也能得到体温，但不从无单位文字猜数值', () => {
   assert.deepEqual(extractVitalSigns('最高烧到39度呢，烧的时候还打哆嗦，吃了退烧药能退下来。'), { temperature: 39 });
   assert.deepEqual(extractVitalSigns('双肺呼吸音稍粗，未闻及啰音。'), {});

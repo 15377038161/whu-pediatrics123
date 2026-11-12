@@ -42,6 +42,8 @@ const RESPIRATORY_RATE_PATTERNS: readonly RegExp[] = [
 ];
 const SPO2_PATTERNS: readonly RegExp[] = [
   /(?:S\s*p\s*O\s*[₂2]?|血氧(?:饱和度)?)\s*(?:读数\s*)?[:：]?\s*(?:为|是)?\s*(\d{2,3})\s*%?/i,
+  // 兜底：允许“SpO₂固定读数96%”这类修饰词插在中间，但必须带 % 才取值，避免把其它数字误当饱和度
+  /(?:S\s*p\s*O\s*[₂2]?|血氧(?:饱和度)?)[\s\S]{0,6}?(\d{2,3})\s*%/i,
 ];
 
 function matchInRange(text: string, patterns: readonly RegExp[], min: number, max: number): number | null {
