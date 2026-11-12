@@ -204,9 +204,9 @@ test('沉浸式会话保留统一病例内核并初始化场景状态', () => {
   assert.equal(session.expiresAt, null);
 });
 
-test('全部教师病例均可创建训练、沉浸式与OSCE会话', () => {
+test('全部开放病例均可创建训练、沉浸式与OSCE会话', () => {
   const teacherCases = CASE_CATALOG.filter((item) => item.id.startsWith('case-'));
-  assert.equal(teacherCases.length, 67);
+  assert.equal(teacherCases.length, 52);
   for (const item of teacherCases) {
     assert.equal(getCase(item.id).id, resolveCaseId(item.id));
     for (const mode of ['guided', 'immersive', 'osce'] as const) {

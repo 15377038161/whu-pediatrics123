@@ -152,8 +152,13 @@ export const RETIRED_SIMULATION_PROFILES: PublicCaseProfile[] = [
   },
 ];
 
-export const CASE_CATALOG: PublicCaseProfile[] = [
-  ...TEACHER_PUBLIC_ENTRIES.map((item): PublicCaseProfile => ({
+// 别名/亚型条目与正式病例读取同一源病例，不再作为独立关卡重复开放。
+// 急性肾衰竭与急性百草枯中毒的原始现病史、年龄和性别完全一致；保留资料更完整的百草枯病例。
+const RETIRED_DUPLICATE_CASE_IDS = new Set(['case-6d3b5195-2419-4734-be1e-a09ea948fe61']);
+const isRetiredDuplicate = (item: TeacherPublicEntry): boolean => item.sourceRelation !== null || RETIRED_DUPLICATE_CASE_IDS.has(item.id);
+
+function toPublicProfile(item: TeacherPublicEntry): PublicCaseProfile {
+  return {
     id: item.id,
     version: 1,
     title: summaries[item.id] ? `${summaries[item.id].age}${summaries[item.id].sex === '男' ? '男童' : summaries[item.id].sex === '女' ? '女童' : '患儿'}，${summaries[item.id].complaint}` : item.title,
@@ -171,8 +176,15 @@ export const CASE_CATALOG: PublicCaseProfile[] = [
     sourceRelation: item.sourceRelation,
     mediaCount: item.mediaCount,
     documentCount: item.documentCount,
-  })),
-];
+  };
+}
+
+export const CASE_CATALOG: PublicCaseProfile[] = TEACHER_PUBLIC_ENTRIES
+  .filter((item) => !isRetiredDuplicate(item))
+  .map(toPublicProfile);
+
+// 仅为既有会话和报告保留原目录投影；不能用于新会话的开放病例清单。
+const RETIRED_DUPLICATE_CATALOG = TEACHER_PUBLIC_ENTRIES.filter(isRetiredDuplicate).map(toPublicProfile);
 
 export function getPublicCase(caseId: string): PublicCaseProfile {
   const caseProfile = CASE_CATALOG.find((item) => item.id === caseId);
@@ -185,7 +197,9 @@ export function getPublicCase(caseId: string): PublicCaseProfile {
  * 返回 null 而非抛错，调用方降级展示病例 ID；训练核心链路仍走 getPublicCase 硬防线。
  */
 export function findPublicCase(caseId: string): PublicCaseProfile | null {
-  return CASE_CATALOG.find((item) => item.id === caseId) ?? null;
+  return CASE_CATALOG.find((item) => item.id === caseId)
+    ?? RETIRED_DUPLICATE_CATALOG.find((item) => item.id === caseId)
+    ?? null;
 }
 
 export function isTrainableCase(caseId: string): boolean {

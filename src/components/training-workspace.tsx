@@ -30,9 +30,10 @@ import { ConversationComposer } from '@/components/conversation-composer';
 import { ConversationThread, type PendingConversation } from '@/components/conversation-thread';
 import { reportSessionEvent } from '@/lib/engagement-tracker';
 import { appendVoiceTranscript, resolveSpeechTurnMeta, type SpeechTurnMeta, type VoiceRecordingResult } from '@/domain/speech-contract';
+import { stageForTrainingNavigation } from '@/domain/training-stage';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
-  { id: 'triage', label: '接诊与分诊', short: '接诊' }, { id: 'history', label: '问诊与沟通', short: '交流' },
+  { id: 'triage', label: '接诊与分诊', short: '接诊' }, { id: 'history', label: '问诊与沟通', short: '沟通' },
   { id: 'exam', label: '可视化体格检查', short: '查体' }, { id: 'tests', label: '辅助检查选择', short: '检查' },
   { id: 'assessment', label: '病情摘要与诊断', short: '诊断' }, { id: 'plan', label: '治疗计划', short: '治疗' },
   { id: 'communication', label: '患儿与家长沟通', short: '沟通' }, { id: 'report', label: '训练报告', short: '报告' },
@@ -303,14 +304,16 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     }
   }
 
-  // 专项训练任务化（方案 5.2）：practice 模式按配置只显示本专项允许的阶段（服务端同规则门控）
+  // 专项训练仍按场景显示允许阶段；其余训练只呈现一个“沟通”，内部 communication 阶段保持不变。
   const activeScenario = session?.mode === 'practice' ? getPracticeScenario(session.practiceFocus) : null;
   const visibleStages = activeScenario
     ? activeScenario.allowedStages.map((id) => stages.find((stage) => stage.id === id)).filter((stage): stage is { id: Stage; label: string; short: string } => Boolean(stage))
-    : session?.mode === 'osce' || session?.mode === 'immersive' ? stages : stages.filter((stage) => stage.id !== 'communication');
-  // 展示阶段优先级：回看态 viewStage（非 OSCE，业务阶段不变）> communication 归一到会话中心 > 业务阶段
-  // （practice 沟通专项的 communication 是真实业务阶段，不归一）
-  const displayStage: Stage | undefined = session?.viewStage ?? (session?.stage === 'communication' && session.mode !== 'osce' && session.mode !== 'practice' ? 'history' : session?.stage);
+    : stages.filter((stage) => stage.id !== 'communication');
+  // 回看阶段优先，但旧会话若已停留在 communication，也归一到同一个沟通入口；专项沟通除外。
+  const requestedStage = session?.viewStage ?? session?.stage;
+  const displayStage: Stage | undefined = session && requestedStage
+    ? stageForTrainingNavigation(requestedStage, session.mode, session.practiceFocus)
+    : undefined;
   useEffect(()=>{if(window.matchMedia('(max-width:1023px)').matches)document.querySelector<HTMLElement>('.stage-scroll [data-current="true"]')?.scrollIntoView({block:'nearest',inline:'center'});},[displayStage,noteOpen]);
   const currentIndex = visibleStages.findIndex((stage) => stage.id === displayStage);
   const evidenceEvents = useMemo(() => session?.events.filter((event) => event.evidenceCodes.length > 0) ?? [], [session?.events]);
@@ -474,7 +477,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         <div className="form-field"><div className="field-label-row"><label htmlFor="differentials">鉴别诊断</label><button className="btn btn-quiet" type="button" disabled={busy || !differentials} onClick={() => setDifferentials('')}>清空鉴别诊断</button></div><textarea id="differentials" value={differentials} onChange={(e) => setDifferentials(e.target.value)} placeholder="列出需要鉴别的疾病及理由" /></div>
         <button className="btn btn-primary btn-block" disabled={busy}>提交诊断并继续</button>
       </form>;
-      case 'plan': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_PLAN', data: { priority, detail: planDetail } }); if (result) { if (session.mode === 'osce') await navigate('communication'); else if (session.mode === 'practice') await finish(); else await navigate('history'); } }}>
+      case 'plan': return <form className="clinical-form" onSubmit={async (event) => { event.preventDefault(); const result = await sendEvent({ type: 'SUBMIT_PLAN', data: { priority, detail: planDetail } }); if (result) { if (session.mode === 'practice') await finish(); else await navigate('history'); } }}>
         <div className="stage-intro"><p className="eyebrow">患者安全优先</p><h2>治疗计划</h2><p>首要处置写当前最先做的一件事；后续计划补充药物、监测、复评和随访，无需重复诊断依据。接受要点简答。</p></div>
         <div className="form-field"><label htmlFor="priority">首要处置</label><input id="priority" required value={priority} onChange={(e) => setPriority(e.target.value)} placeholder="此刻最先做什么？" /></div>
         <div className="form-field"><label htmlFor="plan-detail">后续治疗与监测</label><textarea id="plan-detail" required minLength={5} value={planDetail} onChange={(e) => setPlanDetail(e.target.value)} placeholder="补充后续治疗、必要安全条件、监测与复评；不必重复上面的首要处置。" /></div>
@@ -518,7 +521,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       {error && <div className="alert" role="alert" style={{ margin: '14px 14px 0' }}>{error}</div>}
       {noteOpen?<div className="training-note-workspace"><NoteWriting ref={noteRef} sessionId={session.id} embedded context={session} onComplete={finish}/></div>:<div className="training-grid" data-patient={showPatient} data-exam={spatialExam} data-record-inline={!drawerStage && !recordOpen}>
         {(!spatialExam || practiceCompletion === 'exam_observation') && <section tabIndex={-1} className="workspace-panel training-primary" data-stage={displayStage} data-mobile-hidden={false}>
-          <div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续交流</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div>
+          <div className="panel-head"><h2>{visibleStages[currentIndex]?.label}</h2><div className="panel-actions">{displayStage !== 'triage' && displayStage !== 'history' && displayStage !== 'communication' && displayStage !== 'report' && session.mode !== 'osce' && !activeScenario && <button className="conversation-return" type="button" onClick={() => { void navigate('history'); }}><MessageCircle size={14} /> 继续沟通</button>}{busy && <LoaderCircle className="patient-breath" size={18} />}</div></div>
           <div className="panel-body">{currentFocus && <div className="focus-banner"><span>本轮重点</span><strong>{focusLabels[currentFocus]}</strong></div>}{stageContent}{feedback && <div className="feedback">{feedback}</div>}</div>
         </section>}
         {showPatient&&<section className="workspace-panel training-patient" data-mobile-hidden={false}><div className="panel-head"><h2>自主体格检查</h2><span className="emotion-pill">{caseProfile.age} · {caseProfile.sex}</span></div><button type="button" className="ce-mobile-record-trigger" onClick={()=>setRecordOpen(true)}><ClipboardList size={16}/>共享病例记录<span>查看已获得信息</span></button><PatientFigure growthMeasurements={Boolean(session.caseOptions?.growthMeasurements)} posture={effectivePosture} position={effectivePosition} patient={caseProfile} positions={postureOptions} onPositionChange={setPosture} onExamine={examine} observation={examObservation} onCloseObservation={() => setExamObservation(null)} onReplayAudio={replayObservationAudio} busy={busy} hygieneCompleted={hygieneCompleted} showReference={session.mode!=='osce'} completedActions={session.events.filter(event=>event.type==='EXAM_ACTION'&&event.correct===true&&event.examAction).map(event=>event.examAction!)} /></section>}

@@ -31,6 +31,12 @@ export function ConversationComposer({
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea || inputMode !== 'text') return;
+    // 空草稿始终一行，不能让窄屏占位文本的换行撑高整个工具行。
+    if (!value) {
+      textarea.style.height = '44px';
+      textarea.style.overflowY = 'hidden';
+      return;
+    }
     textarea.style.height = '0px';
     textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
     textarea.style.overflowY = textarea.scrollHeight > 120 ? 'auto' : 'hidden';

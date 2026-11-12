@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CASE_CATALOG } from '../src/domain/case-catalog';
+import { findPublicCase } from '../src/domain/case-catalog';
 import { admissionProfile } from '../src/lib/case-admission';
 import summaries from '../src/domain/admission-summaries.json';
 import { TEACHER_CASE_CATALOG } from '../src/domain/teacher-case-catalog';
@@ -11,7 +11,7 @@ test('部署缺少私有资料时仍显示年龄、性别、真实主诉', () =>
   try {
     assert.equal(Object.keys(summaries).length, 67);
     for (const id of Object.keys(summaries)) {
-      const profile = CASE_CATALOG.find(item => item.id === id)!;
+      const profile = findPublicCase(id)!;
       const actual = admissionProfile(profile);
       assert.equal(actual.title, profile.title);
       assert.ok(actual.title.includes(actual.age));

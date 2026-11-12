@@ -6,7 +6,8 @@ import type { UrlWithParsedQuery } from 'node:url';
 import next from 'next';
 
 // 仅平台显式标记 DEV 时启用 Next 开发模式；其他情况保持生产 fail-closed。
-const dev = process.env.CODER_PROJECTS_ENV === 'DEV' || process.env.CODER_PROJECT_ENV === 'DEV';
+const runtimeEnv = process.env.CODER_PROJECT_ENV || process.env.CODER_PROJECTS_ENV;
+const dev = runtimeEnv === 'DEV';
 if (!process.env.NODE_ENV) Reflect.set(process.env, 'NODE_ENV', dev ? 'development' : 'production');
 // HOSTNAME 在容器中是 pod 主机名（绑定后外部不可达），监听地址一律 0.0.0.0。
 const hostname = process.env.HOST || '0.0.0.0';
@@ -101,8 +102,22 @@ app.prepare().then(() => {
       }
     }
   });
+  let shuttingDown = false;
+  const shutdown = () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    server.close(() => process.exit(0));
+    // Next 开发编译或长请求可能占用连接，不能无限阻塞 tsx 热重启。
+    setTimeout(() => process.exit(0), 3_000).unref();
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
+
   server.listen(port, hostname, () => {
     console.log(`> Luojia Pediatrics Agent ready at http://${hostname}:${port}`);
     startSyncWorker();
   });
+}).catch((error: unknown) => {
+  console.error('[server] failed to prepare Next.js', error);
+  process.exit(1);
 });

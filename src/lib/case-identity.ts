@@ -1,5 +1,5 @@
 // 服务端公开标识注册表。保持稳定，不重写历史数据库case_id；禁止客户端导入。
-import { CASE_CATALOG } from '@/domain/case-catalog';
+import { CASE_CATALOG, findPublicCase as findCatalogCase } from '@/domain/case-catalog';
 
 export const CASE_PUBLIC_IDS: Record<string, string> = {
   "teacher-单纯肥胖症": "case-5a51b3c9-ea4a-4c1b-96f8-20a9b59e44b7",
@@ -80,6 +80,6 @@ export function resolveCaseId(value: string): string {
   return internalByPublic.get(decoded) ?? decoded;
 }
 export function publicCaseId(value: string): string { return CASE_PUBLIC_IDS[resolveCaseId(value)] ?? value; }
-export function findPublicCase(value: string) { return CASE_CATALOG.find(item => item.id === publicCaseId(value)); }
+export function findPublicCase(value: string) { return findCatalogCase(publicCaseId(value)); }
 export function getPublicCase(value: string) { const result = findPublicCase(value); if (!result) throw new Error('CASE_NOT_FOUND'); return result; }
-export function isTrainableCase(value: string) { return Boolean(findPublicCase(value)); }
+export function isTrainableCase(value: string) { const id = publicCaseId(value); return CASE_CATALOG.some(item => item.id === id); }

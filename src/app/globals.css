@@ -324,21 +324,22 @@ textarea { resize: vertical; }
 .stream-text[data-streaming] { cursor: pointer; }
 .stream-caret { display: inline-block; width: 2px; height: .95em; margin-left: 2px; vertical-align: -0.12em; background: currentColor; animation: caret-blink .85s steps(2, start) infinite; }
 @keyframes caret-blink { 50% { opacity: 0; } }
-.composer-card { flex: none; padding: 8px 10px; border-top: 1px solid var(--line); background: #f7faf8; }
-.composer-main-row { display: flex; align-items: flex-end; gap: 8px; width: 100%; }
-.composer-input-slot { flex: 1; min-width: 0; display: flex; align-items: flex-end; }
+.composer-card { flex: none; min-width: 0; padding: 8px 10px; border-top: 1px solid var(--line); background: #f7faf8; }
+.composer-main-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px auto; align-items: end; gap: 8px; width: 100%; }
+.composer-main-row > * { min-width: 0; }
+.composer-input-slot { width: 100%; min-width: 0; display: flex; align-items: flex-end; }
 .composer-input-slot .composer { flex: 1; min-width: 0; }
 .composer-icon-button { flex: 0 0 44px; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 11px; background: transparent; color: #47625c; }
 .composer-icon-button:hover:not(:disabled), .composer-icon-button:focus-visible { background: #e7f1ec; color: var(--pine-dark); }
 .composer-icon-button:disabled { opacity: .5; cursor: wait; }
 .composer-audio-toggle[aria-pressed="true"] { background: var(--mint); color: var(--pine-dark); }
 .composer textarea, .clinical-form textarea, .clinical-form input { width: 100%; border: 1px solid #becbc7; border-radius: 13px; background: white; color: var(--ink); padding: 12px 13px; }
-.composer-main-row .composer textarea { display: block; min-height: 44px; height: 44px; max-height: 120px; padding: 10px 13px; resize: none; font-size: 16px; line-height: 22px; }
+.composer-main-row .composer textarea { display: block; min-width: 0; min-height: 44px; height: 44px; max-height: 120px; padding: 10px 13px; resize: none; font-size: 16px; line-height: 22px; }
 .composer-card[data-mode="communication"] .composer textarea { border-color: #e2c89a; background: #fffaf0; }
-.composer-input-slot .voice-hold { width: 100%; }
+.composer-input-slot .voice-hold { position: relative; width: 100%; min-width: 0; }
 .composer-input-slot .voice-hold-button { min-height: 44px; border-radius: 11px; background: #fff; font-size: 14px; }
-.composer-input-slot .voice-inline-notice { margin: 5px 2px 0; font-size: 12px; line-height: 1.5; text-align: left; overflow-wrap: anywhere; }
-.composer-send { flex: none; min-height: 44px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; border-radius: 11px; font-size: 14px; }
+.composer-input-slot .voice-inline-notice { position: absolute; z-index: 12; right: 0; bottom: calc(100% + 6px); left: 0; margin: 0; padding: 8px 10px; border: 1px solid #e3cb7e; border-radius: 10px; background: #fffaf0; color: #684f16; box-shadow: 0 8px 24px rgba(74,61,25,.14); font-size: 12px; line-height: 1.5; text-align: left; overflow-wrap: anywhere; }
+.composer-send { flex: none; min-width: 44px; min-height: 44px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; border-radius: 11px; font-size: 14px; }
 @media (max-width: 560px) {
   .composer-card { padding: 6px; }
   .composer-main-row { gap: 4px; }
