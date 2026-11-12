@@ -5,8 +5,9 @@ import type { IncomingMessage } from 'node:http';
 import type { UrlWithParsedQuery } from 'node:url';
 import next from 'next';
 
-if (!process.env.NODE_ENV) Reflect.set(process.env, 'NODE_ENV', 'production');
-const dev = false;
+// 仅平台显式标记 DEV 时启用 Next 开发模式；其他情况保持生产 fail-closed。
+const dev = process.env.CODER_PROJECTS_ENV === 'DEV' || process.env.CODER_PROJECT_ENV === 'DEV';
+if (!process.env.NODE_ENV) Reflect.set(process.env, 'NODE_ENV', dev ? 'development' : 'production');
 // HOSTNAME 在容器中是 pod 主机名（绑定后外部不可达），监听地址一律 0.0.0.0。
 const hostname = process.env.HOST || '0.0.0.0';
 // 平台端口优先 DEPLOY_RUN_PORT，其次 PORT，最后默认 5173（沙箱约定端口）。
