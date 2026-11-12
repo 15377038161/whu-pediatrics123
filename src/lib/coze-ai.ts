@@ -242,3 +242,39 @@ export async function invokeCozeAI(options: InvokeCozeAIOptions, deps?: InvokeCo
   }
   throw new AIGatewayError(lastInfo, maxAttempts);
 }
+
+/**
+ * Streaming producer for structured generation. Chunks are consumed incrementally on the
+ * server; the caller validates the completed JSON before any clinical result is released.
+ */
+export async function invokeCozeAIStream(options: InvokeCozeAIOptions): Promise<InvokeCozeAIResult> {
+  const settings = getAIGatewaySettings();
+  const timeoutMs = options.timeoutMs ?? settings.timeoutMs;
+  const maxAttempts = Math.max(1, options.maxAttempts ?? settings.maxAttempts);
+  const retryBaseMs = options.retryBaseMs ?? settings.retryBaseMs;
+  let lastInfo: AIErrorInfo = { kind: 'unknown', retryable: false, detail: 'no attempt executed' };
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const headers = options.forwardHeaders && Object.keys(options.forwardHeaders).length > 0 ? options.forwardHeaders : undefined;
+      const client = new LLMClient(getAIConfig(timeoutMs), headers);
+      const collect = async (): Promise<string> => {
+        let content = '';
+        for await (const chunk of client.stream(options.messages, options.llmConfig)) {
+          if (chunk.content) content += chunk.content;
+          if (chunk.done) break;
+        }
+        return content;
+      };
+      const content = await withTimeout(collect(), timeoutMs);
+      if (!content.trim()) throw new Error('COZE_AI_EMPTY_STREAM');
+      return { content, attempts: attempt };
+    } catch (error) {
+      lastInfo = classifyAIError(error);
+      if (!lastInfo.retryable || attempt === maxAttempts) throw new AIGatewayError(lastInfo, attempt);
+      const backoff = retryBaseMs * 2 ** (attempt - 1) + Math.floor(Math.random() * retryBaseMs);
+      const retryAfter = retryAfterMsOf(error);
+      await defaultSleep(retryAfter !== null ? Math.max(retryAfter, backoff) : backoff);
+    }
+  }
+  throw new AIGatewayError(lastInfo, maxAttempts);
+}

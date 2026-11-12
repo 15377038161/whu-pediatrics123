@@ -39,15 +39,16 @@ export const VITAL_METRIC_UNITS: Record<VitalMetric, string> = {
   spo2: '%',
 };
 
-const ranges: Record<VitalMetric, readonly [number, number]> = {
+export const VITAL_MEASUREMENT_RANGES: Record<VitalMetric, readonly [number, number]> = {
   temperature: [30, 45],
   heartRate: [20, 300],
-  respiratoryRate: [5, 120],
+  // A fixed record of apnea is clinically meaningful; zero is not a missing value.
+  respiratoryRate: [0, 200],
   spo2: [30, 100],
 };
 
 function validateMeasurement(value: z.infer<typeof measurementShape>, ctx: z.RefinementCtx): void {
-  const [minimum, maximum] = ranges[value.metric];
+  const [minimum, maximum] = VITAL_MEASUREMENT_RANGES[value.metric];
   if (value.value < minimum || value.value > maximum) {
     ctx.addIssue({ code: 'custom', path: ['value'], message: `${VITAL_METRIC_LABELS[value.metric]}超出允许范围` });
   }

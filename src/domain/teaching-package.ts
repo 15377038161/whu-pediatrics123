@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { sourceExamRuleSchema } from './source-exam-contract';
 import { caseIntakeSchema } from './case-intake';
 import { fixedVitalMeasurementSchema } from './vital-measurement';
+import { measurementContractSchema } from './structured-measurement';
 
 export const teachingOriginSchema = z.enum(['source','teaching-simulation','reference']);
 export const historyFactSchema = z.object({
@@ -22,6 +23,7 @@ export const examLocalSupplementSchema=z.object({
   origin:z.literal('teaching-simulation'),scope:z.literal('local'),
   sourceLocator:z.string().trim().min(1).max(300),reviewStatus:z.literal('automated-unreviewed'),
 }).strict();
+export const teachingExamApplicabilitySchema=z.object({status:z.enum(['applicable','conditional','not_applicable']),reason:z.string().optional()}).optional();
 export const teachingExamSchema=sourceExamRuleSchema.extend({
   id:z.string(), evidenceCode:z.string(), origin:teachingOriginSchema,
   technique:z.string(), reaction:z.string(), interpretation:z.string(),
@@ -29,6 +31,9 @@ export const teachingExamSchema=sourceExamRuleSchema.extend({
   scope:z.enum(['local','whole-region','reference']), aspect:z.enum(['front','back']).optional(),
   /** 固定病例测量定义；实际 measuredAt 只在学生成功操作时写入会话事件。 */
   measurements:z.array(fixedVitalMeasurementSchema).max(4).optional(),
+  applicability:teachingExamApplicabilitySchema,
+  /** Author-side numeric parameters remain bound to the exact exam, never inferred from prose. */
+  fixedParameters:z.record(z.string(),z.unknown()).optional(),
   media:z.array(mediaSchema).default([]),localSupplement:examLocalSupplementSchema.optional(),
 }).superRefine((exam,ctx)=>{
   if(exam.localSupplement&&(exam.origin!=='source'||exam.scope!=='whole-region'))ctx.addIssue({
@@ -70,6 +75,8 @@ export const teachingPackageSchema=z.object({
   roleState:z.object({childCanSpeak:z.boolean(),reason:z.string(),sourceLocator:z.string()}).optional(),
   appearanceAssets:z.array(z.object({assetId:z.string(),posture:z.enum(['standing','supine']),publicPath:z.string()})).optional(),
   historyFacts:z.array(historyFactSchema),exams:z.array(teachingExamSchema),tests:z.array(teachingTestSchema),
+  /** Version-pinned author measurement contracts; absent only on historical packages. */
+  measurementContracts:z.array(measurementContractSchema).max(16).optional(),
   questions:z.array(z.object({topic:z.string(),prompt:z.string(),variants:z.array(z.string()),followups:z.array(z.string()),factIds:z.array(z.string()),parentAnswer:z.string(),childAnswer:z.string(),unavailable:z.string()})).default([]),
   management:z.array(z.object({title:z.string(),detail:z.string(),origin:teachingOriginSchema,sourceLocator:z.string()})),
   referenceNote:z.record(z.string(),z.string()),rubric:z.array(teachingRubricItemSchema),

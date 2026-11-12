@@ -32,7 +32,20 @@ function fabricated(requested = '血常规') {
   return { requested, label: requested, status: 'result' as const, origin: 'generated' as const, result: '旧合成软件测试报告，不作医学数据。', sourceTestIds: [], sourceQuotes: [] };
 }
 function simulation(requested = '血常规') {
-  return { requested, label: requested, status: 'result' as const, origin: 'teaching-simulation' as const, result: '教学模拟：白细胞 11.2×10^9/L，中性粒细胞 72%，血红蛋白 118g/L，血小板 286×10^9/L。', sourceTestIds: [], sourceQuotes: [] };
+  const result = '教学模拟时点：2026-01-02 08:00。白细胞 11.2×10^9/L，中性粒细胞 72%，血红蛋白 118g/L，血小板 286×10^9/L。';
+  return {
+    requested, label: requested, status: 'result' as const, origin: 'teaching-simulation' as const, result,
+    report: {
+      name: requested, specimen: '静脉血（教学模拟）', reference: '仅用于软件测试的教学参考', origin: 'teaching-simulation' as const,
+      rows: [
+        { item: '白细胞', value: '11.2', unit: '×10^9/L', reportedAt: '2026-01-02 08:00' },
+        { item: '中性粒细胞', value: '72', unit: '%', reportedAt: '2026-01-02 08:00' },
+        { item: '血红蛋白', value: '118', unit: 'g/L', reportedAt: '2026-01-02 08:00' },
+        { item: '血小板', value: '286', unit: '×10^9/L', reportedAt: '2026-01-02 08:00' },
+      ],
+    },
+    sourceTestIds: [], sourceQuotes: [],
+  };
 }
 function sourceExtract(requested = '指标甲') {
   return { requested, label: requested, status: 'result' as const, origin: 'source' as const, result: '不可把此模型概述当原文', sourceTestIds: ['source-test-0'], sourceQuotes: ['指标甲 123 单位甲'] };
@@ -83,6 +96,24 @@ test('无原始结果时只接受明确标识的 teaching-simulation，旧 gener
   assert.doesNotMatch(prompt, /origin=generated/);
 });
 
+test('AI结构化报告的数值、单位、时点与来源类型必须和正文一致', () => {
+  const { s, c } = setup();
+  const accepted = validateTestSupplements({ results: [simulation()] }, ['血常规'], s, c.tests);
+  assert.equal(accepted.length, 1);
+  assert.equal(accepted[0].report?.rows.length, 4);
+  assert.equal(accepted[0].report?.origin, 'teaching-simulation');
+  const mismatches = [
+    { ...simulation(), report: { ...simulation().report, origin: 'source' as const } },
+    { ...simulation(), report: { ...simulation().report, rows: simulation().report.rows.map((row, index) => index === 0 ? { ...row, value: '99.9' } : row) } },
+    { ...simulation(), report: { ...simulation().report, rows: simulation().report.rows.map((row, index) => index === 0 ? { ...row, unit: 'mg/L' } : row) } },
+    { ...simulation(), report: { ...simulation().report, rows: simulation().report.rows.map((row, index) => index === 0 ? { ...row, reportedAt: '2026-01-03 09:00' } : row) } },
+  ];
+  for (const item of mismatches) assert.deepEqual(validateTestSupplements({ results: [item] }, ['血常规'], s, c.tests), []);
+  const withoutReport = simulation() as Partial<ReturnType<typeof simulation>>;
+  delete withoutReport.report;
+  assert.deepEqual(validateTestSupplements({ results: [withoutReport as ReturnType<typeof simulation>] }, ['血常规'], s, c.tests), []);
+});
+
 test('缓存只复用同来源、同教学包的原文或新模拟，历史 generated 永不复用', () => {
   const { s, c } = setup();
   const legacy = {
@@ -131,6 +162,8 @@ test('AI 教学模拟醒目标识，按会话和版本持久复用，JSON 恢复
   assert.ok(s.unlockedEvidence.some(code => code.startsWith('TEACHING_SIMULATION_TEST_')));
   assert.ok(first.newMessages.some(message => message.content.includes(TEACHING_SIMULATION_LABEL)));
   assert.ok(s.events.some(event => event.summary.includes('非原患者实测')));
+  assert.equal(s.supplementalTests?.[0].report?.rows[0].reportedAt, '2026-01-02 08:00');
+  assert.equal(s.events.find(event => event.testReport)?.testReport?.rows[0].value, '11.2');
   assert.equal(getCase(s.caseId, version, s.id).tests.length, c.tests.length, 'source definitions are unchanged');
 
   const restored = JSON.parse(JSON.stringify(s));

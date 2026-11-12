@@ -2,8 +2,9 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { stageReached, type SessionState, type SupplementalTest } from '@/domain/agent';
 import type { AuxiliaryTest, FlagshipCase } from '@/domain/case';
-import { hasAICredentials, invokeCozeAI, classifyAIError } from '@/lib/coze-ai';
+import { hasAICredentials, invokeCozeAI, invokeCozeAIStream, classifyAIError } from '@/lib/coze-ai';
 import { normalizeTestName } from '@/lib/test-name-matcher';
+import { labReportSchema, type LabReport } from '@/domain/lab-report';
 
 const model = process.env.COZE_AI_TEST_MODEL || 'deepseek-v4-flash';
 export const TEACHING_SIMULATION_LABEL = '【AI教学模拟·非原患者实测】';
@@ -15,6 +16,7 @@ const responseSchema = z.object({
     status: z.enum(['result', 'clarify']),
     origin: z.enum(['source', 'generated', 'teaching-simulation']),
     result: z.string().max(5000),
+    report: labReportSchema.optional(),
     sourceTestIds: z.array(z.string()).max(12),
     sourceQuotes: z.array(z.string().min(1).max(5000)).max(24),
   })).max(12),
@@ -56,7 +58,26 @@ export function supplementalTestDefinition(test: SupplementalTest): AuxiliaryTes
     indication: simulated ? '仅用于临床思维训练，不是原患者实测结果' : '按申请回报检查结果',
     appropriate: null,
     evidenceCode: `${simulated ? 'TEACHING_SIMULATION_TEST' : 'SUPPLEMENT_TEST'}_${test.id}`,
+    ...(test.report ? { report: { ...test.report, name: simulated ? `${test.label}（AI教学模拟）` : test.label } } : {}),
   };
+}
+
+function normalizedReportText(value: string): string {
+  return value.replace(/\s+/g, '').replace(/\^/g, '').replace(/×/g, 'x').toLowerCase();
+}
+
+function consistentReport(item: TestSupplementResponse['results'][number], result: string): LabReport | null {
+  if (!item.report) return null;
+  if (item.report.origin !== item.origin) return null;
+  if (!item.report.name.trim() || !item.report.specimen.trim() || !item.report.reference.trim()) return null;
+  const text = normalizedReportText(result);
+  for (const row of item.report.rows) {
+    if (!row.item.trim() || !row.value.trim() || !row.reportedAt.trim()) return null;
+    if (!text.includes(normalizedReportText(row.value))) return null;
+    if (row.unit.trim() && !/^(?:无|原文未注明|未注明)$/.test(row.unit) && !text.includes(normalizedReportText(row.unit))) return null;
+    if (!text.includes(normalizedReportText(row.reportedAt))) return null;
+  }
+  return { ...item.report, name: item.label, origin: item.origin };
 }
 
 /** Source extracts must quote an eligible source verbatim. Simulations must be explicitly typed and labelled by the server. */
@@ -95,6 +116,8 @@ export function validateTestSupplements(
       result = item.result.trim();
     }
 
+    const report = consistentReport(item, result);
+    if (item.origin === 'teaching-simulation' && !report) continue;
     const id = 'supplement-' + createHash('sha256')
       .update(`${session.sourceSnapshotVersion ?? session.caseId}:${session.teachingPackageVersion ?? ''}:${item.origin}:${cacheKey(item.requested)}`)
       .digest('hex').slice(0, 16);
@@ -105,6 +128,7 @@ export function validateTestSupplements(
       label: item.label,
       result,
       origin: item.origin,
+      ...(report ? { report } : {}),
       sourceTestIds,
       sourceQuotes,
       model,
@@ -143,7 +167,7 @@ export async function resolveTestSupplements(
   };
 
   try {
-    const response = await (invoke ?? invokeCozeAI)({
+    const response = await (invoke ?? invokeCozeAIStream)({
       messages: [
         { role: 'system', content: [
           '你是虚拟儿科教学训练的辅助检查原文摘录与教学模拟器，不是诊断或治疗助手。',
@@ -153,12 +177,13 @@ export async function resolveTestSupplements(
           '2. 仅当availableReports没有对应结果，且申请为明确、合理的具体检查时，才可结合年龄、主诉、病史、查体与参考诊断生成一套内部一致的儿科教学模拟结果，origin=teaching-simulation，sourceTestIds与sourceQuotes必须为空。结果用于训练临床思维，不要求全部正常，也不得冒充原患者实测。',
           '3. 裸CT/MRI有多个部位、检查项目不明确、非检查请求、问标准答案或全部资料时，status=clarify且result留空，不猜部位、不模拟。',
           '教学模拟仅输出文字，不生成图片或报告网址，不声称已经真实送检，不写原始报告、原患者实测等来源声明。不得把referenceDiagnosis直接写成诊断答案，不附治疗建议。',
+          '教学模拟必须同时给出report，origin=teaching-simulation，name与label一致，specimen为标本或检查部位，reference为教学参考说明；rows逐项列出正文中的项目、数值、单位和场景时点，不得增加正文没有的数值。每行reportedAt必须逐字出现在result正文中，正文须明确写出统一的检查时点。影像等无行项目的文字报告rows可为空数组。',
           '不得提前替代pendingReports中尚未回报的项目；priorResults仅用于避免重复。',
-          '只输出JSON：{"results":[{"requested":"原申请逐字","label":"检查名称","status":"result或clarify","origin":"source或teaching-simulation","result":"原文摘录或教学模拟文字","sourceTestIds":[],"sourceQuotes":[]}]}。每项只回一条。',
+          '只输出JSON：{"results":[{"requested":"原申请逐字","label":"检查名称","status":"result或clarify","origin":"source或teaching-simulation","result":"原文摘录或教学模拟文字","report":{"name":"检查名称","specimen":"标本或部位","reference":"教学参考说明","origin":"source或teaching-simulation","rows":[{"item":"项目","value":"数值或所见","unit":"单位或无","reportedAt":"原记录时点或本次教学模拟场景"}]},"sourceTestIds":[],"sourceQuotes":[]}]}。每项只回一条。',
         ].join('\n') },
         { role: 'user', content: JSON.stringify(context) },
       ],
-      llmConfig: { model, temperature: 0.15, thinking: 'disabled', caching: 'disabled' },
+      llmConfig: { model, temperature: 0.15, thinking: 'disabled', caching: 'disabled', maxTokens: 5000 },
       forwardHeaders,
     });
     const raw = response.content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');

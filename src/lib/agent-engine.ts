@@ -36,7 +36,9 @@ import { resolveOsceStation } from '@/domain/osce-stations';
 import { renderRoleReply } from '@/lib/role-agent';
 import { findSupplementalTest, supplementalTestDefinition, resolveTestSupplements, uniqueModalityTest, type TestSupplementInvoke } from '@/lib/test-result-supplement';
 import { fixedMeasurementsForTeachingExam } from '@/domain/exam-vital-measurements';
-import { releaseVitalMeasurements, type VitalMeasurement } from '@/domain/vital-measurement';
+import { releaseVitalMeasurements, VITAL_METRIC_UNITS, type FixedVitalMeasurement, type VitalMeasurement, type VitalMetric } from '@/domain/vital-measurement';
+import { formatStructuredMeasurement, releaseStructuredMeasurements, structuredMeasurementKey, type AcquiredStructuredMeasurement } from '@/domain/structured-measurement';
+import { teachingExamReleaseBlock } from '@/domain/exam-release-gate';
 
 /** 开单 RPC 注入缝：生产默认指向 case-snapshot 封装；仅测试注入 503/守卫拒绝失败路径，
  *  不改变业务判定与守卫逻辑（不绕过归属/版本/已下单校验）。 */
@@ -489,11 +491,12 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
   const data={toolId,bodyPartId,posture,position,location};
   if(isRepeatedExamAction(session,data))return {session,newMessages:[],feedback:null,repeated:true,trace:[trace('查体规则','相同检查已记录，静默忽略重复操作')]};
   const operation=normalizedExamAction(session,data);
-  const record=(summary:string,correct:boolean,codes:string[],media?:CaseMedia[],failure?:RecordedExamAction['failure'],measurements?:VitalMeasurement[])=>{
+  const record=(summary:string,correct:boolean,codes:string[],media?:CaseMedia[],failure?:RecordedExamAction['failure'],measurements?:VitalMeasurement[],structuredMeasurements?:AcquiredStructuredMeasurement[])=>{
     session.events.push({
       ...clinicalEvent(clientEventId,'EXAM_ACTION','exam',summary,correct,codes,media),
       examAction:{...operation,...(failure?{failure}:{})},
       ...(measurements?.length?{measurements}:{}),
+      ...(structuredMeasurements?.length?{structuredMeasurements}:{}),
     });
   };
   const target=ANATOMY_REGIONS.flatMap(r=>r.sites).find(s=>s.id===bodyPartId);
@@ -548,6 +551,12 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
     session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, feedbackText), trace: traceItems };
   }
+  const authorBlock=teachingExamReleaseBlock(teachingExam,session.stage);
+  if(authorBlock){
+    record(`${rule.label}：${authorBlock.reason}`,false,[],undefined,authorBlock.kind);
+    advanceStageTo(session,'exam');session.updatedAt=now();
+    return {session,newMessages:[],feedback:feedbackFor(session,authorBlock.reason),trace:[...traceItems,trace('安全校验','作者门控阻止当前病例场景释放结果、证据和测量')]};
+  }
   // 分时点事实释放（补充单 §5）：查体项目设定了更晚的可执行阶段时阻止执行，不解锁体征证据。
   if (rule.availableFromStage && !stageReached(session.stage, rule.availableFromStage)) {
     record(`${rule.label}：当前阶段暂不可执行，未解锁`,false,[],undefined,'stage');
@@ -562,10 +571,24 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
     session.updatedAt = now();
     return { session, newMessages: [], feedback: feedbackFor(session, '尚未完成必要准备。请先进行手卫生并向患儿说明检查。'), trace: [...traceItems, trace('安全校验', '阻止未完成准备的深层检查')] };
   }
+  const measuredAt=now();
+  const structuredRelease=boundPack?.measurementContracts
+    ?releaseStructuredMeasurements(boundPack.measurementContracts,toolId,bodyPartId,session.stage,measuredAt)
+    :{measurements:[],withheld:[]};
+  if(structuredRelease.withheld.length&&structuredRelease.measurements.length===0){
+    const blocked=structuredRelease.withheld[0];
+    record(`${rule.label}：${blocked.reason}`,false,[],undefined,blocked.kind==='stage'?'stage':'applicability');
+    advanceStageTo(session,'exam');session.updatedAt=now();
+    return {session,newMessages:[],feedback:feedbackFor(session,blocked.reason),trace:[...traceItems,trace('安全校验','作者测量契约阻止当前场景释放数值')]};
+  }
   session.unlockedEvidence = uniq([...session.unlockedEvidence, rule.evidenceCode]);
   if (rule.id === 'prep-hygiene') session.preparationActions = uniq([...session.preparationActions, rule.id]);
-  const measuredAt=now();
-  const definitions=boundPack&&teachingExam?fixedMeasurementsForTeachingExam(boundPack,teachingExam):[];
+  const definitions:FixedVitalMeasurement[]=structuredRelease.measurements.flatMap(item=>{
+    if(!['temperature','heartRate','respiratoryRate','spo2'].includes(item.indicator)||item.value===undefined)return [];
+    const metric=item.indicator as VitalMetric;
+    return [{metric,value:item.value,unit:VITAL_METRIC_UNITS[metric],method:item.method,site:anatomyLabel(item.bodyPartId),origin:item.origin,sourceLocator:item.sourceLocator,sourceTimepoint:item.timepoint}];
+  });
+  if(!boundPack?.measurementContracts&&boundPack&&teachingExam)definitions.push(...fixedMeasurementsForTeachingExam(boundPack,teachingExam));
   const measurements=releaseVitalMeasurements(definitions,measuredAt);
   if(rule.evidenceCode==='EX_SPO2'&&getCase(session.caseId,session.sourceSnapshotVersion,session.id).sourceFacts===undefined){
     measurements.push(...releaseVitalMeasurements([{
@@ -574,11 +597,16 @@ function handleExam(session: SessionState, toolId: string, bodyPartId: string, c
     }],measuredAt));
   }
   for(const measurement of measurements)session.vitals[measurement.metric]=measurement.value;
+  if(structuredRelease.measurements.length){
+    session.structuredMeasurements??={};
+    for(const item of structuredRelease.measurements)session.structuredMeasurements[structuredMeasurementKey(item)]=item;
+  }
+  const resultText=[rule.result,...structuredRelease.measurements.map(item=>`结构化测量：${formatStructuredMeasurement(item)}`)].join('\n');
   // 结果释放：测量数值只来自绑定病例的结构化定义，不从描述文字临时提取。
-  record(`${rule.label}${session.teachingPackageVersion?`（实际体位${{standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'}[effectivePosition]}）`:''}${location?`（${{left:'患者左侧',right:'患者右侧',both:'双侧或整体',midline:'正中'}[location.side]}，${location.aspect==='front'?'前面':'后面'}）`:''}：${rule.result}`,true,[rule.evidenceCode],rule.media,undefined,measurements);
+  record(`${rule.label}${session.teachingPackageVersion?`（实际体位${{standing:'站立',supine:'仰卧',sitting:'坐位',lateral:'侧卧',prone:'俯卧'}[effectivePosition]}）`:''}${location?`（${{left:'患者左侧',right:'患者右侧',both:'双侧或整体',midline:'正中'}[location.side]}，${location.aspect==='front'?'前面':'后面'}）`:''}：${resultText}`,true,[rule.evidenceCode],rule.media,undefined,measurements,structuredRelease.measurements);
   advanceStageTo(session, 'exam');
   session.updatedAt = now();
-  const resultMessage = message('system', rule.result, { kind: 'navigation' });  session.messages.push(resultMessage);
+  const resultMessage = message('system', resultText, { kind: 'navigation' });  session.messages.push(resultMessage);
   return {
     session,
     newMessages: [resultMessage],
@@ -918,7 +946,9 @@ export interface AgentTurnOptions {
 }
 
 export async function runAgentTurn(session: SessionState, event: AgentEvent, clientEventId: string, options?: AgentTurnOptions): Promise<AgentTurnResult> {
-  if(!isTrainableCase(session.caseId))throw new Error('CASE_RETIRED');
+  // Alias/subtype entries stay out of the public catalog, but a fully verified independent teaching
+  // package is an explicit new training binding. Historical sessions without that package stay read-only.
+  if(!isTrainableCase(session.caseId)&&!(session.teachingPackageVersion&&sessionTeachingPackage(session)))throw new Error('CASE_RETIRED');
   // 证据驱动的投影刷新（教师病例恢复态缓存）：学生真实执行查体/开单后 RPC 门控已按证据放行，
   // 会话作用域缓存仍为剥离态时重新恢复——避免引擎规则匹配读到剥离态造成假阴性
   // （病例实际有记录却判「资料未提供/检查不存在」）。失败不阻断回合（保持原有剥离态语义）。

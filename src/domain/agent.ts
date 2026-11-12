@@ -112,6 +112,8 @@ export interface ClinicalEvent {
   media?: CaseMedia[];
   /** 成功测量后由服务端写入的结构化结果；错配、资料不足和重复操作不会新增该字段。 */
   measurements?: import('./vital-measurement').VitalMeasurement[];
+  /** 全指标测量快照，含血压与生长测量；只在作者契约允许时释放。 */
+  structuredMeasurements?: import('./structured-measurement').AcquiredStructuredMeasurement[];
   createdAt: string;
 }
 
@@ -127,6 +129,8 @@ export interface SupplementalTest {
   // 'generated' 只存在于历史记录且永不复用；新模拟必须使用 teaching-simulation 并明确非原患者实测。
   id:string; requested:string; label:string; result:string;
   origin:'source'|'generated'|'teaching-simulation';
+  /** Validated structured report released with the same cached result; historical records may omit it. */
+  report?:import('./lab-report').LabReport;
   sourceTestIds:string[]; sourceQuotes:string[]; model:string; createdAt:string;
   sourceSnapshotVersion:string|null;
   /** AI 教学模拟与原文摘录均绑定会话创建时的教学包版本；历史记录可为空。 */
@@ -205,6 +209,8 @@ export interface SessionState {
   /** 接诊时的不可变快照；vitals 保存当前最新值，历史会话可缺省。 */
   initialVitals?: VitalSigns;
   vitals: VitalSigns;
+  /** 按指标、器材、部位与场景持久化；JSON 恢复后仍返回同一次成功操作的结构化记录。 */
+  structuredMeasurements?: Record<string, import('./structured-measurement').AcquiredStructuredMeasurement>;
   reportId: string | null;
   /** Independent, post-completion teaching explanation; never a score or a source of new patient facts. */
   postVisitReview?: import('./post-visit-review').SavedPostVisitReview;

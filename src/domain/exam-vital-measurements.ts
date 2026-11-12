@@ -15,6 +15,8 @@ export function fixedMeasurementsForTeachingExam(
   pack:TeachingPackage,
   exam:TeachingExam,
 ):FixedVitalMeasurement[] {
+  // New packages use the author measurement contracts as the sole measurement gate.
+  if(pack.measurementContracts)return [];
   if(exam.measurements)return exam.measurements;
   if(exam.origin==='teaching-simulation'&&exam.toolId==='oximeter'){
     const measurement=fixedTeachingOximeterMeasurement(pack.age);

@@ -27,7 +27,7 @@ test('本地包按双版本固定；错误操作不释放媒体，刷新与索�
     const bytes=Buffer.from('synthetic-image-fixture');const hash=createHash('sha256').update(bytes).digest('hex');
     writeFileSync(path.join(root,'training','media',hash+'.png'),bytes);
     const media={fileId:'training-media:'+hash,kind:'image' as const,caption:'合成检查信息'};
-    const pack=teachingPackageSchema.parse({schemaVersion:1,caseId:id,sourceId:id,sourceVersion:computeCaseDataVersion(source),version:'pending',relation:'independent',title:'合成教学',age:'8岁',sex:'男',reviewStatus:'automated-unreviewed',complaint:source.complaint,persona:{appearance:'合成',caregiver:'家长',speaking:'自然',cooperation:'可配合',knowledgeBoundary:'仅已知事实'},historyFacts:[{id:'SOURCE_HX_0_0',text:'水肿2天。',topics:['水肿及尿液变化'],actor:'parent',origin:'source',sourceLocator:'synthetic'}],exams:[{id:'unit-exam',toolId:'palpation',bodyPartId:'abdomen',label:'腹部触诊',result:'合成结果：无压痛',postures:['supine'],allowedPositions:['supine'],sourceLocator:'synthetic',evidenceCode:'TEACH_EX_palpation_abdomen',origin:'source',technique:'先解释再触诊',reaction:'合成配合动作',interpretation:'按记录',scope:'whole-region',media:[],localSupplement:{result:'固定局部教学补充：腹部局部触诊柔软，无固定压痛。',rationale:'合成整体原记录未提供局部独立所见，本补充仅用于测试分层投影。',state:'normal',origin:'teaching-simulation',scope:'local',sourceLocator:'synthetic-local-supplement',reviewStatus:'automated-unreviewed'}},{id:'unit-back',toolId:'stethoscope',bodyPartId:'right-lung-back',label:'右后肺野听诊',result:'合成后肺野所见',postures:['standing','supine'],allowedPositions:['standing','sitting','lateral'],sourceLocator:'synthetic',evidenceCode:'TEACH_EX_stethoscope_right-lung-back',origin:'reference',technique:'配合实际体位检查后肺野',reaction:'合成配合动作',interpretation:'不能直接从仰卧位完成',scope:'reference',aspect:'back',media:[]}],tests:[{report:{name:'合成尿常规',specimen:'合成',reference:'合成参考',origin:'source',rows:[{item:'合成表格指标',value:'+++',unit:'原文未注明',reportedAt:'合成时点'}]},id:'unit-test',label:'合成尿常规',aliases:['尿常规'],result:'合成结果：尿蛋白+++',origin:'source',objective:'评估',reference:'按适龄范围',necessity:'essential',rationale:'训练后解释',sourceLocator:'synthetic',media:[media]}],management:[],referenceNote:{},rubric:[],references:[]});
+    const pack=teachingPackageSchema.parse({schemaVersion:1,caseId:id,sourceId:id,sourceVersion:computeCaseDataVersion(source),version:'pending',relation:'independent',title:'合成教学',age:'8岁',sex:'男',reviewStatus:'automated-unreviewed',complaint:source.complaint,persona:{appearance:'合成',caregiver:'家长',speaking:'自然',cooperation:'可配合',knowledgeBoundary:'仅已知事实'},historyFacts:[{id:'SOURCE_HX_0_0',text:'水肿2天。',topics:['水肿及尿液变化'],actor:'parent',origin:'source',sourceLocator:'synthetic'}],exams:[{id:'unit-exam',toolId:'palpation',bodyPartId:'abdomen',label:'腹部触诊',result:'合成结果：无压痛',postures:['supine'],allowedPositions:['supine'],sourceLocator:'synthetic',evidenceCode:'TEACH_EX_palpation_abdomen',origin:'source',technique:'先解释再触诊',reaction:'合成配合动作',interpretation:'按记录',scope:'whole-region',media:[],localSupplement:{result:'固定局部教学补充：腹部局部触诊柔软，无固定压痛。',rationale:'合成整体原记录未提供局部独立所见，本补充仅用于测试分层投影。',state:'normal',origin:'teaching-simulation',scope:'local',sourceLocator:'synthetic-local-supplement',reviewStatus:'automated-unreviewed'}},{id:'unit-back',toolId:'stethoscope',bodyPartId:'right-lung-back',label:'右后肺野听诊',result:'合成后肺野所见',postures:['standing','supine'],allowedPositions:['standing','sitting','lateral'],sourceLocator:'synthetic',evidenceCode:'TEACH_EX_stethoscope_right-lung-back',origin:'reference',technique:'配合实际体位检查后肺野',reaction:'合成配合动作',interpretation:'不能直接从仰卧位完成',scope:'reference',aspect:'back',media:[]},{id:'unit-bp',toolId:'bp-cuff',bodyPartId:'upper-arm',label:'上臂血压测量',result:'固定教学血压测量已完成。',postures:['standing','supine'],allowedPositions:['standing','sitting','supine'],sourceLocator:'synthetic-bp',evidenceCode:'TEACH_EX_bp-cuff_upper-arm',origin:'teaching-simulation',technique:'选择合适袖带后测量',reaction:'合成配合动作',interpretation:'仅作教学训练',scope:'whole-region',media:[]}],measurementContracts:[{indicator:'bloodPressure',status:'applicable',readyForActivation:true,releaseStage:'exam',syncTarget:'bloodPressure',candidates:[{indicator:'bloodPressure',systolic:96,diastolic:60,unit:'mmHg',toolId:'bp-cuff',bodyPartId:'upper-arm',method:'儿童上臂血压计固定教学测量',timepoint:'初始查体',origin:'teaching-simulation',sourceLocator:'synthetic-bp',preconditions:['选择合适袖带'],availableFromStage:'exam'}]}],tests:[{report:{name:'合成尿常规',specimen:'合成',reference:'合成参考',origin:'source',rows:[{item:'合成表格指标',value:'+++',unit:'原文未注明',reportedAt:'合成时点'}]},id:'unit-test',label:'合成尿常规',aliases:['尿常规'],result:'合成结果：尿蛋白+++',origin:'source',objective:'评估',reference:'按适龄范围',necessity:'essential',rationale:'训练后解释',sourceLocator:'synthetic',media:[media]}],management:[],referenceNote:{},rubric:[],references:[]});
     pack.version=teachingPackageVersion(pack);
     const withoutSupplement=structuredClone(pack);delete withoutSupplement.exams[0].localSupplement;
     assert.notEqual(teachingPackageVersion(withoutSupplement),pack.version,'局部教学补充必须进入内容哈希');
@@ -45,6 +45,20 @@ test('本地包按双版本固定；错误操作不释放媒体，刷新与索�
     const wrongSide=await runAgentTurn(session,{type:'EXAM_ACTION',data:{toolId:'stethoscope',bodyPartId:'right-lung-back',location:{side:'left',aspect:'front'}}},'blocked-location');
     assert.equal(wrongSide.session.events.at(-1)?.correct,false);
     await runAgentTurn(session,{type:'EXAM_ACTION',data:{toolId:'hand-hygiene',bodyPartId:'hands'}},'prep-synthetic');
+    await runAgentTurn(session,{type:'EXAM_ACTION',data:{toolId:'bp-cuff',bodyPartId:'upper-arm',posture:'standing'}},'bp-synthetic');
+    const bpEvent=session.events.at(-1);
+    assert.equal(bpEvent?.correct,true);
+    assert.equal(bpEvent?.structuredMeasurements?.[0].systolic,96);
+    assert.equal(session.structuredMeasurements?.['bloodPressure:bp-cuff:upper-arm:initial'].diastolic,60);
+    assert.match(bpEvent?.summary??'',/结构化测量：血压 96\/60 mmHg/);
+    const examEventCount=session.events.length;
+    const repeated=await runAgentTurn(session,{type:'EXAM_ACTION',data:{toolId:'bp-cuff',bodyPartId:'upper-arm',posture:'standing'}},'bp-repeat');
+    assert.equal(repeated.repeated,true);
+    assert.equal(session.events.length,examEventCount);
+    assert.equal(Object.keys(session.structuredMeasurements??{}).length,1);
+    session=JSON.parse(JSON.stringify(session));
+    assert.equal(session.structuredMeasurements?.['bloodPressure:bp-cuff:upper-arm:initial'].systolic,96);
+    assert.equal(session.events.at(-1)?.structuredMeasurements?.[0].diastolic,60);
     await runAgentTurn(session,{type:'EXAM_ACTION',data:{toolId:'palpation',bodyPartId:'abdomen',posture:'supine',location:{side:'both',aspect:'front'}}},'exam-synthetic');
     assert.equal(session.events.at(-1)?.correct,true);assert.match(session.events.at(-1)!.summary,/双侧或整体/);
     await runAgentTurn(session,{type:'EXAM_ACTION',data:{toolId:'stethoscope',bodyPartId:'right-lung-back',posture:'supine',position:'supine',location:{side:'right',aspect:'back'}}},'back-inaccessible');
@@ -72,7 +86,7 @@ test('本地包按双版本固定；错误操作不释放媒体，刷新与索�
     assert.ok(followup.newMessages.some(m=>m.actor==='parent'&&m.content.includes('水肿2天')));
     const records=getCaseRecordEntries(session);
     assert.ok(records.some(r=>r.question==='请您留意孩子的变化，及时告诉医生。'&&r.category==='history'&&r.answers.length>0));
-    assert.ok(session.askedIntents.includes('SOURCE_HX_0_0'));
+    assert.ok(session.askedIntents.some(id=>id==='SOURCE_HX_0_0'||id==='SOURCE_HX_-2'),'病程追问必须披露主诉或现病史中的对应事实');
     const osce=createInitialSession('synthetic-osce','osce',id);
     await runAgentTurn(osce,{type:'NAVIGATE_STAGE',data:{stage:'exam'}},'osce-enter-exam');
     await runAgentTurn(osce,{type:'EXAM_ACTION',data:{toolId:'hand-hygiene',bodyPartId:'hands'}},'osce-prep');
