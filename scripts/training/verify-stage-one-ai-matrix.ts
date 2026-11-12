@@ -5,7 +5,7 @@ import path from 'node:path';
 import { createInitialSession, runAgentTurn } from '../../src/lib/agent-engine';
 import { sessionTeachingCase } from '../../src/lib/session-teaching';
 import { findSupplementalTest, TEACHING_SIMULATION_LABEL } from '../../src/lib/test-result-supplement';
-import { hasAICredentials, invokeCozeAIStream } from '../../src/lib/coze-ai';
+import { classifyAIError, hasAICredentials, invokeCozeAIStream } from '../../src/lib/coze-ai';
 import { matchRequestedTest } from '../../src/lib/test-name-matcher';
 import type { SessionState } from '../../src/domain/agent';
 import type { TeachingPackage } from '../../src/domain/teaching-package';
@@ -81,28 +81,39 @@ async function generate(pack: TeachingPackage): Promise<Record<string, unknown>>
   let calls = 0;
   let attempts = 0;
   const rawHashes: string[] = [];
+  const failureKinds: string[] = [];
   const startedAt = new Date().toISOString();
   for (let round = 1; round <= 2 && !findSupplementalTest(session, requested); round++) {
+    let gatewayFailed = false;
     const result = await runAgentTurn(session, {
       type: 'ORDER_TEST', data: { requestedTests: requested, reason: '结合本例病情申请合理的未预设检查' },
     }, `${pack.version}-ai-${round}`, {
       testSupplementInvoke: async input => {
         calls++;
-        const response = await invokeCozeAIStream({ ...input, timeoutMs: 90_000, maxAttempts: 2 });
-        attempts += response.attempts;
-        const raw = response.content;
-        rawHashes.push(createHash('sha256').update(raw).digest('hex'));
-        writeFileSync(path.join(rawRoot, `${pack.version}-${calls}.txt`), raw, { flag: 'w' });
-        return { content: raw };
+        try {
+          const response = await invokeCozeAIStream({ ...input, timeoutMs: 90_000, maxAttempts: 2 });
+          attempts += response.attempts;
+          const raw = response.content;
+          rawHashes.push(createHash('sha256').update(raw).digest('hex'));
+          writeFileSync(path.join(rawRoot, `${pack.version}-${calls}.txt`), raw, { flag: 'w' });
+          return { content: raw };
+        } catch (error) {
+          gatewayFailed = true;
+          failureKinds.push(classifyAIError(error).kind);
+          throw error;
+        }
       },
     });
     const generated = findSupplementalTest(session, requested);
     if (generated) {
       assert.ok(result.newMessages.some(message => message.content.includes(TEACHING_SIMULATION_LABEL)), `AI_LABEL_MISSING:${pack.caseId}`);
     }
+    // The gateway already performed its bounded network retries. A second full turn is
+    // reserved for a completed model response that failed JSON/clinical validation.
+    if (gatewayFailed) break;
   }
   const generated = findSupplementalTest(session, requested);
-  assert.ok(generated, `REAL_AI_NO_VALID_RESULT:${pack.caseId}:${requested}`);
+  assert.ok(generated, `REAL_AI_NO_VALID_RESULT:${pack.caseId}:${requested}:failures=${failureKinds.join(',') || 'invalid_model_output'}`);
   assert.equal(generated.origin, 'teaching-simulation', `UNEXPECTED_ORIGIN:${pack.caseId}`);
   assert.equal(generated.sourceSnapshotVersion, pack.sourceVersion);
   assert.equal(generated.teachingPackageVersion, pack.version);
