@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-13",
+  "status": "partially_accepted_external_ai_blocked",
+  "code": {
+    "verifiedCommit": "ae7ea12",
+    "formalReleaseTriggered": false
+  },
+  "source": {
+    "caseCount": 67,
+    "packageCount": 6,
+    "fileCount": 3756,
+    "totalBytes": 665560360,
+    "mergedArchiveSha256": "8f1bbe2ae6cded9a85ee573961b89b86fa32b63efb1efcdca10db55ae50b0c88",
+    "runtimeGeneration": "f8589d9e8bf3fb5a2707",
+    "measurementContracts": 638
+  },
+  "examMatrix": {
+    "status": "passed",
+    "cases": 67,
+    "examRows": 11658,
+    "fixedTestsReused": 67,
+    "jsonRestored": 67,
+    "repeatedSuppressed": 67,
+    "unexpectedAiCalls": 0,
+    "report": "/tmp/peds67-stage-one-acceptance/exam-matrix-0-67.json"
+  },
+  "checks": {
+    "targetedRegressionTests": {
+      "passed": 60,
+      "failed": 0
+    },
+    "eslint": "passed",
+    "typescript": "passed",
+    "productionBuild": "passed",
+    "keyApiSmokeTests": "passed",
+    "fullUnitSuite": "incomplete_historical_private_knowledge_fixtures_missing_and_some_group_timeouts"
+  },
+  "aiMatrix": {
+    "status": "blocked_before_case_execution",
+    "platformGateway": {
+      "httpStatus": 429,
+      "usedTokens": 2002165,
+      "tokenLimit": 2000000
+    },
+    "customGateway": {
+      "httpStatus": 403,
+      "error": "Invalid API key"
+    },
+    "mockUsed": false,
+    "casesCompleted": 0
+  },
+  "preview": {
+    "url": "https://sandbox-684358ca-4b23-4597-a7ac-b818c2a60ac6-5173.cxiagents.com",
+    "loginAndCatalog": "passed",
+    "historicalSessionReadOnlyRestore": "passed",
+    "newRuntimeAiPageFlow": "not_verified"
+  },
+  "deferred": [
+    "real_microphone_asr_end_to_end",
+    "formal_release",
+    "later_content_completion"
+  ]
+}

@@ -99,7 +99,8 @@ async function generate(pack: TeachingPackage): Promise<Record<string, unknown>>
           return { content: raw };
         } catch (error) {
           gatewayFailed = true;
-          failureKinds.push(classifyAIError(error).kind);
+          const info = classifyAIError(error);
+          failureKinds.push(`${info.kind}:${info.statusCode ?? 'none'}:${info.detail.slice(0, 500)}`);
           throw error;
         }
       },
