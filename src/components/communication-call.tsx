@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { LoaderCircle, PhoneOff, Send, Volume2, VolumeX } from 'lucide-react';
+import { PhoneOff } from 'lucide-react';
 import type { SessionState } from '@/domain/agent';
-import { resolveSpeechTurnMeta, type SpeechTurnMeta, type VoiceRecordingResult } from '@/domain/speech-contract';
+import { appendVoiceTranscript, resolveSpeechTurnMeta, type SpeechTurnMeta, type VoiceRecordingResult } from '@/domain/speech-contract';
 import { RoleAudioPlayer, type RoleAudioPlayerHandle } from '@/components/role-audio-player';
-import { VoiceHoldButton } from '@/components/voice-hold-button';
+import { ConversationComposer } from '@/components/conversation-composer';
 import { ConversationThread, type PendingConversation } from '@/components/conversation-thread';
 
 export interface CommunicationCallProps {
   session: SessionState;
-  ttsReady: boolean;
+  ttsEnabled: boolean;
+  onToggleTts: () => boolean | Promise<boolean>;
   busy: boolean;
   pending: PendingConversation | null;
   streamingIds: ReadonlySet<string>;
@@ -21,10 +22,9 @@ export interface CommunicationCallProps {
 }
 
 export function CommunicationCall({
-  session, ttsReady, busy, pending, streamingIds, onStreamDone, onSend, onFinish, canFinish,
+  session, ttsEnabled, onToggleTts, busy, pending, streamingIds, onStreamDone, onSend, onFinish, canFinish,
 }: CommunicationCallProps) {
   const [elapsedSec, setElapsedSec] = useState(0);
-  const [muted, setMuted] = useState(false);
   const [draft, setDraft] = useState('');
   const [voiceDraft, setVoiceDraft] = useState<{ rawText: string; fileId: string | null; durationMs: number } | null>(null);
   const audioPlayerRef = useRef<RoleAudioPlayerHandle>(null);
@@ -50,7 +50,7 @@ export function CommunicationCall({
   }
 
   function acceptVoiceResult(result: VoiceRecordingResult) {
-    setDraft(result.text);
+    setDraft((current) => appendVoiceTranscript(current, result.text));
     setVoiceDraft({ rawText: result.text, fileId: result.audioFileId, durationMs: result.audioDurationMs });
   }
 
@@ -65,7 +65,7 @@ export function CommunicationCall({
   const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
   const ss = String(elapsedSec % 60).padStart(2, '0');
 
-  return <div className="communication-call" data-muted={muted || undefined}>
+  return <div className="communication-call" data-muted={!ttsEnabled || undefined}>
     <header className="call-header">
       <div className="call-identity">
         <span className="call-badge" title="本通话为教学模拟，角色语音由 AI 生成">AI 模拟通话</span>
@@ -73,9 +73,6 @@ export function CommunicationCall({
         <small>通话中 {mm}:{ss}</small>
       </div>
       <div className="call-controls">
-        <button className="icon-btn" type="button" disabled={!ttsReady} aria-pressed={muted} aria-label={!ttsReady ? 'AI 回复语音播报暂不可用' : muted ? '开启 AI 回复语音播报' : '关闭 AI 回复语音播报'} onClick={() => setMuted((value) => !value)}>
-          {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
-        </button>
         <button className="btn btn-danger call-hangup" type="button" disabled={busy} onClick={hangUp}><PhoneOff size={15} /> 结束通话</button>
       </div>
     </header>
@@ -85,21 +82,26 @@ export function CommunicationCall({
       pending={pending}
       streamingIds={streamingIds}
       onStreamDone={onStreamDone}
-      ttsEnabled={!muted && ttsReady}
+      ttsEnabled={ttsEnabled}
       onReplay={(id) => audioPlayerRef.current?.replay(id)}
       onRetry={() => void sendText()}
     />
-    <RoleAudioPlayer ref={audioPlayerRef} sessionId={session.id} messages={messages} enabled={!muted && ttsReady} />
+    <RoleAudioPlayer ref={audioPlayerRef} sessionId={session.id} messages={messages} enabled={ttsEnabled} />
     <footer className="call-input">
-      <div className="call-text-composer">
-        <textarea rows={2} value={draft} onChange={(event) => setDraft(event.target.value)} aria-label="输入对家长的解释" placeholder="向家长解释病情、风险与下一步安排，例如：我理解您很担心，孩子目前呼吸和血氧需要先处理……" onKeyDown={(event) => {
-          if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void sendText(); }
-        }} />
-        <button className="btn btn-primary" type="button" disabled={busy || !draft.trim()} onClick={() => void sendText()}>
-          {busy ? <LoaderCircle className="spin" size={15} /> : <Send size={15} />} 发送
-        </button>
-      </div>
-      <VoiceHoldButton sessionId={session.id} disabled={busy} onResult={acceptVoiceResult} />
+      <ConversationComposer
+        sessionId={session.id}
+        inputId="communication-question"
+        value={draft}
+        onValueChange={setDraft}
+        onSend={sendText}
+        onVoiceResult={acceptVoiceResult}
+        busy={busy}
+        mode="communication"
+        label="输入对家长的解释"
+        placeholder="向家长解释病情、风险与下一步安排…"
+        ttsEnabled={ttsEnabled}
+        onToggleTts={onToggleTts}
+      />
     </footer>
   </div>;
 }

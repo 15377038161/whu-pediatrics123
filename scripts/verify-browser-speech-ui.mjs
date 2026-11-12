@@ -1,244 +1,233 @@
-/* 语音链真实浏览器验收脚本（fail-closed，D-边界-01 收尾口径）：
+/* 语音与输入区真实浏览器验收（fail-closed）。
  *
- * ⚠ 凭据边界（D-边界-01）：本脚本只在 BROWSER_CRED_FILE 指向【既有且经用户明确授权】的
- * 受控凭据时才运行；缺少该凭据时 fail-closed（列待验收，退出码 2），不做任何自动注册、
- * 不新增预览登录、不合成 JWT。历史上 D-验收-01 批次曾违规新建探针账号补测，该账号浏览器
- * 结果（0/1 PASS，本就失败）不计入已授权验收，其自动注册入口已删除；账号处置由用户决定。
+ * 仅使用 BROWSER_CRED_FILE 指向的、既有且经用户明确授权的受控学生身份。
+ * 不自动注册、不新增预览登录、不合成 JWT；凭据只从 0600 临时文件读取且不输出。
+ * 本脚本验证界面条件，不替代完整邮箱密码登录或真实移动设备验收。
  *
- * 口径（与 verify-browser-entries-ui.mjs 一致）：经 node 直连 Supabase 获取既有学生会话，
- * 按官方 supabase-js 存储格式注入浏览器 localStorage 创造可测试登录态——仅界面条件测试手段，
- * 非完整邮箱密码登录验收。只做本人会话合法操作；账号须为 account_kind=test 类受控测试身份。
+ * 覆盖：加载零语音请求、默认播报关闭、语音/键盘切换保留草稿、单行与长文本高度、
+ * 无麦克风降级、开启不补播历史、新回复真实 TTS、390px 无横向溢出、专项沟通同组件。
+ * 明确不覆盖：真实麦克风采集后的 ASR 识别质量、扬声器音质、真机权限与听感。
  *
- * 验证范围（单视口 1440×900，输出仅 PASS/FAIL/布尔/计数，零患者正文、零凭据、零 URL）：
- *  S1 普通病例（guided）训练台：语音工具栏渲染 = 真实 /api/speech/capabilities 探测在
- *     真实浏览器返回 asr/tts turn-based（启用状态不来自前端常量）
- *  S2 切换语音输入：VoiceInput idle 态渲染（按轮录音入口）
- *  S3 无麦克风点开始录音：优雅降级（权限错误提示 + 可继续文字，不崩溃）
- *  S4 文字回退发送问诊：真实 agent 回合正常（训练进度不受语音不可用影响）
- *  S5 角色播报真实 TTS：浏览器内 /api/speech/tts 响应 200 且含 audioUrl（签名 URL 不打印）
- *  S6 专项沟通（practice focus=communication）：CommunicationCall 模拟通话渲染，
- *     speechReady 时语音输入入口可用、无降级提示
- *  S7 OSCE/immersive 沟通站与 guided 共用同一 conversationContent 渲染分支（源码共链），
- *     不在本脚本单独浏览器断言——已在验收记录如实列明。
- *
- * 明确未验收（如实标注，不冒充）：
- *  - 真实麦克风录音 → ASR（沙箱无麦克风设备，getUserMedia 必然失败，仅验降级路径；
- *    ASR SDK 层真实调用已由 scripts/verify-speech-sdk-smoke.ts 与 tests/speech-routes.test.ts 覆盖）
- *  - 扬声器实际播放音质 / 手机端听感（无头环境无声卡、无真机）
- *  - 390px 移动端语音 UI（本脚本单视口，未双视口复验）
- *
- * 用法：source scripts/browser-env.sh && BROWSER_CRED_FILE=<用户授权的既有受控凭据路径> \
- *       node scripts/verify-browser-speech-ui.mjs
+ * 用法：BROWSER_CRED_FILE=<受控凭据路径> node scripts/verify-browser-speech-ui.mjs
  */
 import { readFileSync, mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
-
 
 const BASE = process.env.BROWSER_BASE_URL ?? `http://localhost:${process.env.DEPLOY_RUN_PORT ?? '5173'}`;
 const OUT = process.env.BROWSER_SCREENSHOT_DIR ?? 'artifacts/browser-acceptance';
 const CRED_FILE = process.env.BROWSER_CRED_FILE;
 const STORAGE_KEY = 'luojia-peds-auth';
-
+const results = [];
 
 if (!CRED_FILE) {
-  console.error('FATAL 缺少 BROWSER_CRED_FILE：语音链浏览器验收需要【既有且经用户明确授权】的受控学生凭据（JSON：email/password）。');
-  console.error('fail-closed：不自动注册、不新增预览登录、不合成 JWT。以下浏览器链路项列【待验收】：S1 语音工具栏真实探测、S2 语音输入渲染、S3 无麦克风降级、S4 文字回退续训、S5 角色播报 TTS、S6 模拟通话渲染。');
+  console.error('FATAL 缺少 BROWSER_CRED_FILE：需要既有且经用户明确授权的受控学生凭据。');
+  console.error('fail-closed：登录后输入区、麦克风、TTS、双视口与专项沟通流程均为未验收。');
   process.exit(2);
 }
 mkdirSync(OUT, { recursive: true });
-
 
 let chromium;
 try {
   const require = createRequire(import.meta.url);
   ({ chromium } = require(process.env.PW_CORE_PATH ?? 'playwright-core'));
-} catch (e) {
-  console.error('FATAL playwright-core 不可用：' + (e instanceof Error ? e.message.split('\n')[0] : e));
+} catch (error) {
+  console.error(`FATAL playwright-core 不可用：${error instanceof Error ? error.message.split('\n')[0] : error}`);
   process.exit(2);
 }
 
+function report(name, ok, detail = '') {
+  results.push({ name, ok });
+  console.log(`${ok ? 'PASS' : 'FAIL'} | ${name}${detail ? ` | ${detail}` : ''}`);
+}
 
 function loadCred(file) {
   const raw = readFileSync(file, 'utf8');
-  // 兼容两种格式：bootstrap 写出的 0600 JSON（{"email":...,"password":...}）与既有键值对文本
   try {
     const parsed = JSON.parse(raw);
     if (typeof parsed?.email === 'string' && typeof parsed?.password === 'string') {
       return { email: parsed.email, password: parsed.password };
     }
-  } catch { /* 非 JSON，回落键值对解析 */ }
+  } catch { /* 兼容既有键值对格式。 */ }
   const map = new Map();
   for (const line of raw.split('\n')) {
-    const m = line.match(/^\s*([a-zA-Z_]+)\s*[:=]\s*(.+?)\s*$/);
-    if (m) map.set(m[1].toLowerCase(), m[2]);
+    const match = line.match(/^\s*([a-zA-Z_]+)\s*[:=]\s*(.+?)\s*$/);
+    if (match) map.set(match[1].toLowerCase(), match[2]);
   }
-  const email = map.get('email'), password = map.get('password');
-  if (!email || !password) throw new Error(`凭据文件 ${file} 缺少 email/password`);
+  const email = map.get('email');
+  const password = map.get('password');
+  if (!email || !password) throw new Error('受控凭据文件缺少 email/password');
   return { email, password };
 }
 
-
 async function fetchSession(cred) {
-  const url = process.env.CODER_SUPABASE_URL, key = process.env.CODER_SUPABASE_ANON_KEY, tid = process.env.CODER_SUPABASE_TENANT_ID;
-  if (!url || !key || !tid) throw new Error('缺少 CODER_SUPABASE_* 平台环境变量');
-  const resp = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+  const url = process.env.CODER_SUPABASE_URL;
+  const key = process.env.CODER_SUPABASE_ANON_KEY;
+  const tenant = process.env.CODER_SUPABASE_TENANT_ID;
+  if (!url || !key || !tenant) throw new Error('缺少 CODER_SUPABASE_* 平台环境变量');
+  const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
     method: 'POST',
-    headers: { apikey: key, Authorization: `Bearer ${key}`, 'X-Instance-ID': tid, 'content-type': 'application/json' },
+    headers: { apikey: key, Authorization: `Bearer ${key}`, 'X-Instance-ID': tenant, 'content-type': 'application/json' },
     body: JSON.stringify(cred),
   });
-  if (!resp.ok) throw new Error(`登录失败 status=${resp.status}`);
-  const session = await resp.json();
+  if (!response.ok) throw new Error(`登录失败 status=${response.status}`);
+  const session = await response.json();
   if (!session.access_token) throw new Error('登录响应缺少 access_token');
   return session;
 }
 
-
 async function createTrainingSession(accessToken, body) {
-  const resp = await fetch(`${BASE}/api/sessions`, {
+  const response = await fetch(`${BASE}/api/sessions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const parsed = await resp.json().catch(() => null);
+  const parsed = await response.json().catch(() => null);
   const id = parsed?.data?.session?.id ?? parsed?.data?.id;
-  if (!id) throw new Error(`会话创建失败 mode=${body.mode} status=${resp.status}`);
+  if (!id) throw new Error(`会话创建失败 mode=${body.mode} status=${response.status}`);
   return id;
 }
 
-
-const results = [];
-function report(name, ok, detail) {
-  results.push({ name, ok });
-  console.log(`${ok ? 'PASS' : 'FAIL'} | ${name}${detail ? ' | ' + detail : ''}`);
+function observeSpeechRequests(page) {
+  const requests = [];
+  page.on('request', (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith('/api/speech/') || /\/api\/sessions\/[^/]+\/voice$/.test(path)) {
+      requests.push({ path, method: request.method() });
+    }
+  });
+  return requests;
 }
 
-
-async function injectAndGoto(ctx, authSession, path) {
-  const page = await ctx.newPage();
+async function injectAndGoto(context, authSession, path) {
+  const page = await context.newPage();
   await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.evaluate(([k, a, u]) => {
-    localStorage.setItem(k, a);
-    localStorage.setItem(k + '-user', u);
+  await page.evaluate(([key, auth, user]) => {
+    localStorage.setItem(key, auth);
+    localStorage.setItem(`${key}-user`, user);
   }, [STORAGE_KEY, JSON.stringify(authSession), JSON.stringify({ user: authSession.user })]);
-  // dev 模式首次编译存在导航竞态（ERR_ABORTED 瞬态）：重试一次
-  for (let attempt = 0; ; attempt++) {
+  for (let attempt = 0; ; attempt += 1) {
     try {
       await page.goto(`${BASE}${path}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      break;
-    } catch (e) {
-      if (attempt === 0 && String(e).includes('ERR_ABORTED')) { await page.waitForTimeout(1500); continue; }
-      throw e;
+      return page;
+    } catch (error) {
+      if (attempt === 0 && String(error).includes('ERR_ABORTED')) {
+        await page.waitForTimeout(1500);
+        continue;
+      }
+      throw error;
     }
   }
-  return page;
 }
 
+async function checkDraftAndLayout(page, mode, label) {
+  const composer = page.locator(`.composer-card[data-mode="${mode}"]`);
+  await composer.waitFor({ timeout: 60000 });
+  const textarea = page.locator(`textarea#${mode === 'history' ? 'question' : 'communication-question'}`);
+  await textarea.waitFor({ timeout: 15000 });
+  const initialHeight = await textarea.evaluate((element) => element.getBoundingClientRect().height);
+  report(`${label} 默认键盘单行输入`, initialHeight > 0 && initialHeight <= 52, `height=${Math.round(initialHeight)}`);
+  report(`${label} 默认播报关闭`, await page.locator('.composer-audio-toggle[aria-pressed="false"]').count() === 1);
+
+  await textarea.fill('保留这段草稿');
+  await page.getByRole('button', { name: '切换为语音输入', exact: true }).click();
+  await page.getByRole('button', { name: '按住说话，松开发送识别，上滑取消', exact: true }).waitFor();
+  await page.getByRole('button', { name: '切换为键盘输入，保留当前草稿', exact: true }).click();
+  report(`${label} 语音/键盘切换保留草稿`, await textarea.inputValue() === '保留这段草稿');
+
+  await textarea.fill('第一行\n第二行\n第三行\n第四行\n第五行\n第六行\n第七行\n第八行');
+  const expandedHeight = await textarea.evaluate((element) => element.getBoundingClientRect().height);
+  report(`${label} 长文本有限扩展`, expandedHeight > initialHeight && expandedHeight <= 121, `height=${Math.round(expandedHeight)}`);
+  await textarea.fill('保留这段草稿');
+}
 
 async function main() {
-  const cred = loadCred(CRED_FILE);
-  const authSession = await fetchSession(cred);
+  const authSession = await fetchSession(loadCred(CRED_FILE));
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const consoleErrors = [];
-  const ttsResponses = [];
-  let page;
   try {
-    page = await ctx.newPage();
-    page.on('console', (msg) => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
-    page.on('pageerror', (err) => consoleErrors.push(`pageerror: ${err.message}`));
-    // 全局收集 TTS 响应（初始角色消息入队即触发合成，监听必须在页面加载前挂好）
-    page.on('response', async (resp) => {
-      if (!resp.url().includes('/api/speech/tts')) return;
-      let hasAudioUrl = false;
-      try { const body = await resp.json(); hasAudioUrl = typeof body?.data?.audioUrl === 'string' && body.data.audioUrl.length > 0; } catch { /* 留 false */ }
-      ttsResponses.push({ status: resp.status(), hasAudioUrl });
-    });
-
-
-    // ---------- 普通病例（guided）----------
     const guidedId = await createTrainingSession(authSession.access_token, { mode: 'guided' });
-    await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.evaluate(([k, a, u]) => {
-      localStorage.setItem(k, a);
-      localStorage.setItem(k + '-user', u);
-    }, [STORAGE_KEY, JSON.stringify(authSession), JSON.stringify({ user: authSession.user })]);
-    const gotoTraining = async (sessionId) => {
-      // dev 模式首次编译存在导航竞态（ERR_ABORTED 瞬态）：重试一次
-      for (let attempt = 0; ; attempt++) {
-        try {
-          await page.goto(`${BASE}/student/training?session=${sessionId}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-          return;
-        } catch (e) {
-          if (attempt === 0 && String(e).includes('ERR_ABORTED')) { await page.waitForTimeout(1500); continue; }
-          throw e;
-        }
-      }
-    };
-    await gotoTraining(guidedId);
-    await page.waitForSelector('.training-toolbar', { timeout: 60000 });
+    const desktop = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await injectAndGoto(desktop, authSession, `/student/training?session=${guidedId}`);
+    const speechRequests = observeSpeechRequests(page);
+    page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+    page.on('pageerror', (error) => consoleErrors.push(`pageerror: ${error.message}`));
+    await checkDraftAndLayout(page, 'history', '桌面问诊');
+    await page.waitForTimeout(800);
+    report('加载与切换模式不主动调用语音接口', speechRequests.length === 0, `requests=${speechRequests.length}`);
 
-    // S1 语音工具栏：speechReady = 真实能力探测（服务端最小 TTS/ASR 探测）在真实浏览器返回 turn-based
-    await page.waitForSelector('.voice-toolbar', { timeout: 60000 });
-    report('S1 guided 语音入口渲染（真实能力探测就绪）', true);
+    await page.getByRole('button', { name: '切换为语音输入', exact: true }).click();
+    const hold = page.getByRole('button', { name: '按住说话，松开发送识别，上滑取消', exact: true });
+    await hold.focus();
+    await page.keyboard.down('Space');
+    await page.waitForTimeout(250);
+    await page.keyboard.up('Space');
+    await page.locator('.voice-inline-notice').waitFor({ timeout: 20000 });
+    const notice = await page.locator('.voice-inline-notice').textContent();
+    report('无麦克风权限时优雅降级', /麦克风|录音|文字|权限/.test(notice ?? ''));
+    await page.getByRole('button', { name: '切换为键盘输入，保留当前草稿', exact: true }).click();
+    report('麦克风失败后草稿仍保留', await page.locator('textarea#question').inputValue() === '保留这段草稿');
 
-    // S2 切换语音输入 → VoiceInput idle 态
-    await page.locator('.voice-toolbar button', { hasText: '语音输入' }).click({ timeout: 15000 });
-    await page.waitForSelector('.voice-input[data-state="idle"]', { timeout: 15000 });
-    report('S2 语音输入 idle 态渲染', true);
+    const ttsResponses = [];
+    page.on('response', async (response) => {
+      if (new URL(response.url()).pathname !== '/api/speech/tts') return;
+      let hasAudioUrl = false;
+      try {
+        const body = await response.json();
+        hasAudioUrl = typeof body?.data?.audioUrl === 'string' && body.data.audioUrl.length > 0;
+      } catch { /* 由断言报告失败。 */ }
+      ttsResponses.push({ status: response.status(), hasAudioUrl });
+    });
+    await page.getByRole('button', { name: '开启 AI 回复语音播报', exact: true }).click();
+    await page.waitForTimeout(800);
+    report('开启播报不补播历史消息', ttsResponses.length === 0, `tts=${ttsResponses.length}`);
 
-    // S3 无麦克风开始录音 → 优雅降级（错误提示 + 回 idle，可继续文字）
-    await page.locator('button[aria-label="开始录音（按轮录音，录音后确认转写再发送）"]').click({ timeout: 15000 });
-    await page.waitForSelector('.voice-error', { timeout: 20000 });
-    const errText = (await page.locator('.voice-error').textContent() ?? '').trim();
-    const stateAfterMicFail = await page.locator('.voice-input').getAttribute('data-state');
-    report('S3 无麦克风优雅降级（提示+回idle）',
-      stateAfterMicFail === 'idle' && /麦克风|录音|文字/.test(errText),
-      `state=${stateAfterMicFail} 提示含关键词=${/麦克风|录音|文字/.test(errText)}`);
-
-    // S4 文字回退：切回文字 → 发送中性问诊 → 真实 agent 回合产生角色回复
-    await page.locator('.voice-toolbar button', { hasText: '改用文字输入' }).click({ timeout: 15000 });
-    await page.waitForSelector('#question', { timeout: 15000 });
+    const textarea = page.locator('textarea#question');
+    await textarea.fill('孩子发烧几天了？');
     const before = await page.locator('.message-list .message').count();
-    await page.fill('#question', '小朋友你好，可以告诉我现在哪里不舒服吗？');
-    await page.locator('.composer-actions button', { hasText: '发送' }).click({ timeout: 15000 });
-    await page.waitForFunction((prev) => document.querySelectorAll('.message-list .message').length > prev, before, { timeout: 90000 });
-    report('S4 文字回退发送问诊（agent 回合正常）', true, `消息数 ${before}→${await page.locator('.message-list .message').count()}`);
-    await page.screenshot({ path: `${OUT}/speech-guided-desktop.png`, fullPage: false });
-
-    // S5 角色播报真实 TTS：浏览器内 /api/speech/tts 200 + audioUrl（签名 URL 不打印）
-    // 初始角色消息与问诊回复均会入队合成；等待任一真实响应（播放本身无头环境无声卡，未验收）
+    await page.getByRole('button', { name: '确认并发送当前草稿', exact: true }).click();
+    await page.waitForFunction((count) => document.querySelectorAll('.message-list .message').length > count, before, { timeout: 90000 });
     const deadline = Date.now() + 90000;
     while (ttsResponses.length === 0 && Date.now() < deadline) await page.waitForTimeout(500);
-    const ttsOk = ttsResponses.length > 0 && ttsResponses.some((r) => r.status === 200 && r.hasAudioUrl);
-    report('S5 角色播报真实 TTS 链路（200+audioUrl）', ttsOk,
-      `tts响应数=${ttsResponses.length} 200且含URL=${ttsResponses.filter((r) => r.status === 200 && r.hasAudioUrl).length}`);
+    report('开启后仅新回复触发真实 TTS', ttsResponses.some((item) => item.status === 200 && item.hasAudioUrl), `responses=${ttsResponses.length}`);
+    await page.getByRole('button', { name: '关闭 AI 回复语音播报', exact: true }).click();
+    await page.screenshot({ path: `${OUT}/speech-guided-desktop.png`, fullPage: false });
+    await desktop.close();
 
-    // ---------- 专项沟通（practice focus=communication）----------
+    const mobile = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const mobilePage = await injectAndGoto(mobile, authSession, `/student/training?session=${guidedId}`);
+    const mobileSpeechRequests = observeSpeechRequests(mobilePage);
+    mobilePage.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+    mobilePage.on('pageerror', (error) => consoleErrors.push(`pageerror: ${error.message}`));
+    await checkDraftAndLayout(mobilePage, 'history', '窄屏问诊');
+    const overflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    report('390px 输入区无横向溢出', overflow <= 1, `delta=${overflow}px`);
+    await mobilePage.waitForTimeout(500);
+    report('窄屏历史会话不自动播报', mobileSpeechRequests.length === 0, `requests=${mobileSpeechRequests.length}`);
+    await mobilePage.screenshot({ path: `${OUT}/speech-guided-mobile.png`, fullPage: false });
+    await mobile.close();
+
     const practiceId = await createTrainingSession(authSession.access_token, { mode: 'practice', focus: 'communication' });
-    await gotoTraining(practiceId);
-    await page.waitForSelector('.call-input', { timeout: 60000 });
-    // speechReady 时：默认语音输入态可用，且无「语音暂不可用」降级提示
-    await page.waitForSelector('.call-input-mode', { timeout: 15000 });
-    const voiceIdle = await page.locator('.voice-input[data-state="idle"]').count();
-    const fallbackNote = await page.locator('.call-fallback-note').count();
-    report('S6 专项沟通模拟通话（CommunicationCall）语音入口',
-      voiceIdle === 1 && fallbackNote === 0,
-      `语音idle入口=${voiceIdle} 降级提示=${fallbackNote}`);
-    await page.screenshot({ path: `${OUT}/speech-practice-desktop.png`, fullPage: false });
+    const callContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const callPage = await injectAndGoto(callContext, authSession, `/student/training?session=${practiceId}`);
+    const callSpeechRequests = observeSpeechRequests(callPage);
+    callPage.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+    callPage.on('pageerror', (error) => consoleErrors.push(`pageerror: ${error.message}`));
+    await checkDraftAndLayout(callPage, 'communication', '专项沟通');
+    await callPage.waitForTimeout(500);
+    report('专项沟通加载不主动调用语音接口', callSpeechRequests.length === 0, `requests=${callSpeechRequests.length}`);
+    await callPage.screenshot({ path: `${OUT}/speech-practice-desktop.png`, fullPage: false });
+    await callContext.close();
 
-    // S7 OSCE/immersive 沟通站共用同链（源码共链，不在本脚本浏览器断言——验收记录如实列明）
-    console.log('NOTE | S7 OSCE/immersive 沟通站与 guided 共用 conversationContent 渲染分支（源码共链）；真实麦克风录音→ASR、扬声器播放、390px 移动端语音 UI 为明确未验收项');
-    report('console 无错误', consoleErrors.length === 0, consoleErrors.slice(0, 2).join(' ; ').slice(0, 150));
-  } catch (e) {
-    report('语音链浏览器流程', false, e instanceof Error ? e.message.split('\n')[0] : String(e));
+    report('浏览器 console/pageerror 无错误', consoleErrors.length === 0, `count=${consoleErrors.length}`);
+  } catch (error) {
+    report('语音与输入区浏览器流程', false, error instanceof Error ? error.message.split('\n')[0] : String(error));
   } finally {
-    await ctx.close();
     await browser.close();
   }
-  const pass = results.filter((r) => r.ok).length;
-  console.log(`SUMMARY ${pass}/${results.length} PASS`);
-  process.exit(pass === results.length ? 0 : 1);
+  const passed = results.filter((item) => item.ok).length;
+  console.log(`SUMMARY ${passed}/${results.length} PASS`);
+  console.log('NOTE | 真实麦克风 ASR 质量、扬声器音质和真机权限/听感未由本脚本验收');
+  process.exit(passed === results.length ? 0 : 1);
 }
-
 
 void main();

@@ -16,7 +16,7 @@ import { SharedCaseRecord } from '@/components/shared-case-record';
 
 import {
   Activity, ArrowLeft, ChevronRight, Clock3, Home,
-  ClipboardList, LoaderCircle, MessageCircle, Send, Volume2, VolumeX,
+  ClipboardList, LoaderCircle, MessageCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -26,11 +26,10 @@ import { getPracticeScenario } from '@/domain/practice-scenarios';
 import { findPublicCase, type PublicCaseProfile } from '@/domain/case-catalog';
 import { CommunicationCall } from '@/components/communication-call';
 import { RoleAudioPlayer, type RoleAudioPlayerHandle } from '@/components/role-audio-player';
-import { VoiceHoldButton } from '@/components/voice-hold-button';
+import { ConversationComposer } from '@/components/conversation-composer';
 import { ConversationThread, type PendingConversation } from '@/components/conversation-thread';
 import { reportSessionEvent } from '@/lib/engagement-tracker';
-import { fetchSpeechCapabilities } from '@/lib/speech';
-import { resolveSpeechTurnMeta, type SpeechCapabilities, type SpeechTurnMeta, type VoiceRecordingResult } from '@/domain/speech-contract';
+import { appendVoiceTranscript, resolveSpeechTurnMeta, type SpeechTurnMeta, type VoiceRecordingResult } from '@/domain/speech-contract';
 
 const stages: Array<{ id: Stage; label: string; short: string }> = [
   { id: 'triage', label: '接诊与分诊', short: '接诊' }, { id: 'history', label: '问诊与沟通', short: '交流' },
@@ -93,10 +92,8 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   const [examInterpretationText, setExamInterpretationText] = useState('');
   const [examLinkedEvidence, setExamLinkedEvidence] = useState<string[]>([]);
   const [remaining, setRemaining] = useState<number | null>(null);
-  // 语音链：能力探测（失败按不可用处理）；文字与按住说话共用受控草稿；角色播报可静音。
-  const [speechCapabilities, setSpeechCapabilities] = useState<SpeechCapabilities | null>(null);
-  const [speechProbing,setSpeechProbing]=useState(true);
-  const [roleAudioMuted, setRoleAudioMuted] = useState(false);
+  // 默认完全静默：开启只更新偏好；新回复才请求 TTS，主动录音才请求 ASR。
+  const [roleAudioMuted, setRoleAudioMuted] = useState(true);
   const audioPlayerRef = useRef<RoleAudioPlayerHandle>(null);
   // 流式呈现：会话加载时的既有条目记为历史（直接全文）；之后新增的角色回复逐字呈现，
   // 呈现完成记入 doneIds 并恢复该条播报入口。集合在渲染期派生，不用 effect 同步。
@@ -175,16 +172,12 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   }, [engagementSessionId]);
 
 
-  // 阶段 D：语音能力真实探测（每会话一次）；探测失败按不可用处理，语音入口隐藏、文字流程不受影响
-  const speechProbeSessionId = session?.id ?? null;
-  useEffect(() => {
-    if (!speechProbeSessionId) return;
-    let cancelled = false;
-    void fetchSpeechCapabilities().then((capabilities) => {
-      if (!cancelled) {setSpeechCapabilities(capabilities);setSpeechProbing(false);}
-    });
-    return () => { cancelled = true; };
-  }, [speechProbeSessionId]);
+  const toggleRoleAudio = useCallback((): boolean => {
+    const enabling = roleAudioMuted;
+    setRoleAudioMuted(!enabling);
+    setFeedback(enabling ? 'AI 播报已开启，仅播报之后的新回复。' : null);
+    return enabling;
+  }, [roleAudioMuted]);
 
 
   // 逐字呈现集合：仅本会话加载后新增、尚未呈现完成、非学生的非空回复。
@@ -272,7 +265,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
   }
 
   function acceptVoiceResult(result: VoiceRecordingResult) {
-    setQuestion(result.text);
+    setQuestion((current) => appendVoiceTranscript(current, result.text));
     setVoiceDraft({ rawText: result.text, fileId: result.audioFileId, durationMs: result.audioDurationMs });
     setPendingConversation(null);
   }
@@ -364,7 +357,6 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
     router.push('/student');
   }
   const communicationModeActive = session.stage === 'communication' || Boolean(session.plan);
-  // 语音能力探测仅用于 UI 提示（播报开关/重连按钮），语音按钮始终可点击
   const practiceCompletion = activeScenario?.completion ?? null;
   const stageCompleted = (stage: Stage) => ({
     triage: session.stage !== 'triage',
@@ -385,26 +377,25 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
         pending={pendingConversation}
         streamingIds={streamingIds}
         onStreamDone={clearStreamId}
-        ttsEnabled={!roleAudioMuted && speechCapabilities?.tts === 'turn-based'}
+        ttsEnabled={!roleAudioMuted}
         onReplay={(id) => audioPlayerRef.current?.replay(id)}
         onRetry={() => void submitConversation()}
       />
-      <RoleAudioPlayer ref={audioPlayerRef} sessionId={session.id} messages={session.messages} enabled={!roleAudioMuted && speechCapabilities?.tts === 'turn-based'} />
-      <div className="composer-card" data-mode={communicationModeActive ? 'communication' : 'history'}>
-        <div className="composer-header">
-          <button className="composer-toggle" type="button" disabled={speechCapabilities?.tts !== 'turn-based'} aria-pressed={!roleAudioMuted && speechCapabilities?.tts === 'turn-based'} onClick={() => setRoleAudioMuted((value) => !value)} title="AI 回复语音播报开关">
-            {roleAudioMuted ? <VolumeX size={14} /> : <Volume2 size={14} />} {speechCapabilities?.tts !== 'turn-based' ? '播报暂不可用' : roleAudioMuted ? 'AI 播报已关闭' : 'AI 播报已开启'}
-          </button>
-          {(speechCapabilities?.asr !== 'turn-based' || speechCapabilities?.tts !== 'turn-based') && <button className="composer-toggle" type="button" disabled={speechProbing} onClick={async () => { setSpeechProbing(true); try { const caps = await fetchSpeechCapabilities(); setSpeechCapabilities(caps); setFeedback(caps.asr === 'turn-based' && caps.tts === 'turn-based' ? '语音服务已恢复。' : '语音服务尚未恢复，可稍后重试，文字输入不受影响。'); } finally { setSpeechProbing(false); } }}>{speechProbing ? '正在检测语音…' : '重连语音'}</button>}
-        </div>
-        <div className="composer-input-row">
-          <div className="composer"><label className="sr-only" htmlFor="question">{communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}</label><textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={communicationModeActive ? '说明病情、风险与下一步安排…' : '向患儿或家长提问…'} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void submitConversation(); } }} /></div>
-        </div>
-        <div className="composer-actions">
-          <VoiceHoldButton sessionId={session.id} disabled={busy} onResult={acceptVoiceResult} />
-          <button className="btn btn-primary composer-send" type="button" disabled={busy || !question.trim()} onClick={submitConversation}><Send size={15} /> 发送</button>
-        </div>
-      </div>
+      <RoleAudioPlayer ref={audioPlayerRef} sessionId={session.id} messages={session.messages} enabled={!roleAudioMuted} />
+      <ConversationComposer
+        sessionId={session.id}
+        inputId="question"
+        value={question}
+        onValueChange={setQuestion}
+        onSend={submitConversation}
+        onVoiceResult={acceptVoiceResult}
+        busy={busy}
+        mode={communicationModeActive ? 'communication' : 'history'}
+        label={communicationModeActive ? '输入对患儿和家长的解释' : '输入你的问诊问题'}
+        placeholder={communicationModeActive ? '说明病情、风险与下一步安排…' : '向患儿或家长提问…'}
+        ttsEnabled={!roleAudioMuted}
+        onToggleTts={toggleRoleAudio}
+      />
     </div>
     {practiceCompletion === 'history_summary' && (
       <form className="clinical-form practice-summary-form" onSubmit={async (event) => { event.preventDefault(); if (historySummaryText.trim().length < 10) return; await sendEvent({ type: 'SUBMIT_HISTORY_SUMMARY', data: { summary: historySummaryText.trim() } }); }}>
@@ -492,7 +483,7 @@ export function TrainingWorkspace({ mode, initialSessionId, initialCaseId, pract
       case 'communication': return activeScenario?.focus === 'communication'
         // 阶段 D：家长焦虑沟通专项使用模拟通话界面（AI 模拟标识、通话时长、静音、停止播报、结束确认）；
         // 语音不可用时组件内提供文字输入，训练进度不受影响。
-        ? <CommunicationCall session={session} ttsReady={speechCapabilities?.tts === 'turn-based'} busy={busy} pending={pendingConversation} streamingIds={streamingIds} onStreamDone={clearStreamId} onSend={sendConversationText} onFinish={finish} canFinish={Boolean(session.communication)} />
+        ? <CommunicationCall session={session} ttsEnabled={!roleAudioMuted} onToggleTts={toggleRoleAudio} busy={busy} pending={pendingConversation} streamingIds={streamingIds} onStreamDone={clearStreamId} onSend={sendConversationText} onFinish={finish} canFinish={Boolean(session.communication)} />
         : conversationContent;
       case 'report': return <div className="loading-screen"><div><div className="pulse-mark"><Activity /></div><strong>正在生成可解释报告…</strong></div></div>;
     }

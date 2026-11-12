@@ -116,6 +116,14 @@ export interface VoiceRecordingResult {
   storageWarning?: string;
 }
 
+/** 识别文本追加到现有草稿；切换输入方式或连续录音不会覆盖已输入内容。 */
+export function appendVoiceTranscript(draft: string, transcript: string): string {
+  const recognized = transcript.trim();
+  if (!recognized) return draft;
+  const existing = draft.trimEnd();
+  return existing ? `${existing}\n${recognized}` : recognized;
+}
+
 /** 由确认/编辑结果推导语音轮元数据（纯函数）：编辑过 = 确认文本与 ASR 原文不一致。 */
 export function resolveSpeechTurnMeta(
   asrRawText: string,

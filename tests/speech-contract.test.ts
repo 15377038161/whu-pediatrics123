@@ -70,12 +70,20 @@ test('resolveSpeechTurnMeta：记录 ASR 原文与是否编辑，评分只看确
   });
 });
 
+test('appendVoiceTranscript：识别回填不覆盖已有草稿，空识别不改变输入', () => {
+  assert.equal(contract.appendVoiceTranscript('', '孩子咳嗽几天了'), '孩子咳嗽几天了');
+  assert.equal(contract.appendVoiceTranscript('先保留这段文字', '孩子咳嗽几天了'), '先保留这段文字\n孩子咳嗽几天了');
+  assert.equal(contract.appendVoiceTranscript('原有草稿\n', '  最高体温多少  '), '原有草稿\n最高体温多少');
+  assert.equal(contract.appendVoiceTranscript('原有草稿', '   '), '原有草稿');
+});
+
 test('契约模块只含纯类型与纯函数，不导出网络实现或假成功 adapter', () => {
   // interface/type 导出不进入运行时命名空间，只断言值导出清单
   const exported = Object.keys(contract).sort();
   assert.deepEqual(exported, [
     'UNAVAILABLE_SPEECH_CAPABILITIES',
     'VOICE_TURN_TRANSITIONS',
+    'appendVoiceTranscript',
     'canTransitionVoiceTurn',
     'isSpeechCapabilities',
     'resolveSpeechTurnMeta',

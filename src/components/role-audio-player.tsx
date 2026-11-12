@@ -20,7 +20,8 @@ function actorLabel(actor: AgentMessage['actor']): string { return actor === 'ch
 export const RoleAudioPlayer = forwardRef<RoleAudioPlayerHandle, RoleAudioPlayerProps>(function RoleAudioPlayer(
   { sessionId, messages, enabled, onSpeakingMessageChange }, ref,
 ) {
-  const spokenRef = useRef<Set<string>>(new Set());
+  // A mounted player never announces the history that was already present on its first render.
+  const spokenRef = useRef<Set<string>>(new Set(messages.map((message) => message.id)));
   const queueRef = useRef<AgentMessage[]>([]);
   const pumpingRef = useRef(false);
   const generationRef = useRef(0);
@@ -55,8 +56,8 @@ export const RoleAudioPlayer = forwardRef<RoleAudioPlayerHandle, RoleAudioPlayer
       audio.onplaying=()=>setPlaybackError('');
       audio.src=url;
       void audio.play().catch(()=>{
-        // A blocked autoplay is not successful playback. Keep the queue waiting for the user.
-        setPlaybackError('浏览器未自动播放，请点击播放按钮或播放器继续。');
+        cleanup();
+        reject(new Error('AUTOPLAY_BLOCKED'));
       });
     });
   }
@@ -71,8 +72,12 @@ export const RoleAudioPlayer = forwardRef<RoleAudioPlayerHandle, RoleAudioPlayer
           const {audioUrl}=await requestMessageAudio(sessionIdRef.current,target.id);
           if(generationRef.current!==generation)break;
           onSpeakingMessageChange?.(target.id);await playOnce(audioUrl);
-        } catch {
-          if(generationRef.current===generation){failedRef.current=target;setPlaybackError('角色播报失败，请重试；文字内容已保留。');}
+        } catch (cause) {
+          if(generationRef.current===generation){
+            failedRef.current=target;
+            setPlaybackError(cause instanceof Error&&cause.message==='AUTOPLAY_BLOCKED'
+              ?'浏览器未自动播放，请点击重试播报。':'角色播报失败，请重试；文字内容已保留。');
+          }
           break;
         } finally {setCurrent(null);onSpeakingMessageChange?.(null);}
       }
@@ -82,14 +87,16 @@ export const RoleAudioPlayer = forwardRef<RoleAudioPlayerHandle, RoleAudioPlayer
     }
   }
   // Reset before enqueuing the first messages, rather than cancelling that first playback afterwards.
-  useEffect(()=>{sessionIdRef.current=sessionId;spokenRef.current=new Set();stop();return stop;
+  useEffect(()=>{sessionIdRef.current=sessionId;spokenRef.current=new Set(messages.map((message)=>message.id));stop();return stop;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[sessionId]);
   useEffect(()=>{enabledRef.current=enabled;if(!enabled)stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[enabled]);
   useEffect(()=>{
-    if(!enabled)return;
+    // Disabled time is a hard boundary: existing and newly arrived history is marked as seen,
+    // so enabling never backfills audio. Only messages arriving after enabling enter the queue.
+    if(!enabled){for(const m of messages)spokenRef.current.add(m.id);return;}
     const pending=messages.filter(m=>!spokenRef.current.has(m.id)&&isSpeakable(m));
     for(const m of pending)spokenRef.current.add(m.id);
     queueRef.current.push(...pending);if(pending.length)void pump();

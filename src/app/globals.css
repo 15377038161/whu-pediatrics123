@@ -324,23 +324,27 @@ textarea { resize: vertical; }
 .stream-text[data-streaming] { cursor: pointer; }
 .stream-caret { display: inline-block; width: 2px; height: .95em; margin-left: 2px; vertical-align: -0.12em; background: currentColor; animation: caret-blink .85s steps(2, start) infinite; }
 @keyframes caret-blink { 50% { opacity: 0; } }
-.composer-card { flex: none; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-top: 1px solid var(--line); background: var(--white); }
-.composer-header { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
-.composer-input-row { width: 100%; }
-.composer-input-row .composer textarea { min-height: 72px; max-height: 160px; padding: 14px 16px; font-size: 15px; line-height: 1.5; }
-.composer-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
-.composer-actions .voice-hold { flex: none; }
-.composer-actions .voice-hold-button { min-height: 44px; min-width: 110px; border-radius: 22px; padding: 0 16px; font-size: 14px; }
-.composer textarea, .clinical-form textarea, .clinical-form input { width: 100%; border: 1px solid #becbc7; border-radius: 13px; background: white; color: var(--ink); padding: 12px 13px; resize: vertical; }
-.composer textarea { min-height: 64px; max-height: 180px; }
-.composer[data-mode="communication"] textarea { border-color: #e2c89a; background: linear-gradient(135deg, #fff, #fffaf0); }
-.composer-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.composer-toggle { min-height: 32px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #cfe3da; border-radius: 999px; background: #f6fbf8; color: var(--pine-dark); font-size: 12px; font-weight: 800; }
-.composer-toggle:hover:not(:disabled) { background: var(--mint); }
-.composer-toggle[aria-pressed="true"] { background: var(--mint); border-color: #bcd9d0; }
-.composer-toggle:disabled { opacity: .55; cursor: not-allowed; }
-.composer-toggle svg { width: 14px; height: 14px; }
-.composer-send { min-height: 44px; padding: 0 20px; border-radius: 22px; font-size: 14px; }
+.composer-card { flex: none; padding: 8px 10px; border-top: 1px solid var(--line); background: #f7faf8; }
+.composer-main-row { display: flex; align-items: flex-end; gap: 8px; width: 100%; }
+.composer-input-slot { flex: 1; min-width: 0; display: flex; align-items: flex-end; }
+.composer-input-slot .composer { flex: 1; min-width: 0; }
+.composer-icon-button { flex: 0 0 44px; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 11px; background: transparent; color: #47625c; }
+.composer-icon-button:hover:not(:disabled), .composer-icon-button:focus-visible { background: #e7f1ec; color: var(--pine-dark); }
+.composer-icon-button:disabled { opacity: .5; cursor: wait; }
+.composer-audio-toggle[aria-pressed="true"] { background: var(--mint); color: var(--pine-dark); }
+.composer textarea, .clinical-form textarea, .clinical-form input { width: 100%; border: 1px solid #becbc7; border-radius: 13px; background: white; color: var(--ink); padding: 12px 13px; }
+.composer-main-row .composer textarea { display: block; min-height: 44px; height: 44px; max-height: 120px; padding: 10px 13px; resize: none; font-size: 16px; line-height: 22px; }
+.composer-card[data-mode="communication"] .composer textarea { border-color: #e2c89a; background: #fffaf0; }
+.composer-input-slot .voice-hold { width: 100%; }
+.composer-input-slot .voice-hold-button { min-height: 44px; border-radius: 11px; background: #fff; font-size: 14px; }
+.composer-input-slot .voice-inline-notice { margin: 5px 2px 0; font-size: 12px; line-height: 1.5; text-align: left; overflow-wrap: anywhere; }
+.composer-send { flex: none; min-height: 44px; padding: 0 16px; display: inline-flex; align-items: center; gap: 6px; border-radius: 11px; font-size: 14px; }
+@media (max-width: 560px) {
+  .composer-card { padding: 6px; }
+  .composer-main-row { gap: 4px; }
+  .composer-send { width: 44px; padding: 0; justify-content: center; }
+  .composer-send span { display: none; }
+}
 .hint-anchor { position: relative; }
 .hint-trigger { color: #8a6815; background: #fff5ca; border-color: #ead58e; }
 .hint-popover { position: absolute; z-index: 8; right: 0; bottom: calc(100% + 10px); width: min(270px, calc(100vw - 76px)); padding: 12px 13px; border: 1px solid #e3cb7e; border-radius: 14px 14px 4px 14px; background: #fffaf0; color: #684f16; box-shadow: 0 14px 32px rgba(74,61,25,.16); }
@@ -995,7 +999,7 @@ textarea { resize: vertical; }
 .training-shell .training-primary[data-stage='history']>.panel-body,.training-shell .training-primary[data-stage='communication']>.panel-body { display:flex; flex-direction:column; overflow:hidden; gap:8px; }
 .training-shell .training-primary .history-chat { flex:1; min-height:0; max-height:none; padding:12px; }
 .training-shell .composer,.training-shell .composer-footer,.training-shell .composer-meta { flex-shrink:0; }
-.training-shell .composer textarea { min-height:56px; max-height:100px; }
+.training-shell .composer textarea { min-height:44px; max-height:120px; }
 .training-shell .training-record>.panel-body { display:flex; flex:1; flex-direction:column; min-height:0; overflow:hidden; }
 .training-shell .training-record .vitals,.training-shell .record-section-head { flex-shrink:0; }
 .training-shell .evidence-log { flex:1; min-height:0; overflow-y:auto; align-content:start; scrollbar-gutter:stable; overscroll-behavior:contain; padding-right:5px; }
@@ -1134,7 +1138,7 @@ textarea { resize: vertical; }
  .training-shell .test-order-form { padding:12px; margin-bottom:12px; }
  .training-shell .tests-intro h2 { font-size:20px; }
  .training-shell .tests-intro p { margin-bottom:8px; }
- .training-shell .composer textarea { min-height:48px; }
+ .training-shell .composer textarea { min-height:44px; }
 }
 
 /* C3：说明类小字统一收纳（components/expandable-note.tsx）——触发器常显，浮层点击/悬停展开，
