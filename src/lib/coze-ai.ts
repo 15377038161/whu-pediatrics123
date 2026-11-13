@@ -114,6 +114,13 @@ export function hasAICredentials(): boolean {
   return describeAIConfig().apiKeySource !== 'missing';
 }
 
+/** 问诊角色模型只有一个解析入口，避免各模块回退到不同的旧模型。 */
+export function roleModelName(): string {
+  return process.env.COZE_AI_ROLE_MODEL?.trim()
+    || process.env.COZE_AI_TEST_MODEL?.trim()
+    || 'deepseek-v4.1-flash-1017';
+}
+
 export type AIErrorKind =
   | 'rate_limited'
   | 'timeout'

@@ -33,8 +33,10 @@ supabase/.temp/
 
 .next-exam/
 
-# Raw model replies and operational audit evidence stay private.
+# Raw model replies, browser screenshots and operational audit evidence stay private.
 artifacts/model-acceptance/
+artifacts/browser-acceptance/
+artifacts/stage-one-*/
 
 # Temporary Git synchronization artifacts stay local, never auto-committed.
 /.codex-sync/

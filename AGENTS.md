@@ -1,3 +1,16 @@
+## 2026-11-13 中枢性尿崩症会话与学生首页整改（当前优先）
+
+- 学生首页删除地图上方三段介绍文案；班级积分榜与「继续上次接诊」位于系统地图之后，进入具体系统病例列表时不重复显示。桌面与 390px 手机截图已验收。
+- 目标旧会话缺少 `teachingPackageVersion`，导致人设、预设问答和教学查体未注入。`src/lib/agent-engine.ts` 现会在同一来源快照内补绑匹配教学包，不跨版本改绑，不修改原始病例包。
+- 问诊统一使用 `roleModelName()`；默认模型为 `deepseek-v4.1-flash-1017`。预设问答字段为 `prompt/parentAnswer/childAnswer`，仅用于定位当前问题的证据，不得直接复述隐藏诊断或跨章节拼接答案。
+- `src/lib/history-dialogue.ts` 按当前问题筛选事实：当前起病/病程问题不得因预设事实编号带入既往史、个人史或家族史；明确询问既往信息时仍可选中对应事实。模型校验失败时只按本轮已筛选事实降级，不中断问诊。
+- `src/domain/encounter-time.ts` 只从明确入院/就诊上下文提取时点，禁止按系统当前日期倒推年龄或出生日期。目标病例就诊时点为 2021-12-01；没有明确依据的病例保持「待核实」。
+- 67 例只读审计命令：`pnpm exec tsx scripts/audit-training-package-consistency.ts --root <运行包目录> --output <临时报告路径>`。本轮结果：67/67 版本哈希有效、67/67 查体映射通过、67/67 含 `inspection × scalp`，27 例原始预设起病问题含既往/个人史/家族史候选但均被运行时过滤，`runtimeFilterFailures=0`；8 例可明确提取就诊时点，59 例仍为 `encounter_unverified`，不得擅自补算。完整逐例清单只写 `/tmp`，不提交患者资料。
+- 当前代码真实模型三轮连续问诊：治疗史与初潮两轮由指定模型成功回答；复合起病轮次因 `unsupported_uncited_text` 校验未通过而安全降级，三轮内容边界断言均通过。不得将第三轮表述为模型直答成功。
+- 验证：最终定向回归 37/37、TypeScript、ESLint、生产构建通过；查体视诊/触诊头颅实机操作与刷新持久化已通过。修复后的页面级连续问诊复验受隔离预览间歇性 502 阻塞，未标记通过；未触发正式发布。
+- 既有/环境测试边界：`case-classification.test.ts` 目录计数实际 52、断言 53；`patient-appearance.test.ts` 一例历史病例 ID 返回 `CASE_NOT_FOUND`；`note-primary-rubric.test.ts` 硬编码的 `a9f300e1c12d531d22d8` 私有运行包缺失，临时链接到当前代次后第二项出现 40≠38 的包代次差异。不得修改断言或替换病例数据强行转绿。
+- 密钥、`.env.local`、本地运行包、浏览器截图和含患者内容的验收证据均不得提交。截图仅留存于受控临时目录或既有忽略产物目录。
+
 ## 2026-11-09 最新交付约定（优先于下方历史阶段说明）
 
 - 用户本轮要求制作完整接力包并转交 Coder；交付后 Coder 可继续剩余业务实现与资料制作，Codex 停止主动写入，不再坚持旧阶段“Coder 只能运维”的分工。接收前重新确认单一写入者，自动化 67-5 保持暂停。
@@ -98,7 +111,7 @@ tests/                      # 测试
 ## Coze 原生 AI 集成
 
 - **文本 AI 调用点**：`src/lib/role-agent.ts` 生成SP角色应答；`src/lib/test-result-supplement.ts`（2026-11-02 接入，**2026-11-05 按老师执医三站要求关闭生成通道**）只从绑定版本原始报告逐字摘录申请对应的单项，原始资料没有结果时不生成、不编造、不补全，学生只能选择做/不做并得到「本病例资料未提供该项结果」；历史 origin=generated 记录不再复用。全部经`invokeCozeAI`，见`docs/TEST_RESULT_AI.md`。评分、报告评价和原始临床规则仍保持确定性，不让模型改分或改原件。
-- **角色模型**：默认 `doubao-seed-1-8-251228`（可通过 `COZE_AI_ROLE_MODEL` 覆盖），temperature 0.45；人设提示词要求患儿用儿语词/断续含糊/可给误导性自我判断，家长焦急口语化/可给外行推测判断，均不用医学术语
+- **角色模型**：默认 `deepseek-v4.1-flash-1017`（可通过 `COZE_AI_ROLE_MODEL` 覆盖，`COZE_AI_TEST_MODEL` 仅作为兼容回退），temperature 0.45；人设提示词要求患儿按年龄与表达能力口语化回答，家长围绕当前问题补充，不背诵病历或使用超出角色认知的医学术语
 - **语音播报（TTS）与语音输入（ASR）：阶段 D（2026-10-21，提交 498eaa4 与 D-验收-01 修复）已按平台新 SDK 交付轮次式语音链**。SDK 升级至 `coder-coding-dev-sdk@1.0.0-20261019.d5eff68`（TTSClient/ASRClient/AudioClient，仅服务端调用，密钥不进浏览器）。服务端三路由 `/api/speech/{capabilities,asr,tts}`（requireAuth+**显式本人归属校验**——tts 要求 `session.userId === 当前用户`，教师督导读取不延伸为跨用户合成（他人会话 403 PERMISSION_DENIED），教师本人会话合成保留；能力探测为真实三段——listVoices+最小 TTS 合成+回灌 ASR，listVoices 成功不推断 ASR/TTS 可用；括注与不能言语患儿消息不合成；家长音色按病例已知照护者性别配置，未知明确回退平台默认音色）。前端 ConversationComposer 统一问诊与专项沟通的微信/QQ 式单行输入区，语音/键盘同位切换且共用受控草稿；roleAudioMuted 默认 true，页面加载不自动探测、合成或录音，开启播报不补播历史，仅对开启后新到达的角色消息请求 TTS，关闭立即停止并清空队列。voice-hold-button（按住说话/松开识别/上滑取消/真实音量波形）仅在学生主动按住时申请麦克风，松手仅识别回填，确认/编辑后才发送；conversation-thread 负责统一气泡与流式呈现，voice-message-button 播放学生真实录音，communication-call 复用同一输入组件。新增 `POST/GET /api/sessions/[id]/voice`（显式本人归属校验、WAV ASR、对象存储 fileId 与限时播放链接）；上传失败只降级为文字消息，不伪造语音气泡。验收状态：服务端 SDK 真实调用与路由守卫已验（合成预览身份直调，非真实 OAuth 多身份）；真实浏览器链路/真实麦克风/移动端/专业审核待验收——详见 `docs/SPEECH_INTEGRATION.md` 验收状态表与 `验收记录.md` 第二十二节。2026-10-09 的旧取消指令与旧 SDK 404 取证保留历史语境（仅说明旧接入方式不可用，不推断平台全部语音能力）。查体真实音效（SPRSound 啰音/哮鸣音）与视频播放不受影响
 - **统一走 `src/lib/coze-ai.ts`**：新增任何 AI 调用必须经 `invokeCozeAI`（内置单次超时、指数退避重试、错误分类），禁止在业务代码直接 `new LLMClient` 或硬编码域名/密钥
 - **凭据与域名**：默认取平台注入的 `COZE_WORKLOAD_IDENTITY_API_KEY` / `COZE_INTEGRATION_BASE_URL`；可选覆盖 `COZE_AI_API_KEY` / `COZE_AI_BASE_URL`；弹性参数 `COZE_AI_TIMEOUT_MS`(30s) / `COZE_AI_MAX_ATTEMPTS`(3) / `COZE_AI_RETRY_BASE_MS`(600)。密钥只进环境变量，不进代码/日志

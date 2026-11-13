@@ -4,6 +4,7 @@ import { sessionTeachingCase, sessionTeachingPackage } from '@/lib/session-teach
 import { readTeachingPackage } from '@/lib/teaching-package-store';
 import { computeCaseDataVersion } from '@/lib/case-data-version';
 import { ANATOMY_REGIONS, EXAM_INSTRUMENTS, anatomyLabel, instrumentsForSite } from '@/domain/exam-anatomy';
+import { sourceEncounterContext } from '@/domain/encounter-time';
 import {getPublicCase,isTrainableCase} from '@/lib/case-identity';
 import { verifiedComplaint } from '@/lib/admission-complaint';
 import { isExamResultEvidence } from '@/domain/exam-evidence';
@@ -210,6 +211,10 @@ export function refreshSourceSession(session: SessionState): SessionState {
     // （vitals 由查体事实提取，仅在真实执行查体动作后经 handleExam 路径生效）。
     const fresh = createInitialSession(session.userId, session.mode, session.caseId, session.practiceFocus ?? undefined, session.sourceSnapshotVersion, session.id);
     if (fresh.caseOptions) session.caseOptions = fresh.caseOptions;
+    // 老会话只在来源快照完全一致时补绑同版本教学包；不得把新版本事实混入旧病例。
+    if (fresh.sourceSnapshotVersion === session.sourceSnapshotVersion && fresh.teachingPackageVersion) {
+      session.teachingPackageVersion = fresh.teachingPackageVersion;
+    }
     return session;
   }
   // 旧会话（caseVersion<2 或无 caseOptions）整体重建（遗留迁移路径，重建后进入上方非破坏性分支）
@@ -218,6 +223,9 @@ export function refreshSourceSession(session: SessionState): SessionState {
   const fresh = createInitialSession(session.userId, session.mode, session.caseId, session.practiceFocus ?? undefined, session.sourceSnapshotVersion, session.id);
   session.caseVersion = fresh.caseVersion;
   session.caseOptions = fresh.caseOptions;
+  if (fresh.sourceSnapshotVersion === session.sourceSnapshotVersion && fresh.teachingPackageVersion) {
+    session.teachingPackageVersion = fresh.teachingPackageVersion;
+  }
   session.initialVitals = fresh.initialVitals;
   session.vitals = fresh.vitals;
   session.messages = [...fresh.messages, ...session.messages.filter((item) => item.actor === 'student')];
@@ -420,7 +428,8 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
   const pediatricCase = getCase(session.caseId, session.sourceSnapshotVersion, session.id);
   const source = pediatricCase.sourceFacts;
   const pack = sessionTeachingPackage(session);
-  const facts = pack?.historyFacts ?? sourceHistoryFacts(source?.sections.history ?? '');
+  const facts = (pack?.historyFacts ?? sourceHistoryFacts(source?.sections.history ?? ''))
+    .filter((fact) => !/^(?:入院情况|入院诊断|出院诊断|初步诊断|最后诊断|诊断依据)[：:]/.test(fact.text));
   const allFacts = [...facts];
   if (source) {
     allFacts.push({id:'SOURCE_HX_-1',text:`孩子${source.age}，${source.sex}。`,topics:['年龄与性别'],sourceLocator:'age/sex',origin:'source',actor:'parent'});
@@ -430,7 +439,12 @@ async function handleSourceQuestion(session: SessionState, text: string, clientE
   const baselineProfile = resolveAuditedCommunicationProfile(session.caseId, pediatricCase.age);
   const profile=pack?.roleState?.childCanSpeak===false?{...baselineProfile,speechCapability:'impaired' as const}:baselineProfile;
   const asCommunication=Boolean(pack)&&conversationAct(text)==='explanation';
-  const { dialogue, runtime } = await historyDialogue(session,text,allFacts,profile,forwardHeaders,historyInvoke,asCommunication?'explanation':'question');
+  const encounter = source ? sourceEncounterContext(source.sections.history, source.age) : undefined;
+  const { dialogue, runtime } = await historyDialogue(session,text,allFacts,profile,forwardHeaders,historyInvoke,asCommunication?'explanation':'question',{
+    ...(pack?.persona ? { persona: pack.persona } : {}),
+    ...(pack?.questions ? { questions: pack.questions } : {}),
+    ...(encounter ? { encounter } : {}),
+  });
   const newMessages = [message('student',text,speechOptions(speech)),...dialogue.utterances.map(item=>message(item.actor,item.text,{emotion:session.childEmotion}))];
   const codes = disclosedHistoryCodes(dialogue,allFacts);
   session.dialogueMemory = {topic:dialogue.topic,lastFactIds:codes.length?codes:session.dialogueMemory?.lastFactIds??[],clarifiedQuestion:dialogue.clarification??null,concern:/担心|严重|危险/.test(text)?text:session.dialogueMemory?.concern??null};

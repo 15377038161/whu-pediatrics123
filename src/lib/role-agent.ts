@@ -2,11 +2,9 @@ import { z } from 'zod';
 import type { AgentRuntimeSummary } from '@/domain/agent';
 import type { CommunicationProfile } from '@/domain/communication-profile';
 import { canChildSpeak, childPersonaStyle } from '@/domain/communication-profile';
-import { AIGatewayError, classifyAIError, hasAICredentials, invokeCozeAI } from '@/lib/coze-ai';
+import { AIGatewayError, classifyAIError, hasAICredentials, invokeCozeAI, roleModelName } from '@/lib/coze-ai';
 
-// 可用模型以平台注入列表为准（llm 技能）：doubao-seed-1-8-251228 / deepseek-v4-flash。
-// 旧默认 doubao-seed-2-0-pro-260215 平台已不存在（invalid_request 400，探针实测），导致角色应答恒 model_fallback。
-const MODEL_NAME = process.env.COZE_AI_ROLE_MODEL || 'doubao-seed-1-8-251228';
+const MODEL_NAME = roleModelName();
 
 const roleReplySchema = z.object({
   child: z.string().max(180).optional(),

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { SessionState } from '@/domain/agent';
 import { resolveCommunicationProfile } from '@/domain/communication-profile';
-import type { HistoryFact } from '@/domain/teaching-package';
+import type { HistoryFact, TeachingPackage } from '@/domain/teaching-package';
+import { sourceEncounterContext } from '@/domain/encounter-time';
 import { contextualHistorySelection, historyDialogue, inspectHistoryDialogue, sourceHistoryFacts, validateHistoryDialogue,disclosedHistoryCodes,conversationAct } from '@/lib/history-dialogue';
 
 const facts:HistoryFact[]=[
@@ -13,6 +14,11 @@ const facts:HistoryFact[]=[
 ];
 function state():SessionState{return {stage:'history',messages:[],askedIntents:[],behavior:{cooperation:50}} as unknown as SessionState;}
 const profile=resolveCommunicationProfile('synthetic','8岁');
+test('就诊时点只取入院上下文，既往月经日期不替代就诊日期',()=>{
+  const encounter=sourceEncounterContext('【现病史】\n入院情况：\n2021-12-0120:49\n2021.6月经初潮','12岁');
+  assert.deepEqual(encounter,{time:'2021-12-01 20:49',ageAtEncounter:'12岁',note:'年龄与相对时间均以本次就诊时点为准，不按系统当前日期换算。'});
+  assert.equal(sourceEncounterContext('2021.6月经初潮','12岁'),undefined);
+});
 test('问诊和解释按内容识别，解释时不给模型尚未披露的病史',async()=>{
   assert.equal(conversationAct('接下来我们先抽血检查，您理解吗？'),'explanation');
   assert.equal(conversationAct('我先问一下，有没有过敏？'),'question');
@@ -59,6 +65,28 @@ test('概括询问起病时只回答主诉对应的时间，不倾倒既往和�
   assert.equal(result.dialogue.utterances.some(u=>/住院|大便/.test(u.text)),false);
   assert.ok(contextualHistorySelection(state(),'以前是什么时候住院的？',onset).facts.some(f=>f.id==='past'),'specific past-history question must retain its facts');
 });
+test('复合问题不被单一起病分支截断，水肿时长和血尿阴性都能回答',()=>{
+  const scoped:HistoryFact[]=[
+    {id:'SOURCE_HX_-2',text:'水肿2周',topics:['主要不适'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'duration',text:'发现水肿2周',topics:['起病与病程','水肿及尿液变化'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+    {id:'urine',text:'无血尿',topics:['水肿及尿液变化'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+  ];
+  assert.deepEqual(contextualHistorySelection(state(),'水肿多久了？有没有血尿？',scoped).facts.map(f=>f.id),['duration','urine']);
+});
+test('起病复合问题精确命中预设也不跨章节，明确既往问题仍保留事实',()=>{
+  const scoped:HistoryFact[]=[
+    {id:'current-heading',text:'【现病史】',topics:[],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+    {id:'current',text:'4天前开始出现咳嗽',topics:['起病与病程'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+    {id:'past-heading',text:'【既往史】',topics:[],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+    {id:'past',text:'7月龄曾因毛细支气管炎住院',topics:['起病与病程'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+  ];
+  const questions=[{
+    topic:'起病与病程',prompt:'最早什么时候开始不舒服的？这几天有什么变化？',variants:[],followups:[],factIds:['current','past'],
+    parentAnswer:'4天前开始出现咳嗽；7月龄曾因毛细支气管炎住院',childAnswer:'',unavailable:'',
+  }] satisfies TeachingPackage['questions'];
+  assert.deepEqual(contextualHistorySelection(state(),questions[0].prompt,scoped,questions).facts.map(f=>f.id),['current']);
+  assert.ok(contextualHistorySelection(state(),'以前什么时候住院？',scoped,questions).facts.some(f=>f.id==='past'));
+});
 test('持续与年龄追问只取当前主题，模型和降级都不倾倒整段现病史',async()=>{
   const scoped:HistoryFact[]=[
     {id:'SOURCE_HX_-2',text:'发热、咳嗽伴声嘶1天',topics:['主要不适'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
@@ -88,6 +116,41 @@ test('持续与年龄追问只取当前主题，模型和降级都不倾倒整�
   assert.doesNotMatch(ageFallback.dialogue.utterances[0].text,/发热|咳嗽|起病以来|食欲|睡眠/);
 });
 
+
+test('目标病例治疗史不夹带过敏和初潮，月经日期可口语化且保留就诊时点',async()=>{
+  const scoped:HistoryFact[]=[
+    {id:'SOURCE_HX_6_0',text:'患儿2月余前无明显诱因开始多饮多尿，每日饮水约4升，伴每日夜尿1-2次',topics:['起病与病程','一般状态、进食及排泄','水肿及尿液变化'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_10_0',text:'平素健康状况可',topics:['既往、过敏、接种及家族史'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_10_1',text:'2021.6月经初潮',topics:['起病与病程'],actor:'mixed',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_10_2',text:'否认家族史',topics:['既往、过敏、接种及家族史'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+    {id:'SOURCE_HX_10_5',text:'否认其余食物及药物过敏史',topics:['既往、过敏、接种及家族史','已用药物与院外处理'],actor:'parent',origin:'source',sourceLocator:'synthetic'},
+  ];
+  const questions=[
+    {topic:'起病与病程',prompt:'最早什么时候开始不舒服的？这几天有什么变化？',variants:['能具体说说起病与病程吗？','这方面最早有什么变化？'],followups:[],factIds:['SOURCE_HX_6_0','SOURCE_HX_10_1'],parentAnswer:'',childAnswer:'',unavailable:''},
+    {topic:'已用药物与院外处理',prompt:'已经用过什么药或做过什么处理？之后有什么变化？',variants:[],followups:[],factIds:['SOURCE_HX_10_5'],parentAnswer:'否认其余食物及药物过敏史',childAnswer:'',unavailable:''},
+  ];
+  assert.deepEqual(contextualHistorySelection(state(),'孩子第一次来月经具体是什么时候？',scoped,questions).facts.map(fact=>fact.id),['SOURCE_HX_10_1']);
+  assert.deepEqual(contextualHistorySelection(state(),'以前有进行过什么治疗吗？',scoped,questions).facts,[]);
+  const treatment=await historyDialogue(state(),'以前有进行过什么治疗吗？',scoped,profile,undefined,async()=>{throw Error('synthetic model unavailable');},'question',{questions});
+  assert.equal(treatment.runtime.execution,'model_fallback');
+  assert.match(treatment.dialogue.utterances[0].text,/没有可核实的记录/);
+  assert.doesNotMatch(treatment.dialogue.utterances.map(item=>item.text).join(''),/初潮|月经|家族|过敏/);
+  let promptPayload:Record<string,unknown>={};
+  const menarche=await historyDialogue(state(),'孩子已经来月经了吗？',scoped,profile,undefined,async input=>{
+    promptPayload=JSON.parse(input.messages[1].content as string) as Record<string,unknown>;
+    return {content:JSON.stringify({topic:'月经情况',clarification:null,utterances:[{actor:'parent',text:'孩子是2021年6月第一次来月经。',factIds:['SOURCE_HX_10_1']}]})};
+  },'question',{
+    questions,
+    persona:{appearance:'12岁、女',caregiver:'家长',speaking:'家长补充时间',cooperation:'配合',knowledgeBoundary:'只讲已知事实'},
+    encounter:{time:'2021-12-01 20:49',ageAtEncounter:'12岁',note:'以就诊时点为准'},
+  });
+  assert.equal(menarche.runtime.execution,'model',JSON.stringify(menarche.runtime));
+  assert.deepEqual((promptPayload.facts as HistoryFact[]).map(fact=>fact.id),['SOURCE_HX_10_1']);
+  assert.equal((promptPayload.encounter as {time:string}).time,'2021-12-01 20:49');
+  assert.ok(promptPayload.persona);
+  assert.equal(JSON.stringify(promptPayload.referenceQuestions).includes('parentAnswer'),false);
+  assert.match(menarche.dialogue.utterances[0].text,/2021年6月/);
+});
 
 test('模型只在筛选上下文内选择且不受前三句截断，只解锁实际引用的事实',async()=>{
   const many=Array.from({length:7},(_,i)=>({...facts[0],id:`fact-${i}`,text:`已有事实${i}。`}));

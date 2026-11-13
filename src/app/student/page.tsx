@@ -88,27 +88,11 @@ export default function StudentHome() {
   const lockOf = new Map(buildLevelLocks(cases.map((item) => item.id), sessions).map((lock) => [lock.caseId, lock]));
 
   return <div className={styles.home}>
-    <section className={styles.shortcuts} aria-label="积分与继续训练">
-      <Link className={styles.pointsCard} href="/student/classes">
-        <Trophy aria-hidden="true" />
-        <span>
-          <strong>{standing ? `第 ${standing.rank} 名 · ${standing.points} 积分` : '班级积分榜'}</strong>
-          <small>{standing ? `${standing.className}（共 ${standing.total} 人）· 已完成 ${standing.sourceCount} 个来源病例` : '积分口径：每个来源病例取最高临床过程分，累加为总积分'}</small>
-        </span>
-      </Link>
-      {active && <Link className={styles.continueCard} href={`/student/training?session=${encodeURIComponent(active.id)}`}>
-        <span><strong>继续上次接诊</strong><small>会话已保留，可从当前阶段接着完成。</small></span>
-      </Link>}
-    </section>
     <header className={styles.heading}>
       <div>
         {!system && <p className={styles.hospital}>武汉大学中南医院</p>}
         <h1>{system ? system.label : '儿科病例训练'}</h1>
-        <p>{system ? '选择病例，开始接诊。' : '从儿科各系统进入病例，完成问诊、查体、诊断、治疗与沟通训练。'}</p>
-        {!system && <>
-          <p className={styles.trainingPurpose}>通过病例接诊训练，提升病史采集、体格检查、辅助检查判读、临床诊断、治疗决策和医患沟通能力。</p>
-          <p className={styles.motto}><span>大医精诚</span><span>敬畏生命，练一次，会接诊</span></p>
-        </>}
+        {system && <p>选择病例，开始接诊。</p>}
       </div>
       {system && <div className={styles.tools}>
         <button className="btn btn-secondary" onClick={() => setSelected(null)}>返回系统地图</button>
@@ -168,5 +152,17 @@ export default function StudentHome() {
           })}
         </ol>
       </section>}
+    {!system && <section className={styles.shortcuts} aria-label="积分与继续训练">
+      <Link className={styles.pointsCard} href="/student/classes">
+        <Trophy aria-hidden="true" />
+        <span>
+          <strong>{standing ? `第 ${standing.rank} 名 · ${standing.points} 积分` : '班级积分榜'}</strong>
+          <small>{standing ? `${standing.className}（共 ${standing.total} 人）· 已完成 ${standing.sourceCount} 个来源病例` : '积分口径：每个来源病例取最高临床过程分，累加为总积分'}</small>
+        </span>
+      </Link>
+      {active && <Link className={styles.continueCard} href={`/student/training?session=${encodeURIComponent(active.id)}`}>
+        <span><strong>继续上次接诊</strong><small>会话已保留，可从当前阶段接着完成。</small></span>
+      </Link>}
+    </section>}
   </div>;
 }

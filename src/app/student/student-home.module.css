@@ -3,10 +3,8 @@
 .heading h1 { margin: 0; color: #174b48; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 750; }
 .heading p { margin: .3rem 0 0; font-weight: 400; line-height: 1.65; }
 .heading .hospital { margin: 0 0 .25rem; color: #36675d; font-size: .85rem; font-weight: 650; letter-spacing: .08em; }
-.heading .trainingPurpose { max-width: 62rem; color: #36675d; }
-.heading .motto { display: flex; flex-wrap: wrap; gap: .2rem 1.25rem; color: #174b48; font-weight: 650; letter-spacing: .04em; }
 .tools { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
-/* 积分榜入口置顶：手机底栏是写死的 5 列（4 主项 + 更多），排行榜放不进底栏，改由首页卡片承载醒目度。 */
+/* 积分与续诊位于系统地图之后；手机底栏空间不变，两个入口仍保留清晰卡片层级。 */
 .shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
 .pointsCard, .continueCard {
   display: flex;
