@@ -1,0 +1,1240 @@
+{
+  "schemaVersion": 1,
+  "status": "passed",
+  "runtimeGeneration": "f8589d9e8bf3fb5a2707",
+  "sourceArchiveSha256": "8f1bbe2ae6cded9a85ee573961b89b86fa32b63efb1efcdca10db55ae50b0c88",
+  "model": "deepseek-v4.1-flash-1017",
+  "cases": 67,
+  "fixedTestsReused": 67,
+  "generatedResultsValidated": 67,
+  "jsonRefreshReused": 67,
+  "processRestartReused": 67,
+  "restartModelCalls": 0,
+  "realModelCalls": 74,
+  "gatewayAttempts": 74,
+  "casesNeedingSecondGeneration": [
+    "teacher-病毒性脑炎",
+    "teacher-结核性脑炎",
+    "teacher-先天性肌无力",
+    "teacher-1型糖尿病伴有酮症酸中毒",
+    "teacher-新生儿败血症",
+    "teacher-新生儿化脓性脑膜炎",
+    "teacher-新生儿缺血缺氧性脑病"
+  ],
+  "mockUsed": false,
+  "caseDetails": [
+    {
+      "caseId": "teacher-急性喉炎",
+      "packageVersion": "09169d2aef13362bebab",
+      "sourceVersion": "ca4b32d174d66a95",
+      "fixedTest": "teaching-test-796b2af97a",
+      "requested": "血气分析",
+      "generatedId": "supplement-ceb1ec5f1df99ddb",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "528f69d07526647d45a95175ddf9b55c678449330c15d86b931c38febdec19e0"
+      ],
+      "resultSha256": "d7cf4690e3053125006975513503175b0b9f3d262c085e5215f8be051740463d",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-异物吸入性窒息",
+      "packageVersion": "af32959b0b43345a09d9",
+      "sourceVersion": "7838e2aa1c4c53af",
+      "fixedTest": "teaching-test-796b2af97a",
+      "requested": "C反应蛋白",
+      "generatedId": "supplement-24545f570f1a6cdb",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "ff57e5315d95d1c2077fbd8b29c8616ed2feb592463dc301a01520d163463ffb"
+      ],
+      "resultSha256": "2abe8e3204e05b5e3599340026fe1dd424b02982dd3266e4ab30d9573072e31f",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-急性喘息性支气管炎",
+      "packageVersion": "7b8667d96787ff04af9b",
+      "sourceVersion": "5be48bfd5e9b58c7",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "血气分析",
+      "generatedId": "supplement-40f2589d2cc13e6b",
+      "reportRows": 8,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "1d105361592c49e187c682c90b497a88e7af59fbf158bf2b08bb62daaf058c35"
+      ],
+      "resultSha256": "02d746b57e7721505355b501119300ec48bbb88e56f608a056b7f5be0effc578",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-毛细支气管炎",
+      "packageVersion": "01ba723940e907637b8f",
+      "sourceVersion": "7e85f01ebd51bd0c",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "血气分析",
+      "generatedId": "supplement-50a4055d7df7e1db",
+      "reportRows": 8,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "7c1eadc4ea5439069eee9ea85e70384ddf3ca6810245d7b6513dfe302bcf38aa"
+      ],
+      "resultSha256": "39d057c62ab81dd2d7a1b694c5f25384ded9f6b09eef70a44519b6e28ebe1edc",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-支气管哮喘",
+      "packageVersion": "ef97c4cc6d3eee7c63cd",
+      "sourceVersion": "48df9bf06dd03b94",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "血气分析",
+      "generatedId": "supplement-16d0896a1d119cba",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "bf66a573104f00dc6b7363f97b5a8e31ec11539cfe5df47896d5fe28c2db179a"
+      ],
+      "resultSha256": "44299c144e927d564b19e41ad01723a9298c9387178ca337c2f0e035fb5b6e74",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-大叶性肺炎",
+      "packageVersion": "4592b15ab46259484a61",
+      "sourceVersion": "56e26c1ac1156c5f",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "血气分析",
+      "generatedId": "supplement-bb3e6292e801f07e",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "bb66271087fe7b4ba826ebcd0f3641386b77836783bfaceb660b333275a20782"
+      ],
+      "resultSha256": "a1b4db0a8c946548c379734e197d2b0ad333199a232ededcec9b0808af3185af",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-肺炎支原体性肺炎",
+      "packageVersion": "571fc4d6c741dee8297b",
+      "sourceVersion": "56e26c1ac1156c5f",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "血气分析",
+      "generatedId": "supplement-40bb1ff327bf21d4",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "75ea41740f73ec73883afdcb9a6d283e9b521d23d82f2c163a4dc28769252f50"
+      ],
+      "resultSha256": "988190023f95ed6bf02c4476bc32f3610efd92b18c3720ff1df5f0ce9816fd5f",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-急性毛细支气管炎",
+      "packageVersion": "c1d972382012a044b690",
+      "sourceVersion": "7e85f01ebd51bd0c",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "血气分析",
+      "generatedId": "supplement-73e4172d7843b42e",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "1c2eec1c423845383f189c3cf094e4ffe18f5d4df4c42c8fda7c508f77e0f481"
+      ],
+      "resultSha256": "107573055ba3eb497619c663af29fba7b36490af6d87f8b38ed34c7d2cd4d1b3",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-肺不张",
+      "packageVersion": "460b1fe6c8119002e2c4",
+      "sourceVersion": "e69753018532427a",
+      "fixedTest": "teaching-test-c68e3c6461",
+      "requested": "血气分析",
+      "generatedId": "supplement-18cf206c65c8d792",
+      "reportRows": 10,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "a3fb5ad3dc9e900009be76bf394b3bdb604a16bff0b9358c95bdb656fddc91a7"
+      ],
+      "resultSha256": "d858d4d73c62d9463b9b0ed687ea1a16de08d960d95be6cc0ba370e50493d471",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-肺炎支原体肺炎",
+      "packageVersion": "36f7b9de35eb764c1c8b",
+      "sourceVersion": "56e26c1ac1156c5f",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "血气分析",
+      "generatedId": "supplement-4e47fa8cb624c907",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "51544e3293b291fa98d4c681c1a7ef233347140ef46f6bf5b241128924e09cce"
+      ],
+      "resultSha256": "f0e66733bdec6f2d57841ae29082d683c653e946f235add9d7083ad769d3b294",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-重症肺炎",
+      "packageVersion": "fba4a76c414cae48de9f",
+      "sourceVersion": "3307b61547d5d316",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "凝血功能",
+      "generatedId": "supplement-f057890f9fe6588a",
+      "reportRows": 5,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "8a573b28f29ad8ec6ca3086afde819fddb119b6560ebd0919b5e74b97170e32d"
+      ],
+      "resultSha256": "882b9660ac6089ee0f2ba296526c4c8aaa2610e38fa9f0086b74cd768dc71451",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-心律失常-阵发性室上性心动过速",
+      "packageVersion": "9bc1f3117e6763929cd8",
+      "sourceVersion": "e4f426ece906a139",
+      "fixedTest": "teaching-test-0a7d2da582",
+      "requested": "血气分析",
+      "generatedId": "supplement-9a555cde5fa5e3c6",
+      "reportRows": 10,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "7bb901f54df5b56b38a541acc05de7349bae4a4b3d0ea30118182bbc1e7422ee"
+      ],
+      "resultSha256": "81033a9df96c67f5bae3e8da6b3eff1655368e267a4782b6841d926c8503692b",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-暴发性心肌炎",
+      "packageVersion": "0a964058b92f84beca4b",
+      "sourceVersion": "4c21a6b619afa522",
+      "fixedTest": "teaching-test-0a7d2da582",
+      "requested": "铁蛋白",
+      "generatedId": "supplement-2a837f41f5a25033",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "df042fd9a2f9d5310111166b81d9ffd14214c70847ab853e33481eef7c7a56c7"
+      ],
+      "resultSha256": "e5f85ee01f3996b1c7c2e22415426e708f64e3ad30f53c23071a2f167a4d2219",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-心律失常-室上性心动过速",
+      "packageVersion": "bb56428a0aaaabdbe0de",
+      "sourceVersion": "e4f426ece906a139",
+      "fixedTest": "teaching-test-0a7d2da582",
+      "requested": "血气分析",
+      "generatedId": "supplement-d3079379bdf8cb14",
+      "reportRows": 11,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "4326f44303a9a39ae7bc443be1b38625af1d0b4f2e6637c488f838fcd11017c0"
+      ],
+      "resultSha256": "18114ae12387d8d2f5f9bf3063f394f6722990e939f277b79c1868eb0c1b3a4b",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-轮状病毒性肠炎",
+      "packageVersion": "ac5933f541bd376a690e",
+      "sourceVersion": "22f64934f6199683",
+      "fixedTest": "teaching-test-b8ea9caf65",
+      "requested": "凝血功能",
+      "generatedId": "supplement-fc9fe7a9fea308c8",
+      "reportRows": 6,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "fb76740e44b4fa77430e31249bde6b7da4f98c3f770acee96efc5794686dc21b"
+      ],
+      "resultSha256": "46c09cfbcd213a1995677b4f6c6137214d646ef4cb223a9f3d2bce01c559c178",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-细菌性肠炎",
+      "packageVersion": "ad744601fc12db716a7f",
+      "sourceVersion": "19eb3bb732d3b723",
+      "fixedTest": "teaching-test-e353832fc0",
+      "requested": "凝血功能",
+      "generatedId": "supplement-fe81cbe81a234936",
+      "reportRows": 6,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "ef9a381714a292a2e2318b320e6136c4342093f2a9c52930f7f37bcb7153deaf"
+      ],
+      "resultSha256": "63462c2d105acc7a3a7e6313eebc2b77994668c1b4dd3b7d5fa4d5d161499ab5",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-婴儿胆汁淤积症-巨细胞病毒",
+      "packageVersion": "09e996addecc3380d7c4",
+      "sourceVersion": "63b9499d525c9971",
+      "fixedTest": "teaching-test-554ca534b0",
+      "requested": "凝血功能",
+      "generatedId": "supplement-184a451fc87c0af5",
+      "reportRows": 5,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "f58d1e59b891f448b8a749b67d82635c8d2351fceeaba53e4808c35fa74b2ada"
+      ],
+      "resultSha256": "f667b1ef58b8784636e55cd81557203f538d4fa55874dcf51202a6c829281943",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-婴儿胆汁淤积症-巨细胞病毒感染",
+      "packageVersion": "6ffbe29d3bb97ae5101c",
+      "sourceVersion": "63b9499d525c9971",
+      "fixedTest": "teaching-test-554ca534b0",
+      "requested": "凝血功能",
+      "generatedId": "supplement-7b87c13cceece81c",
+      "reportRows": 5,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "2f36fb16327cecab7b07a7f4dc788803dd9515b5ae13933779f1a1473d81315e"
+      ],
+      "resultSha256": "dd4da6059e87b7e307b9a7dcedd8c4d5b3655030dace9b7ad7d284fb119bc946",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-发热性惊厥",
+      "packageVersion": "890cdfa2b821eae108d9",
+      "sourceVersion": "a8a74b096101d2f9",
+      "fixedTest": "teaching-test-55c7f0f250",
+      "requested": "脑电图",
+      "generatedId": "supplement-647bfd6474b8e608",
+      "reportRows": 5,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "28717a99c17b1d72f1dc510352bb9cca698fb50813bb74e68862dd2215362182"
+      ],
+      "resultSha256": "e6e3298c82fd2f1a40785300879bdc71d475f543ad26b0a7c6dca69829000ff0",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-癫痫",
+      "packageVersion": "594d539261e4d8bfa7a8",
+      "sourceVersion": "1ef60beab8ee1416",
+      "fixedTest": "teaching-test-55c7f0f250",
+      "requested": "血气分析",
+      "generatedId": "supplement-3ffd4f4b18d8150e",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "677695a968985ea5b6e12322c423555ac8ac34aa37e737c2630cf906c962a98c"
+      ],
+      "resultSha256": "f3fcbaab5b509b8b8504bacba253d64ddd5b2e6861a6965054678e752bebb15d",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-病毒性脑炎",
+      "packageVersion": "3928c46e82d9dc7dfa60",
+      "sourceVersion": "2594bcad9fa89a45",
+      "fixedTest": "teaching-test-3ddfac24aa",
+      "requested": "凝血功能",
+      "generatedId": "supplement-801b89e9740fc968",
+      "reportRows": 6,
+      "realModelCalls": 2,
+      "gatewayAttempts": 2,
+      "rawSha256": [
+        "7dc8745819f4fe678222c2b29c04a70f85d7b6fd9a6d0b90f2714a2453eafa7b",
+        "9011e9c7c7d16b49bdf340f04de874521e70a77607a6fc4f812d413934239283"
+      ],
+      "resultSha256": "0280bd05b6c7ff9d7ef10c9c817f8b394d02b063ef131ffee4780eb2b3832441",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-化脓性脑膜炎",
+      "packageVersion": "059e634dd6e3f9bcda31",
+      "sourceVersion": "b7afa2eb7fea5588",
+      "fixedTest": "teaching-test-ac49043bc5",
+      "requested": "脑电图",
+      "generatedId": "supplement-8ec3d0400f5ff77f",
+      "reportRows": 6,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "4466d7af714c5f5905b70ce51c220dd814790695c7eb237a08a78e67c06e3939"
+      ],
+      "resultSha256": "4120184e59d40d158afdebe7a17cc392bea1704a42b506e375cd11c652ad5e6c",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-结核性脑炎",
+      "packageVersion": "2ed6a4ed237e6d22a872",
+      "sourceVersion": "391083ecf68525b8",
+      "fixedTest": "teaching-test-3ddfac24aa",
+      "requested": "脑电图",
+      "generatedId": "supplement-60d1a7b3ebbeedef",
+      "reportRows": 7,
+      "realModelCalls": 2,
+      "gatewayAttempts": 2,
+      "rawSha256": [
+        "feab037d55921cee3bab9e0a684fbc3d5fa4210fee4096bd158a1d068d0ff12d",
+        "a1a2f24dc3e80184a177ff9654bd1f5ac54e62ea3a701ef893ee2167ce7f5b15"
+      ],
+      "resultSha256": "d72591ae5a2314edd2226530593944820503ae124247f301f94211612e35ddb9",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-先天性肌无力综合征",
+      "packageVersion": "34fd3b81b69188517edd",
+      "sourceVersion": "f17f17fcdaeaa3c6",
+      "fixedTest": "teaching-test-615f312f75",
+      "requested": "脑电图",
+      "generatedId": "supplement-6bf95e58ab301eb3",
+      "reportRows": 6,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "97a8af4b66af721f0a3b3349363a2b27f3dfb9734ec4da9263b14059e12a61a5"
+      ],
+      "resultSha256": "f307215d93c9c1ced49713fada2aea60867f60b85ca79b8f72e13b49f732f7ce",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-中枢神经系统脱髓鞘病",
+      "packageVersion": "efb8fdb09c3fa5b7d467",
+      "sourceVersion": "7e0d077f7910d3ad",
+      "fixedTest": "teaching-test-73f30565c0",
+      "requested": "脑电图",
+      "generatedId": "supplement-37fb1585a62d882a",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "15c612dafadc52d3a71bcaf1cde8b8df8e333cefbf43959aba2b46d7cec90005"
+      ],
+      "resultSha256": "0a26e078d2653ec5fadadd526233385dc590b944ca34f11607346954e2c348f1",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-先天性肌无力",
+      "packageVersion": "cb71cf27581d56d51d4d",
+      "sourceVersion": "f17f17fcdaeaa3c6",
+      "fixedTest": "teaching-test-615f312f75",
+      "requested": "脑电图",
+      "generatedId": "supplement-7a1319554baf6db4",
+      "reportRows": 4,
+      "realModelCalls": 2,
+      "gatewayAttempts": 2,
+      "rawSha256": [
+        "fdfbb6f98a68e8568a9a4a029e0ebd9cb67abeae52973c8bfef789c8fd58a999",
+        "2359bfec171e084a190d4666bfa2d7ab48dbe93124c97012f0b2e56eb78f2549"
+      ],
+      "resultSha256": "7ce50228bb6465533025a54a16f89d6465e44355a8d691229222d699148c1161",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-癫痫全面性发作阵挛性发作",
+      "packageVersion": "0fdf69c0d33f97da5948",
+      "sourceVersion": "1ef60beab8ee1416",
+      "fixedTest": "teaching-test-55c7f0f250",
+      "requested": "血气分析",
+      "generatedId": "supplement-8c8199cdbcdd5d8b",
+      "reportRows": 6,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "8149fdeb9ad9a16e19062408f21bcb7ba047739a5bbac59e6a5a3cbac8b8fefd"
+      ],
+      "resultSha256": "1f23ecc44a9ba005ae1f94385a45545bd8f6d6d677a937d31bb92d00d8ead20e",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-急性肾小球肾炎",
+      "packageVersion": "70ab6f23d87df2290c10",
+      "sourceVersion": "4440187c4775fe50",
+      "fixedTest": "teaching-test-3d0010855b",
+      "requested": "血气分析",
+      "generatedId": "supplement-3ceb6825989a1f81",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "5c3febbc3e4f612678c68126b0018fb7118ca9e1f997b5a67097bb531fe4cf6e"
+      ],
+      "resultSha256": "66a9694e136b2cbd74fa03e6acb28fe3a3da98c33bd0ce01e5c82e9a91b771b7",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-肾病综合征",
+      "packageVersion": "bad7375bf0972ab4a78e",
+      "sourceVersion": "dff734ae57cde6dd",
+      "fixedTest": "teaching-test-3d0010855b",
+      "requested": "血气分析",
+      "generatedId": "supplement-f155ee906553a564",
+      "reportRows": 10,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "5de1746543a5c7eea90135025c233193c5e11b829151b6e21b0520ee7b7018fc"
+      ],
+      "resultSha256": "8f3068a4feaede8c54823bc053d058fad83cf7ae3dabb4dcd7e253974b3c9d38",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-泌尿道感染",
+      "packageVersion": "3a7626b02c2ad9d17f2d",
+      "sourceVersion": "0f7c93b95d8e0521",
+      "fixedTest": "teaching-test-3d0010855b",
+      "requested": "血气分析",
+      "generatedId": "supplement-91427c38ee5d2483",
+      "reportRows": 10,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "d8e6a72795103c00775b8c530c0f5ab6544dc0dd7e3bcf84c83178d593db6c50"
+      ],
+      "resultSha256": "f794a738e7c431a988ca708847889c1da06cb531a36ae1ee7018c7bf32587f33",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-急性肾衰竭",
+      "packageVersion": "dce7185663ece898cc2e",
+      "sourceVersion": "540f318b2df4e925",
+      "fixedTest": "teaching-test-dde11e0a50",
+      "requested": "血培养",
+      "generatedId": "supplement-ca5ec7534e93ed32",
+      "reportRows": 6,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "c75ea8dd924d7f325a58a00baa1da1819fcc422b492ac8fd0d4190f571a8d7a8"
+      ],
+      "resultSha256": "780f76650f1188ac396b96102255e82ba81dfb5b429bd2827d84ab4222542022",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-再生障碍性贫血",
+      "packageVersion": "9a495ad77d69f8c93705",
+      "sourceVersion": "643f8495b534a333",
+      "fixedTest": "teaching-test-2b526c2211",
+      "requested": "血气分析",
+      "generatedId": "supplement-28ceff98f2b3c8b9",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "4dfd0839f9e94a22b968dbddbaf2acf46870d2ac2d7c37149a6ee3ac1ffd05bd"
+      ],
+      "resultSha256": "882704c12e25ede1986421fd75f29cf398d9448f332ec91882e38c0584deeba8",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-蚕豆病",
+      "packageVersion": "a69c4507c03dc6c09f53",
+      "sourceVersion": "7b11b44563484343",
+      "fixedTest": "teaching-test-2b526c2211",
+      "requested": "凝血功能",
+      "generatedId": "supplement-a67df87a02a72149",
+      "reportRows": 5,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "15b8a950ec10e9a9a9965872afda2e4a0394e1ffeb3595f2a5ea2c78b82b1a55"
+      ],
+      "resultSha256": "15a94e640e0589f9a4dd679213b29af5b8b380949de9542758f49dfd1d1ee852",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-特发性血小板减少性紫癜",
+      "packageVersion": "c5ed33bea64e875d1c95",
+      "sourceVersion": "b8c5c9b92a3f6f21",
+      "fixedTest": "teaching-test-2b526c2211",
+      "requested": "血气分析",
+      "generatedId": "supplement-d8212813b06515e9",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "b773e0272922b98375424d1778a117bb994e3ede6d26115731aa2a4d6eef8c8b"
+      ],
+      "resultSha256": "77481a0c0a5433fb17608ae45184751035cb5c72570cd0d0e6eebe022b6119dd",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-急性白血病",
+      "packageVersion": "8731b4e3dff8f2fd82f5",
+      "sourceVersion": "0a7529b8860f2faa",
+      "fixedTest": "teaching-test-2b526c2211",
+      "requested": "血气分析",
+      "generatedId": "supplement-ce9985955c27716a",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "248c8f8c1a2638bed15cfc36d5dba09af64aba94b148453e38d62d1a74c978cf"
+      ],
+      "resultSha256": "7d75bdb3f31ef3825f185c48c24613064380fa578ca5c8b2b4b982bd8a29bbde",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-噬血细胞综合征",
+      "packageVersion": "ebd4225743b22b3ccae9",
+      "sourceVersion": "0fcd716cf9d311cb",
+      "fixedTest": "teaching-test-2b526c2211",
+      "requested": "血气分析",
+      "generatedId": "supplement-fe494dd0865b14c5",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "54129b470ac946bdc712cae5b25dbcd98438c5d3e52ef752ea2066c6823e9b89"
+      ],
+      "resultSha256": "ce23858e8a0279254e2cafceee70e540cf7ee3f0b5bd4bd6bbdc9b96518484d6",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-急性白血病-急性淋巴细胞白血病",
+      "packageVersion": "5bca8913dedbc8e399a9",
+      "sourceVersion": "0a7529b8860f2faa",
+      "fixedTest": "teaching-test-2b526c2211",
+      "requested": "血气分析",
+      "generatedId": "supplement-70176be6b10d5b75",
+      "reportRows": 11,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "36fe86e42d25cf093065a3220946895d30d1fdf85e826b8b40a829fe151826bf"
+      ],
+      "resultSha256": "6f26575e166a44a3a6c05bf6d2d24010965d431bf24bccbd2dc258ecd14388ae",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-生长激素缺乏症-矮小症",
+      "packageVersion": "3615bb993dd136a1f22c",
+      "sourceVersion": "1863d7e5de5bfc26",
+      "fixedTest": "teaching-test-6b1b5023ac",
+      "requested": "C反应蛋白",
+      "generatedId": "supplement-72474f0356076313",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "547707d204b78a38c7e3ab069ef746832fad3001085ca4be8cc57f9febc77ffa"
+      ],
+      "resultSha256": "a13f405e87d4af320cce2b9b6021750049c421c4d444fd11ddb486cab4af8f27",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-中枢性尿崩症",
+      "packageVersion": "80c577a5e6920e3cf942",
+      "sourceVersion": "8399007092abff43",
+      "fixedTest": "teaching-test-743353c2f3",
+      "requested": "血气分析",
+      "generatedId": "supplement-b3ee87715a4a017e",
+      "reportRows": 11,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "5712d6acaafeea158c5511ba6f85f142fa13e6251736e8c3d60d8f8b37687009"
+      ],
+      "resultSha256": "50881fbdc38e1af11cf2f11cff001ff9f939f658833c1c3e89b9ea9411407028",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-外周性性早熟",
+      "packageVersion": "f0ac3209108b17356cfc",
+      "sourceVersion": "3c2153d1ca7728c2",
+      "fixedTest": "teaching-test-b175e5ab02",
+      "requested": "C反应蛋白",
+      "generatedId": "supplement-d4dd526d962c1877",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "301061264ebcebfba3b3f6e4937c04510f8038eec796dc0d7e3fd5c96aeb32f0"
+      ],
+      "resultSha256": "808f290797d5af69a124a1546ca1152f3b4b21037f48cafe66d7eaad0b8bfe2b",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-中枢性性早熟",
+      "packageVersion": "9907e4889e3462968b00",
+      "sourceVersion": "3d16322f3d6a38ef",
+      "fixedTest": "teaching-test-b175e5ab02",
+      "requested": "C反应蛋白",
+      "generatedId": "supplement-e2247f404d07247b",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "65878df0c11c20a89e55da64f7de495b8efddb6e8ca407234e08525996b2e7d6"
+      ],
+      "resultSha256": "9a41e095ddd80114990897b2e4a972fedb9d5c4ac8418ce7f3bffae7237c48b6",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-i型糖尿病伴有酮症酸中毒",
+      "packageVersion": "51e3dff3a14ead4f61f3",
+      "sourceVersion": "85de76a667884e12",
+      "fixedTest": "teaching-test-55c7f0f250",
+      "requested": "心电图",
+      "generatedId": "supplement-2d772ab9a2a1069f",
+      "reportRows": 8,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "21af807404264dd9549868ea2ee992dd0767b05a6ceea4301b0e2147959a95d9"
+      ],
+      "resultSha256": "2a2fb96a6053b6f1f925cff89e10c4f190e605955df09d291e8d2b1b6e16ca8b",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-1型糖尿病伴有酮症酸中毒",
+      "packageVersion": "bc35deb58f1fc8cf67a6",
+      "sourceVersion": "85de76a667884e12",
+      "fixedTest": "teaching-test-55c7f0f250",
+      "requested": "心电图",
+      "generatedId": "supplement-1a1da1d2219b8562",
+      "reportRows": 6,
+      "realModelCalls": 2,
+      "gatewayAttempts": 2,
+      "rawSha256": [
+        "02c97ae10bff80eb8dbb1e555fcae9f713e8774ec934eefd23b9b55040e21506",
+        "e6c01be2954dfd11bbbb1c864fc203c75d0cf29e48888fcba924504b41e80fce"
+      ],
+      "resultSha256": "e4377f11b115239ee3acc745d82e99df16f569c1eb1060b656dcc5eeb5f5c52e",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-矮小症",
+      "packageVersion": "ad191eabedf5a38f4bec",
+      "sourceVersion": "1863d7e5de5bfc26",
+      "fixedTest": "teaching-test-6b1b5023ac",
+      "requested": "C反应蛋白",
+      "generatedId": "supplement-11d0d61447a50b18",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "98dcf4d3c5b0071eb07da7356f1c186c3d3511cffd74f28edb2ae45c9dd35cf5"
+      ],
+      "resultSha256": "eb9c5baf35dfbcb2dd05ab8d042b9b59a68ad866f75ae0873776cf9cd803de62",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿呼吸窘迫综合征",
+      "packageVersion": "520caba95dff5f82396d",
+      "sourceVersion": "8651193aac23a7d5",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "胸部CT",
+      "generatedId": "supplement-11e061d885e22ec0",
+      "reportRows": 0,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "335ea7ab5f9ab3e1009f5a66d3b78e47552a2d5a6a0b27982aee97cdb19bee86"
+      ],
+      "resultSha256": "91ac02f629e49e34ac70a2c63d0858a78776ed591d522c5be5568fe5e3153982",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿败血症",
+      "packageVersion": "fd2fbc8a8ad65abb6722",
+      "sourceVersion": "fff889dba9233f1b",
+      "fixedTest": "teaching-test-ac49043bc5",
+      "requested": "铁蛋白",
+      "generatedId": "supplement-da16d9b09e4ae83c",
+      "reportRows": 1,
+      "realModelCalls": 2,
+      "gatewayAttempts": 2,
+      "rawSha256": [
+        "3722db6a3d726e6f79c802eeb7f67cc38e0e10db5b438579f5f9ee0cd1e124d3",
+        "251e6179d10ecd90cddbe395a54d254a67438e97fc7519462dde8f3843e18e5f"
+      ],
+      "resultSha256": "0a2eaea13ed265ac8b6634192fbf67971e92f2d40b475e802e975c90c9f76fa4",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿高胆红素血症",
+      "packageVersion": "af192d80f2e7d5563c98",
+      "sourceVersion": "1f57511b96db9b5a",
+      "fixedTest": "teaching-test-918b13543c",
+      "requested": "血培养",
+      "generatedId": "supplement-001c012ed0681770",
+      "reportRows": 3,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "237acd66bd1a2e8084df7e7946143ac981b31aae9fb29ac20d40f7e3cfd07d60"
+      ],
+      "resultSha256": "251859a1781b80071eba1d39d15b3f35c663edf74c7bfa921e10a6f18b458b7c",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿abo溶血性黄疸",
+      "packageVersion": "f5b49b5fe000aceb77b4",
+      "sourceVersion": "f11dfe9acfb61137",
+      "fixedTest": "teaching-test-918b13543c",
+      "requested": "铁蛋白",
+      "generatedId": "supplement-9cda92934625b3a2",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "9cf3f0ea2c095c83c56e6ce677d2a42e06798498172b0253ea3fa8265e28926f"
+      ],
+      "resultSha256": "6f662d0c1f1046abd1f4a2e1c72c6d01b8ab8bf2641b153aac1b3befc3887430",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿rh溶血性黄疸",
+      "packageVersion": "841130aa2994ebc0bb4e",
+      "sourceVersion": "e15510ecda00cba7",
+      "fixedTest": "teaching-test-918b13543c",
+      "requested": "凝血功能",
+      "generatedId": "supplement-d38bd4e5fcfb44df",
+      "reportRows": 6,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "8533ae890ae724f5643f643a7dbc32616a7dae96375100b81e253f648176d893"
+      ],
+      "resultSha256": "70dc85fc3f329e3be52e8fe5c9d0dcb6b9c529b070a505bd124c039f05e17b65",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿肺炎",
+      "packageVersion": "3826dd625941162a76e2",
+      "sourceVersion": "9781895ad6f581a1",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "胸部CT",
+      "generatedId": "supplement-9a04465fc43d6530",
+      "reportRows": 0,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "c27d1494668343af9ad60237b2c6f7196fa45b24bd1e8211dfbffe7e991edcdd"
+      ],
+      "resultSha256": "34898114064f571c0e10d281c4fe00864892df09a70b841985dca163cffdb8d6",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿胎粪吸入肺炎",
+      "packageVersion": "da42ee51a51ae4ca2301",
+      "sourceVersion": "e1781ec12aa49479",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "胸部CT",
+      "generatedId": "supplement-540730d26372b6ec",
+      "reportRows": 0,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "63291492cb7662ee7e55a359f7fea01fe54e9558a9c3891f7308099421b53a61"
+      ],
+      "resultSha256": "c78b384734acb13852e28087f3fc8dd3d548171b6d3de65b7c76e9f3ac2e2b1b",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿化脓性脑膜炎",
+      "packageVersion": "784d86a08a2a23cb1586",
+      "sourceVersion": "d84429e7d8849c68",
+      "fixedTest": "teaching-test-ac49043bc5",
+      "requested": "脑电图",
+      "generatedId": "supplement-fcfa4d438c82539a",
+      "reportRows": 6,
+      "realModelCalls": 2,
+      "gatewayAttempts": 2,
+      "rawSha256": [
+        "0c69645e6c5785b9b575c6405ff07fce4c26d9d4c96d18df6b7bd04a1cdf368d",
+        "95a06377d31e9d5098c90b56dbf3cbd85a039b72c288a8bc4e4fca3b205ef826"
+      ],
+      "resultSha256": "dfd6736329fdc62bbdcd185f2b87e63304b9673a32df21af73f277c69f10ebd1",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿重度窒息",
+      "packageVersion": "0293d2180a898d15e577",
+      "sourceVersion": "827194cdee9b00ae",
+      "fixedTest": "teaching-test-7d7e35dbac",
+      "requested": "铁蛋白",
+      "generatedId": "supplement-6c87c1ab7c071d1c",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "a34f5f8c8b5687b355bd7c2f8a35e060bece565e2001c40671d9d3d083ad2fb0"
+      ],
+      "resultSha256": "3058222d4cf2d4395bb518fd173ac2e43294dce5a9b8228601c25284314c2318",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-先天性肾上腺皮质增生症",
+      "packageVersion": "657a05425288c8ee2bca",
+      "sourceVersion": "99d2910de3c8c18e",
+      "fixedTest": "teaching-test-743353c2f3",
+      "requested": "血培养",
+      "generatedId": "supplement-be6bbc13c7561330",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "9f84a3ab24d64c5b7ac62a0322bd8d282a5af0b3ca934694414df4a06ef0090e"
+      ],
+      "resultSha256": "ce0b8e875616e6c8e8992265c4a64c34dfa59e5b1f07ee27a41a2a7c85e8dfa2",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿缺血缺氧性脑病",
+      "packageVersion": "3826db65041a7ad22c83",
+      "sourceVersion": "ff9c2777e168fa11",
+      "fixedTest": "teaching-test-7d7e35dbac",
+      "requested": "血培养",
+      "generatedId": "supplement-55fba3d65847d6a3",
+      "reportRows": 2,
+      "realModelCalls": 2,
+      "gatewayAttempts": 2,
+      "rawSha256": [
+        "d803ec9f8b44628def4d66f60e4eae1d3692ea227de7f03090dc6a154682d244",
+        "3115f6a529bedd8dc41fba9057ac8a886c3c30783906629a737c914581c58993"
+      ],
+      "resultSha256": "f373cb212c7e745f33dbd89fb285d499fc66374d3e932bbf5c609c918780aa1c",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-新生儿胎粪吸入性肺炎",
+      "packageVersion": "6060c93670e0b897e3f5",
+      "sourceVersion": "e1781ec12aa49479",
+      "fixedTest": "teaching-test-335d822fab",
+      "requested": "胸部CT",
+      "generatedId": "supplement-2b6df701c1592d1b",
+      "reportRows": 0,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "af19e0a2592434d478013d77c8aa1bf3a600fcebabf77d5b30ce67bef052a57f"
+      ],
+      "resultSha256": "eac1bab857de5e91d019ff22711116524459b89794ab0296388fa497281cc492",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-单纯肥胖症",
+      "packageVersion": "99a37df037211db8f093",
+      "sourceVersion": "5f48641f7627155a",
+      "fixedTest": "teaching-test-6b1b5023ac",
+      "requested": "肾功能",
+      "generatedId": "supplement-4e67b5ac19746fc0",
+      "reportRows": 4,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "f68da77cec118f5d63206d7cc3fca0920cf26f891d19c979af8c6edb5ecdaada"
+      ],
+      "resultSha256": "fc652bec1bb2a8592d6e40dd04e6e87da9ef9d66273d3084643be295fc2c32a5",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-儿童-肥胖症",
+      "packageVersion": "36cee88feea21e60d637",
+      "sourceVersion": "5f48641f7627155a",
+      "fixedTest": "teaching-test-6b1b5023ac",
+      "requested": "肾功能",
+      "generatedId": "supplement-0f7b4cfc6d3725a3",
+      "reportRows": 4,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "865746c44fa2d3e1275a1763c199a99914a1847b4604ccfacb794b2d7857dd4b"
+      ],
+      "resultSha256": "412c48f4eb1759c053c399332075fd7a1ae00814c9304315ea2b144243ed1bb2",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-传染行单核细胞增多症",
+      "packageVersion": "c5f2b2c4bccb65740747",
+      "sourceVersion": "4a2f23d986deb6bf",
+      "fixedTest": "teaching-test-2b526c2211",
+      "requested": "肾功能",
+      "generatedId": "supplement-9595263f5edb74d0",
+      "reportRows": 3,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "b37ec6ce907f096fffd93d8b78b69017a3029bd597d70122941be2b3b00dd6fa"
+      ],
+      "resultSha256": "2abc9808839506d7c2094529991503dd557d54eb4a8f91af1160a89126e7a458",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-传染性单核细胞增多症",
+      "packageVersion": "6d41fd11a546cbd90428",
+      "sourceVersion": "4a2f23d986deb6bf",
+      "fixedTest": "teaching-test-2b526c2211",
+      "requested": "肾功能",
+      "generatedId": "supplement-773fe66f80b53103",
+      "reportRows": 5,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "bc9f0c41b5ce9a7db1ab93abb00ecc9e6d5d34997358a15302e2ddc5e16fe5af"
+      ],
+      "resultSha256": "fad1473cbfb191038a845064f8c2175e140de21b90ebd725729f210aee0a3ace",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-风湿热",
+      "packageVersion": "270e7c58e9f12a3855b2",
+      "sourceVersion": "fb48cf0c165e8d37",
+      "fixedTest": "teaching-test-edf85a4c90",
+      "requested": "血气分析",
+      "generatedId": "supplement-a0e4cb11d2c3f2fe",
+      "reportRows": 11,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "f0d4444eb36f162847730e9519cbe7ba4b8f3674094d26a8bc0056f37b7614bc"
+      ],
+      "resultSha256": "bdb1f838b7345852a052d4696726010f30e9eb98a29094414054e4071824264d",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-过敏性紫癜",
+      "packageVersion": "896bb018260004b68c0d",
+      "sourceVersion": "3d64ffa02809860c",
+      "fixedTest": "teaching-test-3d0010855b",
+      "requested": "血培养",
+      "generatedId": "supplement-f787604ccbd183fd",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "8ca5c92956d644d949ae49e1cbea6dfda793220119edaabda856dfc4832be976"
+      ],
+      "resultSha256": "c2ad0b623a61658d337af07ece1e90f8aa7cb639b7a42e904e2cc052a7cec57c",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-川崎病",
+      "packageVersion": "a14a4cfbcc0ab337b8ee",
+      "sourceVersion": "e4da92f85a02862f",
+      "fixedTest": "teaching-test-2b526c2211",
+      "requested": "铁蛋白",
+      "generatedId": "supplement-99e100e64b7b6b33",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "1e1cda3c4a44a4e0dbd1ea48b063912a21246bbb50073526f4fdd7e0d325e1eb"
+      ],
+      "resultSha256": "297187cbc1c814d4d019468855d1dda623d60d7bf9e3300c6403863a386511ad",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-肝豆状核变性",
+      "packageVersion": "6c9ba2f7ad82f335cc4f",
+      "sourceVersion": "2d6343846c472bf9",
+      "fixedTest": "teaching-test-554ca534b0",
+      "requested": "C反应蛋白",
+      "generatedId": "supplement-6f43b0027ad4065a",
+      "reportRows": 1,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "d0fef4ca8137bc0b07c43e9f2f0673fcb36438d8bc8cb8773c70f429a1b627cf"
+      ],
+      "resultSha256": "69b08a84823fbb70f6d4954f2d90e62c87dd3e585f0eb99c8b647320fd30d350",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-糖原贮积病",
+      "packageVersion": "21640339dde05bcba40d",
+      "sourceVersion": "dd824540193c3650",
+      "fixedTest": "teaching-test-554ca534b0",
+      "requested": "血气分析",
+      "generatedId": "supplement-d69af9d43d1c586d",
+      "reportRows": 6,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "d701ad92af3296b83b81be4b86de08a6575a72c669a264c69a233ea72507f98a"
+      ],
+      "resultSha256": "f40f9de05b82db294adc0c7b5a8a5100f234853399b418a3b490231396a776fd",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-糖原贮积病iv型",
+      "packageVersion": "740e6ca6d85a83efa664",
+      "sourceVersion": "dd824540193c3650",
+      "fixedTest": "teaching-test-554ca534b0",
+      "requested": "血气分析",
+      "generatedId": "supplement-b7538b51c3e8e618",
+      "reportRows": 7,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "effb3d94b974431a138b2ac38750ebb0c2f20be716086a660578085d53f69344"
+      ],
+      "resultSha256": "2710a75a22421a5bc5dfe0f34791f88c2148d63574d6ee48b3007815baf9bcf4",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    },
+    {
+      "caseId": "teacher-急性百草枯中毒",
+      "packageVersion": "3d72239232e454cc9464",
+      "sourceVersion": "851b18dd4400c01c",
+      "fixedTest": "teaching-test-dde11e0a50",
+      "requested": "血培养",
+      "generatedId": "supplement-8e8d3706956ee983",
+      "reportRows": 3,
+      "realModelCalls": 1,
+      "gatewayAttempts": 1,
+      "rawSha256": [
+        "434e26625770080acfb2ac5a0acf14202ffb3989ff69d815057a99817e4a7867"
+      ],
+      "resultSha256": "d9672519b35bd78d9601f2eed8e6bf3de64c88950d9b43093920466ecd651186",
+      "refreshReuse": true,
+      "processRestartReuse": true,
+      "fixedRestartReuse": true
+    }
+  ]
+}

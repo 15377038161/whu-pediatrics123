@@ -5,7 +5,7 @@ import {
   APIError as CoderAPIError,
   NetworkError as CoderNetworkError,
 } from 'coder-coding-dev-sdk';
-import { AIGatewayError, classifyAIError, invokeCozeAI, getAIConfig } from '@/lib/coze-ai';
+import { AIGatewayError, classifyAIError, invokeCozeAI, getAIConfig, getModelAIConfig } from '@/lib/coze-ai';
 
 const messages = [{ role: 'user', content: '测试' }] as const;
 
@@ -199,4 +199,25 @@ test('每用途的超时传入SDK且关闭内部重试，避免等待预算失�
  assert.equal(report.timeout,90000);
  assert.equal(quick.retryTimes,0);
  assert.equal(report.retryTimes,0);
+});
+
+test('自定义模型网关通过modelApiKey/modelBaseUrl鉴权且不污染通用配置', () => {
+  const names = ['COZE_AI_BASE_URL', 'COZE_AI_API_KEY', 'APIKEY'] as const;
+  const previous = new Map(names.map(name => [name, process.env[name]]));
+  try {
+    process.env.COZE_AI_BASE_URL = 'https://llm.example.test/v1';
+    delete process.env.COZE_AI_API_KEY;
+    process.env.APIKEY = 'test-custom-key';
+    const modelConfig = getModelAIConfig(12000);
+    assert.equal(modelConfig.modelApiKey, 'test-custom-key');
+    assert.equal(modelConfig.modelBaseUrl, 'https://llm.example.test/v1');
+    assert.equal(modelConfig.timeout, 12000);
+    assert.equal(modelConfig.retryTimes, 0);
+  } finally {
+    for (const name of names) {
+      const value = previous.get(name);
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
 });

@@ -55,6 +55,34 @@ export function getAIConfig(timeoutMs = getAIGatewaySettings().timeoutMs): Confi
   });
 }
 
+/**
+ * LLM 专用配置。自定义网关必须使用 SDK 的 modelApiKey/modelBaseUrl；
+ * APIKEY 仅在用户同时显式配置 COZE_AI_BASE_URL 时作为其 Key 别名读取，
+ * 不会误入平台或语音链路，也不会写入仓库与日志。
+ */
+export function getModelAIConfig(timeoutMs = getAIGatewaySettings().timeoutMs): Config {
+  const customBaseUrl = process.env.COZE_AI_BASE_URL?.trim() || undefined;
+  const customApiKey = process.env.COZE_AI_API_KEY?.trim()
+    || (customBaseUrl ? process.env.APIKEY?.trim() : undefined)
+    || undefined;
+  const modelApiKey = customApiKey
+    || process.env.CODER_CODING_MODEL_API_KEY?.trim()
+    || process.env.CODER_CODING_API_KEY?.trim()
+    || process.env.COZE_WORKLOAD_IDENTITY_API_KEY?.trim()
+    || undefined;
+  const modelBaseUrl = customBaseUrl
+    || process.env.CODER_CODING_MODEL_BASE_URL?.trim()
+    || process.env.CODER_CODING_BASE_URL?.trim()
+    || process.env.COZE_INTEGRATION_BASE_URL?.trim()
+    || undefined;
+  return new Config({
+    ...(modelApiKey ? { modelApiKey } : {}),
+    ...(modelBaseUrl ? { modelBaseUrl } : {}),
+    timeout: timeoutMs,
+    retryTimes: 0,
+  });
+}
+
 export interface AIConfigSummary {
   provider: 'coze_native';
   sdkVersion: string;
@@ -66,14 +94,16 @@ export interface AIConfigSummary {
 }
 
 export function describeAIConfig(): AIConfigSummary {
-  const config = getAIConfig();
-  const apiKeySource = process.env.COZE_AI_API_KEY?.trim()
+  const config = getModelAIConfig();
+  const customOverride = process.env.COZE_AI_API_KEY?.trim()
+    || (process.env.COZE_AI_BASE_URL?.trim() ? process.env.APIKEY?.trim() : undefined);
+  const apiKeySource = customOverride
     ? 'env_override'
-    : (process.env.CODER_CODING_API_KEY?.trim() || process.env.CODER_CODING_MODEL_API_KEY?.trim() || process.env.COZE_WORKLOAD_IDENTITY_API_KEY?.trim())
+    : (process.env.CODER_CODING_MODEL_API_KEY?.trim() || process.env.CODER_CODING_API_KEY?.trim() || process.env.COZE_WORKLOAD_IDENTITY_API_KEY?.trim())
       ? 'platform_injected'
       : 'missing';
   const { timeoutMs, maxAttempts, retryBaseMs } = getAIGatewaySettings();
-  return { provider: 'coze_native', sdkVersion: VERSION, apiKeySource, baseUrl: config.baseUrl || config.modelBaseUrl, timeoutMs, maxAttempts, retryBaseMs };
+  return { provider: 'coze_native', sdkVersion: VERSION, apiKeySource, baseUrl: config.modelBaseUrl || config.baseUrl, timeoutMs, maxAttempts, retryBaseMs };
 }
 
 /** 统一凭据检测：是否存在可用 API key。
@@ -209,7 +239,7 @@ const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(r
 
 function defaultInvoke(forwardHeaders?: Record<string, string>, timeoutMs?: number): AIInvokeFn {
   const headers = forwardHeaders && Object.keys(forwardHeaders).length > 0 ? forwardHeaders : undefined;
-  const client = new LLMClient(getAIConfig(timeoutMs), headers);
+  const client = new LLMClient(getModelAIConfig(timeoutMs), headers);
   return (messages, llmConfig) => client.invoke(messages, llmConfig);
 }
 
@@ -256,7 +286,7 @@ export async function invokeCozeAIStream(options: InvokeCozeAIOptions): Promise<
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       const headers = options.forwardHeaders && Object.keys(options.forwardHeaders).length > 0 ? options.forwardHeaders : undefined;
-      const client = new LLMClient(getAIConfig(timeoutMs), headers);
+      const client = new LLMClient(getModelAIConfig(timeoutMs), headers);
       const collect = async (): Promise<string> => {
         let content = '';
         for await (const chunk of client.stream(options.messages, options.llmConfig)) {

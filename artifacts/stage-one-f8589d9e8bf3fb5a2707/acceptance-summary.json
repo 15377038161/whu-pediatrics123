@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
   "recordedAt": "2026-11-13",
-  "status": "partially_accepted_external_ai_blocked",
+  "status": "accepted_within_stage_one_scope",
   "code": {
-    "verifiedCommit": "ae7ea12",
+    "baseCommit": "3af31ae8bb228d16be91d47f0c7517ddf1f2a029",
+    "changesPendingCommit": true,
     "formalReleaseTriggered": false
   },
   "source": {
@@ -25,9 +26,24 @@
     "unexpectedAiCalls": 0,
     "report": "/tmp/peds67-stage-one-acceptance/exam-matrix-0-67.json"
   },
+  "aiMatrix": {
+    "status": "passed",
+    "model": "deepseek-v4.1-flash-1017",
+    "casesCompleted": 67,
+    "fixedTestsReused": 67,
+    "generatedResultsValidated": 67,
+    "jsonRefreshReused": 67,
+    "processRestartReused": 67,
+    "restartModelCalls": 0,
+    "realModelCalls": 74,
+    "gatewayAttempts": 74,
+    "casesNeedingSecondGeneration": 7,
+    "mockUsed": false,
+    "report": "artifacts/stage-one-f8589d9e8bf3fb5a2707/ai-matrix-summary.json"
+  },
   "checks": {
     "targetedRegressionTests": {
-      "passed": 60,
+      "passed": 61,
       "failed": 0
     },
     "eslint": "passed",
@@ -36,29 +52,18 @@
     "keyApiSmokeTests": "passed",
     "fullUnitSuite": "incomplete_historical_private_knowledge_fixtures_missing_and_some_group_timeouts"
   },
-  "aiMatrix": {
-    "status": "blocked_before_case_execution",
-    "platformGateway": {
-      "httpStatus": 429,
-      "usedTokens": 2002165,
-      "tokenLimit": 2000000
-    },
-    "customGateway": {
-      "httpStatus": 403,
-      "error": "Invalid API key"
-    },
-    "mockUsed": false,
-    "casesCompleted": 0
-  },
   "preview": {
-    "url": "https://sandbox-684358ca-4b23-4597-a7ac-b818c2a60ac6-5173.cxiagents.com",
-    "loginAndCatalog": "passed",
-    "historicalSessionReadOnlyRestore": "passed",
-    "newRuntimeAiPageFlow": "not_verified"
+    "url": "https://sandbox-ba81d40d-3037-43fb-bfbb-8014eba1cbe4-5173.cxiagents.com",
+    "loginPage": "passed",
+    "customGatewayHealthLocalAndExternal": "passed",
+    "trainingPackageRootConfigured": true,
+    "historicalSessionReadOnlyRestore": "passed_previous_round",
+    "authenticatedNewRuntimeAiPageFlow": "not_verified_auth_required"
   },
   "deferred": [
     "real_microphone_asr_end_to_end",
     "formal_release",
-    "later_content_completion"
+    "later_content_completion",
+    "full_unit_suite_after_historical_private_fixtures_are_restored"
   ]
 }

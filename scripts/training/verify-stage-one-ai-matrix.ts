@@ -43,7 +43,13 @@ const candidatesFor = (pack: TeachingPackage): string[] => {
 function selectUnpreset(pack: TeachingPackage, session: SessionState): string {
   const tests = sessionTeachingCase(session).tests;
   const candidates = [...candidatesFor(pack), '凝血功能', '血培养', '铁蛋白', '乳酸'];
-  const selected = candidates.find(name => matchRequestedTest(name, tests).test === null);
+  const selected = candidates.find(name => {
+    if (matchRequestedTest(name, tests).test !== null) return false;
+    const normalizedName = name.replace(/\s+/g, '').toLowerCase();
+    const mentionedInCombinedReport = tests.some(test => `${test.label}\n${test.result}`
+      .replace(/\s+/g, '').toLowerCase().includes(normalizedName));
+    return !mentionedInCombinedReport;
+  });
   assert.ok(selected, `NO_UNPRESET_REASONABLE_TEST:${pack.caseId}`);
   return selected;
 }
@@ -107,6 +113,7 @@ async function generate(pack: TeachingPackage): Promise<Record<string, unknown>>
     });
     const generated = findSupplementalTest(session, requested);
     if (generated) {
+      assert.equal(generated.origin, 'teaching-simulation', `UNEXPECTED_ORIGIN:${pack.caseId}:${generated.origin}`);
       assert.ok(result.newMessages.some(message => message.content.includes(TEACHING_SIMULATION_LABEL)), `AI_LABEL_MISSING:${pack.caseId}`);
     }
     // The gateway already performed its bounded network retries. A second full turn is
